@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bolões de Loterias Especiais | Portal SimonSports</title>
+  <meta name="description" content="Página oficial dos bolões de loterias especiais do Portal SimonSports, com acesso ao sistema web de bolões, regras, cotas, transparência e acompanhamento dos sorteios." />
+
+  <style>
+    :root {
+      --bg: #07131f;
+      --bg-2: #0b1f33;
+      --card: #10263d;
+      --card-2: #132f4c;
+      --text: #f4f7fb;
+      --muted: #b8c7d9;
+      --line: rgba(255,255,255,.12);
+      --green: #16a34a;
+      --green-2: #22c55e;
+      --yellow: #facc15;
+      --blue: #38bdf8;
+      --red: #ef4444;
+      --shadow: 0 24px 70px rgba(0,0,0,.35);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(34,197,94,.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(56,189,248,.16), transparent 28%),
+        linear-gradient(180deg, var(--bg), #030712 90%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(7,19,31,.82);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+
+    .brand-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      box-shadow: 0 10px 30px rgba(34,197,94,.28);
+      font-size: 22px;
+      flex: 0 0 auto;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-links a {
+      padding: 9px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 19px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+      text-align: center;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green), var(--green-2));
+      color: #03120a;
+      box-shadow: 0 14px 36px rgba(34,197,94,.25);
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255,255,255,.06);
+    }
+
+    .btn-yellow {
+      background: linear-gradient(135deg, #fde047, #facc15);
+      color: #161100;
+      box-shadow: 0 14px 36px rgba(250,204,21,.22);
+    }
+
+    .hero {
+      padding: 76px 0 46px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(34,197,94,.35);
+      background: rgba(34,197,94,.12);
+      color: #bbf7d0;
+      padding: 8px 13px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(34px, 6vw, 62px);
+      line-height: 1.02;
+      letter-spacing: -1.6px;
+      margin-bottom: 18px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 680px;
+      margin-bottom: 26px;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .hero-note {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(19,47,76,.94), rgba(16,38,61,.88));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-top {
+      padding: 22px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #bbf7d0;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green-2);
+      box-shadow: 0 0 0 6px rgba(34,197,94,.13);
+    }
+
+    .panel-body {
+      padding: 22px;
+    }
+
+    .lottery-card {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .lottery-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .lottery-card h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .lottery-card p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .numbers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .ball {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #f8fafc;
+      color: #06111f;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    section {
+      padding: 52px 0;
+    }
+
+    .section-title {
+      font-size: clamp(26px, 4vw, 40px);
+      margin-bottom: 10px;
+      letter-spacing: -.8px;
+    }
+
+    .section-subtitle {
+      color: var(--muted);
+      max-width: 760px;
+      margin-bottom: 26px;
+    }
+
+    .webapp-box {
+      background:
+        radial-gradient(circle at top right, rgba(250,204,21,.22), transparent 34%),
+        linear-gradient(135deg, rgba(34,197,94,.20), rgba(56,189,248,.12));
+      border: 1px solid rgba(250,204,21,.26);
+      border-radius: 30px;
+      padding: 30px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .webapp-box h2 {
+      font-size: clamp(25px, 4vw, 38px);
+      margin-bottom: 10px;
+    }
+    .webapp-box p {
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .webapp-mini {
+      border: 1px solid var(--line);
+      background: rgba(3,7,18,.35);
+      border-radius: 22px;
+      padding: 20px;
+    }
+
+    .webapp-mini strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #fef9c3;
+    }
+
+    .webapp-mini ul {
+      color: var(--muted);
+      font-size: 14px;
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      background: rgba(16,38,61,.86);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 14px 36px rgba(0,0,0,.18);
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.08);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      margin-bottom: 14px;
+    }
+
+    .card h3 {
+      font-size: 19px;
+      margin-bottom: 8px;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .card ul {
+      padding-left: 18px;
+      margin-top: 10px;
+    }
+
+    .special-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .special {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 142px;
+    }
+
+    .special strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .special span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .rules {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .rule-list {
+      counter-reset: item;
+      display: grid;
+      gap: 12px;
+    }
+
+    .rule {
+      position: relative;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      border-radius: 18px;
+      padding: 17px 17px 17px 58px;
+    }
+
+    .rule::before {
+      counter-increment: item;
+      content: counter(item);
+      position: absolute;
+      left: 17px;
+      top: 17px;
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(34,197,94,.18);
+      color: #bbf7d0;
+      font-weight: 900;
+    }
+
+    .rule h4 {
+      margin-bottom: 4px;
+    }
+
+    .rule p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .cta {
+      background:
+        radial-gradient(circle at top right, rgba(250,204,21,.20), transparent 34%),
+        linear-gradient(135deg, rgba(22,163,74,.22), rgba(56,189,248,.14));
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      padding: 34px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 22px;
+      align-items: center;
+      box-shadow: var(--shadow);
+    }
+
+    .cta p {
+      color: var(--muted);
+      margin-top: 8px;
+      max-width: 720px;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 28px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .small-alert {
+      margin-top: 22px;
+      border: 1px solid rgba(250,204,21,.25);
+      background: rgba(250,204,21,.08);
+      color: #fde68a;
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 920px) {
+      .hero-grid,
+      .rules,
+      .cta,
+      .webapp-box {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .special-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .nav-links {
+        display: none;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .container {
+        width: min(100% - 22px, 1120px);
+      }
+
+      .hero {
+        padding-top: 48px;
+      }
+      .special-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cta,
+      .webapp-box {
+        padding: 24px;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container nav">
+      <a class="brand" href="#inicio" aria-label="Portal SimonSports">
+        <span class="brand-badge">🍀</span>
+        <span>Portal SimonSports</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Menu principal">
+        <a href="#sistema">Sistema</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#loterias">Loterias</a>
+        <a href="#regras">Regras</a>
+        <a href="#participar">Participar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="tag">🎯 Bolões especiais com organização e transparência</div>
+          <h1>Bolões de Loterias Especiais</h1>
+          <p class="lead">
+            Página oficial para divulgação, organização e acompanhamento dos bolões especiais do Portal SimonSports,
+            integrada ao sistema web de controle dos bolões.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://script.google.com/macros/s/AKfycbzTXJr4uZS4k8gDtsA0EsrrQZ_S5hYcKryq9PVJ-skMC90kWkYQR64eAD04jikBP57gew/exec" target="_blank" rel="noopener">Abrir sistema de bolões</a>
+            <a class="btn btn-secondary" href="#regras">Ver regras</a>
+          </div>
+
+          <p class="hero-note">
+            O botão principal já está vinculado ao Web App: Bolões Especiais.
+          </p>
+        </div>
+
+        <aside class="panel" aria-label="Resumo dos bolões">
+          <div class="panel-top">
+            <strong>Bolão em destaque</strong>
+            <span class="status"><span class="status-dot"></span>Aberto</span>
+          </div>
+
+          <div class="panel-body">
+            <div class="lottery-card">
+              <h3>Mega da Virada</h3>
+              <p>Bolão especial com cotas limitadas, registro organizado e acompanhamento até o sorteio.</p>
+
+              <div class="numbers" aria-label="Números ilustrativos">
+                <span class="ball">07</span>
+                <span class="ball">13</span>
+                <span class="ball">22</span>
+                <span class="ball">35</span>
+                <span class="ball">44</span>
+                <span class="ball">58</span>
+              </div>
+            </div>
+
+            <div class="lottery-card">
+              <h3>Controle transparente</h3>
+              <p>Participantes, cotas, status de pagamento e comprovantes podem ser controlados pelo sistema web.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="sistema">
+      <div class="container">
+        <div class="webapp-box">
+          <div>
+            <h2>Sistema oficial dos Bolões Especiais</h2>
+            <p>
+              Acesse o Web App para administrar os bolões, registrar participantes, controlar cotas, acompanhar pagamentos
+              e organizar os sorteios especiais.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn btn-yellow" href="https://script.google.com/macros/s/AKfycbzTXJr4uZS4k8gDtsA0EsrrQZ_S5hYcKryq9PVJ-skMC90kWkYQR64eAD04jikBP57gew/exec" target="_blank" rel="noopener">Acessar Web App</a>
+              <a class="btn btn-secondary" href="#participar">Ver canais de participação</a>
+            </div>
+          </div>
+
+          <div class="webapp-mini">
+            <strong>Recursos vinculados</strong>
+            <ul>
+              <li>Acesso direto ao Web App de Bolões Especiais.</li>
+              <li>Organização de cotas e participantes.</li>
+              <li>Controle centralizado dos bolões ativos.</li>
+              <li>Divulgação pública pela página do GitHub Pages.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="como-funciona">
+      <div class="container">
+        <h2 class="section-title">Como funciona</h2>
+        <p class="section-subtitle">
+          A proposta é manter cada bolão especial organizado do início ao fim, evitando dúvidas sobre cotas,
+          pagamentos, jogos realizados e possíveis premiações.
+        </p>
+
+        <div class="cards">
+          <article class="card">
+            <div class="card-icon">🧾</div>
+            <h3>Cadastro do bolão</h3>
+            <p>O bolão é criado com nome, loteria, data do sorteio, quantidade de cotas e valor definido.</p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon">👥</div>
+            <h3>Controle de participantes</h3>
+            <p>Cada participante fica vinculado a uma ou mais cotas, com status de pagamento e registro de confirmação.</p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon">📢</div>
+            <h3>Divulgação e resultado</h3>
+            <p>As informações principais podem ser publicadas no site, WhatsApp, Telegram e demais canais oficiais.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="loterias">
+      <div class="container">
+        <h2 class="section-title">Loterias especiais</h2>
+        <p class="section-subtitle">
+          Use esta área para divulgar os bolões disponíveis, encerrados ou em preparação.
+        </p>
+
+        <div class="special-grid">
+          <div class="special">
+            <strong>🍀 Mega da Virada</strong>
+            <span>Bolão especial de fim de ano, com alta procura e cotas limitadas.</span>
+          </div>
+
+          <div class="special">
+            <strong>🎉 Lotofácil da Independência</strong>
+            <span>Bolão especial para o concurso anual da Lotofácil.</span>
+          </div>
+
+          <div class="special">
+            <strong>🌽 Quina de São João</strong>
+            <span>Bolão voltado ao concurso especial da Quina.</span>
+          </div>
+
+          <div class="special">
+            <strong>🥚 Dupla de Páscoa</strong>
+            <span>Bolão especial para concurso temático da Dupla Sena.</span>
+          </div>
+
+          <div class="special">
+            <strong>⚽ Loteca</strong>
+            <span>Bolão individualizado para palpites esportivos, quando disponível.</span>
+          </div>
+
+          <div class="special">
+            <strong>🌞 Dia de Sorte</strong>
+            <span>Organização de cotas para concursos selecionados.</span>
+          </div>
+
+          <div class="special">
+            <strong>7️⃣ Super Sete</strong>
+            <span>Bolões especiais conforme calendário e viabilidade.</span>
+          </div>
+
+          <div class="special">
+            <strong>📌 Outros especiais</strong>
+            <span>Novos bolões poderão ser adicionados conforme demanda.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="regras">
+      <div class="container rules">
+        <div>
+          <h2 class="section-title">Regras básicas</h2>
+          <p class="section-subtitle">
+            Ajuste estas regras conforme o modelo final do bolão. A recomendação é manter tudo objetivo e publicado
+            antes da abertura das cotas.
+          </p>
+
+          <div class="small-alert">
+            Importante: esta página é apenas um modelo informativo. Antes de publicar, revise as regras,
+            valores, prazos, responsabilidades e forma de divisão de eventual premiação.
+          </div>
+        </div>
+        <div class="rule-list">
+          <div class="rule">
+            <h4>Cotas limitadas</h4>
+            <p>As cotas são reservadas conforme disponibilidade e confirmação do organizador.</p>
+          </div>
+
+          <div class="rule">
+            <h4>Pagamento confirmado</h4>
+            <p>A participação só é considerada ativa após confirmação do pagamento ou registro autorizado.</p>
+          </div>
+
+          <div class="rule">
+            <h4>Jogos registrados</h4>
+            <p>Os jogos realizados devem ser armazenados e compartilhados com os participantes antes do sorteio.</p>
+          </div>
+
+          <div class="rule">
+            <h4>Divisão proporcional</h4>
+            <p>Eventual premiação deve ser dividida proporcionalmente à quantidade de cotas confirmadas.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="participar">
+      <div class="container">
+        <div class="cta">
+          <div>
+            <h2 class="section-title">Participar de um bolão especial</h2>
+            <p>
+              Para participar, entre no canal oficial, consulte as cotas disponíveis e confirme as regras do bolão ativo.
+            </p>
+          </div>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://script.google.com/macros/s/AKfycbzTXJr4uZS4k8gDtsA0EsrrQZ_S5hYcKryq9PVJ-skMC90kWkYQR64eAD04jikBP57gew/exec" target="_blank" rel="noopener">Abrir sistema</a>
+            <a class="btn btn-secondary" href="https://t.me/seu_canal" target="_blank" rel="noopener">Telegram</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <span>© <span id="anoAtual"></span> Portal SimonSports. Todos os direitos reservados.</span>
+      <span>Página integrada ao Web App Bolões Especiais.</span>
+    </div>
+  </footer>
+
+  <script>
+    const WEBAPP_BOLOES_ESPECIAIS_URL = "https://script.google.com/macros/s/AKfycbzTXJr4uZS4k8gDtsA0EsrrQZ_S5hYcKryq9PVJ-skMC90kWkYQR64eAD04jikBP57gew/exec";
+    document.getElementById('anoAtual').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
