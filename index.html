@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V143_DADOS_COMPLETOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V144_BASE_PARTICIPANTES_SAVE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V143</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V144</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -43,7 +43,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V143_DADOS_COMPLETOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V144_BASE_PARTICIPANTES_SAVE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
     function api(action,dados={},args=null){return new Promise((resolve,reject)=>{const cb='PSS_CB_'+Date.now()+'_'+Math.floor(Math.random()*1e6),payload=Object.assign({},dados||{});payload.action=action;payload.fnName=action;if(Array.isArray(args))payload.args=args;const p=new URLSearchParams();p.set('action',action);p.set('fn',action);p.set('fnName',action);p.set('callback',cb);p.set('payload',JSON.stringify(payload));p.set('email',ESTADO.email||dados.email||'');p.set('_',String(Date.now()));const s=document.createElement('script');let timer=null;window[cb]=r=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();if(!r||r.ok!==true){reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));return}resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r))};s.onerror=()=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Falha ao conectar à API.'))};timer=setTimeout(()=>{try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Tempo limite excedido ao conectar à API.'))},30000);s.src=CONFIG.apiUrl+'?'+p.toString();document.body.appendChild(s)})}
@@ -52,7 +52,7 @@
     async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario={nome:u.nome||u.usuario||'Usuário',email:u.email||email,role:String(u.role||u.perfil||'usuario').toLowerCase(),perfil:u.perfil||u.role||'usuario'};ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(u||{}))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');renderLogin()}
     function aplicarLayoutLogado(){document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');document.getElementById('userDisplay').textContent=`${ESTADO.usuario.nome||'Usuário'}${ESTADO.usuario.email?' • '+ESTADO.usuario.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
-    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderAdminTable('PARTICIPANTES','Participantes Bolão')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
     function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
     async function carregarBoloes(){
       const lista=await apiMulti([{action:'getLoteriasPagamentoAtivas',args:[]},{action:'listarBoloes',args:[ESTADO.email]}]);
@@ -172,33 +172,72 @@
       }catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}
     }
     async function salvarBaseLoteriasGit(){
-      const rows={};
-      document.querySelectorAll('.admin-edit-table input[data-row]').forEach(inp=>{const r=inp.dataset.row;rows[r]=rows[r]||{};rows[r][inp.dataset.campo]=inp.value});
-      const lista=Object.keys(rows).sort((a,b)=>Number(a)-Number(b)).map(k=>Object.assign({linha:Number(k)+2},rows[k]));
-      await chamarAcaoAdmin('salvarBaseLoteriasAdmin',[lista],'Base Loterias salva.');
-    }
+      const inputs=document.querySelectorAll('.admin-edit-table input');
+      const map={};
+      inputs.forEach(inp=>{
+        const r=inp.dataset.row;
+        if(!map[r]) map[r]={linha:Number(r)+2};
+        map[r][inp.dataset.campo]=inp.value;
+      });
+      const lista=Object.values(map);
 
-    async function renderSolicitacoesAdmin(){
-      if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
-      loading('Carregando solicitações');
       try{
-        const r=await adminDados('SOLICITACOES_CADASTRO'),headers=r.headers||[],rows=r.rows||[];
-        const campos=['DATA','NOME','EMAIL','CELULAR','STATUS','COTAS','TIPO','COMPROVANTE','ACEITOU_REGULAMENTO','DATA_ACEITE_REGULAMENTO','VERSAO_REGULAMENTO','LOTERIA','EVENTO_ID','CPF','TIPO_SOLICITACAO'];
-        setView(`<div class="panel no-left"><h2>SOLICITACOES CADASTRO</h2><div class="table-wrap"><table><thead><tr>${campos.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}<th>Ações</th></tr></thead><tbody>${rows.map((row,i)=>{const o=rowObj(headers,row);const st=normalizar(cellObj(o,['STATUS']));let cls=st.includes('APROV')?'aprovado':(st.includes('PEND')?'pendente':'');let linha=linhaPlanilha(i);let acoes=st.includes('PEND')?`<button class="mini-action green" onclick="chamarAcaoAdmin('aprovarSolicitacaoCadastro',[${linha}],'Solicitação aprovada.')">Aprovar</button><button class="mini-action red" onclick="chamarAcaoAdmin('recusarSolicitacaoCadastro',[${linha}],'Solicitação recusada.')">Recusar</button><button class="mini-action" onclick="chamarAcaoAdmin('inativarSolicitacaoCadastro',[${linha}],'Solicitação inativada.')">Inativar</button><button class="mini-action red" onclick="confirmarExcluirAdmin('excluirSolicitacaoCadastro',${linha},'Excluir esta solicitação?')">Excluir</button>`:`<button class="mini-action" onclick="chamarAcaoAdmin('tornarUsuarioAdministradorLinha',[${linha}],'Usuário definido como administrador.')">Tornar administrador</button><button class="mini-action" onclick="chamarAcaoAdmin('inativarSolicitacaoCadastro',[${linha}],'Solicitação inativada.')">Inativar</button><button class="mini-action red" onclick="confirmarExcluirAdmin('excluirSolicitacaoCadastro',${linha},'Excluir esta solicitação?')">Excluir</button>`;return `<tr>${campos.map(c=>{let v=cellObj(o,[c]);if(c==='STATUS')return `<td><span class="sol-status ${cls}">${escapeHtml(v||'-')}</span></td>`;return `<td>${formatarCelula(v||'-')}</td>`}).join('')}<td>${acoes}</td></tr>`}).join('')}</tbody></table></div></div>`)
-      }catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}
+        const r = await api('salvarBaseLoteriasAdmin',{},[lista]);
+        toast((r&&r.msg)||'Base Loterias salva.');
+        renderBaseLoteriasAdmin();
+      }catch(err1){
+        try{
+          const r2 = await api('salvarBaseLoterias',{},[lista]);
+          toast((r2&&r2.msg)||'Base Loterias salva.');
+          renderBaseLoteriasAdmin();
+        }catch(err2){
+          toast(err2.message || err1.message || 'Erro ao salvar Base Loterias.','error');
+        }
+      }
     }
-    async function renderUsuariosAdmin(){
-      if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
-      loading('Carregando usuários');
-      try{
-        const r=await adminDados('Usuarios'),headers=r.headers||[],rows=r.rows||[];
-        setView(`<div class="panel no-left"><h2>Usuarios</h2><div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}<th>Ações</th></tr></thead><tbody>${rows.map((row,i)=>{const o=rowObj(headers,row);const st=normalizar(cellObj(o,['STATUS','ATIVO']));const linha=linhaPlanilha(i);const acoes=`<button class="mini-action green" onclick="chamarAcaoAdmin('ativarUsuarioLinha',[${linha}],'Usuário ativado.')">Ativar</button><button class="mini-action" onclick="chamarAcaoAdmin('inativarUsuarioLinha',[${linha}],'Usuário inativado.')">Inativar</button><button class="mini-action" onclick="chamarAcaoAdmin('tornarUsuarioAdministradorLinha',[${linha}],'Usuário definido como administrador.')">Admin</button><button class="mini-action red" onclick="confirmarExcluirAdmin('excluirUsuarioLinha',${linha},'Excluir este usuário?')">Excluir</button>`;return `<tr>${row.map((c,ci)=>{const h=normalizar(headers[ci]);if(h==='STATUS'||h==='ATIVO'){const cls=st.includes('ATIVO')?'aprovado':(st.includes('INAT')?'pendente':'');return `<td><span class="sol-status ${cls}">${escapeHtml(c||'-')}</span></td>`}return `<td>${formatarCelula(c)}</td>`}).join('')}<td>${acoes}</td></tr>`}).join('')}</tbody></table></div></div>`)
-      }catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}
-    }
-    async function renderPagamentosAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando pagamentos');try{const r=await adminDados('PAGAMENTOS'),headers=r.headers||[],rows=r.rows||[];let total=0;const cards=rows.map((row,i)=>{const o=rowObj(headers,row);const valor=num(cellObj(o,['VALOR','VALOR_PAGO','VALOR PAGO']));total+=valor;const status=cellObj(o,['STATUS'])||'Em Análise';const warn=!normalizar(status).includes('PAGO');const lot=cellObj(o,['LOTERIA','BOLAO','BOLÃO'])||'Pagamento sem loteria informada';const url=cellObj(o,['URL_COMPROVANTE','COMPROVANTE_URL','COMPROVANTE','ARQUIVO_URL','URL']);return `<div class="payment-admin-card ${warn?'warning':''}"><div class="pay-head"><div class="pay-title">${escapeHtml(lot)}</div><div class="pay-status">${escapeHtml(status)}</div></div><div class="pay-grid"><div class="pay-info"><b>Data</b><span>${escapeHtml(cellObj(o,['DATA','DATA_HORA','DATA_PAGAMENTO'])||'-')}</span></div><div class="pay-info"><b>E-mail</b><span>${escapeHtml(cellObj(o,['EMAIL','E-MAIL'])||'-')}</span></div><div class="pay-info"><b>Pagador</b><span>${escapeHtml(cellObj(o,['PAGADOR','NOME'])||'-')}</span></div><div class="pay-info"><b>Valor</b><span>${moeda(valor)}</span></div><div class="pay-info"><b>ID transação</b><span>${escapeHtml(cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO'])||'-')}</span></div><div class="pay-info"><b>Autenticação</b><span>${escapeHtml(cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO'])||'-')}</span></div><div class="pay-info"><b>Recebedor</b><span>${escapeHtml(cellObj(o,['RECEBEDOR'])||'-')}</span></div><div class="pay-info"><b>Mês referência</b><span>${escapeHtml(cellObj(o,['MES_REFERENCIA','MÊS_REFERÊNCIA'])||'-')}</span></div><div class="pay-info"><b>Tipo cota</b><span>${escapeHtml(cellObj(o,['TIPO_COTA','TIPO COTA'])||'-')}</span></div><div class="pay-info"><b>Partes</b><span>${escapeHtml(cellObj(o,['PARTES'])||'-')}</span></div><div class="pay-info full"><b>Validação</b><span>${escapeHtml(cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS'])||'-')}</span></div></div><div class="actions">${url?`<a class="btn btn-blue" href="${escapeAttr(url)}" target="_blank" rel="noopener">Ver comprovante</a>`:''}<button class="btn btn-blue" onclick="chamarAcaoAdmin('reprocessarPagamentoLinha',[${linhaPlanilha(i)}],'OCR reprocessado.')">Reprocessar OCR</button>${warn?`<button class="btn" onclick="chamarAcaoAdmin('confirmarPagamentoManual',[${linhaPlanilha(i)}],'Pagamento confirmado.')">Confirmar pagamento</button>`:''}</div></div>`}).join('');setView(`<div class="panel"><h2>📊 Resumo financeiro dos pagamentos pagos</h2><div class="meta-box"><b>Total geral</b><span class="outline-pill">${moeda(total)}</span></div><h3 style="margin-top:18px;">Resumo mensal</h3><div class="meta-box"><span>Consolidado externo via GitHub Pages.</span></div></div><h2 style="margin:18px;">PAGAMENTOS</h2>${cards||'<div class="panel"><div class="notice warn">Nenhum pagamento localizado.</div></div>'}`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
 
     async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const lista=await carregarBoloes();setView(`<div class="panel"><h2>⚙️ Configurações individuais dos bolões ativos</h2><p>Cada bolão salva individualmente. BASE_LOTERIAS define range, mínimo, máximo e quantidade por palpite.</p>${lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(b.valorCota||'')}"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(b.totalCotas||b.cotasTotal||'')}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(b.cotasAdquiridas||'')}"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(b.qtdParcelas||'1')}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(b.premiacao||'')}"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(b.dataSorteio||'')}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(b.inicioPagamento||'')}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(b.fimPagamento||'')}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(b.inicioPalpite||'')}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(b.fimPalpite||'')}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(b.range||'')}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(b.qtdMin||'')}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(b.qtdMax||'')}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(b.qtdPalpite||'')}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join('')}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
     async function salvarConfigBolaoGit(i){const b=ESTADO.boloes[i];if(!b)return;const d={nome:b.nome||b.loteria,loteria:b.loteria||b.nome,status:document.getElementById('cfg_status_'+i).value,valorCota:document.getElementById('cfg_valor_'+i).value,totalCotas:document.getElementById('cfg_total_'+i).value,cotasTotaisAdquiridas:document.getElementById('cfg_cotas_'+i).value,qtdParcelas:document.getElementById('cfg_parc_'+i).value,premiacao:document.getElementById('cfg_premio_'+i).value,dataSorteio:document.getElementById('cfg_sorteio_'+i).value,iniBol:document.getElementById('cfg_iniBol_'+i).value,fimBol:document.getElementById('cfg_fimBol_'+i).value,iniPal:document.getElementById('cfg_iniPal_'+i).value,fimPal:document.getElementById('cfg_fimPal_'+i).value,range:document.getElementById('cfg_range_'+i).value,qtdMin:document.getElementById('cfg_min_'+i).value,qtdMax:document.getElementById('cfg_max_'+i).value,qtdPalpite:document.getElementById('cfg_qtdPal_'+i).value};chamarAcaoAdmin('salvarConfigBolaoAtivoAdmin',[d],'Bolão salvo.')}
+
+
+    async function renderParticipantesBolaoAdmin(){
+      if(!isAdmin()){
+        setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');
+        return;
+      }
+
+      loading('Carregando Participantes Bolão');
+
+      try{
+        let r = await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES_BOLAO'},args:['PARTICIPANTES_BOLAO']}]);
+
+        if((!r.headers || !r.headers.length) && (!r.rows || !r.rows.length)){
+          r = await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES'},args:['PARTICIPANTES']}]);
+        }
+
+        const headers = r.headers || [];
+        const rows = r.rows || [];
+
+        setView(`
+          <div class="panel">
+            <h2>Participantes Bolão</h2>
+            <p>Dados carregados da aba <strong>${escapeHtml(r.aba || 'PARTICIPANTES_BOLAO')}</strong>.</p>
+            ${headers.length ? `
+              <div class="table-wrap">
+                <table>
+                  <thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+                  <tbody>
+                    ${rows.map(row=>`<tr>${row.map(c=>`<td>${formatarCelula(c)}</td>`).join('')}</tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : '<div class="notice warn">Nenhum dado localizado na aba PARTICIPANTES_BOLAO.</div>'}
+          </div>
+        `);
+      }catch(err){
+        setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+      }
+    }
 
     async function abrirCadastro(){abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button></form>`);try{const lista=await carregarBoloes();document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}}
     async function enviarCadastro(ev){ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');btn.disabled=true;btn.textContent='Enviando...';try{const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');toast((r&&r.msg)||'Solicitação enviada com sucesso.');fecharModal()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}}
