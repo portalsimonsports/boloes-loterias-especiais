@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V149_BOTOES_VISIVEIS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V150_DATA_PTBR_BOTOES_VISIVEIS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V149</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V150</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -43,7 +43,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V149_BOTOES_VISIVEIS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V150_DATA_PTBR_BOTOES_VISIVEIS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
     function api(action,dados={},args=null){return new Promise((resolve,reject)=>{const cb='PSS_CB_'+Date.now()+'_'+Math.floor(Math.random()*1e6),payload=Object.assign({},dados||{});payload.action=action;payload.fnName=action;if(Array.isArray(args))payload.args=args;const p=new URLSearchParams();p.set('action',action);p.set('fn',action);p.set('fnName',action);p.set('callback',cb);p.set('payload',JSON.stringify(payload));p.set('email',ESTADO.email||dados.email||'');p.set('_',String(Date.now()));const s=document.createElement('script');let timer=null;window[cb]=r=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();if(!r||r.ok!==true){reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));return}resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r))};s.onerror=()=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Falha ao conectar à API.'))};timer=setTimeout(()=>{try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Tempo limite excedido ao conectar à API.'))},30000);s.src=CONFIG.apiUrl+'?'+p.toString();document.body.appendChild(s)})}
@@ -113,7 +113,7 @@
       if(!Array.isArray(palpites)||!palpites.length)return '<tr><td colspan="4">Nenhum palpite registrado.</td></tr>';
       return palpites.map((p,i)=>{
         const nums=p.numerosTexto||formatarNumeros(p.numeros)||'';
-        return `<tr><td>${escapeHtml(p.jogo||i+1)}</td><td>${escapeHtml(p.data||'-')}</td><td><strong>${escapeHtml(nums)}</strong></td><td><button class="btn btn-blue" onclick="mostrarGradePalpite('${escapeAttr(nums)}')">Editar</button></td></tr>`
+        return `<tr><td>${escapeHtml(p.jogo||i+1)}</td><td>${escapeHtml(formatarDataHoraPtBR(p.data||p.DATA||p.dataHora||p.DATA_HORA||'-'))}</td><td><strong>${escapeHtml(nums)}</strong></td><td><button class="btn btn-blue" onclick="mostrarGradePalpite('${escapeAttr(nums)}')">Editar</button></td></tr>`
       }).join('')
     }
     function mostrarGradePalpite(numerosTexto){
@@ -150,7 +150,7 @@
     function getPrazoBolao(nome){const b=ESTADO.boloes.find(x=>normalizar(x.loteria)===normalizar(nome)||normalizar(x.nome)===normalizar(nome));return b?(b.fimPalpite||'-'):'-'}
     async function renderComprovante(){loading('Carregando comprovante');try{const lista=await carregarBoloes(),hist=await apiMulti([{action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},{action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}]).catch(()=>[]);setView(`<div class="panel no-left"><form onsubmit="enviarComprovante(event)"><div class="wide-control"><label>Tipo de cota:</label><select id="tipoCota" onchange="renderCamposPartes()"><option value="unica">Cota única</option><option value="dividida">Cota dividida</option></select></div><div id="partesBox"></div><div class="upload-center"><label>Selecione a loteria do depósito:</label><select id="uploadBolao" required><option value="">Selecione...</option>${lista.map(b=>`<option value="${escapeAttr(b.loteria)}" ${b.loteria===ESTADO.bolaoSelecionado?'selected':''}>${escapeHtml(b.loteria)}</option>`).join('')}</select><h3>Enviar Comprovante</h3><small>Formatos aceitos: JPG, PNG, PDF</small><input id="arquivoComprovante" type="file" accept="image/*,.pdf,application/pdf" required style="margin:16px 0 10px;" /><button class="btn btn-block" id="btnEnviarComprovante" type="submit">Enviar agora</button></div></form><hr style="border:0;border-top:1px solid #ddd;margin:24px 0;"><h3>🕘 Meus Envios Recentes</h3>${renderHistoricoComprovantes(hist)}</div>`);renderCamposPartes()}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
     function renderCamposPartes(){const box=document.getElementById('partesBox');if(!box)return;const tipo=document.getElementById('tipoCota').value;if(tipo!=='dividida'){box.innerHTML='';return}box.innerHTML=`<div class="wide-control"><label>Em quantas partes a cota foi dividida?</label><select id="qtdPartes" onchange="renderNomesPartes()"><option value="2">2 partes</option><option value="3">3 partes</option><option value="4">4 partes</option><option value="5">5 partes</option></select></div><div id="nomesPartes"></div>`;renderNomesPartes()}function renderNomesPartes(){const box=document.getElementById('nomesPartes'),qtd=Number(document.getElementById('qtdPartes').value||2);let h='';for(let i=1;i<=qtd;i++)h+=`<input style="margin-bottom:12px;" placeholder="Nome do participante ${i}" />`;box.innerHTML=h}
-    function renderHistoricoComprovantes(lista){lista=Array.isArray(lista)?lista:[];if(!lista.length)return '<div class="notice warn">Nenhum envio localizado.</div>';return `<div class="table-wrap"><table><thead><tr><th>Data/Hora</th><th>Status</th><th>Link</th></tr></thead><tbody>${lista.map(x=>`<tr><td>${escapeHtml(x.data||'-')}</td><td>${escapeHtml(x.status||'Pendente')}</td><td>${x.url?`<a href="${escapeAttr(x.url)}" target="_blank" rel="noopener">Ver Arquivo</a>`:'-'}</td></tr>`).join('')}</tbody></table></div>`}
+    function renderHistoricoComprovantes(lista){lista=Array.isArray(lista)?lista:[];if(!lista.length)return '<div class="notice warn">Nenhum envio localizado.</div>';return `<div class="table-wrap"><table><thead><tr><th>Data/Hora</th><th>Status</th><th>Link</th></tr></thead><tbody>${lista.map(x=>`<tr><td>${escapeHtml(formatarDataHoraPtBR(x.data||x.DATA||x.dataHora||x.DATA_HORA||'-'))}</td><td>${escapeHtml(x.status||'Pendente')}</td><td>${x.url?`<a href="${escapeAttr(x.url)}" target="_blank" rel="noopener">Ver Arquivo</a>`:'-'}</td></tr>`).join('')}</tbody></table></div>`}
     async function enviarComprovante(ev){ev.preventDefault();const loteria=document.getElementById('uploadBolao').value,file=document.getElementById('arquivoComprovante').files[0],btn=document.getElementById('btnEnviarComprovante');if(!loteria)return toast('Selecione a loteria do depósito.','error');if(!file)return toast('Selecione o arquivo do comprovante.','error');ESTADO.bolaoSelecionado=loteria;localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);btn.disabled=true;btn.textContent='Enviando...';try{const base64=await lerArquivoBase64(file),r=await apiMulti([{action:'uploadComprovante',dados:{fileData:base64,fileName:file.name,email:ESTADO.email,loteria},args:[base64,file.name,ESTADO.email,loteria]},{action:'enviarComprovante',dados:{fileData:base64,fileName:file.name,email:ESTADO.email,loteria},args:[base64,file.name,ESTADO.email,loteria]}]);toast((r&&r.msg)||'Comprovante enviado com sucesso.');renderComprovante()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar agora'}}
     function renderEspeciais(tipoSelecionado=''){
       setView(`
@@ -490,7 +490,76 @@
     }
 
     function abrirModal(t,h){document.getElementById('modalTitulo').textContent=t;document.getElementById('modalConteudo').innerHTML=h;document.getElementById('modalBackdrop').classList.add('open')}function fecharModal(){document.getElementById('modalBackdrop').classList.remove('open')}document.getElementById('modalBackdrop').addEventListener('click',ev=>{if(ev.target.id==='modalBackdrop')fecharModal()});function toast(msg,tipo='success'){const box=document.getElementById('toastContainer'),el=document.createElement('div');el.className=`toast ${tipo}`;el.textContent=msg;box.appendChild(el);setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),220)},3500)}
-    function lerArquivoBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(new Error('Erro ao ler arquivo.'));r.readAsDataURL(file)})}function isHistorico(b){const st=normalizar(b.status);return st.includes('HISTORICO')||st.includes('ENCERRADO')||st.includes('FINALIZADO')}function valorNumeroConfig(v,fallback=''){if(v===undefined||v===null||v==='')return fallback;const original=String(v).trim();if(!original)return fallback;const m=original.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4,6})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);if(m){const d=Number(m[1]),mo=Number(m[2])-1,y=Number(m[3]);if(y>=1899){const base=Date.UTC(1899,11,30);const atual=Date.UTC(y,mo,d);const serial=Math.round((atual-base)/86400000);if(isFinite(serial)&&!isNaN(serial))return String(serial)}}return original}function moeda(v){const n=num(v);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function num(v){if(typeof v==='number')return isNaN(v)?0:v;const s=String(v||'0').replace(/R\$/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');const n=Number(s);return isNaN(n)?0:n}function normalizar(s){return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function escapeHtml(v){return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;')}function formatNum(n){const x=Number(n);return isNaN(x)?escapeHtml(n):(x<10?'0'+x:String(x))}function formatarNumeros(nums){if(!nums)return '';const arr=Array.isArray(nums)?nums:String(nums).split(/[-,;\s]+/).filter(Boolean);return arr.map(formatNum).join(' - ')}function formatarCelula(c){const s=String(c===undefined||c===null?'':c);if(s.startsWith('http'))return `<a href="${escapeAttr(s)}" target="_blank" rel="noopener">Abrir</a>`;return escapeHtml(s)}
+    function lerArquivoBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(new Error('Erro ao ler arquivo.'));r.readAsDataURL(file)})}function isHistorico(b){const st=normalizar(b.status);return st.includes('HISTORICO')||st.includes('ENCERRADO')||st.includes('FINALIZADO')}function valorNumeroConfig(v,fallback=''){if(v===undefined||v===null||v==='')return fallback;const original=String(v).trim();if(!original)return fallback;const m=original.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4,6})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);if(m){const d=Number(m[1]),mo=Number(m[2])-1,y=Number(m[3]);if(y>=1899){const base=Date.UTC(1899,11,30);const atual=Date.UTC(y,mo,d);const serial=Math.round((atual-base)/86400000);if(isFinite(serial)&&!isNaN(serial))return String(serial)}}return original}function moeda(v){const n=num(v);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function num(v){if(typeof v==='number')return isNaN(v)?0:v;const s=String(v||'0').replace(/R\$/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');const n=Number(s);return isNaN(n)?0:n}function normalizar(s){return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function escapeHtml(v){return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;')}function formatNum(n){const x=Number(n);return isNaN(x)?escapeHtml(n):(x<10?'0'+x:String(x))}function formatarNumeros(nums){if(!nums)return '';const arr=Array.isArray(nums)?nums:String(nums).split(/[-,;\s]+/).filter(Boolean);return arr.map(formatNum).join(' - ')}function formatarCelula(c){const s=String(c===undefined||c===null?'':c);if(s.startsWith('http'))return `<a href="${escapeAttr(s)}" target="_blank" rel="noopener">Abrir</a>`;if(pareceDataHora_(s))return escapeHtml(formatarDataHoraPtBR(s));return escapeHtml(s)}
+
+    function formatarDataHoraPtBR(valor){
+      if(valor===undefined||valor===null||valor==='')return '-';
+      if(valor instanceof Date && !isNaN(valor.getTime()))return montarDataHoraPtBR_(valor,true);
+      const bruto=String(valor).trim();
+      if(!bruto)return '-';
+
+      if(/^\d{2}\/\d{2}\/\d{4}/.test(bruto)){
+        return bruto.replace(',', '');
+      }
+
+      const iso=bruto.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+      if(iso){
+        const yyyy=iso[1],mm=iso[2],dd=iso[3],hh=iso[4]||'',mi=iso[5]||'',ss=iso[6]||'';
+        if(hh&&mi)return `${dd}/${mm}/${yyyy} ${hh}:${mi}${ss?':'+ss:''}`;
+        return `${dd}/${mm}/${yyyy}`;
+      }
+
+      const slash=bruto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+      if(slash){
+        let p1=Number(slash[1]),p2=Number(slash[2]);
+        const ano=slash[3];
+        const hora=slash[4]?String(slash[4]).padStart(2,'0'):'';
+        const minuto=slash[5]||'';
+        const segundo=slash[6]||'';
+        let dia,mes;
+
+        if(p1>12 && p2<=12){
+          dia=p1;
+          mes=p2;
+        }else if(p2>12 && p1<=12){
+          mes=p1;
+          dia=p2;
+        }else{
+          mes=p1;
+          dia=p2;
+        }
+
+        const dd=String(dia).padStart(2,'0');
+        const mm=String(mes).padStart(2,'0');
+
+        if(hora&&minuto)return `${dd}/${mm}/${ano} ${hora}:${minuto}${segundo?':'+segundo:''}`;
+        return `${dd}/${mm}/${ano}`;
+      }
+
+      const dt=new Date(bruto);
+      if(!isNaN(dt.getTime()) && /\d{4}|\d{1,2}\/\d{1,2}/.test(bruto)){
+        return montarDataHoraPtBR_(dt, bruto.includes(':'));
+      }
+
+      return bruto;
+    }
+
+    function montarDataHoraPtBR_(dt,comHora){
+      const dd=String(dt.getDate()).padStart(2,'0');
+      const mm=String(dt.getMonth()+1).padStart(2,'0');
+      const yyyy=dt.getFullYear();
+      if(!comHora)return `${dd}/${mm}/${yyyy}`;
+      const hh=String(dt.getHours()).padStart(2,'0');
+      const mi=String(dt.getMinutes()).padStart(2,'0');
+      const ss=String(dt.getSeconds()).padStart(2,'0');
+      return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+    }
+
+    function pareceDataHora_(valor){
+      const s=String(valor||'').trim();
+      if(!s)return false;
+      return /^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)||/^\d{4}-\d{2}-\d{2}/.test(s);
+    }
     function atualizarRelogio(){document.getElementById('clock').textContent=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(',',',')}function dataHoraAtualCurta(){return new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')}
   </script>
 </body>
