@@ -826,7 +826,7 @@
      *
      * Atualização focada:
      * - URL base da API corrigida, sem parâmetros fixos.
-     * - Comunicação JSONP reforçada para Apps Script /exec.
+     * - Comunicação JSONP ajustada para usar callback=teste, igual ao teste manual que funcionou.
      * - Tratamento de retorno mais tolerante: dados/data/result/rows/lista.
      * - Mensagens de falha mais claras, sem quebrar sessão salva.
      * - Correção das colunas CSS col-5/col-7.
@@ -879,14 +879,32 @@
     /********************************************************
      * API JSONP — COMPATÍVEL COM APPS SCRIPT PUBLICADO COMO /exec
      ********************************************************/
+    let PSS_API_FILA = Promise.resolve();
+
     function api(action, dados = {}, args = null) {
+      const executar = () => apiJsonpSerialCompatTeste_(action, dados, args);
+      PSS_API_FILA = PSS_API_FILA.then(executar, executar);
+      return PSS_API_FILA;
+    }
+
+    function apiJsonpSerialCompatTeste_(action, dados = {}, args = null) {
       return new Promise((resolve, reject) => {
         if (!CONFIG.apiUrl || !String(CONFIG.apiUrl).startsWith('https://script.google.com/macros/s/')) {
           reject(new Error('URL da API não configurada corretamente no index.html.'));
           return;
         }
 
-        const callback = 'PSS_CB_' + Date.now() + '_' + Math.floor(Math.random() * 1000000000);
+        /****************************************************
+         * IMPORTANTE
+         * Seu teste manual funcionou com:
+         * ?action=ping&callback=teste
+         *
+         * Por isso este index agora usa o callback fixo "teste",
+         * exatamente no padrão já aceito pelo seu GS atual.
+         * A fila PSS_API_FILA impede conflito entre chamadas.
+         ****************************************************/
+        const callback = 'teste';
+
         const payloadObj = Object.assign({}, dados || {});
         if (Array.isArray(args)) payloadObj.args = args;
 
@@ -896,18 +914,37 @@
 
         const params = new URLSearchParams();
         params.set('action', action);
-        params.set('fn', action);
-        params.set('fnName', action);
         params.set('callback', callback);
-        params.set('payload', JSON.stringify(payloadObj));
-        params.set('email', payloadObj.email || '');
         params.set('_', String(Date.now()));
+
+        if (action !== 'ping') {
+          params.set('fn', action);
+          params.set('fnName', action);
+          params.set('payload', JSON.stringify(payloadObj));
+          params.set('email', payloadObj.email || '');
+
+          Object.keys(payloadObj).forEach(k => {
+            const v = payloadObj[k];
+            if (k === 'payload' || k === 'callback' || k === '_' || k === 'fileData') return;
+            if (Array.isArray(v) || (v && typeof v === 'object')) return;
+            if (v !== undefined && v !== null) params.set(k, String(v));
+          });
+        }
 
         const script = document.createElement('script');
         let finalizado = false;
-
+        const callbackAnterior = window[callback];
         const limpar = () => {
-          try { delete window[callback]; } catch (e) { window[callback] = undefined; }
+          try {
+            if (callbackAnterior === undefined) {
+              delete window[callback];
+            } else {
+              window[callback] = callbackAnterior;
+            }
+          } catch (e) {
+            window[callback] = callbackAnterior;
+          }
+
           if (script && script.parentNode) script.parentNode.removeChild(script);
         };
 
@@ -915,9 +952,8 @@
           if (finalizado) return;
           finalizado = true;
           limpar();
-          reject(new Error('Tempo limite excedido ao conectar à API. Confirme se o Apps Script está publicado como Web App /exec e se o doGet retorna JSONP usando o parâmetro callback.'));
+          reject(new Error('Tempo limite excedido ao conectar à API usando callback=teste.'));
         }, CONFIG.timeoutApiMs);
-
         window[callback] = function(resposta) {
           if (finalizado) return;
           finalizado = true;
@@ -937,11 +973,10 @@
           finalizado = true;
           clearTimeout(timer);
           limpar();
-          reject(new Error('Falha ao carregar a API. Verifique a URL /exec, a permissão "Qualquer pessoa" e se o retorno está em JSONP.'));
+          reject(new Error('Falha ao carregar a API usando o mesmo padrão do teste: action=' + action + '&callback=teste.'));
         };
 
         script.async = true;
-        script.referrerPolicy = 'no-referrer-when-downgrade';
         script.src = CONFIG.apiUrl + '?' + params.toString();
 
         document.body.appendChild(script);
@@ -960,7 +995,6 @@
         }
         return;
       }
-
       if (resposta.ok === false) {
         throw new Error(resposta.erro || resposta.msg || resposta.message || 'Erro retornado pela API.');
       }
@@ -976,6 +1010,7 @@
 
     function desembrulharResposta(resposta) {
       if (!resposta || typeof resposta !== 'object') return resposta;
+
       if (resposta.dados !== undefined) return resposta.dados;
       if (resposta.data !== undefined) return resposta.data;
       if (resposta.result !== undefined) return resposta.result;
@@ -1080,6 +1115,7 @@
           <div class="login-card">
             <h1>Bolões de Loterias Especiais</h1>
             <p>Acesse usando o e-mail e a senha cadastrados na planilha.</p>
+
             <div id="loginMsg"></div>
 
             <form onsubmit="fazerLogin(event)">
@@ -1100,6 +1136,7 @@
 
               <button class="btn btn-primary btn-block" id="btnLogin" type="submit">Entrar no sistema</button>
             </form>
+
             <div class="hero-actions" style="justify-content:center;margin-top:16px;">
               <button class="btn btn-light" onclick="abrirCadastro()">Cadastrar</button>
               <button class="btn btn-light" onclick="abrirResetSenha()">Esqueci a senha</button>
@@ -1146,7 +1183,6 @@
         ESTADO.usuario = usuario;
         ESTADO.email = usuario.email;
         ESTADO.role = usuario.role;
-
         if (document.getElementById('lembrarEmail').checked) {
           localStorage.setItem('PSS_BOLAO_EMAIL', usuario.email);
         } else {
@@ -1188,7 +1224,6 @@
       toast('Sessão encerrada.', 'info');
       renderPublico();
     }
-
     function aplicarSessaoVisual() {
       document.getElementById('navWrap').classList.add('open');
       document.getElementById('userDisplay').classList.remove('hidden');
@@ -1230,7 +1265,6 @@
       if (viewName === 'regulamento') renderRegulamento();
       if (viewName === 'admin') renderAdmin();
     }
-
     function view(html) {
       document.getElementById('view').innerHTML = html;
     }
@@ -1272,7 +1306,6 @@
               </select>
             </div>
           </div>
-
           <div class="field">
             <label>Bolão desejado</label>
             <select id="cadBolao" required>
@@ -1293,7 +1326,6 @@
           <button class="btn btn-primary btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button>
         </form>
       `);
-
       carregarBoloesCadastro();
       carregarRegulamentoCadastro();
     }
@@ -1330,6 +1362,7 @@
           { action: 'getRegulamento', args: [] },
           { action: 'obterRegulamento', args: [] }
         ]);
+
         box.textContent = typeof txt === 'string'
           ? txt
           : (txt.texto || txt.regulamento || 'Regulamento definido pela administração.');
@@ -1376,7 +1409,6 @@
             args: [nome, email, cotas, loteria, cpf, true]
           }
         ]);
-
         if (r && r.sucesso === false) throw new Error(r.msg || 'Não foi possível enviar a solicitação.');
 
         toast((r && r.msg) || 'Solicitação enviada com sucesso. Aguarde aprovação.', 'success');
@@ -1392,6 +1424,7 @@
     async function abrirRegulamentoPublico() {
       abrirModal('Regulamento', `<div class="regulamento-box" id="regPublico">Carregando regulamento...</div>`);
       const box = document.getElementById('regPublico');
+
       try {
         const txt = await apiMulti([
           { action: 'getRegulamento', args: [] },
@@ -1459,7 +1492,6 @@
           { action: 'getEstatisticasAtiva', dados: { email: ESTADO.email }, args: [ESTADO.email] },
           { action: 'dashboard', dados: { email: ESTADO.email }, args: [ESTADO.email] }
         ]);
-
         const conf = normalizarDashboard(dados);
 
         view(`
@@ -1685,6 +1717,7 @@
       const b = ESTADO.boloes.find(x => String(x.id) === String(id) || String(x.nome) === String(id) || String(x.loteria) === String(id));
       ESTADO.bolaoSelecionado = b ? (b.loteria || b.nome || id) : id;
       localStorage.setItem('PSS_BOLAO_SELECIONADO', ESTADO.bolaoSelecionado);
+
       abrirModal('Bolão selecionado', `
         <div class="notice">Bolão selecionado: <strong>${escapeHtml(ESTADO.bolaoSelecionado)}</strong></div>
         <div class="hero-actions">
@@ -1789,6 +1822,7 @@
           </div>
         `;
       });
+
       html += `</div>`;
       return html;
     }
@@ -1914,6 +1948,7 @@
         </div>
       `;
     }
+
     async function enviarComprovante(event) {
       event.preventDefault();
 
@@ -1960,7 +1995,6 @@
         reader.readAsDataURL(file);
       });
     }
-
     /********************************************************
      * PAGAMENTOS
      ********************************************************/
@@ -1976,6 +2010,7 @@
         const hist = await apiMulti([
           { action: 'getHistoricoComprovantes', dados: { email: ESTADO.email }, args: [ESTADO.email] }
         ]).catch(() => []);
+
         const listaDem = extrairLista(dem, ['pagamentos', 'demonstrativo', 'rows', 'dados', 'lista']);
         const resumo = normalizarResumoFinanceiro(dem, listaDem);
 
@@ -2064,7 +2099,6 @@
         </div>
       `;
     }
-
     function somarPossiveis(lista, chaves) {
       return (Array.isArray(lista) ? lista : []).reduce((acc, item) => acc + num(valorPorChaves(item, chaves)), 0);
     }
