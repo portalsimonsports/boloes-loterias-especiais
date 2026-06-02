@@ -42,9 +42,7 @@
         linear-gradient(160deg, #071526, #102a43 54%, #061321);
     }
 
-    button, input, select, textarea {
-      font: inherit;
-    }
+    button, input, select, textarea { font: inherit; }
 
     a {
       color: inherit;
@@ -161,9 +159,7 @@
       color: #111827;
     }
 
-    .menu button.danger {
-      color: #ffd4d4;
-    }
+    .menu button.danger { color: #ffd4d4; }
 
     .wrap {
       width: min(1180px, 100%);
@@ -190,10 +186,7 @@
       box-shadow: var(--shadow);
       border-radius: 28px;
     }
-
-    .hero-main {
-      padding: clamp(22px, 3vw, 34px);
-    }
+    .hero-main { padding: clamp(22px, 3vw, 34px); }
 
     .hero-main h1 {
       margin: 0 0 12px;
@@ -255,7 +248,6 @@
       position: relative;
       z-index: 1;
     }
-
     .hero-side small {
       color: rgba(255,255,255,.80);
       position: relative;
@@ -289,7 +281,9 @@
 
     .col-3 { grid-column: span 3; }
     .col-4 { grid-column: span 4; }
+    .col-5 { grid-column: span 5; }
     .col-6 { grid-column: span 6; }
+    .col-7 { grid-column: span 7; }
     .col-8 { grid-column: span 8; }
     .col-12 { grid-column: span 12; }
 
@@ -337,7 +331,6 @@
       background: var(--danger);
       color: #fff;
     }
-
     .btn-block {
       width: 100%;
       border-radius: 14px;
@@ -408,15 +401,14 @@
       resize: vertical;
     }
 
-    .field {
-      margin-bottom: 13px;
-    }
+    .field { margin-bottom: 13px; }
 
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+
     .notice {
       border-radius: 16px;
       padding: 12px 14px;
@@ -437,9 +429,22 @@
       background: #fff7df;
       color: #8a5a00;
     }
+
     .notice.info {
       background: #eaf2ff;
       color: #123c74;
+    }
+
+    .api-mini {
+      margin-top: 10px;
+      padding: 9px 11px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-word;
     }
 
     .table-wrap {
@@ -457,6 +462,7 @@
       border-collapse: collapse;
       background: #fff;
     }
+
     th, td {
       padding: 11px 10px;
       border-bottom: 1px solid var(--line);
@@ -492,7 +498,6 @@
       background: #fff7df;
       color: var(--warning);
     }
-
     .tag.danger {
       background: #fee2e2;
       color: var(--danger);
@@ -534,7 +539,6 @@
       gap: 10px;
       min-height: 100%;
     }
-
     .bolao-card h3 {
       margin-bottom: 3px;
       color: var(--primary-2);
@@ -597,7 +601,6 @@
       border-color: var(--primary);
       transform: scale(1.08);
     }
-
     .palpite-resumo {
       max-width: 680px;
       margin: 0 auto 14px;
@@ -639,7 +642,6 @@
       justify-content: center;
       padding: 18px;
     }
-
     .modal-backdrop.open { display: flex; }
 
     .modal {
@@ -729,6 +731,7 @@
       line-height: 1.35;
       animation: toastIn .25s ease-out;
     }
+
     .toast.error { border-left-color: var(--danger); }
     .toast.warn { border-left-color: var(--accent); }
     .toast.info { border-left-color: #1565c0; }
@@ -743,18 +746,13 @@
         align-items: flex-start;
         flex-direction: column;
       }
+      .hero { grid-template-columns: 1fr; }
 
-      .hero {
-        grid-template-columns: 1fr;
-      }
-
-      .col-3, .col-4, .col-6, .col-8 {
+      .col-3, .col-4, .col-5, .col-6, .col-7, .col-8 {
         grid-column: span 12;
       }
 
-      .form-row {
-        grid-template-columns: 1fr;
-      }
+      .form-row { grid-template-columns: 1fr; }
 
       .numbers-grid {
         grid-template-columns: repeat(5, 1fr);
@@ -766,9 +764,7 @@
         height: 40px;
       }
 
-      .bolao-meta {
-        grid-template-columns: 1fr;
-      }
+      .bolao-meta { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -825,12 +821,21 @@
 
   <script>
     /********************************************************
-     * CONFIGURAÇÃO DA API
-     * URL oficial informada no projeto.
+     * BOLÕES DE LOTERIAS ESPECIAIS — INDEX GITHUB PAGES
+     * Portal SimonSports
+     *
+     * Atualização focada:
+     * - URL base da API corrigida, sem parâmetros fixos.
+     * - Comunicação JSONP reforçada para Apps Script /exec.
+     * - Tratamento de retorno mais tolerante: dados/data/result/rows/lista.
+     * - Mensagens de falha mais claras, sem quebrar sessão salva.
+     * - Correção das colunas CSS col-5/col-7.
      ********************************************************/
+
     const CONFIG = {
       apiUrl: 'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',
-      versaoRegulamento: '2026.1'
+      versaoRegulamento: '2026.1',
+      timeoutApiMs: 45000
     };
 
     const ESTADO = {
@@ -854,6 +859,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       atualizarRelogio();
       setInterval(atualizarRelogio, 1000);
+
       document.querySelectorAll('#menuPrincipal button[data-view]').forEach(btn => {
         btn.addEventListener('click', () => navegar(btn.dataset.view));
       });
@@ -862,7 +868,7 @@
       if (sessao && sessao.email) {
         ESTADO.usuario = sessao;
         ESTADO.email = sessao.email;
-        ESTADO.role = String(sessao.role || '').toLowerCase();
+        ESTADO.role = String(sessao.role || sessao.perfil || '').toLowerCase();
         aplicarSessaoVisual();
         navegar('inicio');
       } else {
@@ -871,20 +877,22 @@
     });
 
     /********************************************************
-     * API JSONP
+     * API JSONP — COMPATÍVEL COM APPS SCRIPT PUBLICADO COMO /exec
      ********************************************************/
     function api(action, dados = {}, args = null) {
       return new Promise((resolve, reject) => {
-        if (!CONFIG.apiUrl) {
-          reject(new Error('URL da API não configurada.'));
+        if (!CONFIG.apiUrl || !String(CONFIG.apiUrl).startsWith('https://script.google.com/macros/s/')) {
+          reject(new Error('URL da API não configurada corretamente no index.html.'));
           return;
         }
 
-        const callback = 'PSS_CB_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+        const callback = 'PSS_CB_' + Date.now() + '_' + Math.floor(Math.random() * 1000000000);
         const payloadObj = Object.assign({}, dados || {});
         if (Array.isArray(args)) payloadObj.args = args;
+
         payloadObj.fnName = action;
         payloadObj.action = action;
+        payloadObj.email = payloadObj.email || ESTADO.email || '';
 
         const params = new URLSearchParams();
         params.set('action', action);
@@ -892,58 +900,89 @@
         params.set('fnName', action);
         params.set('callback', callback);
         params.set('payload', JSON.stringify(payloadObj));
-        params.set('email', ESTADO.email || dados.email || '');
+        params.set('email', payloadObj.email || '');
         params.set('_', String(Date.now()));
 
         const script = document.createElement('script');
-        let timer = null;
+        let finalizado = false;
+
+        const limpar = () => {
+          try { delete window[callback]; } catch (e) { window[callback] = undefined; }
+          if (script && script.parentNode) script.parentNode.removeChild(script);
+        };
+
+        const timer = setTimeout(() => {
+          if (finalizado) return;
+          finalizado = true;
+          limpar();
+          reject(new Error('Tempo limite excedido ao conectar à API. Confirme se o Apps Script está publicado como Web App /exec e se o doGet retorna JSONP usando o parâmetro callback.'));
+        }, CONFIG.timeoutApiMs);
 
         window[callback] = function(resposta) {
+          if (finalizado) return;
+          finalizado = true;
           clearTimeout(timer);
-          try { delete window[callback]; } catch(e) { window[callback] = undefined; }
-          script.remove();
+          limpar();
 
-          if (resposta && resposta.ok === false) {
-            reject(new Error(resposta.erro || resposta.msg || 'Erro retornado pela API.'));
-            return;
+          try {
+            validarRespostaApi(resposta);
+            resolve(desembrulharResposta(resposta));
+          } catch (err) {
+            reject(err);
           }
-
-          if (resposta && resposta.erro && !resposta.sucesso) {
-            reject(new Error(resposta.msg || resposta.erro || 'Erro retornado pela API.'));
-            return;
-          }
-
-          resolve(desembrulharResposta(resposta));
         };
 
         script.onerror = function() {
+          if (finalizado) return;
+          finalizado = true;
           clearTimeout(timer);
-          try { delete window[callback]; } catch(e) { window[callback] = undefined; }
-          script.remove();
-          reject(new Error('Falha ao conectar à API. Verifique a implantação /exec do Apps Script.'));
+          limpar();
+          reject(new Error('Falha ao carregar a API. Verifique a URL /exec, a permissão "Qualquer pessoa" e se o retorno está em JSONP.'));
         };
 
-        timer = setTimeout(() => {
-          try { delete window[callback]; } catch(e) { window[callback] = undefined; }
-          script.remove();
-          reject(new Error('Tempo limite excedido ao conectar à API.'));
-        }, 30000);
-
+        script.async = true;
+        script.referrerPolicy = 'no-referrer-when-downgrade';
         script.src = CONFIG.apiUrl + '?' + params.toString();
+
         document.body.appendChild(script);
       });
     }
 
-    function desembulharPadrao(resposta) {
-      if (!resposta) return resposta;
-      if (resposta.dados !== undefined) return resposta.dados;
-      if (resposta.data !== undefined) return resposta.data;
-      if (resposta.result !== undefined) return resposta.result;
-      return resposta;
+    function validarRespostaApi(resposta) {
+      if (resposta === undefined || resposta === null) {
+        throw new Error('A API respondeu vazia.');
+      }
+
+      if (typeof resposta === 'string') {
+        const s = normalizar(resposta);
+        if (s.includes('ERRO') || s.includes('FALHA') || s.includes('INVALID')) {
+          throw new Error(resposta);
+        }
+        return;
+      }
+
+      if (resposta.ok === false) {
+        throw new Error(resposta.erro || resposta.msg || resposta.message || 'Erro retornado pela API.');
+      }
+
+      if (resposta.sucesso === false) {
+        throw new Error(resposta.msg || resposta.erro || resposta.message || 'Erro retornado pela API.');
+      }
+
+      if (resposta.erro && !resposta.sucesso && !resposta.ok) {
+        throw new Error(resposta.msg || resposta.erro || resposta.message || 'Erro retornado pela API.');
+      }
     }
 
     function desembrulharResposta(resposta) {
-      return desembulharPadrao(resposta);
+      if (!resposta || typeof resposta !== 'object') return resposta;
+      if (resposta.dados !== undefined) return resposta.dados;
+      if (resposta.data !== undefined) return resposta.data;
+      if (resposta.result !== undefined) return resposta.result;
+      if (resposta.resultado !== undefined) return resposta.resultado;
+      if (resposta.payload !== undefined && resposta.payload !== null && typeof resposta.payload !== 'string') return resposta.payload;
+
+      return resposta;
     }
 
     async function apiMulti(tentativas) {
@@ -952,13 +991,40 @@
       for (const t of tentativas) {
         try {
           const res = await api(t.action, t.dados || {}, t.args || null);
-          if (res && res.erro && !res.sucesso) throw new Error(res.msg || res.erro);
           return res;
         } catch (err) {
           ultimoErro = err;
+          const msg = normalizar(err && err.message ? err.message : '');
+          const erroRota = (
+            msg.includes('FUNCAO') ||
+            msg.includes('FUNÇÃO') ||
+            msg.includes('ACTION') ||
+            msg.includes('ROTA') ||
+            msg.includes('NAO ENCONTR') ||
+            msg.includes('NÃO ENCONTR') ||
+            msg.includes('INVALID')
+          );
+
+          if (!erroRota && tentativas.length === 1) break;
         }
       }
-      throw ultimoErro || new Error('Nenhuma rota de API respondeu.');
+
+      throw ultimoErro || new Error('Nenhuma rota da API respondeu.');
+    }
+
+    async function testarApiManual() {
+      try {
+        const r = await api('ping', { origem: 'github-pages' }, []);
+        abrirModal('Teste da API', `
+          <div class="notice">API respondeu com sucesso.</div>
+          <div class="api-mini">${escapeHtml(JSON.stringify(r, null, 2))}</div>
+        `);
+      } catch (err) {
+        abrirModal('Teste da API', `
+          <div class="notice error">${escapeHtml(err.message)}</div>
+          <div class="api-mini">URL configurada: ${escapeHtml(CONFIG.apiUrl)}</div>
+        `);
+      }
     }
 
     /********************************************************
@@ -978,6 +1044,7 @@
               <button class="btn btn-primary" onclick="renderLogin()">Entrar no sistema</button>
               <button class="btn btn-accent" onclick="abrirCadastro()">Solicitar cadastro</button>
               <button class="btn btn-light" onclick="abrirRegulamentoPublico()">Ver regulamento</button>
+              <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
             </div>
           </div>
           <div class="hero-side">
@@ -1013,7 +1080,6 @@
           <div class="login-card">
             <h1>Bolões de Loterias Especiais</h1>
             <p>Acesse usando o e-mail e a senha cadastrados na planilha.</p>
-
             <div id="loginMsg"></div>
 
             <form onsubmit="fazerLogin(event)">
@@ -1034,10 +1100,10 @@
 
               <button class="btn btn-primary btn-block" id="btnLogin" type="submit">Entrar no sistema</button>
             </form>
-
             <div class="hero-actions" style="justify-content:center;margin-top:16px;">
               <button class="btn btn-light" onclick="abrirCadastro()">Cadastrar</button>
               <button class="btn btn-light" onclick="abrirResetSenha()">Esqueci a senha</button>
+              <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
             </div>
           </div>
         </div>
@@ -1067,12 +1133,14 @@
           { action: 'login', dados: { email, senha }, args: [email, senha] }
         ]);
 
-        if (!r || r.erro) throw new Error((r && (r.msg || r.erro)) || 'E-mail ou senha incorretos.');
+        if (!r || r.erro || r.sucesso === false) {
+          throw new Error((r && (r.msg || r.erro)) || 'E-mail ou senha incorretos.');
+        }
 
         const usuario = {
-          nome: r.nome || r.usuario || r.name || 'Usuário',
-          email: r.email || email,
-          role: String(r.role || r.perfil || r.status || 'usuario').toLowerCase()
+          nome: r.nome || r.usuario || r.name || r.Nome || r.NOME || 'Usuário',
+          email: r.email || r.Email || r.EMAIL || email,
+          role: String(r.role || r.perfil || r.Perfil || r.PERFIL || r.status || 'usuario').toLowerCase()
         };
 
         ESTADO.usuario = usuario;
@@ -1251,6 +1319,7 @@
         toast(err.message, 'error');
       }
     }
+
     async function carregarRegulamentoCadastro() {
       const box = document.getElementById('cadRegulamento');
       if (!box) return;
@@ -1261,7 +1330,6 @@
           { action: 'getRegulamento', args: [] },
           { action: 'obterRegulamento', args: [] }
         ]);
-
         box.textContent = typeof txt === 'string'
           ? txt
           : (txt.texto || txt.regulamento || 'Regulamento definido pela administração.');
@@ -1324,7 +1392,6 @@
     async function abrirRegulamentoPublico() {
       abrirModal('Regulamento', `<div class="regulamento-box" id="regPublico">Carregando regulamento...</div>`);
       const box = document.getElementById('regPublico');
-
       try {
         const txt = await apiMulti([
           { action: 'getRegulamento', args: [] },
@@ -1389,12 +1456,11 @@
       try {
         const dados = await apiMulti([
           { action: 'getEstatisticasAtivaUsuario', dados: { email: ESTADO.email }, args: [ESTADO.email] },
-          { action: 'getEstatisticasAtiva', args: [] },
-          { action: 'dashboard', args: [ESTADO.email] }
+          { action: 'getEstatisticasAtiva', dados: { email: ESTADO.email }, args: [ESTADO.email] },
+          { action: 'dashboard', dados: { email: ESTADO.email }, args: [ESTADO.email] }
         ]);
 
-        const conf = dados || {};
-        const cards = conf.cards || {};
+        const conf = normalizarDashboard(dados);
 
         view(`
           <section class="hero">
@@ -1408,12 +1474,13 @@
                 <button class="btn btn-primary" onclick="navegar('boloes')">Ver bolões</button>
                 <button class="btn btn-light" onclick="navegar('palpites')">Fazer palpite</button>
                 <button class="btn btn-light" onclick="navegar('pagamentos')">Pagamentos</button>
+                <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
               </div>
             </div>
 
             <div class="hero-side">
               <div>
-                <div class="big">${escapeHtml(conf.cotasAdquiridas || cards.cotasAdquiridas || '0')}</div>
+                <div class="big">${escapeHtml(conf.cotasAdquiridas || '0')}</div>
                 <p>Cotas adquiridas vinculadas ao usuário ou ao bolão ativo.</p>
               </div>
               <small>${dataHoraAtual()}</small>
@@ -1421,9 +1488,9 @@
           </section>
 
           <section class="grid">
-            ${cardStat('Loteria ativa', conf.loteria || conf.loteriaAtiva || 'Bolão')}
-            ${cardStat('Valor da cota', moeda(conf.valorCota || conf.valor_cota || 0))}
-            ${cardStat('Cotas totais', conf.totalCotas || conf.cotasTotal || 0)}
+            ${cardStat('Loteria ativa', conf.loteria || 'Bolão')}
+            ${cardStat('Valor da cota', moeda(conf.valorCota || 0))}
+            ${cardStat('Cotas totais', conf.totalCotas || 0)}
             ${cardStat('Cotas adquiridas', conf.cotasAdquiridas || 0)}
           </section>
 
@@ -1436,12 +1503,47 @@
         `);
       } catch (err) {
         view(`
-          <div class="card">
-            <div class="notice error">${escapeHtml(err.message)}</div>
-            <p>O login foi mantido, mas o painel inicial não conseguiu carregar a API de resumo.</p>
-          </div>
+          <section class="hero">
+            <div class="hero-main">
+              <h1>Olá, ${escapeHtml(ESTADO.usuario.nome || 'usuário')}</h1>
+              <p>A sessão está ativa, mas a API não retornou o resumo inicial.</p>
+              <div class="hero-actions">
+                <button class="btn btn-primary" onclick="navegar('boloes')">Tentar carregar bolões</button>
+                <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
+                <button class="btn btn-light" onclick="logout()">Sair</button>
+              </div>
+              <div class="notice error">${escapeHtml(err.message)}</div>
+              <div class="api-mini">URL configurada: ${escapeHtml(CONFIG.apiUrl)}</div>
+            </div>
+            <div class="hero-side">
+              <div>
+                <div class="big">API</div>
+                <p>Verifique se o Code.gs atual contém a rota JSONP e se a implantação publicada é esta mesma URL /exec.</p>
+              </div>
+              <small>${dataHoraAtual()}</small>
+            </div>
+          </section>
         `);
       }
+    }
+
+    function normalizarDashboard(dados) {
+      const base = dados || {};
+      const cards = base.cards || base.resumo || {};
+
+      return {
+        loteria: base.loteria || base.loteriaAtiva || base.Loteria_Ativa || cards.loteria || cards.loteriaAtiva || '',
+        valorCota: base.valorCota || base.valor_cota || base.VALOR_COTA || cards.valorCota || 0,
+        totalCotas: base.totalCotas || base.cotasTotal || base.COTAS_TOTAIS || cards.totalCotas || 0,
+        cotasAdquiridas: base.cotasAdquiridas || base.COTAS_ADQUIRIDAS || cards.cotasAdquiridas || 0,
+        valorMensal: base.valorMensal || base.VALOR_MENSAL || cards.valorMensal || 0,
+        qtdParcelas: base.qtdParcelas || base.QTD_PARCELAS || cards.qtdParcelas || '',
+        inicioPalpites: base.inicioPalpites || base.INI_PAL || cards.inicioPalpites || '',
+        prazoPalpites: base.prazoPalpites || base.FIM_PAL || cards.prazoPalpites || '',
+        inicioPagamento: base.inicioPagamento || base.INI_BOL || cards.inicioPagamento || '',
+        fimPagamento: base.fimPagamento || base.FIM_BOL || cards.fimPagamento || '',
+        totalArrecadado: base.totalArrecadado || base.TOTAL_ARRECADADO || cards.totalArrecadado || 0
+      };
     }
 
     function renderResumoInicio(conf) {
@@ -1455,7 +1557,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td>Loteria</td><td>${escapeHtml(conf.loteria || conf.loteriaAtiva || conf.Loteria_Ativa || '-')}</td></tr>
+              <tr><td>Loteria</td><td>${escapeHtml(conf.loteria || '-')}</td></tr>
               <tr><td>Valor mensal</td><td>${moeda(conf.valorMensal || 0)}</td></tr>
               <tr><td>Qtd parcelas</td><td>${escapeHtml(conf.qtdParcelas || '-')}</td></tr>
               <tr><td>Início palpites</td><td>${escapeHtml(conf.inicioPalpites || '-')}</td></tr>
@@ -1486,14 +1588,26 @@
     async function obterBoloesAtivos() {
       const r = await apiMulti([
         { action: 'getLoteriasPagamentoAtivas', args: [] },
-        { action: 'listarBoloes', args: [ESTADO.email] },
+        { action: 'listarBoloes', dados: { email: ESTADO.email }, args: [ESTADO.email] },
         { action: 'PSS_getEstruturaSubmenusBoloes', dados: { email: ESTADO.email }, args: [ESTADO.email] }
       ]);
 
-      if (Array.isArray(r)) return normalizarListaBoloes(r);
-      if (r && Array.isArray(r.boloes)) return normalizarListaBoloes(r.boloes);
-      if (r && Array.isArray(r.ativas)) return normalizarListaBoloes(r.ativas);
-      if (r && r.dados && Array.isArray(r.dados.boloes)) return normalizarListaBoloes(r.dados.boloes);
+      const lista = extrairLista(r, ['boloes', 'ativas', 'loterias', 'rows', 'lista', 'dados']);
+      return normalizarListaBoloes(lista);
+    }
+
+    function extrairLista(obj, chaves = []) {
+      if (Array.isArray(obj)) return obj;
+      if (!obj || typeof obj !== 'object') return [];
+
+      for (const k of chaves) {
+        if (Array.isArray(obj[k])) return obj[k];
+        if (obj[k] && typeof obj[k] === 'object') {
+          const aninhada = extrairLista(obj[k], chaves);
+          if (aninhada.length) return aninhada;
+        }
+      }
+
       return [];
     }
 
@@ -1505,12 +1619,12 @@
           nome,
           loteria: b.loteria || b.LOTERIA || nome,
           status: b.status || b.STATUS || 'ATIVO',
-          dataSorteio: b.dataSorteio || b.DATA_SORTEIO || b.sorteio || '-',
-          inicioPagamento: b.inicioPagamento || b.INI_BOL || b.iniBol || '-',
-          fimPagamento: b.fimPagamento || b.FIM_BOL || b.fimBol || '-',
+          dataSorteio: b.dataSorteio || b.DATA_SORTEIO || b.sorteio || b.SORTEIO || '-',
+          inicioPagamento: b.inicioPagamento || b.INI_BOL || b.iniBol || b.inicioBolao || '-',
+          fimPagamento: b.fimPagamento || b.FIM_BOL || b.fimBol || b.fimBolao || '-',
           inicioPalpite: b.inicioPalpite || b.INI_PAL || b.iniPal || '-',
           fimPalpite: b.fimPalpite || b.FIM_PAL || b.fimPal || '-',
-          valorCota: b.valorCota || b.VALOR_COTA || b.valor || 0,
+          valorCota: b.valorCota || b.VALOR_COTA || b.valor || b.VALOR || 0,
           cotas: b.cotas || b.COTAS || b.cotasAdquiridas || '',
           recebedor: b.recebedor || b.RECEBEDOR || b.recebedorNome || ''
         };
@@ -1533,14 +1647,20 @@
           </section>
         `);
       } catch (err) {
-        view(`<div class="card"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+        view(`
+          <div class="card">
+            <h2>Bolões</h2>
+            <div class="notice error">${escapeHtml(err.message)}</div>
+            <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
+          </div>
+        `);
       }
     }
 
     function renderCardsBoloes(lista) {
       return `
         <div class="grid">
-          ${lista.map((b, i) => `
+          ${lista.map((b) => `
             <div class="col-4">
               <div class="bolao-card">
                 <div>
@@ -1565,7 +1685,6 @@
       const b = ESTADO.boloes.find(x => String(x.id) === String(id) || String(x.nome) === String(id) || String(x.loteria) === String(id));
       ESTADO.bolaoSelecionado = b ? (b.loteria || b.nome || id) : id;
       localStorage.setItem('PSS_BOLAO_SELECIONADO', ESTADO.bolaoSelecionado);
-
       abrirModal('Bolão selecionado', `
         <div class="notice">Bolão selecionado: <strong>${escapeHtml(ESTADO.bolaoSelecionado)}</strong></div>
         <div class="hero-actions">
@@ -1584,8 +1703,8 @@
 
       try {
         const info = await apiMulti([
-          { action: 'obterDadosPalpite', dados: { loteria: ESTADO.bolaoSelecionado }, args: [ESTADO.bolaoSelecionado] },
-          { action: 'getDadosPalpite', dados: { loteria: ESTADO.bolaoSelecionado }, args: [ESTADO.bolaoSelecionado] }
+          { action: 'obterDadosPalpite', dados: { loteria: ESTADO.bolaoSelecionado, email: ESTADO.email }, args: [ESTADO.bolaoSelecionado, ESTADO.email] },
+          { action: 'getDadosPalpite', dados: { loteria: ESTADO.bolaoSelecionado, email: ESTADO.email }, args: [ESTADO.bolaoSelecionado, ESTADO.email] }
         ]);
 
         const status = await apiMulti([
@@ -1625,7 +1744,16 @@
 
         atualizarBotaoPalpite();
       } catch (err) {
-        view(`<div class="card"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+        view(`
+          <div class="card">
+            <h2>Palpite</h2>
+            <div class="notice error">${escapeHtml(err.message)}</div>
+            <div class="hero-actions">
+              <button class="btn btn-primary" onclick="navegar('boloes')">Selecionar bolão</button>
+              <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
+            </div>
+          </div>
+        `);
       }
     }
 
@@ -1635,32 +1763,32 @@
       return {
         nome: info.loteria || info.loteriaOriginal || ESTADO.bolaoSelecionado || 'Loteria',
         qtdEscolha: Number(info.qtdEscolha || info.qtd_palpites || info.qtdPalpite || 6),
-        nMax: Number(info.nMax || info.range || 60),
+        nMax: Number(info.nMax || info.range || info.max || 60),
         numerosDisponiveis: nums
       };
     }
 
     function renderResumoPalpites(status) {
+      status = status || {};
       const palpites = Array.isArray(status.palpites) ? status.palpites : [];
-      const maxJogos = Number(status.maxJogos || status.cotas || 1);
+      const maxJogos = Number(status.maxJogos || status.cotas || status.qtdCotas || 1);
 
       let html = `<div class="palpite-resumo">`;
       html += `<div class="palpite-box"><b>Resumo</b><br>Cotas: <b>${escapeHtml(maxJogos)}</b> • Palpites feitos: <b>${escapeHtml(palpites.length)}/${escapeHtml(maxJogos)}</b></div>`;
 
-      if (status.msgErro) {
-        html += `<div class="notice warn">${escapeHtml(status.msgErro)}</div>`;
+      if (status.msgErro || status.msg) {
+        html += `<div class="notice warn">${escapeHtml(status.msgErro || status.msg)}</div>`;
       }
 
       palpites.forEach(p => {
         html += `
           <div class="palpite-box">
-            <b>Palpite ${escapeHtml(p.jogo || '')}</b>
+            <b>Palpite ${escapeHtml(p.jogo || p.slot || '')}</b>
             <div class="nums">${escapeHtml(p.numerosTexto || formatarNumeros(p.numeros))}</div>
-            <small>Atualizado em: ${escapeHtml(p.data || '-')}</small>
+            <small>Atualizado em: ${escapeHtml(p.data || p.atualizadoEm || '-')}</small>
           </div>
         `;
       });
-
       html += `</div>`;
       return html;
     }
@@ -1764,7 +1892,7 @@
     }
 
     function renderHistoricoComprovantes(lista) {
-      lista = Array.isArray(lista) ? lista : [];
+      lista = extrairLista(lista, ['comprovantes', 'historico', 'rows', 'dados', 'lista']);
       if (!lista.length) return `<div class="notice warn">Nenhum comprovante enviado.</div>`;
 
       return `
@@ -1776,9 +1904,9 @@
             <tbody>
               ${lista.map(i => `
                 <tr>
-                  <td>${escapeHtml(i.data || i.DATA || '-')}</td>
+                  <td>${escapeHtml(i.data || i.DATA || i.dataHora || i.DATA_HORA || '-')}</td>
                   <td><span class="tag ${classeStatus(i.status || i.STATUS)}">${escapeHtml(i.status || i.STATUS || 'Pendente')}</span></td>
-                  <td>${i.url ? `<a class="tag info" href="${escapeAttr(i.url)}" target="_blank" rel="noopener">Abrir</a>` : '-'}</td>
+                  <td>${i.url || i.URL ? `<a class="tag info" href="${escapeAttr(i.url || i.URL)}" target="_blank" rel="noopener">Abrir</a>` : '-'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1786,7 +1914,6 @@
         </div>
       `;
     }
-
     async function enviarComprovante(event) {
       event.preventDefault();
 
@@ -1808,8 +1935,8 @@
         const base64 = await lerArquivoBase64(file);
 
         const r = await apiMulti([
-          { action: 'uploadComprovante', dados: { fileData: base64, fileName: file.name, email: ESTADO.email, loteria }, args: [base64, file.name, ESTADO.email, loteria] },
-          { action: 'enviarComprovante', dados: { fileData: base64, fileName: file.name, email: ESTADO.email, loteria }, args: [base64, file.name, ESTADO.email, loteria] }
+          { action: 'uploadComprovante', dados: { fileData: base64, fileName: file.name, mimeType: file.type, email: ESTADO.email, loteria }, args: [base64, file.name, ESTADO.email, loteria] },
+          { action: 'enviarComprovante', dados: { fileData: base64, fileName: file.name, mimeType: file.type, email: ESTADO.email, loteria }, args: [base64, file.name, ESTADO.email, loteria] }
         ]);
 
         if (r && r.sucesso === false) throw new Error(r.msg || 'Não foi possível enviar o comprovante.');
@@ -1842,26 +1969,26 @@
 
       try {
         const dem = await apiMulti([
-          { action: 'getDemonstrativo', dados: { email: ESTADO.email }, args: [ESTADO.email] },
+          { action: 'getDemonstrativo', dados: { email: ESTADO.email, loteria: ESTADO.bolaoSelecionado }, args: [ESTADO.email, ESTADO.bolaoSelecionado] },
           { action: 'resumoFinanceiro', dados: { email: ESTADO.email, loteria: ESTADO.bolaoSelecionado }, args: [ESTADO.email, ESTADO.bolaoSelecionado] }
         ]).catch(() => []);
 
         const hist = await apiMulti([
           { action: 'getHistoricoComprovantes', dados: { email: ESTADO.email }, args: [ESTADO.email] }
         ]).catch(() => []);
-
-        const listaDem = Array.isArray(dem) ? dem : (dem.pagamentos || dem.rows || []);
+        const listaDem = extrairLista(dem, ['pagamentos', 'demonstrativo', 'rows', 'dados', 'lista']);
+        const resumo = normalizarResumoFinanceiro(dem, listaDem);
 
         view(`
           <section class="grid">
-            ${cardStat('Total pago', moeda(somarCampo(listaDem, 'pago')))}
-            ${cardStat('Restante', moeda(somarCampo(listaDem, 'restante')))}
-            ${cardStat('Registros', listaDem.length || hist.length || 0)}
+            ${cardStat('Total pago', moeda(resumo.totalPago))}
+            ${cardStat('Restante', moeda(resumo.restante))}
+            ${cardStat('Registros', listaDem.length || extrairLista(hist, ['comprovantes', 'historico', 'rows', 'dados', 'lista']).length || 0)}
             ${cardStat('Bolão selecionado', ESTADO.bolaoSelecionado || '-')}
 
             <div class="card col-12">
               <h2>Demonstrativo financeiro</h2>
-              ${renderDemonstrativo(listaDem)}
+              ${renderDemonstrativo(listaDem, resumo)}
             </div>
 
             <div class="card col-12">
@@ -1871,13 +1998,47 @@
           </section>
         `);
       } catch (err) {
-        view(`<div class="card"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+        view(`
+          <div class="card">
+            <h2>Pagamentos</h2>
+            <div class="notice error">${escapeHtml(err.message)}</div>
+            <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
+          </div>
+        `);
       }
     }
 
-    function renderDemonstrativo(lista) {
+    function normalizarResumoFinanceiro(dem, lista) {
+      const obj = dem && typeof dem === 'object' && !Array.isArray(dem) ? dem : {};
+      const totalPago = obj.totalPago || obj.pago || obj.total_pago || obj.TOTAL_PAGO || somarPossiveis(lista, ['pago', 'totalPago', 'valorPago', 'VALOR_PAGO', 'PAGO']);
+      const restante = obj.restante || obj.pendente || obj.valorRestante || obj.RESTANTE || somarPossiveis(lista, ['restante', 'pendente', 'valorRestante', 'RESTANTE', 'PENDENTE']);
+      return { totalPago: num(totalPago), restante: num(restante) };
+    }
+
+    function renderDemonstrativo(lista, resumo = null) {
       lista = Array.isArray(lista) ? lista : [];
-      if (!lista.length) return `<div class="notice warn">Nenhum resumo financeiro localizado.</div>`;
+      if (!lista.length) {
+        if (resumo && (num(resumo.totalPago) || num(resumo.restante))) {
+          return `
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Nome</th><th>Pago</th><th>Restante</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>${escapeHtml(ESTADO.usuario.nome || '-')}</td>
+                    <td>${moeda(resumo.totalPago || 0)}</td>
+                    <td>${moeda(resumo.restante || 0)}</td>
+                    <td><span class="tag ${num(resumo.restante) > 0 ? 'warn' : ''}">${num(resumo.restante) > 0 ? 'Pendente' : 'Em dia'}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+        return `<div class="notice warn">Nenhum resumo financeiro localizado.</div>`;
+      }
 
       return `
         <div class="table-wrap">
@@ -1886,22 +2047,34 @@
               <tr><th>Nome</th><th>Pago</th><th>Restante</th><th>Status</th></tr>
             </thead>
             <tbody>
-              ${lista.map(r => `
-                <tr>
-                  <td>${escapeHtml(r.nome || r.participante || ESTADO.usuario.nome || '-')}</td>
-                  <td>${moeda(r.pago || r.totalPago || r.valorPago || 0)}</td>
-                  <td>${moeda(r.restante || r.pendente || r.valorRestante || 0)}</td>
-                  <td><span class="tag ${Number(r.restante || r.pendente || 0) > 0 ? 'warn' : ''}">${Number(r.restante || r.pendente || 0) > 0 ? 'Pendente' : 'Em dia'}</span></td>
-                </tr>
-              `).join('')}
+              ${lista.map(r => {
+                const pago = valorPorChaves(r, ['pago', 'totalPago', 'valorPago', 'VALOR_PAGO', 'PAGO']);
+                const restante = valorPorChaves(r, ['restante', 'pendente', 'valorRestante', 'RESTANTE', 'PENDENTE']);
+                return `
+                  <tr>
+                    <td>${escapeHtml(r.nome || r.participante || r.NOME || r.PARTICIPANTE || ESTADO.usuario.nome || '-')}</td>
+                    <td>${moeda(pago || 0)}</td>
+                    <td>${moeda(restante || 0)}</td>
+                    <td><span class="tag ${num(restante) > 0 ? 'warn' : ''}">${num(restante) > 0 ? 'Pendente' : 'Em dia'}</span></td>
+                  </tr>
+                `;
+              }).join('')}
             </tbody>
           </table>
         </div>
       `;
     }
 
-    function somarCampo(lista, campo) {
-      return (Array.isArray(lista) ? lista : []).reduce((acc, item) => acc + num(item[campo] || item[`total${campo}`] || 0), 0);
+    function somarPossiveis(lista, chaves) {
+      return (Array.isArray(lista) ? lista : []).reduce((acc, item) => acc + num(valorPorChaves(item, chaves)), 0);
+    }
+
+    function valorPorChaves(obj, chaves) {
+      if (!obj || typeof obj !== 'object') return '';
+      for (const k of chaves) {
+        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
+      }
+      return '';
     }
 
     /********************************************************
@@ -1940,6 +2113,7 @@
         view(`<div class="card"><div class="notice error">Acesso restrito ao administrador.</div></div>`);
         return;
       }
+
       view(`
         <section class="grid">
           <div class="card col-12">
@@ -1952,6 +2126,7 @@
               <button class="btn btn-light" onclick="carregarAbaAdmin('BASE_LOTERIAS')">Base loterias</button>
               <button class="btn btn-light" onclick="carregarAbaAdmin('EVENTOS_ESPECIAIS')">Eventos especiais</button>
               <button class="btn btn-light" onclick="carregarAbaAdmin('Config')">Config</button>
+              <button class="btn btn-light" onclick="testarApiManual()">Testar API</button>
             </div>
           </div>
           <div class="card col-12" id="adminConteudo">
@@ -1960,39 +2135,52 @@
         </section>
       `);
     }
+
     async function carregarAbaAdmin(nomeAba) {
       const box = document.getElementById('adminConteudo');
       box.innerHTML = `<h2>${escapeHtml(nomeAba)}</h2><p>Carregando...</p>`;
 
       try {
         const r = await apiMulti([
-          { action: 'getDadosAdmin', dados: { nomeAba }, args: [nomeAba] }
+          { action: 'getDadosAdmin', dados: { nomeAba, email: ESTADO.email }, args: [nomeAba, ESTADO.email] },
+          { action: 'listarAbaAdmin', dados: { nomeAba, email: ESTADO.email }, args: [nomeAba, ESTADO.email] }
         ]);
 
-        const headers = r.headers || [];
-        const rows = r.rows || [];
+        const dados = r || {};
+        const headers = dados.headers || dados.cabecalhos || [];
+        const rows = dados.rows || dados.linhas || extrairLista(dados, ['dados', 'lista', 'rows']);
+
+        if (!headers.length && rows.length && Array.isArray(rows[0])) {
+          box.innerHTML = renderTabelaAdmin(nomeAba, rows[0], rows.slice(1));
+          return;
+        }
 
         if (!headers.length) {
           box.innerHTML = `<h2>${escapeHtml(nomeAba)}</h2><div class="notice warn">Aba sem dados ou não localizada.</div>`;
           return;
         }
 
-        box.innerHTML = `
-          <h2>${escapeHtml(nomeAba.replace(/_/g, ' '))}</h2>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
-              <tbody>
-                ${rows.map(row => `
-                  <tr>${row.map(cell => `<td>${formatarCelulaAdmin(cell)}</td>`).join('')}</tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
+        box.innerHTML = renderTabelaAdmin(nomeAba, headers, rows);
       } catch (err) {
         box.innerHTML = `<h2>${escapeHtml(nomeAba)}</h2><div class="notice error">${escapeHtml(err.message)}</div>`;
       }
+    }
+
+    function renderTabelaAdmin(nomeAba, headers, rows) {
+      return `
+        <h2>${escapeHtml(String(nomeAba).replace(/_/g, ' '))}</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${(rows || []).map(row => {
+                const arr = Array.isArray(row) ? row : headers.map(h => row[h] || row[normalizar(h)] || '');
+                return `<tr>${arr.map(cell => `<td>${formatarCelulaAdmin(cell)}</td>`).join('')}</tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
     }
 
     function formatarCelulaAdmin(cell) {
@@ -2035,7 +2223,8 @@
      * HELPERS
      ********************************************************/
     function atualizarRelogio() {
-      document.getElementById('clock').textContent = dataHoraAtual();
+      const el = document.getElementById('clock');
+      if (el) el.textContent = dataHoraAtual();
     }
 
     function dataHoraAtual() {
@@ -2056,7 +2245,12 @@
 
     function num(v) {
       if (typeof v === 'number') return isNaN(v) ? 0 : v;
-      const s = String(v || '0').replace(/R\$/g, '').replace(/\./g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
+      const s = String(v || '0')
+        .replace(/R\$/g, '')
+        .replace(/\s/g, '')
+        .replace(/\./g, '')
+        .replace(',', '.')
+        .replace(/[^0-9.\-]/g, '');
       const n = Number(s);
       return isNaN(n) ? 0 : n;
     }
@@ -2085,6 +2279,7 @@
     function escapeAttr(value) {
       return escapeHtml(value).replace(/`/g, '&#096;');
     }
+
     function formatNum(n) {
       const x = Number(n);
       if (isNaN(x)) return escapeHtml(n);
@@ -2103,7 +2298,7 @@
       const s = normalizar(status);
       if (s.includes('PAGO') || s.includes('APROV')) return '';
       if (s.includes('ERRO') || s.includes('RECUS') || s.includes('DUPLIC')) return 'danger';
-      if (s.includes('PEND') || s.includes('ANALISE')) return 'warn';
+      if (s.includes('PEND') || s.includes('ANALISE') || s.includes('ANÁLISE')) return 'warn';
       return 'info';
     }
   </script>
