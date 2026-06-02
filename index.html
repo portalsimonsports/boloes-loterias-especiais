@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V147_ESPECIAIS_FORM_ATIVACAO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V148_CONFIG_ESPECIAIS_NUMEROS_PREMIO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V147</title>AA
-  <style>A
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V148</title>
+  <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
     .public-header{background:#071526;color:#fff;padding:22px 18px 20px;border-bottom:1px solid rgba(255,255,255,.08)}.public-header-inner{max-width:1180px;margin:0 auto}.public-header h1{margin:0;font-size:24px}.public-header p{margin:6px 0 0;color:#b8c7d9}
@@ -43,7 +43,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V147_ESPECIAIS_FORM_ATIVACAO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V148_CONFIG_ESPECIAIS_NUMEROS_PREMIO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
     function api(action,dados={},args=null){return new Promise((resolve,reject)=>{const cb='PSS_CB_'+Date.now()+'_'+Math.floor(Math.random()*1e6),payload=Object.assign({},dados||{});payload.action=action;payload.fnName=action;if(Array.isArray(args))payload.args=args;const p=new URLSearchParams();p.set('action',action);p.set('fn',action);p.set('fnName',action);p.set('callback',cb);p.set('payload',JSON.stringify(payload));p.set('email',ESTADO.email||dados.email||'');p.set('_',String(Date.now()));const s=document.createElement('script');let timer=null;window[cb]=r=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();if(!r||r.ok!==true){reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));return}resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r))};s.onerror=()=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Falha ao conectar à API.'))};timer=setTimeout(()=>{try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Tempo limite excedido ao conectar à API.'))},30000);s.src=CONFIG.apiUrl+'?'+p.toString();document.body.appendChild(s)})}
@@ -171,7 +171,15 @@
     }
 
     function cardEspecialHtml(tipo,icone,titulo,selecionado){
-      return `<button class="special-card ${selecionado===tipo?'active':''}" onclick="renderEspeciais('${tipo}')"><span class="icon">${icone}</span>${titulo}</button>`;
+      return `<button class="special-card ${selecionado===tipo?'active':''}" onclick="abrirEspecialClick('${tipo}')"><span class="icon">${icone}</span>${titulo}</button>`;
+    }
+
+    function abrirEspecialClick(tipo){
+      renderEspeciais(tipo);
+      setTimeout(()=>{
+        const box=document.getElementById('especialFormBox');
+        if(box) box.scrollIntoView({behavior:'smooth',block:'start'});
+      },120);
     }
 
     function especialPadrao(tipo){
@@ -257,6 +265,10 @@
               <label>Números por palpite</label>
               <input id="esp_qtdPalpite" value="${escapeAttr(qtdPalpite)}" placeholder="6">
             </div>
+            <div class="field">
+              <label>Prêmio por cota</label>
+              <input id="esp_premioPorCota" value="" placeholder="Ex.: 100">
+            </div>
           </div>
 
           <div class="field" style="margin-top:12px;">
@@ -319,7 +331,8 @@
         totalCotas: '',
         cotasTotaisAdquiridas: '0',
         qtdParcelas: '1',
-        premiacao: '',
+        premiacao: valorNumeroConfig(document.getElementById('esp_premioPorCota').value,''),
+        premioPorCota: valorNumeroConfig(document.getElementById('esp_premioPorCota').value,''),
         dataSorteio: dataInputParaBR('esp_dataSorteio'),
         iniBol: dataInputParaBR('esp_iniBol'),
         fimBol: dataInputParaBR('esp_fimBol'),
@@ -477,7 +490,7 @@
     }
 
     function abrirModal(t,h){document.getElementById('modalTitulo').textContent=t;document.getElementById('modalConteudo').innerHTML=h;document.getElementById('modalBackdrop').classList.add('open')}function fecharModal(){document.getElementById('modalBackdrop').classList.remove('open')}document.getElementById('modalBackdrop').addEventListener('click',ev=>{if(ev.target.id==='modalBackdrop')fecharModal()});function toast(msg,tipo='success'){const box=document.getElementById('toastContainer'),el=document.createElement('div');el.className=`toast ${tipo}`;el.textContent=msg;box.appendChild(el);setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),220)},3500)}
-    function lerArquivoBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(new Error('Erro ao ler arquivo.'));r.readAsDataURL(file)})}function isHistorico(b){const st=normalizar(b.status);return st.includes('HISTORICO')||st.includes('ENCERRADO')||st.includes('FINALIZADO')}function valorNumeroConfig(v,fallback=''){if(v===undefined||v===null||v==='')return fallback;const original=String(v).trim();if(!original)return fallback;const m=original.match(/^(\d{1,2})\/(\d{1,2})\/(1899|1900)(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);if(m){const d=Number(m[1]),mo=Number(m[2])-1,y=Number(m[3]);const base=Date.UTC(1899,11,30);const atual=Date.UTC(y,mo,d);const serial=Math.round((atual-base)/86400000);if(!isNaN(serial))return String(serial)}return original}function moeda(v){const n=num(v);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function num(v){if(typeof v==='number')return isNaN(v)?0:v;const s=String(v||'0').replace(/R\$/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');const n=Number(s);return isNaN(n)?0:n}function normalizar(s){return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function escapeHtml(v){return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;')}function formatNum(n){const x=Number(n);return isNaN(x)?escapeHtml(n):(x<10?'0'+x:String(x))}function formatarNumeros(nums){if(!nums)return '';const arr=Array.isArray(nums)?nums:String(nums).split(/[-,;\s]+/).filter(Boolean);return arr.map(formatNum).join(' - ')}function formatarCelula(c){const s=String(c===undefined||c===null?'':c);if(s.startsWith('http'))return `<a href="${escapeAttr(s)}" target="_blank" rel="noopener">Abrir</a>`;return escapeHtml(s)}
+    function lerArquivoBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(new Error('Erro ao ler arquivo.'));r.readAsDataURL(file)})}function isHistorico(b){const st=normalizar(b.status);return st.includes('HISTORICO')||st.includes('ENCERRADO')||st.includes('FINALIZADO')}function valorNumeroConfig(v,fallback=''){if(v===undefined||v===null||v==='')return fallback;const original=String(v).trim();if(!original)return fallback;const m=original.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4,6})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);if(m){const d=Number(m[1]),mo=Number(m[2])-1,y=Number(m[3]);if(y>=1899){const base=Date.UTC(1899,11,30);const atual=Date.UTC(y,mo,d);const serial=Math.round((atual-base)/86400000);if(isFinite(serial)&&!isNaN(serial))return String(serial)}}return original}function moeda(v){const n=num(v);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function num(v){if(typeof v==='number')return isNaN(v)?0:v;const s=String(v||'0').replace(/R\$/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');const n=Number(s);return isNaN(n)?0:n}function normalizar(s){return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function escapeHtml(v){return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;')}function formatNum(n){const x=Number(n);return isNaN(x)?escapeHtml(n):(x<10?'0'+x:String(x))}function formatarNumeros(nums){if(!nums)return '';const arr=Array.isArray(nums)?nums:String(nums).split(/[-,;\s]+/).filter(Boolean);return arr.map(formatNum).join(' - ')}function formatarCelula(c){const s=String(c===undefined||c===null?'':c);if(s.startsWith('http'))return `<a href="${escapeAttr(s)}" target="_blank" rel="noopener">Abrir</a>`;return escapeHtml(s)}
     function atualizarRelogio(){document.getElementById('clock').textContent=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(',',',')}function dataHoraAtualCurta(){return new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')}
   </script>
 </body>
