@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V171_PAGAMENTOS_SUBMENU_RECORRENCIA -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V172_CORRECAO_NULL_STARTUP_CACHE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V171</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V172</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -166,9 +166,9 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V171_PAGAMENTOS_SUBMENU_RECORRENCIA',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V172_CORRECAO_NULL_STARTUP_CACHE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
-    document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()});
+    document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
 
     function api(action,dados={},args=null){
@@ -398,6 +398,31 @@
 
     async function apiMulti(t){let e=null;for(const x of t){try{return await api(x.action,x.dados||{},x.args||null)}catch(err){e=err}}throw e||new Error('Nenhuma rota respondeu.')}
 
+
+    function normalizarUsuarioSessao_(s){
+      s=s&&typeof s==='object'?s:{};
+      const email=String(s.email||s.EMAIL||'').trim().toLowerCase();
+      return {
+        nome:String(s.nome||s.NOME||s.usuario||s.USUARIO||s.name||'Usuário').trim()||'Usuário',
+        email:email,
+        role:String(s.role||s.perfil||s.PERFIL||'usuario').toLowerCase(),
+        perfil:s.perfil||s.role||s.PERFIL||'usuario'
+      };
+    }
+
+    function limparEstadoCorrompido_(){
+      try{localStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){}
+      try{Object.keys(localStorage).filter(k=>k.indexOf('PSS_BOLAO_CACHE_')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}
+      ESTADO.usuario=null;
+      ESTADO.role='';
+      ESTADO.boloes=[];
+    }
+
+    function listaSegura_(lista){
+      if(!Array.isArray(lista))return [];
+      return lista.filter(x=>x&&typeof x==='object');
+    }
+
     function renderHomePublica(){
       document.getElementById('publicHeader').classList.add('hidden');
       document.getElementById('appHeader').classList.add('hidden');
@@ -483,13 +508,13 @@
       const timeoutHome=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout_home_publica')),16000));
 
       try{
-        const lista=await Promise.race([carregarBoloes(),timeoutHome]);
-        const ativos=(lista||[])
+        const lista=listaSegura_(await Promise.race([carregarBoloes(),timeoutHome]));
+        const ativos=lista
           .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
           .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')))
           .slice(0,8);
 
-        const nomes=[...new Set((lista||[]).map(b=>b.loteria||b.nome).filter(Boolean))];
+        const nomes=[...new Set(listaSegura_(lista).map(b=>b.loteria||b.nome).filter(Boolean))];
 
         if(!ativos.length){
           box.innerHTML='<div class="home-note">Nenhum bolão ativo foi localizado no momento. Consulte novamente mais tarde ou solicite cadastro.</div>';
@@ -572,9 +597,9 @@
     }
 
     function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button></div></div>`)}
-    async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario={nome:u.nome||u.usuario||'Usuário',email:u.email||email,role:String(u.role||u.perfil||'usuario').toLowerCase(),perfil:u.perfil||u.role||'usuario'};ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
+    async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},u||{},{email:(u&&u.email)||email}));ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(u||{}))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');renderHomePublica()}
-    function aplicarLayoutLogado(){document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');document.getElementById('userDisplay').textContent=`${ESTADO.usuario.nome||'Usuário'}${ESTADO.usuario.email?' • '+ESTADO.usuario.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
     function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
     function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
 
@@ -858,8 +883,8 @@
       const cached=cacheGet_(cacheNome,true);
 
       if(usarCacheRapido&&cached){
-        ESTADO.boloes=cached;
-        return cached;
+        ESTADO.boloes=listaSegura_(cached);
+        return ESTADO.boloes;
       }
 
       const loader=async()=>{
@@ -901,15 +926,15 @@
       };
 
       if(cached){
-        ESTADO.boloes=cached;
+        ESTADO.boloes=listaSegura_(cached);
         loader().then(novos=>{
-          ESTADO.boloes=novos;
-          cacheSet_(cacheNome,novos,CACHE_TTL.curto);
+          ESTADO.boloes=listaSegura_(novos);
+          cacheSet_(cacheNome,ESTADO.boloes,CACHE_TTL.curto);
         }).catch(()=>{});
-        return cached;
+        return ESTADO.boloes;
       }
 
-      const novos=await loader();
+      const novos=listaSegura_(await loader());
       ESTADO.boloes=novos;
       cacheSet_(cacheNome,novos,CACHE_TTL.curto);
       return novos;
@@ -918,14 +943,15 @@
   loading('Carregando início');
 
   try{
+    if(!ESTADO.usuario)ESTADO.usuario=normalizarUsuarioSessao_({email:ESTADO.email});
     const dash=await apiMulti([
       {action:'getEstatisticasAtivaUsuario',dados:{email:ESTADO.email},args:[ESTADO.email]},
       {action:'getEstatisticasAtiva',args:[]},
       {action:'dashboard',args:[ESTADO.email]}
     ]).catch(()=>({}));
 
-    const lista=await carregarBoloes();
-    const ativos=(lista||[])
+    const lista=listaSegura_(await carregarBoloes());
+    const ativos=lista
       .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
       .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
 
@@ -941,7 +967,7 @@
         <div class="grid">
           <div class="col-8">
             <div class="panel no-left" style="margin:0;padding:24px;">
-              <h2 style="font-size:32px;">Olá, ${escapeHtml(ESTADO.usuario.nome||'Usuário')}</h2>
+              <h2 style="font-size:32px;">Olá, ${escapeHtml((ESTADO.usuario&&ESTADO.usuario.nome)||'Usuário')}</h2>
               <p>Painel de acompanhamento dos bolões ativos, pagamentos, palpites, comprovantes, jogos realizados e atualizações oficiais.</p>
               <div class="actions">
                 <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
@@ -1052,7 +1078,7 @@
 function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr><th>Campo</th><th>Informação</th></tr></thead><tbody><tr><td>Loteria</td><td>${escapeHtml(d.loteria||'-')}</td></tr><tr><td>Valor mensal</td><td>${moeda(d.valorMensal||0)}</td></tr><tr><td>Qtd parcelas</td><td>${escapeHtml(d.qtdParcelas||'-')}</td></tr><tr><td>Início palpites</td><td>${escapeHtml(d.inicioPalpites||'-')}</td></tr><tr><td>Prazo palpites</td><td>${escapeHtml(d.prazoPalpites||'-')}</td></tr><tr><td>Início pagamento</td><td>${escapeHtml(d.inicioPagamento||'-')}</td></tr><tr><td>Fim pagamento</td><td>${escapeHtml(d.fimPagamento||'-')}</td></tr></tbody></table></div>`}
 
     async function abrirPagamentoBolao(loteria){
-      const b=(ESTADO.boloes||[]).find(x=>normalizar(x.loteria||x.nome)===normalizar(loteria))||{loteria};
+      const b=listaSegura_(ESTADO.boloes).find(x=>normalizar(x.loteria||x.nome)===normalizar(loteria))||{loteria};
       abrirModal('Pagamento da cota',`<div class="notice info">Carregando meios de pagamento...</div>`);
 
       try{
@@ -1107,7 +1133,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     }
 
     function atualizarValorPagamentoModal(loteria){
-      const b=(ESTADO.boloes||[]).find(x=>normalizar(x.loteria||x.nome)===normalizar(loteria))||{};
+      const b=listaSegura_(ESTADO.boloes).find(x=>normalizar(x.loteria||x.nome)===normalizar(loteria))||{};
       const qtd=Math.max(1,num(document.getElementById('pagQtdCotas')?document.getElementById('pagQtdCotas').value:1));
       const valor=num(b.valorCota||0)*qtd;
       const el=document.getElementById('pagValorTotal');
@@ -1226,10 +1252,10 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text||'');
     }
 
-    async function renderBoloes(tipo){loading('Carregando bolões');try{const lista=await carregarBoloes(),ativos=lista.filter(b=>!isHistorico(b)),hist=lista.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button></div>${renderCardsBoloes(dados,'boloes')}</div><div class="panel"><label>Participante</label><div style="display:flex;gap:10px;align-items:center;"><select id="consultaParticipante"><option>Selecione um participante...</option></select><button type="button" class="btn" onclick="toast('Selecione um participante para consultar.','info')">Consultar</button></div></div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
-    function renderCardsBoloes(lista,origem){if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;return `<div class="cards-row">${lista.map(b=>`<div class="bolao-card"><h3>🎯 ${escapeHtml(b.nome||b.loteria)}</h3>${origem==='boloes'?`<div class="status-pill">Participante inscrito</div><br>`:''}${b.cotasDisponiveis!==''?`<div class="outline-pill">Cotas disponíveis: ${escapeHtml(b.cotasDisponiveis)}</div>`:''}<div class="meta-grid"><div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div><div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div><div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div><div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div></div><button class="btn" onclick="selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')">${origem==='palpite'?'Abrir palpite':(isHistorico(b)?'Abrir':'Participar')}</button></div>`).join('')}</div>`}
+    async function renderBoloes(tipo){loading('Carregando bolões');try{const lista=listaSegura_(await carregarBoloes()),ativos=lista.filter(b=>!isHistorico(b)),hist=lista.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button></div>${renderCardsBoloes(dados,'boloes')}</div><div class="panel"><label>Participante</label><div style="display:flex;gap:10px;align-items:center;"><select id="consultaParticipante"><option>Selecione um participante...</option></select><button type="button" class="btn" onclick="toast('Selecione um participante para consultar.','info')">Consultar</button></div></div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    function renderCardsBoloes(lista,origem){lista=listaSegura_(lista);if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;return `<div class="cards-row">${lista.map(b=>`<div class="bolao-card"><h3>🎯 ${escapeHtml(b.nome||b.loteria)}</h3>${origem==='boloes'?`<div class="status-pill">Participante inscrito</div><br>`:''}${b.cotasDisponiveis!==''?`<div class="outline-pill">Cotas disponíveis: ${escapeHtml(b.cotasDisponiveis)}</div>`:''}<div class="meta-grid"><div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div><div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div><div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div><div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div></div><button class="btn" onclick="selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')">${origem==='palpite'?'Abrir palpite':(isHistorico(b)?'Abrir':'Participar')}</button></div>`).join('')}</div>`}
     function selecionarBolao(nome,origem){ESTADO.bolaoSelecionado=nome;localStorage.setItem('PSS_BOLAO_SELECIONADO',nome);if(origem==='palpite')renderPalpiteAberto(nome);else abrirModal('Bolão selecionado',`<div class="notice">Bolão selecionado: <strong>${escapeHtml(nome)}</strong></div><div class="actions"><button class="btn" onclick="fecharModal(); navegar('palpite')">Palpites</button><button class="btn btn-light" onclick="fecharModal(); navegar('comprovante')">Comprovante</button></div>`)}
-    async function renderPalpiteLista(tipo){loading('Carregando palpites');try{const lista=await carregarBoloes(),ativos=lista.filter(b=>!isHistorico(b)),hist=lista.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;setView(`<div class="panel"><h2>🎯 Palpites</h2><p>Selecione bolões ativos para palpitar ou encerrados para consultar dezenas e estatísticas.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderPalpiteLista('ativos')">Ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderPalpiteLista('historico')">Encerrados</button></div>${renderCardsBoloes(dados,'palpite')}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderPalpiteLista(tipo){loading('Carregando palpites');try{const lista=listaSegura_(await carregarBoloes()),ativos=lista.filter(b=>!isHistorico(b)),hist=lista.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;setView(`<div class="panel"><h2>🎯 Palpites</h2><p>Selecione bolões ativos para palpitar ou encerrados para consultar dezenas e estatísticas.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderPalpiteLista('ativos')">Ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderPalpiteLista('historico')">Encerrados</button></div>${renderCardsBoloes(dados,'palpite')}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
     async function renderPalpiteAberto(nome){loading('Carregando palpite');try{const info=await apiMulti([{action:'obterDadosPalpite',dados:{loteria:nome},args:[nome]},{action:'getDadosPalpite',dados:{loteria:nome},args:[nome]}]),status=await apiMulti([{action:'checarStatusPalpite',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]},{action:'getStatusPalpite',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]}]).catch(()=>({}));ESTADO.palpiteInfo=info||{};ESTADO.palpiteStatus=status||{};ESTADO.qtdEscolha=Number(info.qtdEscolha||info.qtdPalpite||6);ESTADO.numerosSelecionados=[];const numeros=Array.isArray(info.numerosDisponiveis)&&info.numerosDisponiveis.length?info.numerosDisponiveis:Array.from({length:Number(info.nMax||info.range||60)},(_,i)=>i+1);setView(`<div class="panel"><div class="palpite-stage"><h3 class="center">🎯 ${escapeHtml(nome)}</h3><div class="meta-box" style="margin-top:16px;"><b>Resumo dos palpites</b><span>Cotas: ${escapeHtml(status.cotas||status.maxJogos||1)} · Palpites feitos: ${escapeHtml((status.palpites||[]).length)}/${escapeHtml(status.maxJogos||status.cotas||1)} · Prazo final: ${escapeHtml(getPrazoBolao(nome))}</span></div><div class="meta-box" style="margin-top:10px;"><b>🏆 10 dezenas mais escolhidas</b>${renderChips((status.top10||[]).length?status.top10:[])}</div><div class="meta-box" style="margin-top:10px;"><b>📌 Dezenas escolhidas por todos os participantes</b>${renderChips(status.todosNumeros||[])}</div><div class="table-wrap" style="margin-top:10px;"><table><thead><tr><th>#</th><th>Data</th><th>Dezenas</th><th>Ação</th></tr></thead><tbody>${renderHistoricoPalpite(status.palpites||[])}</tbody></table></div><div style="margin-top:12px;"><button class="btn" onclick="mostrarGradePalpite()">Novo / editar palpite</button></div><div id="gradePalpiteBox" class="hidden" style="margin-top:16px;"><div class="center"><strong>Selecione ${ESTADO.qtdEscolha} dezenas.</strong></div><div id="selecionadasPalpite" class="notice info" style="margin:10px 0;"><strong>Dezenas selecionadas:</strong> -</div><div class="numbers-grid">${numeros.map(n=>`<div class="ball" data-num="${Number(n)}" onclick="toggleNumero(${Number(n)},this)">${formatNum(n)}</div>`).join('')}</div><button class="btn" id="btnSalvarPalpite" onclick="salvarPalpite()" disabled>Salvar alteração (0/${ESTADO.qtdEscolha})</button></div></div></div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
     function renderChips(lista){
       if(!Array.isArray(lista)||!lista.length)return '<div style="margin-top:8px;">-</div>';
@@ -1280,7 +1306,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       atualizarSelecionadasPalpite()
     }
     async function salvarPalpite(){const btn=document.getElementById('btnSalvarPalpite');btn.disabled=true;btn.textContent='Salvando...';try{const nums=ESTADO.numerosSelecionados.slice().sort((a,b)=>a-b),r=await apiMulti([{action:'salvarPalpite',dados:{numeros:nums,email:ESTADO.email,jogo:1,loteria:ESTADO.bolaoSelecionado},args:[nums,ESTADO.email,1,ESTADO.bolaoSelecionado]},{action:'registrarPalpite',dados:{numeros:nums,email:ESTADO.email,loteria:ESTADO.bolaoSelecionado},args:[ESTADO.email,ESTADO.bolaoSelecionado,nums]}]);toast((r&&r.msg)||'Palpite salvo com sucesso.');renderPalpiteAberto(ESTADO.bolaoSelecionado)}catch(err){toast(err.message,'error');btn.disabled=false}}
-    function getPrazoBolao(nome){const b=ESTADO.boloes.find(x=>normalizar(x.loteria)===normalizar(nome)||normalizar(x.nome)===normalizar(nome));return b?(b.fimPalpite||'-'):'-'}
+    function getPrazoBolao(nome){const b=listaSegura_(ESTADO.boloes).find(x=>normalizar(x.loteria)===normalizar(nome)||normalizar(x.nome)===normalizar(nome));return b?(b.fimPalpite||'-'):'-'}
     async function renderComprovante(){loading('Carregando comprovante');try{const lista=await carregarBoloes(),hist=await apiMulti([{action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},{action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}]).catch(()=>[]);setView(`<div class="panel no-left"><form onsubmit="enviarComprovante(event)"><div class="wide-control"><label>Tipo de cota:</label><select id="tipoCota" onchange="renderCamposPartes()"><option value="unica">Cota única</option><option value="dividida">Cota dividida</option></select></div><div id="partesBox"></div><div class="upload-center"><label>Selecione a loteria do depósito:</label><select id="uploadBolao" required><option value="">Selecione...</option>${lista.map(b=>`<option value="${escapeAttr(b.loteria)}" ${b.loteria===ESTADO.bolaoSelecionado?'selected':''}>${escapeHtml(b.loteria)}</option>`).join('')}</select><h3>Enviar Comprovante</h3><small>Formatos aceitos: JPG, PNG, PDF</small><input id="arquivoComprovante" type="file" accept="image/*,.pdf,application/pdf" required style="margin:16px 0 10px;" /><button class="btn btn-block" id="btnEnviarComprovante" type="submit">Enviar agora</button>
 <div class="upload-progress-box" id="comprovanteUploadProgressBox">
   <div class="upload-progress-top">
@@ -2436,7 +2462,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       }
     }
 
-    async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const todosBoloes=await carregarBoloes();const lista=(todosBoloes||[]).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));setView(`<div class="panel"><h2>⚙️ Configurações dos bolões ativos</h2><p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>${lista.length?lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.dataSorteio||''))}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPagamento||''))}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPagamento||''))}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPalpite||''))}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPalpite||''))}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join(''):'<div class="notice warn">Nenhum bolão ativo localizado para configuração.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const todosBoloes=listaSegura_(await carregarBoloes());const lista=todosBoloes.filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));setView(`<div class="panel"><h2>⚙️ Configurações dos bolões ativos</h2><p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>${lista.length?lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.dataSorteio||''))}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPagamento||''))}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPagamento||''))}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPalpite||''))}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPalpite||''))}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join(''):'<div class="notice warn">Nenhum bolão ativo localizado para configuração.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
 
     function calcularPremioPorCotaValor(premiacao,cotasAdquiridas){
       const premio=num(premiacao);
@@ -2637,7 +2663,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       },true);
     }
 
-    function lerArquivoBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(new Error('Erro ao ler arquivo.'));r.readAsDataURL(file)})}function isHistorico(b){const st=normalizar(b.status);return st.includes('HISTORICO')||st.includes('ENCERRADO')||st.includes('FINALIZADO')}function valorNumeroConfig(v,fallback=''){if(v===undefined||v===null||v==='')return fallback;const original=String(v).trim();if(!original)return fallback;const m=original.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4,6})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);if(m){const d=Number(m[1]),mo=Number(m[2])-1,y=Number(m[3]);if(y>=1899){const base=Date.UTC(1899,11,30);const atual=Date.UTC(y,mo,d);const serial=Math.round((atual-base)/86400000);if(isFinite(serial)&&!isNaN(serial))return String(serial)}}return original}function moeda(v){const n=num(v);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function num(v){if(typeof v==='number')return isNaN(v)?0:v;const s=String(v||'0').replace(/R\$/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');const n=Number(s);return isNaN(n)?0:n}function normalizar(s){return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function escapeHtml(v){return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;')}function formatNum(n){const x=Number(n);return isNaN(x)?escapeHtml(n):(x<10?'0'+x:String(x))}function formatarNumeros(nums){if(!nums)return '';const arr=Array.isArray(nums)?nums:String(nums).split(/[-,;\s]+/).filter(Boolean);return arr.map(formatNum).join(' - ')}function formatarCelula(c){const s=String(c===undefined||c===null?'':c);if(s.startsWith('http'))return `<a href="${escapeAttr(s)}" target="_blank" rel="noopener">Abrir</a>`;if(pareceDataHora_(s))return escapeHtml(formatarDataHoraPtBR(s));return escapeHtml(s)}
+    function lerArquivoBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(new Error('Erro ao ler arquivo.'));r.readAsDataURL(file)})}function isHistorico(b){if(!b||typeof b!=='object')return false;const st=normalizar(b.status);return st.includes('HISTORICO')||st.includes('ENCERRADO')||st.includes('FINALIZADO')}function valorNumeroConfig(v,fallback=''){if(v===undefined||v===null||v==='')return fallback;const original=String(v).trim();if(!original)return fallback;const m=original.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4,6})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);if(m){const d=Number(m[1]),mo=Number(m[2])-1,y=Number(m[3]);if(y>=1899){const base=Date.UTC(1899,11,30);const atual=Date.UTC(y,mo,d);const serial=Math.round((atual-base)/86400000);if(isFinite(serial)&&!isNaN(serial))return String(serial)}}return original}function moeda(v){const n=num(v);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function num(v){if(typeof v==='number')return isNaN(v)?0:v;const s=String(v||'0').replace(/R\$/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');const n=Number(s);return isNaN(n)?0:n}function normalizar(s){return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function escapeHtml(v){return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;')}function formatNum(n){const x=Number(n);return isNaN(x)?escapeHtml(n):(x<10?'0'+x:String(x))}function formatarNumeros(nums){if(!nums)return '';const arr=Array.isArray(nums)?nums:String(nums).split(/[-,;\s]+/).filter(Boolean);return arr.map(formatNum).join(' - ')}function formatarCelula(c){const s=String(c===undefined||c===null?'':c);if(s.startsWith('http'))return `<a href="${escapeAttr(s)}" target="_blank" rel="noopener">Abrir</a>`;if(pareceDataHora_(s))return escapeHtml(formatarDataHoraPtBR(s));return escapeHtml(s)}
 
     function formatarDataHoraPtBR(valor){
       if(valor===undefined||valor===null||valor==='')return '-';
