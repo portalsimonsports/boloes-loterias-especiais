@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V163_HOME_DADOS_REAIS_LOGIN_VOLTA_API_V159 -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V164_INICIO_PTBR_PAGAMENTO_RECEBIMENTO_API_V160 -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -78,6 +78,30 @@
     .home-bolao-card .mini{grid-template-columns:repeat(2,minmax(150px,1fr))}
     @media(max-width:920px){.home-public-top{align-items:flex-start}.home-bolao-card .mini{grid-template-columns:1fr}}
 
+
+    .inicio-grid-boloes{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:16px;margin-top:16px}
+    .inicio-bolao-card{background:#fff;border:1px solid #cbded0;border-top:5px solid #0b6f28;border-radius:16px;padding:16px;box-shadow:0 7px 18px rgba(0,0,0,.07)}
+    .inicio-bolao-card h3{margin:0 0 8px;color:#003b12;font-size:18px}
+    .inicio-badges{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+    .inicio-badge{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900;background:#e8f8ec;color:#003b12;border:1px solid #c9ead1}
+    .inicio-badge.warn{background:#fff7df;color:#7a5200;border-color:#f1d78a}
+    .inicio-mini{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:8px;margin:12px 0}
+    .inicio-mini div{background:#f7fbf8;border:1px solid #e0ebe3;border-radius:10px;padding:9px;font-size:12px;color:#263445}
+    .inicio-mini b{display:block;color:#0b4b1d;text-transform:uppercase;font-size:10px;margin-bottom:4px}
+    .inicio-resumo{display:none;margin-top:12px;border-top:1px solid #dce8df;padding-top:12px}
+    .inicio-resumo.open{display:block}
+    .telegram-card{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,#eaf5ff,#f7fbff);border:1px solid #bdd7ef;border-radius:16px;padding:16px;margin-top:16px}
+    .telegram-card strong{color:#0a3564;font-size:16px}
+    .pay-method-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:14px;margin-top:14px}
+    .pay-method{border:1px solid #cbded0;border-radius:14px;padding:14px;background:#fff}
+    .pay-method h4{margin:0 0 8px;color:#003b12}
+    .pay-copy{background:#f6faf7;border:1px dashed #aec9b4;border-radius:10px;padding:10px;word-break:break-all;font-size:12px;margin-top:10px}
+    .qr-img{width:220px;height:220px;max-width:100%;border:1px solid #d8e4dc;border-radius:12px;background:#fff;margin-top:10px}
+    .recebimento-card{border:1px solid #cbded0;border-radius:14px;padding:14px;background:#fff;margin:12px 0}
+    .recebimento-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}
+    .recebimento-grid .field{margin-bottom:0}
+    @media(max-width:920px){.inicio-grid-boloes,.pay-method-grid,.recebimento-grid{grid-template-columns:1fr}.inicio-mini{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -87,7 +111,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V163_HOME_DADOS_REAIS_LOGIN_VOLTA_API_V159',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V164_INICIO_PTBR_PAGAMENTO_RECEBIMENTO_API_V160',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
@@ -533,8 +557,275 @@
       ESTADO.boloes=Object.values(map).sort((a,b)=>String(a.dataSorteio).localeCompare(String(b.dataSorteio)));
       return ESTADO.boloes
     }
-    async function renderInicio(){loading('Carregando início');try{const d=await apiMulti([{action:'getEstatisticasAtivaUsuario',dados:{email:ESTADO.email},args:[ESTADO.email]},{action:'getEstatisticasAtiva',args:[]},{action:'dashboard',args:[ESTADO.email]}]);setView(`<div class="panel no-left"><div class="grid"><div class="col-8"><div class="panel no-left" style="margin:0;padding:24px;"><h2 style="font-size:32px;">Olá, ${escapeHtml(ESTADO.usuario.nome||'Usuário')}</h2><p>Painel de acompanhamento dos bolões de loterias especiais. Use os menus para consultar bolões, palpites, pagamentos, comprovantes e regulamento.</p><div class="actions"><button class="btn" onclick="navegar('boloes')">Ver bolões</button><button class="btn btn-light" onclick="navegar('palpite')">Fazer palpite</button><button class="btn btn-light" onclick="navegar('pagamentos')">Pagamentos</button><button class="btn btn-light" onclick="navegar('jogos')">Jogos</button></div></div></div><div class="col-4"><div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;"><h2 style="color:#fff;font-size:42px;">${escapeHtml(d.cotasAdquiridas||(d.cards&&d.cards.cotasAdquiridas)||'0')}</h2><p style="color:#fff;">Cotas adquiridas vinculadas ao usuário ou ao bolão ativo.</p><div style="margin-top:40px;font-weight:800;">${escapeHtml(dataHoraAtualCurta())}</div></div></div></div><div class="grid" style="margin-top:18px;">${statCard('Loteria ativa',d.loteria||d.loteriaAtiva||'-')}${statCard('Valor da cota',moeda(d.valorCota||0))}${statCard('Cotas totais',d.totalCotas||0)}${statCard('Cotas adquiridas',d.cotasAdquiridas||(d.cards&&d.cards.cotasAdquiridas)||0)}</div></div><div class="panel"><h2>Resumo do bolão</h2>${renderResumoBolao(d)}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
-    function statCard(t,v){return `<div class="col-3"><div class="stat-card"><span>${escapeHtml(t)}</span><strong>${escapeHtml(v)}</strong></div></div>`}function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr><th>Campo</th><th>Informação</th></tr></thead><tbody><tr><td>Loteria</td><td>${escapeHtml(d.loteria||'-')}</td></tr><tr><td>Valor mensal</td><td>${moeda(d.valorMensal||0)}</td></tr><tr><td>Qtd parcelas</td><td>${escapeHtml(d.qtdParcelas||'-')}</td></tr><tr><td>Início palpites</td><td>${escapeHtml(d.inicioPalpites||'-')}</td></tr><tr><td>Prazo palpites</td><td>${escapeHtml(d.prazoPalpites||'-')}</td></tr><tr><td>Início pagamento</td><td>${escapeHtml(d.inicioPagamento||'-')}</td></tr><tr><td>Fim pagamento</td><td>${escapeHtml(d.fimPagamento||'-')}</td></tr></tbody></table></div>`}
+    async function renderInicio(){
+  loading('Carregando início');
+
+  try{
+    const dash=await apiMulti([
+      {action:'getEstatisticasAtivaUsuario',dados:{email:ESTADO.email},args:[ESTADO.email]},
+      {action:'getEstatisticasAtiva',args:[]},
+      {action:'dashboard',args:[ESTADO.email]}
+    ]).catch(()=>({}));
+
+    const lista=await carregarBoloes();
+    const ativos=(lista||[])
+      .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
+      .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
+
+    const cfg=await apiMulti([{action:'getConfigPublica',args:[]}]).catch(()=>({}));
+    const telegramLink=(cfg&&cfg.telegramCanalLink)||dash.telegramCanalLink||'';
+
+    const minhasCotas=ativos.reduce((s,b)=>s+num(b.cotasUsuario||b.minhasCotas||0),0);
+    const totalCotas=ativos.reduce((s,b)=>s+num(b.totalCotas||b.cotasTotal||0),0);
+    const cotasDisponiveis=ativos.reduce((s,b)=>s+num(b.cotasDisponiveis||0),0);
+
+    setView(`
+      <div class="panel no-left">
+        <div class="grid">
+          <div class="col-8">
+            <div class="panel no-left" style="margin:0;padding:24px;">
+              <h2 style="font-size:32px;">Olá, ${escapeHtml(ESTADO.usuario.nome||'Usuário')}</h2>
+              <p>Painel de acompanhamento dos bolões ativos, pagamentos, palpites, comprovantes, jogos realizados e atualizações oficiais.</p>
+              <div class="actions">
+                <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
+                <button class="btn btn-light" onclick="navegar('palpite')">Fazer palpite</button>
+                <button class="btn btn-light" onclick="navegar('comprovante')">Comprovantes</button>
+                <button class="btn btn-light" onclick="navegar('jogos')">Jogos</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
+              <h2 style="color:#fff;font-size:42px;">${escapeHtml(ativos.length)}</h2>
+              <p style="color:#fff;">Bolões ativos em acompanhamento.</p>
+              <div style="margin-top:40px;font-weight:800;">${escapeHtml(dataHoraAtualCurta())}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:18px;">
+          ${statCard('Bolões ativos',ativos.length)}
+          ${statCard('Minhas cotas',minhasCotas)}
+          ${statCard('Cotas disponíveis',cotasDisponiveis)}
+          ${statCard('Total de cotas',totalCotas)}
+        </div>
+
+        ${telegramLink?`
+          <div class="telegram-card">
+            <div>
+              <strong>Canal oficial de atualizações no Telegram</strong>
+              <p style="margin:4px 0 0;color:#385066;">Entre no canal para acompanhar avisos, resultados, jogos realizados e atualizações dos bolões em andamento.</p>
+            </div>
+            <a class="btn" href="${escapeAttr(telegramLink)}" target="_blank" rel="noopener">Entrar no canal</a>
+          </div>
+        `:''}
+      </div>
+
+      <div class="panel">
+        <h2>Bolões ativos</h2>
+        <p>Clique em uma loteria para abrir o resumo detalhado, consultar prazos e acessar as opções de pagamento.</p>
+        ${ativos.length?`<div class="inicio-grid-boloes">${ativos.map((b,i)=>renderInicioBolaoCard_(b,i)).join('')}</div>`:'<div class="notice warn">Nenhum bolão ativo localizado.</div>'}
+      </div>
+    `);
+  }catch(err){
+    setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+  }
+}
+    function statCard(t,v){return `<div class="col-3"><div class="stat-card"><span>${escapeHtml(t)}</span><strong>${escapeHtml(v)}</strong></div></div>`}
+
+    function renderInicioBolaoCard_(b,i){
+      const minhas=num(b.cotasUsuario||b.minhasCotas||0);
+      const total=b.totalCotas||b.cotasTotal||'-';
+      const disponiveis=(b.cotasDisponiveis!==undefined&&b.cotasDisponiveis!==null&&b.cotasDisponiveis!=='')?b.cotasDisponiveis:'-';
+
+      return `
+        <article class="inicio-bolao-card">
+          <h3 onclick="toggleResumoInicio(${i})" style="cursor:pointer;">🎯 ${escapeHtml(b.loteria||b.nome||'Bolão')}</h3>
+          <div class="inicio-badges">
+            <span class="inicio-badge">${escapeHtml(b.status||'ATIVO')}</span>
+            <span class="inicio-badge warn">Minhas cotas: ${escapeHtml(minhas)}</span>
+            <span class="inicio-badge warn">Disponíveis: ${escapeHtml(disponiveis)}</span>
+          </div>
+          <div class="inicio-mini">
+            <div><b>Sorteio</b>${escapeHtml(formatarDataHoraPtBR(b.dataSorteio||'-'))}</div>
+            <div><b>Valor da cota</b>${escapeHtml(b.valorCota?moeda(b.valorCota):'-')}</div>
+            <div><b>Pagamento</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPagamento||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPagamento||'-'))}</div>
+            <div><b>Palpites</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPalpite||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPalpite||'-'))}</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-light" onclick="toggleResumoInicio(${i})">Ver resumo</button>
+            <button class="btn" onclick="abrirPagamentoBolao('${escapeAttr(b.loteria||b.nome)}')">Pagar cota</button>
+            <button class="btn btn-light" onclick="ESTADO.bolaoSelecionado='${escapeAttr(b.loteria||b.nome)}';navegar('palpite')">Palpite</button>
+          </div>
+          <div class="inicio-resumo" id="inicioResumo_${i}">
+            ${renderResumoInicioBolao_(b,total,disponiveis,minhas)}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderResumoInicioBolao_(b,total,disponiveis,minhas){
+      return `
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th>Loteria</th><td>${escapeHtml(b.loteria||b.nome||'-')}</td></tr>
+              <tr><th>Status</th><td>${escapeHtml(b.status||'-')}</td></tr>
+              <tr><th>Valor da cota</th><td>${escapeHtml(b.valorCota?moeda(b.valorCota):'-')}</td></tr>
+              <tr><th>Total de cotas</th><td>${escapeHtml(total)}</td></tr>
+              <tr><th>Cotas adquiridas no bolão</th><td>${escapeHtml(b.cotasAdquiridas||0)}</td></tr>
+              <tr><th>Cotas disponíveis</th><td>${escapeHtml(disponiveis)}</td></tr>
+              <tr><th>Minhas cotas</th><td>${escapeHtml(minhas)}</td></tr>
+              <tr><th>Data do sorteio</th><td>${escapeHtml(formatarDataHoraPtBR(b.dataSorteio||'-'))}</td></tr>
+              <tr><th>Pagamento</th><td>${escapeHtml(formatarDataHoraPtBR(b.inicioPagamento||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPagamento||'-'))}</td></tr>
+              <tr><th>Palpites</th><td>${escapeHtml(formatarDataHoraPtBR(b.inicioPalpite||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPalpite||'-'))}</td></tr>
+              ${b.premiacao?`<tr><th>Premiação</th><td>${escapeHtml(moeda(b.premiacao))}</td></tr>`:''}
+              ${b.premioPorCota?`<tr><th>Prêmio por cota</th><td>${escapeHtml(moeda(b.premioPorCota))}</td></tr>`:''}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function toggleResumoInicio(i){
+      const el=document.getElementById('inicioResumo_'+i);
+      if(el)el.classList.toggle('open');
+    }
+
+function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr><th>Campo</th><th>Informação</th></tr></thead><tbody><tr><td>Loteria</td><td>${escapeHtml(d.loteria||'-')}</td></tr><tr><td>Valor mensal</td><td>${moeda(d.valorMensal||0)}</td></tr><tr><td>Qtd parcelas</td><td>${escapeHtml(d.qtdParcelas||'-')}</td></tr><tr><td>Início palpites</td><td>${escapeHtml(d.inicioPalpites||'-')}</td></tr><tr><td>Prazo palpites</td><td>${escapeHtml(d.prazoPalpites||'-')}</td></tr><tr><td>Início pagamento</td><td>${escapeHtml(d.inicioPagamento||'-')}</td></tr><tr><td>Fim pagamento</td><td>${escapeHtml(d.fimPagamento||'-')}</td></tr></tbody></table></div>`}
+
+    async function abrirPagamentoBolao(loteria){
+      const b=(ESTADO.boloes||[]).find(x=>normalizar(x.loteria||x.nome)===normalizar(loteria))||{loteria};
+      abrirModal('Pagamento da cota',`<div class="notice info">Carregando meios de pagamento...</div>`);
+
+      try{
+        const dados=await apiMulti([
+          {action:'getDadosRecebimento',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]},
+          {action:'listarDadosRecebimento',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]}
+        ]);
+
+        const lista=Array.isArray(dados)?dados:(dados.dados||[]);
+        const minhas=num(b.cotasUsuario||b.minhasCotas||1)||1;
+
+        document.getElementById('modalConteudo').innerHTML=`
+          <div class="notice">
+            <strong>${escapeHtml(b.loteria||b.nome||loteria)}</strong><br>
+            Valor da cota: <strong>${escapeHtml(moeda(b.valorCota||0))}</strong>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Quantidade de cotas para pagamento</label>
+              <input id="pagQtdCotas" value="${escapeAttr(minhas)}" oninput="atualizarValorPagamentoModal('${escapeAttr(b.loteria||b.nome||loteria)}')">
+            </div>
+            <div class="field">
+              <label>Valor total</label>
+              <input id="pagValorTotal" value="${escapeAttr(moeda(num(b.valorCota||0)*minhas))}" readonly style="font-weight:900;background:#f3f6f4;color:#003b12;">
+            </div>
+          </div>
+
+          ${lista.length?`
+            <div class="pay-method-grid">
+              ${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}
+            </div>
+          `:'<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>'}
+        `;
+      }catch(err){
+        document.getElementById('modalConteudo').innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function atualizarValorPagamentoModal(loteria){
+      const b=(ESTADO.boloes||[]).find(x=>normalizar(x.loteria||x.nome)===normalizar(loteria))||{};
+      const qtd=Math.max(1,num(document.getElementById('pagQtdCotas')?document.getElementById('pagQtdCotas').value:1));
+      const valor=num(b.valorCota||0)*qtd;
+      const el=document.getElementById('pagValorTotal');
+      if(el)el.value=moeda(valor);
+      document.querySelectorAll('[data-pix-payload]').forEach(node=>{
+        const idx=node.dataset.pixPayload;
+        const raw=node.dataset.metodo?decodeURIComponent(node.dataset.metodo):'{}';
+        let metodo={};
+        try{metodo=JSON.parse(raw)}catch(e){}
+        const payload=gerarPixCopiaECola_(metodo,valor,loteria);
+        node.textContent=payload;
+        const img=document.getElementById('qrPix_'+idx);
+        if(img)img.src=qrUrl_(payload);
+      });
+    }
+
+    function renderMetodoPagamento_(m,b,i){
+      const valor=num(b.valorCota||0)*Math.max(1,num(b.cotasUsuario||b.minhasCotas||1)||1);
+      const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+      const payload=isPix?gerarPixCopiaECola_(m,valor,b.loteria||b.nome):'';
+      const encoded=encodeURIComponent(JSON.stringify(m||{}));
+
+      return `
+        <div class="pay-method">
+          <h4>${escapeHtml(m.tipoRecebimento||'Recebimento')}</h4>
+          <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+          ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+          ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+          ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+
+          ${isPix?`
+            <img class="qr-img" id="qrPix_${i}" src="${escapeAttr(qrUrl_(payload))}" alt="QR Code Pix">
+            <div class="pay-copy" data-pix-payload="${i}" data-metodo="${escapeAttr(encoded)}">${escapeHtml(payload)}</div>
+            <div class="actions" style="margin-top:10px;">
+              <button class="btn" onclick="copiarTextoPagamento(this.previousElementSibling.textContent)">Copiar Pix</button>
+            </div>
+          `:''}
+        </div>
+      `;
+    }
+
+    function copiarTextoPagamento(txt){
+      txt=String(txt||'').trim();
+      if(!txt)return toast('Nada para copiar.','warn');
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(txt).then(()=>toast('Código copiado.')).catch(()=>toast('Não foi possível copiar automaticamente.','warn'));
+      }else{
+        toast('Selecione e copie o código manualmente.','info');
+      }
+    }
+
+    function gerarPixCopiaECola_(m,valor,loteria){
+      const chave=String(m.chavePix||'').trim();
+      if(!chave)return '';
+      const nome=sanitizarPix_(m.nomeCompleto||'PORTAL SIMONSPORTS').slice(0,25)||'PORTAL SIMONSPORTS';
+      const cidade='SAO PAULO';
+      const txid=sanitizarPix_((loteria||'BOLAO').replace(/\s+/g,'')).slice(0,25)||'BOLAO';
+      const gui=tlvPix_('00','br.gov.bcb.pix')+tlvPix_('01',chave);
+      let payload='000201'+tlvPix_('26',gui)+'52040000'+'5303986';
+      if(valor&&valor>0)payload+=tlvPix_('54',Number(valor).toFixed(2));
+      payload+='5802BR'+tlvPix_('59',nome)+tlvPix_('60',cidade)+tlvPix_('62',tlvPix_('05',txid))+'6304';
+      return payload+crc16Pix_(payload);
+    }
+
+    function tlvPix_(id,value){
+      value=String(value||'');
+      return id+String(value.length).padStart(2,'0')+value;
+    }
+
+    function sanitizarPix_(s){
+      return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 ]/g,'').toUpperCase().trim();
+    }
+
+    function crc16Pix_(payload){
+      let crc=0xFFFF;
+      for(let i=0;i<payload.length;i++){
+        crc^=payload.charCodeAt(i)<<8;
+        for(let j=0;j<8;j++){
+          crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);
+          crc&=0xFFFF;
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4,'0');
+    }
+
+    function qrUrl_(text){
+      return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text||'');
+    }
+
     async function renderBoloes(tipo){loading('Carregando bolões');try{const lista=await carregarBoloes(),ativos=lista.filter(b=>!isHistorico(b)),hist=lista.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button></div>${renderCardsBoloes(dados,'boloes')}</div><div class="panel"><label>Participante</label><div style="display:flex;gap:10px;align-items:center;"><select id="consultaParticipante"><option>Selecione um participante...</option></select><button type="button" class="btn" onclick="toast('Selecione um participante para consultar.','info')">Consultar</button></div></div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
     function renderCardsBoloes(lista,origem){if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;return `<div class="cards-row">${lista.map(b=>`<div class="bolao-card"><h3>🎯 ${escapeHtml(b.nome||b.loteria)}</h3>${origem==='boloes'?`<div class="status-pill">Participante inscrito</div><br>`:''}${b.cotasDisponiveis!==''?`<div class="outline-pill">Cotas disponíveis: ${escapeHtml(b.cotasDisponiveis)}</div>`:''}<div class="meta-grid"><div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div><div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div><div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div><div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div></div><button class="btn" onclick="selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')">${origem==='palpite'?'Abrir palpite':(isHistorico(b)?'Abrir':'Participar')}</button></div>`).join('')}</div>`}
     function selecionarBolao(nome,origem){ESTADO.bolaoSelecionado=nome;localStorage.setItem('PSS_BOLAO_SELECIONADO',nome);if(origem==='palpite')renderPalpiteAberto(nome);else abrirModal('Bolão selecionado',`<div class="notice">Bolão selecionado: <strong>${escapeHtml(nome)}</strong></div><div class="actions"><button class="btn" onclick="fecharModal(); navegar('palpite')">Palpites</button><button class="btn btn-light" onclick="fecharModal(); navegar('comprovante')">Comprovante</button></div>`)}
@@ -997,6 +1288,132 @@
     async function renderAdminTable(aba,titulo){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando '+titulo);try{const r=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:aba},args:[aba]}]),headers=r.headers||[],rows=r.rows||[];setView(`<div class="panel"><h2>${escapeHtml(titulo)}</h2>${headers.length?`<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(c=>`<td>${formatarCelula(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<div class="notice warn">Nenhum dado localizado.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
 
     async function adminDados(aba){return await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:aba},args:[aba]}])}
+
+    async function renderUsuariosAdmin(){return renderAdminTable('Usuarios','Usuários')}
+    async function renderSolicitacoesAdmin(){return renderAdminTable('SOLICITACOES_CADASTRO','Solicitações de cadastro')}
+
+    async function renderPagamentosAdmin(){
+      if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+      loading('Carregando pagamentos');
+
+      try{
+        const pag=await adminDados('PAGAMENTOS').catch(()=>({headers:[],rows:[]}));
+        const rec=await apiMulti([{action:'getDadosRecebimentoAdmin',args:[]}]).catch(()=>({dados:[]}));
+        ESTADO.dadosRecebimentoAdmin=rec.dados||[];
+
+        setView(`
+          <div class="panel">
+            <h2>Pagamentos e dados de recebimento</h2>
+            <p>Gerencie os meios de recebimento usados nos bolões ativos e acompanhe os registros de pagamento.</p>
+
+            <div class="actions">
+              <button class="btn" onclick="adicionarRecebimentoAdmin()">Adicionar meio de recebimento</button>
+              <button class="btn btn-light" onclick="renderPagamentosAdmin()">Atualizar</button>
+            </div>
+
+            <div id="dadosRecebimentoAdminBox">
+              ${renderDadosRecebimentoAdmin_()}
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>Registros de pagamentos</h2>
+            ${pag.headers&&pag.headers.length?`
+              <div class="table-wrap">
+                <table>
+                  <thead><tr>${pag.headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+                  <tbody>${(pag.rows||[]).map(row=>`<tr>${row.map(c=>`<td>${formatarCelula(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+                </table>
+              </div>
+            `:'<div class="notice warn">Nenhum pagamento localizado.</div>'}
+          </div>
+        `);
+      }catch(err){
+        setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+      }
+    }
+
+    function renderDadosRecebimentoAdmin_(){
+      const lista=ESTADO.dadosRecebimentoAdmin||[];
+      if(!lista.length){
+        return '<div class="notice warn">Nenhum meio de recebimento cadastrado.</div>';
+      }
+      return lista.map((m,i)=>renderRecebimentoCardAdmin_(m,i)).join('');
+    }
+
+    function renderRecebimentoCardAdmin_(m,i){
+      return `
+        <div class="recebimento-card" data-rec-index="${i}">
+          <div class="recebimento-grid">
+            <div class="field"><label>Loteria</label><input id="rec_loteria_${i}" value="${escapeAttr(m.loteria||'')}"></div>
+            <div class="field"><label>Tipo recebimento</label><input id="rec_tipo_${i}" value="${escapeAttr(m.tipoRecebimento||'PIX')}"></div>
+            <div class="field"><label>Nome completo</label><input id="rec_nome_${i}" value="${escapeAttr(m.nomeCompleto||'')}"></div>
+            <div class="field"><label>Ativo</label><select id="rec_ativo_${i}"><option ${normalizar(m.ativo).includes('SIM')||normalizar(m.ativo).includes('ATIVO')?'selected':''}>SIM</option><option ${normalizar(m.ativo).includes('NAO')||normalizar(m.ativo).includes('NÃO')?'selected':''}>NÃO</option></select></div>
+            <div class="field"><label>Tipo Pix</label><input id="rec_tipoPix_${i}" value="${escapeAttr(m.tipoPix||'')}"></div>
+            <div class="field"><label>Chave Pix</label><input id="rec_chave_${i}" value="${escapeAttr(m.chavePix||'')}"></div>
+            <div class="field"><label>Banco</label><input id="rec_banco_${i}" value="${escapeAttr(m.banco||'')}"></div>
+            <div class="field"><label>Agência</label><input id="rec_agencia_${i}" value="${escapeAttr(m.agencia||'')}"></div>
+            <div class="field"><label>Conta</label><input id="rec_conta_${i}" value="${escapeAttr(m.conta||'')}"></div>
+            <div class="field"><label>Operação</label><input id="rec_operacao_${i}" value="${escapeAttr(m.operacao||'')}"></div>
+            <div class="field" style="grid-column:span 2;"><label>Observação</label><input id="rec_obs_${i}" value="${escapeAttr(m.obs||'')}"></div>
+          </div>
+          <div class="actions" style="margin-top:12px;">
+            <button class="btn" onclick="salvarDadosRecebimentoAdmin()">Salvar recebimentos</button>
+            <button class="btn btn-danger" onclick="excluirRecebimentoAdmin(${i})">Excluir</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function adicionarRecebimentoAdmin(){
+      if(!ESTADO.dadosRecebimentoAdmin)ESTADO.dadosRecebimentoAdmin=[];
+      ESTADO.dadosRecebimentoAdmin.push({linha:'',loteria:'',tipoRecebimento:'PIX',nomeCompleto:'',tipoPix:'CELULAR',chavePix:'',banco:'',agencia:'',conta:'',operacao:'',obs:'',ativo:'SIM'});
+      document.getElementById('dadosRecebimentoAdminBox').innerHTML=renderDadosRecebimentoAdmin_();
+    }
+
+    async function salvarDadosRecebimentoAdmin(){
+      const lista=(ESTADO.dadosRecebimentoAdmin||[]).map((m,i)=>({
+        linha:m.linha||'',
+        loteria:document.getElementById('rec_loteria_'+i).value,
+        tipoRecebimento:document.getElementById('rec_tipo_'+i).value,
+        nomeCompleto:document.getElementById('rec_nome_'+i).value,
+        ativo:document.getElementById('rec_ativo_'+i).value,
+        tipoPix:document.getElementById('rec_tipoPix_'+i).value,
+        chavePix:document.getElementById('rec_chave_'+i).value,
+        banco:document.getElementById('rec_banco_'+i).value,
+        agencia:document.getElementById('rec_agencia_'+i).value,
+        conta:document.getElementById('rec_conta_'+i).value,
+        operacao:document.getElementById('rec_operacao_'+i).value,
+        obs:document.getElementById('rec_obs_'+i).value
+      }));
+
+      try{
+        const r=await api('salvarDadosRecebimentoAdmin',{},[lista]);
+        toast((r&&r.msg)||'Dados de recebimento salvos.');
+        renderPagamentosAdmin();
+      }catch(err){
+        toast(err.message,'error');
+      }
+    }
+
+    async function excluirRecebimentoAdmin(i){
+      const item=(ESTADO.dadosRecebimentoAdmin||[])[i];
+      if(!item)return;
+      if(!confirm('Deseja excluir este meio de recebimento?'))return;
+      try{
+        if(item.linha){
+          await api('excluirDadosRecebimentoAdmin',{},[item.linha]);
+        }else{
+          ESTADO.dadosRecebimentoAdmin.splice(i,1);
+        }
+        toast('Meio de recebimento excluído.');
+        renderPagamentosAdmin();
+      }catch(err){
+        toast(err.message,'error');
+      }
+    }
+
+
     function rowObj(headers,row){const o={};(headers||[]).forEach((h,i)=>o[normalizar(h)]=row[i]);return o}
     function cellObj(o,names){for(const n of names){const k=normalizar(n);if(Object.prototype.hasOwnProperty.call(o,k))return o[k]}return ''}
     function linhaPlanilha(i){return Number(i)+2}
@@ -1036,7 +1453,7 @@
       }
     }
 
-    async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const todosBoloes=await carregarBoloes();const lista=(todosBoloes||[]).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));setView(`<div class="panel"><h2>⚙️ Configurações dos bolões ativos</h2><p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>${lista.length?lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(b.dataSorteio||'')}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(b.inicioPagamento||'')}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(b.fimPagamento||'')}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(b.inicioPalpite||'')}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(b.fimPalpite||'')}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join(''):'<div class="notice warn">Nenhum bolão ativo localizado para configuração.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const todosBoloes=await carregarBoloes();const lista=(todosBoloes||[]).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));setView(`<div class="panel"><h2>⚙️ Configurações dos bolões ativos</h2><p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>${lista.length?lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.dataSorteio||''))}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPagamento||''))}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPagamento||''))}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPalpite||''))}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPalpite||''))}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join(''):'<div class="notice warn">Nenhum bolão ativo localizado para configuração.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
 
     function calcularPremioPorCotaValor(premiacao,cotasAdquiridas){
       const premio=num(premiacao);
@@ -1083,7 +1500,7 @@
       const arred=Math.round(n*100)/100;
       return arred.toLocaleString('pt-BR',{minimumFractionDigits:Number.isInteger(arred)?0:2,maximumFractionDigits:2});
     }
-    async function salvarConfigBolaoGit(i){const b=ESTADO.boloes[i];if(!b)return;atualizarPremioPorCotaConfig(i);const d={nome:b.nome||b.loteria,loteria:b.loteria||b.nome,status:document.getElementById('cfg_status_'+i).value,valorCota:valorMoedaSalvarConfig(document.getElementById('cfg_valor_'+i).value),totalCotas:valorNumeroConfig(document.getElementById('cfg_total_'+i).value,''),cotasTotaisAdquiridas:valorNumeroConfig(document.getElementById('cfg_cotas_'+i).value,'0'),qtdParcelas:valorNumeroConfig(document.getElementById('cfg_parc_'+i).value,'1'),premiacao:valorMoedaSalvarConfig(document.getElementById('cfg_premio_'+i).value),premioPorCota:valorMoedaSalvarConfig(document.getElementById('cfg_premioCota_'+i).value),premiacaoPorCota:valorMoedaSalvarConfig(document.getElementById('cfg_premioCota_'+i).value),dataSorteio:document.getElementById('cfg_sorteio_'+i).value,iniBol:document.getElementById('cfg_iniBol_'+i).value,fimBol:document.getElementById('cfg_fimBol_'+i).value,iniPal:document.getElementById('cfg_iniPal_'+i).value,fimPal:document.getElementById('cfg_fimPal_'+i).value,range:valorNumeroConfig(document.getElementById('cfg_range_'+i).value,''),qtdMin:valorNumeroConfig(document.getElementById('cfg_min_'+i).value,''),qtdMax:valorNumeroConfig(document.getElementById('cfg_max_'+i).value,''),qtdPalpite:valorNumeroConfig(document.getElementById('cfg_qtdPal_'+i).value,'')};chamarAcaoAdmin('salvarConfigBolaoAtivoAdmin',[d],'Bolão salvo.')}
+    async function salvarConfigBolaoGit(i){const b=ESTADO.boloes[i];if(!b)return;atualizarPremioPorCotaConfig(i);const d={nome:b.nome||b.loteria,loteria:b.loteria||b.nome,status:document.getElementById('cfg_status_'+i).value,valorCota:valorMoedaSalvarConfig(document.getElementById('cfg_valor_'+i).value),totalCotas:valorNumeroConfig(document.getElementById('cfg_total_'+i).value,''),cotasTotaisAdquiridas:valorNumeroConfig(document.getElementById('cfg_cotas_'+i).value,'0'),qtdParcelas:valorNumeroConfig(document.getElementById('cfg_parc_'+i).value,'1'),premiacao:valorMoedaSalvarConfig(document.getElementById('cfg_premio_'+i).value),premioPorCota:valorMoedaSalvarConfig(document.getElementById('cfg_premioCota_'+i).value),premiacaoPorCota:valorMoedaSalvarConfig(document.getElementById('cfg_premioCota_'+i).value),dataSorteio:normalizarDataPtBRParaSalvar(document.getElementById('cfg_sorteio_'+i).value),iniBol:normalizarDataPtBRParaSalvar(document.getElementById('cfg_iniBol_'+i).value),fimBol:normalizarDataPtBRParaSalvar(document.getElementById('cfg_fimBol_'+i).value),iniPal:normalizarDataPtBRParaSalvar(document.getElementById('cfg_iniPal_'+i).value),fimPal:normalizarDataPtBRParaSalvar(document.getElementById('cfg_fimPal_'+i).value),range:valorNumeroConfig(document.getElementById('cfg_range_'+i).value,''),qtdMin:valorNumeroConfig(document.getElementById('cfg_min_'+i).value,''),qtdMax:valorNumeroConfig(document.getElementById('cfg_max_'+i).value,''),qtdPalpite:valorNumeroConfig(document.getElementById('cfg_qtdPal_'+i).value,'')};chamarAcaoAdmin('salvarConfigBolaoAtivoAdmin',[d],'Bolão salvo.')}
 
 
     async function renderParticipantesBolaoAdmin(){
@@ -1263,17 +1680,15 @@
         const hora=slash[4]?String(slash[4]).padStart(2,'0'):'';
         const minuto=slash[5]||'';
         const segundo=slash[6]||'';
+
         let dia,mes;
 
-        if(p1>12 && p2<=12){
-          dia=p1;
-          mes=p2;
-        }else if(p2>12 && p1<=12){
+        if(p2>12 && p1<=12){
           mes=p1;
           dia=p2;
         }else{
-          mes=p1;
-          dia=p2;
+          dia=p1;
+          mes=p2;
         }
 
         const dd=String(dia).padStart(2,'0');
@@ -1283,12 +1698,26 @@
         return `${dd}/${mm}/${ano}`;
       }
 
+      if(/^\d{4,6}$/.test(bruto)){
+        const serial=Number(bruto);
+        if(serial>20000&&serial<80000){
+          const base=Date.UTC(1899,11,30);
+          const dt=new Date(base+serial*86400000);
+          return montarDataHoraPtBR_(dt,false);
+        }
+      }
+
       const dt=new Date(bruto);
-      if(!isNaN(dt.getTime()) && /\d{4}|\d{1,2}\/\d{1,2}/.test(bruto)){
+      if(!isNaN(dt.getTime()) && /\d{4}/.test(bruto)){
         return montarDataHoraPtBR_(dt, bruto.includes(':'));
       }
 
       return bruto;
+    }
+
+    function normalizarDataPtBRParaSalvar(valor){
+      const f=formatarDataHoraPtBR(valor);
+      return f==='-'?'':f.split(' ')[0];
     }
 
     function montarDataHoraPtBR_(dt,comHora){
