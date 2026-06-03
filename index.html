@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V162_CONFIG_ATIVOS_TEXTOS_PRO_BOTOES_AGEIS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V163_HOME_DADOS_REAIS_LOGIN_VOLTA_API_V159 -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -73,6 +73,11 @@
     .loading-fast:before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spinFast .7s linear infinite}
     @keyframes spinFast{to{transform:rotate(360deg)}}
 
+
+    .home-public-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 14px;flex-wrap:wrap;color:#546173;font-size:12px;font-weight:900}
+    .home-bolao-card .mini{grid-template-columns:repeat(2,minmax(150px,1fr))}
+    @media(max-width:920px){.home-public-top{align-items:flex-start}.home-bolao-card .mini{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -82,7 +87,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V162_CONFIG_ATIVOS_TEXTOS_PRO_BOTOES_AGEIS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V163_HOME_DADOS_REAIS_LOGIN_VOLTA_API_V159',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
@@ -346,7 +351,7 @@
 
         <section class="home-section" id="homeBoloesPublicos">
           <h2>Bolões ativos e próximos sorteios</h2>
-          <p>Resumo público dos bolões e loterias disponíveis.</p>
+          <p>Informações atualizadas dos bolões ativos, conforme o cadastro interno do sistema.</p>
           <div id="homeBoloesPublicosConteudo">
             <div class="notice info">Carregando bolões ativos...</div>
           </div>
@@ -390,17 +395,31 @@
       const lotBox=document.getElementById('homeTodasLoteriasConteudo');
       if(!box)return;
 
-      const timeoutHome=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout_home_publica')),12000));
+      box.innerHTML=`
+        <div class="notice info">
+          <span class="loading-fast">Atualizando informações dos bolões ativos...</span>
+        </div>
+      `;
+
+      const timeoutHome=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout_home_publica')),16000));
 
       try{
         const lista=await Promise.race([carregarBoloes(),timeoutHome]);
-        const ativos=(lista||[]).filter(b=>!isHistorico(b)).slice(0,6);
+        const ativos=(lista||[])
+          .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
+          .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')))
+          .slice(0,8);
+
         const nomes=[...new Set((lista||[]).map(b=>b.loteria||b.nome).filter(Boolean))];
 
         if(!ativos.length){
           box.innerHTML='<div class="home-note">Nenhum bolão ativo foi localizado no momento. Consulte novamente mais tarde ou solicite cadastro.</div>';
         }else{
           box.innerHTML=`
+            <div class="home-public-top">
+              <span>Atualizado em ${escapeHtml(dataHoraAtualCurta())}</span>
+              <button type="button" class="btn btn-light btn-pill" onclick="carregarHomePublicaBoloes()">Atualizar dados</button>
+            </div>
             <div class="home-public-grid">
               ${ativos.map(b=>renderCardHomeBolao_(b)).join('')}
             </div>
@@ -418,29 +437,45 @@
         box.innerHTML=`
           <div class="home-note">
             Não foi possível carregar os bolões ativos automaticamente neste momento. 
-            Clique em <strong>Entrar no sistema</strong> para acessar a área restrita ou tente atualizar a página.
+            Clique em <strong>Atualizar dados</strong> ou acesse a área restrita.
           </div>
           <div class="actions" style="margin-top:14px;">
-            <button class="btn" onclick="renderLogin()">Entrar no sistema</button>
-            <button class="btn btn-light" onclick="carregarHomePublicaBoloes()">Tentar novamente</button>
+            <button class="btn" onclick="carregarHomePublicaBoloes()">Atualizar dados</button>
+            <button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button>
           </div>
         `;
       }
     }
 
     function renderCardHomeBolao_(b){
+      const total=normalizarValorCard_(b.totalCotas||b.cotasTotal);
+      const adquiridas=normalizarValorCard_(b.cotasAdquiridas);
+      let disponiveis=b.cotasDisponiveis;
+      if((disponiveis===''||disponiveis===undefined||disponiveis===null) && total!=='-'){
+        disponiveis=Math.max(0,num(total)-num(adquiridas));
+      }
+
       return `
         <article class="home-bolao-card">
           <h3>${escapeHtml(b.loteria||b.nome||'Bolão')}</h3>
           <span class="status-pill">${escapeHtml(b.status||'ATIVO')}</span>
           <div class="mini">
-            <div><b>Sorteio</b>${escapeHtml(b.dataSorteio||'-')}</div>
+            <div><b>Sorteio</b>${escapeHtml(formatarDataHoraPtBR(b.dataSorteio||'-'))}</div>
             <div><b>Valor da cota</b>${escapeHtml(b.valorCota?moeda(b.valorCota):'-')}</div>
-            <div><b>Pagamento</b>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</div>
-            <div><b>Palpites</b>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</div>
+            <div><b>Total de cotas</b>${escapeHtml(total)}</div>
+            <div><b>Cotas disponíveis</b>${escapeHtml(normalizarValorCard_(disponiveis))}</div>
+            <div><b>Pagamento</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPagamento||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPagamento||'-'))}</div>
+            <div><b>Palpites</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPalpite||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPalpite||'-'))}</div>
+            ${b.premiacao?`<div><b>Premiação</b>${escapeHtml(moeda(b.premiacao))}</div>`:''}
+            ${b.premioPorCota?`<div><b>Prêmio por cota</b>${escapeHtml(moeda(b.premioPorCota))}</div>`:''}
           </div>
         </article>
       `;
+    }
+
+    function normalizarValorCard_(valor){
+      if(valor===undefined||valor===null||valor==='')return '-';
+      return String(valor);
     }
 
     async function abrirRegulamentoPublico(){
@@ -454,7 +489,7 @@
       }
     }
 
-    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button></div></div>`)}
+    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button></div></div>`)}
     async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario={nome:u.nome||u.usuario||'Usuário',email:u.email||email,role:String(u.role||u.perfil||'usuario').toLowerCase(),perfil:u.perfil||u.role||'usuario'};ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(u||{}))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');renderHomePublica()}
     function aplicarLayoutLogado(){document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');document.getElementById('userDisplay').textContent=`${ESTADO.usuario.nome||'Usuário'}${ESTADO.usuario.email?' • '+ESTADO.usuario.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
@@ -1155,7 +1190,7 @@
       }
     }
 
-    async function abrirCadastro(){abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button></form>`);try{const lista=await carregarBoloes();document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}}
+    async function abrirCadastro(){abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button></form>`);try{const lista=(await carregarBoloes()).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}}
     async function enviarCadastro(ev){ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');btn.disabled=true;btn.textContent='Enviando...';try{const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');toast((r&&r.msg)||'Solicitação enviada com sucesso.');fecharModal()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}}
     function abrirResetSenha(){abrirModal('Recuperar senha',`<form onsubmit="resetarSenha(event)"><div class="field"><label>E-mail cadastrado</label><input id="resetEmail" type="email" required /></div><button class="btn btn-block" id="btnReset" type="submit">Enviar nova senha</button></form>`)}async function resetarSenha(ev){ev.preventDefault();const email=document.getElementById('resetEmail').value.trim().toLowerCase(),btn=document.getElementById('btnReset');btn.disabled=true;btn.textContent='Enviando...';try{const r=await apiMulti([{action:'resetarSenha',dados:{email},args:[email]},{action:'recuperarSenha',dados:{email},args:[email]}]);toast((r&&r.msg)||'Solicitação processada.');fecharModal()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar nova senha'}}
     async function inativarBolaoGit(i){
