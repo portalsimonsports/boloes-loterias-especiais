@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V165_CACHE_PRELOAD_JOGOS_REGULAMENTO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V166_UPLOAD_PROGRESS_RELOGIO_TEMPO_REAL -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -107,6 +107,16 @@
     .cache-hint.ok{color:#0b6b2b}
     .cache-hint.warn{color:#8a5a00}
 
+
+    .upload-progress-box{margin-top:12px;border:1px solid #cbded0;background:#f8fcf9;border-radius:14px;padding:12px;display:none}
+    .upload-progress-box.open{display:block}
+    .upload-progress-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:900;color:#0b4b1d;margin-bottom:8px;flex-wrap:wrap}
+    .upload-progress-bar{height:12px;background:#e4ece7;border-radius:999px;overflow:hidden;border:1px solid #d4e2d8}
+    .upload-progress-fill{height:100%;width:0;background:#0b7a2b;border-radius:999px;transition:width .22s ease}
+    .upload-progress-detail{margin-top:8px;color:#43556a;font-size:12px;font-weight:800;word-break:break-word}
+    .upload-progress-ok{color:#0b6b2b}
+    .upload-progress-error{color:#a21818}
+
 </style>
 </head>
 <body>
@@ -116,7 +126,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V165_CACHE_PRELOAD_JOGOS_REGULAMENTO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V166_UPLOAD_PROGRESS_RELOGIO_TEMPO_REAL',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
@@ -748,7 +758,7 @@
             <div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
               <h2 style="color:#fff;font-size:42px;">${escapeHtml(ativos.length)}</h2>
               <p style="color:#fff;">Bolões ativos em acompanhamento.</p>
-              <div style="margin-top:40px;font-weight:800;">${escapeHtml(dataHoraAtualCurta())}</div>
+              <div style="margin-top:40px;font-weight:800;" data-live-clock>${escapeHtml(dataHoraAtualCurta())}</div>
             </div>
           </div>
         </div>
@@ -1085,6 +1095,16 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
                     <input id="arquivoJogoRealizado" type="file" accept="image/*,.pdf,application/pdf" multiple required>
                   </div>
                   <button class="btn" id="btnEnviarJogoRealizado" type="submit">Enviar jogos realizados</button>
+                  <div class="upload-progress-box" id="jogoUploadProgressBox">
+                    <div class="upload-progress-top">
+                      <span id="jogoUploadTitulo">Preparando envio...</span>
+                      <span id="jogoUploadPercentual">0%</span>
+                    </div>
+                    <div class="upload-progress-bar">
+                      <div class="upload-progress-fill" id="jogoUploadFill"></div>
+                    </div>
+                    <div class="upload-progress-detail" id="jogoUploadDetalhe">Aguardando arquivos...</div>
+                  </div>
                 </form>
               </div>
             `:''}
@@ -1204,26 +1224,68 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
 
       btn.disabled=true;
       btn.textContent='Enviando...';
+      atualizarProgressoUploadJogos_(0,files.length,'Preparando envio...','Lendo arquivos selecionados.');
+
+      const inicioEnvio=Date.now();
 
       try{
-        for(const file of files){
+        for(let i=0;i<files.length;i++){
+          const file=files[i];
+          const atual=i+1;
+
+          atualizarProgressoUploadJogos_(i,files.length,`Enviando ${atual}/${files.length}`,`Preparando: ${file.name}`);
+
           const base64=await lerArquivoBase64(file);
+
+          atualizarProgressoUploadJogos_(i,files.length,`Enviando ${atual}/${files.length}`,`Salvando no Drive: ${file.name}`);
+
           await apiMulti([
             {action:'uploadJogoRealizadoBolao',dados:{fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs},args:[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs]},
             {action:'salvarJogoRealizadoBolao',dados:{fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs},args:[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs]},
             {action:'enviarJogoRealizado',dados:{fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs},args:[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs]}
           ]);
+
+          atualizarProgressoUploadJogos_(atual,files.length,`Enviado ${atual}/${files.length}`,`Concluído: ${file.name}`);
         }
+
+        const segundos=Math.max(1,Math.round((Date.now()-inicioEnvio)/1000));
+        atualizarProgressoUploadJogos_(files.length,files.length,'Envio concluído',`${files.length} arquivo(s) enviado(s) em ${segundos}s. Atualizando lista...`,'ok');
 
         toast('Jogos realizados enviados com sucesso.');
         cacheDel_(cacheKeyLoteria_('jogos',loteria));
         input.value='';
-        carregarJogosRealizadosBolao();
+
+        setTimeout(()=>carregarJogosRealizadosBolao(),700);
       }catch(err){
+        atualizarProgressoUploadJogos_(0,files.length,'Falha no envio',err.message,'error');
         toast(err.message,'error');
       }finally{
         btn.disabled=false;
         btn.textContent='Enviar jogos realizados';
+      }
+    }
+
+    function atualizarProgressoUploadJogos_(feito,total,titulo,detalhe,tipo){
+      const box=document.getElementById('jogoUploadProgressBox');
+      const fill=document.getElementById('jogoUploadFill');
+      const pct=document.getElementById('jogoUploadPercentual');
+      const tit=document.getElementById('jogoUploadTitulo');
+      const det=document.getElementById('jogoUploadDetalhe');
+
+      if(!box)return;
+
+      box.classList.add('open');
+
+      const percentual=total?Math.max(0,Math.min(100,Math.round((feito/total)*100))):0;
+
+      if(fill)fill.style.width=percentual+'%';
+      if(pct)pct.textContent=percentual+'%';
+      if(tit)tit.textContent=titulo||'Enviando...';
+      if(det){
+        det.textContent=detalhe||'Processando...';
+        det.classList.remove('upload-progress-ok','upload-progress-error');
+        if(tipo==='ok')det.classList.add('upload-progress-ok');
+        if(tipo==='error')det.classList.add('upload-progress-error');
       }
     }
 
@@ -1914,7 +1976,14 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       if(!s)return false;
       return /^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)||/^\d{4}-\d{2}-\d{2}/.test(s);
     }
-    function atualizarRelogio(){document.getElementById('clock').textContent=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(',',',')}function dataHoraAtualCurta(){return new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')}
+    function atualizarRelogio(){
+      const completo=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(',',',');
+      const curto=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','');
+      const clock=document.getElementById('clock');
+      if(clock)clock.textContent=completo;
+      document.querySelectorAll('[data-live-clock]').forEach(el=>el.textContent=curto);
+    }
+    function dataHoraAtualCurta(){return new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')}
   </script>
 </body>
 </html>
