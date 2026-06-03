@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V174_ADQUIRIR_COTAS_ACESSO_PARTICIPANTE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V176_BLOQUEIO_COTAS_RESERVA_TURBO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -167,6 +167,17 @@
     .status-pill.locked{background:#fff3cd;color:#8a5a00;border:1px solid #f3d37a}
     @media(max-width:920px){.acq-row{grid-template-columns:1fr}.acq-box .btn{width:100%}}
 
+
+    .pay-loading-soft{border:1px solid #bfdbfe;background:#eff6ff;color:#123c74;border-radius:14px;padding:12px;font-weight:900;margin:10px 0}
+    .pay-cache-hint{font-size:12px;color:#516274;margin-top:8px;line-height:1.35}
+    .pay-method-grid.loading-dim{opacity:.72}
+
+
+    .cotas-alerta{border:1px solid #f3d37a;background:#fff8e5;color:#7a4b00;border-radius:12px;padding:10px 12px;font-weight:800;margin-top:10px}
+    .cotas-esgotadas{border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:12px;padding:10px 12px;font-weight:900;margin:10px 0}
+    .btn[disabled], .btn.disabled{opacity:.55!important;cursor:not-allowed!important;filter:grayscale(.2)}
+    .acq-limite-info{font-size:12px;color:#334155;margin-top:6px;font-weight:800}
+
 </style>
 </head>
 <body>
@@ -176,7 +187,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V174_ADQUIRIR_COTAS_ACESSO_PARTICIPANTE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V176_BLOQUEIO_COTAS_RESERVA_TURBO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
@@ -3207,6 +3218,485 @@ function renderMetodoPagamento_(m,b,i){
     </div>
   `;
 }
+
+
+/* =====================================================================
+ * PATCH V175 — MODAL ADQUIRIR COTAS TURBO
+ * Correção focada: o modal não fica mais parado em "Carregando meios".
+ * - Abre imediatamente com seleção de cotas e valores.
+ * - Usa cache local de todos os dados de recebimento.
+ * - Pré-carrega DADOS_RECEBIMENTO em segundo plano.
+ * - Atualiza os meios de pagamento sem travar a tela.
+ * ===================================================================== */
+(function(){
+  const PSS_PRELOAD_BASE_V174 = window.preCarregarDadosEstaticos;
+
+  function cacheNomeRecebimentosTodos_(){
+    return 'dados_recebimento_todos_' + normalizar(ESTADO.email||'publico').replace(/[^A-Z0-9]+/g,'_');
+  }
+
+  function normalizarListaRecebimentos_(dados){
+    if(Array.isArray(dados)) return dados;
+    if(dados && Array.isArray(dados.dados)) return dados.dados;
+    if(dados && Array.isArray(dados.rows)) return dados.rows;
+    return [];
+  }
+
+  function filtrarRecebimentosPorBolao_(lista,loteria){
+    const alvo=normalizar(loteria||'');
+    return listaSegura_(lista).filter(m=>{
+      const ativo=normalizar(m.ativo||m.status||'SIM');
+      if(!(ativo==='SIM'||ativo==='S'||ativo==='ATIVO'||ativo==='TRUE')) return false;
+      const lot=normalizar(m.loteria||m.bolao||m.bolão||'');
+      return !alvo || !lot || lot===alvo;
+    });
+  }
+
+  async function carregarRecebimentosTodosTurbo_(forcar=false){
+    const nome=cacheNomeRecebimentosTodos_();
+    if(!forcar){
+      const fresh=cacheGet_(nome,false);
+      if(fresh) return normalizarListaRecebimentos_(fresh);
+      const expired=cacheGet_(nome,true);
+      if(expired){
+        setTimeout(()=>carregarRecebimentosTodosTurbo_(true).catch(()=>{}),80);
+        return normalizarListaRecebimentos_(expired);
+      }
+    }
+
+    const dados=await promiseTimeout_(
+      apiMulti([
+        {action:'getDadosRecebimento',dados:{email:ESTADO.email,loteria:''},args:[ESTADO.email,'']},
+        {action:'listarDadosRecebimento',dados:{email:ESTADO.email,loteria:''},args:[ESTADO.email,'']}
+      ]),
+      9000,
+      'Tempo limite ao carregar os meios de pagamento.'
+    );
+
+    const lista=normalizarListaRecebimentos_(dados);
+    cacheSet_(nome,lista,CACHE_TTL.longo||1800000);
+    return lista;
+  }
+
+  window.preCarregarRecebimentosAtivosTurbo_ = async function(){
+    try{ await carregarRecebimentosTodosTurbo_(false); }catch(e){}
+  };
+
+  window.preCarregarDadosEstaticos = function(){
+    try{ if(typeof PSS_PRELOAD_BASE_V174==='function') PSS_PRELOAD_BASE_V174(); }catch(e){}
+    setTimeout(()=>window.preCarregarRecebimentosAtivosTurbo_(),700);
+  };
+
+  function renderMetodosPagamentoTurbo_(lista,b){
+    const metodos=filtrarRecebimentosPorBolao_(lista,b.loteria||b.nome||'');
+    if(!metodos.length){
+      return '<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>';
+    }
+    return `<div class="pay-method-grid">${metodos.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}</div><div class="pay-cache-hint">Dados de pagamento carregados e mantidos em cache para abertura mais rápida.</div>`;
+  }
+
+  function atualizarBoxMetodosPagamento_(loteria,lista,origem){
+    const box=document.getElementById('boxMetodosPagamento');
+    if(!box) return;
+    const b=getBolaoByNome_(loteria);
+    box.innerHTML=renderMetodosPagamentoTurbo_(lista,b);
+    setTimeout(()=>atualizarValorPagamentoModal(loteria),50);
+    if(origem==='cache'){
+      const hint=document.getElementById('hintAtualizacaoPagamento');
+      if(hint) hint.textContent='Exibido instantaneamente pelo cache. Atualizando em segundo plano...';
+    }
+  }
+
+  function renderEstruturaAquisicaoTurbo_(loteria){
+    const b=getBolaoByNome_(loteria);
+    const nome=b.loteria||b.nome||loteria;
+    const valorCota=num(b.valorCota||0);
+    const parcelas=Math.max(1,num(b.qtdParcelas||b.parcelas||1)||1);
+    const qtdInicial=1;
+    b._valorPagamentoModalInicial=valorCota*qtdInicial;
+
+    return `
+      <div class="notice">
+        <strong>${escapeHtml(nome)}</strong><br>
+        Valor da cota: <strong>${escapeHtml(moeda(valorCota))}</strong>
+      </div>
+
+      <div class="acq-box">
+        <h4>Quantidade e valor</h4>
+        <div class="acq-row">
+          <div class="field"><label>Quantidade de cotas</label><input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+          <div class="field"><label>Valor da cota</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+        </div>
+
+        ${parcelas>1?`
+          <div class="pag-recorrente-box">
+            <h4>Parcelamento/recorrência opcional</h4>
+            <label class="checkline"><input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')"><span>Quero dividir o valor da cota em parcelas mensais.</span></label>
+            <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
+              <div class="field"><label>Quantidade de parcelas</label><input id="pagRecMeses" value="${escapeAttr(parcelas)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+              <div class="field"><label>Valor mensal estimado</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda((valorCota*qtdInicial)/parcelas))}"></div>
+              <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric"></div>
+              <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+            </div>
+            <div class="acq-help">Quando o bolão possui mais de uma parcela, o participante pode programar pagamentos mensais proporcionais ao valor total da cota.</div>
+          </div>
+        `:''}
+
+        <div class="actions" style="margin-top:12px;">
+          <button type="button" class="btn" onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
+          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        </div>
+      </div>
+
+      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
+      <div id="hintAtualizacaoPagamento" class="pay-cache-hint"></div>
+      <div id="boxMetodosPagamento" class="pay-loading-soft">Carregando meios de pagamento em segundo plano...</div>
+    `;
+  }
+
+  window.abrirPagamentoBolao = function(loteria){
+    const b=getBolaoByNome_(loteria);
+    const nome=b.loteria||b.nome||loteria;
+
+    abrirModal('Adquirir cotas', renderEstruturaAquisicaoTurbo_(nome));
+
+    const cache=cacheGet_(cacheNomeRecebimentosTodos_(),true);
+    if(cache){
+      atualizarBoxMetodosPagamento_(nome,normalizarListaRecebimentos_(cache),'cache');
+    }
+
+    carregarRecebimentosTodosTurbo_(false).then(lista=>{
+      atualizarBoxMetodosPagamento_(nome,lista,'api');
+      const hint=document.getElementById('hintAtualizacaoPagamento');
+      if(hint) hint.textContent='Dados para pagamento atualizados.';
+    }).catch(err=>{
+      const box=document.getElementById('boxMetodosPagamento');
+      if(box){
+        if(cache){
+          box.insertAdjacentHTML('beforeend',`<div class="notice warn" style="margin-top:10px;">Não foi possível atualizar agora. Mantidos os dados em cache.</div>`);
+        }else{
+          box.className='notice error';
+          box.textContent=err.message||'Não foi possível carregar os meios de pagamento.';
+        }
+      }
+    });
+
+    setTimeout(()=>atualizarValorPagamentoModal(nome),50);
+  };
+})();
+
+
+/* =====================================================================
+ * PATCH V176 — BLOQUEIO DE COTAS DISPONÍVEIS + RESERVA IMEDIATA
+ * Base preservada: V175_ADQUIRIR_COTAS_MODAL_TURBO
+ * ===================================================================== */
+(function(){
+  function disponibilidadeBolaoUI_(b){
+    b=b||{};
+    var d=b.cotasDisponiveis;
+    if(d===undefined||d===null||d===''){
+      var total=num(b.totalCotas||b.cotasTotal||0);
+      var adq=num(b.cotasAdquiridas||0);
+      var res=num(b.cotasReservadas||0);
+      if(total>0)return Math.max(0,total-adq-res);
+      return 999999;
+    }
+    return Math.max(0,num(d));
+  }
+
+  function setBolaoLocalDisponibilidade_(loteria, novoValor){
+    var alvo=normalizar(loteria||'');
+    ESTADO.boloes=listaSegura_(ESTADO.boloes).map(function(b){
+      if(normalizar(b.loteria||b.nome||b.id)===alvo){
+        b.cotasDisponiveis=Math.max(0,num(novoValor));
+        b.cotasReservadas=num(b.cotasReservadas||0);
+      }
+      return b;
+    });
+  }
+
+  function subtrairBolaoLocalDisponibilidade_(loteria,qtd,valorServidor){
+    if(valorServidor!==undefined&&valorServidor!==null&&valorServidor!==''){
+      setBolaoLocalDisponibilidade_(loteria,valorServidor);
+      return;
+    }
+    var b=getBolaoByNome_(loteria);
+    var atual=disponibilidadeBolaoUI_(b);
+    if(atual<999999)setBolaoLocalDisponibilidade_(loteria,Math.max(0,atual-num(qtd||0)));
+  }
+
+  window.clampQtdCotasModal_ = function(loteria,mostrarAviso){
+    var input=document.getElementById('pagQtdCotas');
+    if(!input)return 0;
+
+    var b=getBolaoByNome_(loteria);
+    var max=disponibilidadeBolaoUI_(b);
+    var valor=Math.floor(num(input.value||1));
+
+    if(max<=0){
+      input.value='0';
+      input.disabled=true;
+      var btn=document.getElementById('btnRegistrarAquisicaoCota');
+      if(btn)btn.disabled=true;
+      return 0;
+    }
+
+    if(valor<1)valor=1;
+
+    if(max<999999 && valor>max){
+      valor=max;
+      input.value=String(valor);
+      if(mostrarAviso)toast('Quantidade ajustada ao limite de cotas disponíveis: '+max+'.','warn');
+    }else{
+      input.value=String(valor);
+    }
+
+    var btn=document.getElementById('btnRegistrarAquisicaoCota');
+    if(btn)btn.disabled=(valor<1 || (max<999999 && valor>max));
+
+    return valor;
+  };
+
+  function renderMetodosPagamentoTurboV176_(lista,b){
+    var metodos=(typeof filtrarRecebimentosPorBolao_==='function')
+      ? filtrarRecebimentosPorBolao_(lista,b.loteria||b.nome||'')
+      : listaSegura_(lista);
+
+    if(!metodos.length){
+      return '<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>';
+    }
+    return `<div class="pay-method-grid">${metodos.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}</div><div class="pay-cache-hint">Dados de pagamento carregados e mantidos em cache para abertura mais rápida.</div>`;
+  }
+
+  function atualizarBoxMetodosPagamentoV176_(loteria,lista,origem){
+    var box=document.getElementById('boxMetodosPagamento');
+    if(!box)return;
+    var b=getBolaoByNome_(loteria);
+    box.innerHTML=renderMetodosPagamentoTurboV176_(lista,b);
+    setTimeout(function(){atualizarValorPagamentoModal(loteria)},50);
+    if(origem==='cache'){
+      var hint=document.getElementById('hintAtualizacaoPagamento');
+      if(hint)hint.textContent='Exibido instantaneamente pelo cache. Atualizando em segundo plano...';
+    }
+  }
+
+  function renderEstruturaAquisicaoV176_(loteria){
+    var b=getBolaoByNome_(loteria);
+    var nome=b.loteria||b.nome||loteria;
+    var valorCota=num(b.valorCota||0);
+    var parcelas=Math.max(1,num(b.qtdParcelas||b.parcelas||1)||1);
+    var disponiveis=disponibilidadeBolaoUI_(b);
+    var qtdInicial=disponiveis<=0?0:1;
+    var maxAttr=disponiveis<999999?String(disponiveis):'';
+    b._valorPagamentoModalInicial=valorCota*qtdInicial;
+
+    return `
+      <div class="notice">
+        <strong>${escapeHtml(nome)}</strong><br>
+        Valor da cota: <strong>${escapeHtml(moeda(valorCota))}</strong>
+        ${disponiveis<999999?`<br>Cotas disponíveis agora: <strong id="pagCotasDisponiveisInfo">${escapeHtml(disponiveis)}</strong>`:''}
+      </div>
+
+      ${disponiveis<=0?`
+        <div class="cotas-esgotadas">No momento não há cotas disponíveis para este bolão. Novas cotas só serão liberadas se alguma reserva for cancelada/expirada ou após atualização da administração.</div>
+      `:''}
+
+      <div class="acq-box">
+        <h4>Quantidade e valor</h4>
+        <div class="acq-row">
+          <div class="field">
+            <label>Quantidade de cotas</label>
+            <input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" min="${disponiveis<=0?'0':'1'}" ${maxAttr?`max="${escapeAttr(maxAttr)}" data-max="${escapeAttr(maxAttr)}"`:''} inputmode="numeric" ${disponiveis<=0?'disabled':''} oninput="clampQtdCotasModal_('${escapeAttr(nome)}',true);atualizarValorPagamentoModal('${escapeAttr(nome)}')">
+            ${disponiveis<999999?`<div class="acq-limite-info">Limite máximo neste momento: ${escapeHtml(disponiveis)} cota(s).</div>`:''}
+          </div>
+          <div class="field"><label>Valor da cota</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+        </div>
+
+        ${parcelas>1?`
+          <div class="pag-recorrente-box">
+            <h4>Parcelamento/recorrência opcional</h4>
+            <label class="checkline"><input type="checkbox" id="pagRecorrente" ${disponiveis<=0?'disabled':''} onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')"><span>Quero dividir o valor da cota em parcelas mensais.</span></label>
+            <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
+              <div class="field"><label>Quantidade de parcelas</label><input id="pagRecMeses" value="${escapeAttr(parcelas)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+              <div class="field"><label>Valor mensal estimado</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda(qtdInicial?(valorCota*qtdInicial)/parcelas:0))}"></div>
+              <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric"></div>
+              <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+            </div>
+            <div class="acq-help">Quando o bolão possui mais de uma parcela, o participante pode programar pagamentos mensais proporcionais ao valor total da cota.</div>
+          </div>
+        `:''}
+
+        <div class="actions" style="margin-top:12px;">
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
+          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        </div>
+        <div id="pagReservaMsg"></div>
+      </div>
+
+      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
+      <div id="hintAtualizacaoPagamento" class="pay-cache-hint"></div>
+      <div id="boxMetodosPagamento" class="pay-loading-soft">Carregando meios de pagamento em segundo plano...</div>
+    `;
+  }
+
+  window.atualizarValorPagamentoModal = function(loteria){
+    var b=getBolaoByNome_(loteria);
+    var qtd=clampQtdCotasModal_(loteria,false);
+    var valorTotal=num(b.valorCota||0)*qtd;
+    var totalEl=document.getElementById('pagValorTotal');
+    if(totalEl)totalEl.value=moeda(valorTotal);
+
+    var parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+    var rec=document.getElementById('pagRecorrente');
+    var valorAgora=(rec&&rec.checked&&parcelas>1)?(valorTotal/parcelas):valorTotal;
+
+    var agoraEl=document.getElementById('pagValorAgora');
+    if(agoraEl)agoraEl.value=moeda(valorAgora);
+
+    var parcelaEl=document.getElementById('pagValorParcela');
+    if(parcelaEl)parcelaEl.value=moeda(parcelas?valorTotal/parcelas:valorTotal);
+
+    document.querySelectorAll('[data-pix-payload]').forEach(function(node){
+      var idx=node.dataset.pixPayload;
+      var raw=node.dataset.metodo?decodeURIComponent(node.dataset.metodo):'{}';
+      var metodo={};
+      try{metodo=JSON.parse(raw)}catch(e){}
+      var payload=gerarPixCopiaECola_(metodo,valorAgora,loteria);
+      node.textContent=payload;
+      var img=document.getElementById('qrPix_'+idx);
+      if(img)img.src=qrUrl_(payload);
+    });
+  };
+
+  window.registrarAquisicaoCotaModal = async function(loteria){
+    var b=getBolaoByNome_(loteria);
+    var max=disponibilidadeBolaoUI_(b);
+    var qtd=clampQtdCotasModal_(loteria,true);
+
+    if(max<=0){
+      toast('Não há cotas disponíveis para este bolão no momento.','warn');
+      return;
+    }
+
+    if(max<999999 && qtd>max){
+      toast('A quantidade solicitada ultrapassa as cotas disponíveis.','error');
+      return;
+    }
+
+    var btn=document.getElementById('btnRegistrarAquisicaoCota');
+    if(btn){btn.disabled=true;btn.textContent='Reservando cotas...';}
+
+    var valorTotal=document.getElementById('pagValorTotal')?document.getElementById('pagValorTotal').value:'';
+    var valorAgora=document.getElementById('pagValorAgora')?document.getElementById('pagValorAgora').value:'';
+    var rec=document.getElementById('pagRecorrente');
+    var recorrente=!!(rec&&rec.checked);
+    var parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+    var dia=Math.max(1,Math.min(31,num(document.getElementById('pagRecDia')?document.getElementById('pagRecDia').value:10)));
+    var obs=document.getElementById('pagRecObs')?document.getElementById('pagRecObs').value:'';
+
+    try{
+      var r=await api('registrarAquisicaoCotaBolao',{},[{email:ESTADO.email,loteria,qtdCotas:qtd,valorTotal,valorPagamentoAgora:valorAgora,parcelado:recorrente,qtdParcelas:parcelas,diaPreferencial:dia,obs}]);
+
+      subtrairBolaoLocalDisponibilidade_(loteria,qtd,r&&r.disponibilidadeRestante);
+      cacheDel_('boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'));
+
+      var restante=(r&&r.disponibilidadeRestante!==undefined)?num(r.disponibilidadeRestante):disponibilidadeBolaoUI_(getBolaoByNome_(loteria));
+      var info=document.getElementById('pagCotasDisponiveisInfo');
+      if(info)info.textContent=String(restante);
+
+      var input=document.getElementById('pagQtdCotas');
+      if(input){
+        input.dataset.max=String(restante);
+        input.max=String(restante);
+        if(restante<=0){input.value='0';input.disabled=true;}
+      }
+
+      var msg=document.getElementById('pagReservaMsg');
+      if(msg){
+        msg.innerHTML='<div class="notice" style="margin-top:10px;">'+escapeHtml((r&&r.msg)||'Cota(s) reservada(s). Envie o comprovante para validação.')+'</div>';
+      }
+
+      toast((r&&r.msg)||'Cota(s) reservada(s). Envie o comprovante após realizar o pagamento.');
+
+      if(restante<=0 && btn){
+        btn.disabled=true;
+        btn.textContent='Sem cotas disponíveis';
+      }else if(btn){
+        btn.disabled=false;
+        btn.textContent='Registrar aquisição';
+      }
+
+      atualizarValorPagamentoModal(loteria);
+    }catch(err){
+      toast(err.message,'error');
+      if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
+    }
+  };
+
+  window.abrirPagamentoBolao = function(loteria){
+    var b=getBolaoByNome_(loteria);
+    var nome=b.loteria||b.nome||loteria;
+
+    abrirModal('Adquirir cotas', renderEstruturaAquisicaoV176_(nome));
+
+    var cache=null;
+    try{cache=cacheGet_(cacheNomeRecebimentosTodos_(),true)}catch(e){}
+    if(cache){
+      atualizarBoxMetodosPagamentoV176_(nome,normalizarListaRecebimentos_(cache),'cache');
+    }
+
+    carregarRecebimentosTodosTurbo_(false).then(function(lista){
+      atualizarBoxMetodosPagamentoV176_(nome,lista,'api');
+      var hint=document.getElementById('hintAtualizacaoPagamento');
+      if(hint)hint.textContent='Dados para pagamento atualizados.';
+    }).catch(function(err){
+      var box=document.getElementById('boxMetodosPagamento');
+      if(box){
+        if(cache){
+          box.insertAdjacentHTML('beforeend','<div class="notice warn" style="margin-top:10px;">Não foi possível atualizar agora. Mantidos os dados em cache.</div>');
+        }else{
+          box.className='notice error';
+          box.textContent=err.message||'Não foi possível carregar os meios de pagamento.';
+        }
+      }
+    });
+
+    setTimeout(function(){atualizarValorPagamentoModal(nome)},50);
+  };
+
+  var renderCardsBoloesBaseV176 = window.renderCardsBoloes || renderCardsBoloes;
+  window.renderCardsBoloes = renderCardsBoloes = function(lista,origem){
+    lista=listaSegura_(lista);
+    if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;
+
+    return `<div class="cards-row">${lista.map(function(b){
+      var nome=b.nome||b.loteria||'Bolão';
+      var participa=usuarioParticipaBolaoUI_(b);
+      var disp=disponibilidadeBolaoUI_(b);
+      var esgotado=disp<=0&&!participa&&!isHistorico(b);
+      var botao=esgotado?'Sem cotas':labelBotaoPrincipalBolao_(b,origem);
+
+      return `
+        <div class="bolao-card">
+          <h3>🎯 ${escapeHtml(nome)}</h3>
+          ${origem==='boloes'?`<div class="status-pill ${participa?'':'locked'}">${participa?'Participante inscrito':'Não inscrito neste bolão'}</div><br>`:''}
+          ${disp<999999?`<div class="outline-pill ${esgotado?'danger':''}">Cotas disponíveis: ${escapeHtml(disp)}</div>`:''}
+          <div class="meta-grid">
+            <div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div>
+            <div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div>
+            <div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div>
+            <div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div>
+          </div>
+          <button class="btn ${esgotado?'disabled':''}" ${esgotado?'disabled':''} onclick="selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')">${escapeHtml(botao)}</button>
+        </div>
+      `;
+    }).join('')}</div>`;
+  };
+})();
 
 </script>
 </body>
