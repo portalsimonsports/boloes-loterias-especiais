@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V179_MENUS_INSTANTANEOS_CACHE_TURBO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V180_CACHE_STALE_SEM_TRAVAR_MENUS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -325,6 +325,17 @@
     .fast-skeleton-line.w90{width:90%}
     @keyframes pssSkeleton{0%{background-position:0 0}100%{background-position:-200% 0}}
 
+
+    /* =========================================================
+     * V180 — CACHE STALE SEM TRAVAR MENUS
+     * Mostra a última tela salva mesmo quando o cache está vencido.
+     * ========================================================= */
+    .fast-cache-badge.stale{
+      background:#fff8e5;
+      border-color:#f3d37a;
+      color:#7a4b00;
+    }
+
 </style>
 </head>
 <body>
@@ -334,7 +345,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V179_MENUS_INSTANTANEOS_CACHE_TURBO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V180_CACHE_STALE_SEM_TRAVAR_MENUS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
@@ -4273,6 +4284,143 @@ function renderMetodoPagamento_(m,b,i){
     setTimeout(pssV179PreAquecerDados_,1200);
     setTimeout(pssV179PreAquecerDados_,5000);
   });
+})();
+
+
+/* =====================================================================
+ * PATCH V180 — MENUS SEM TRAVA COM CACHE STALE + LEITURAS SEM FILA
+ *
+ * Correções de desempenho:
+ * 1) Se o menu já foi aberto alguma vez, a última tela aparece na hora,
+ *    mesmo que o cache esteja vencido.
+ * 2) A atualização real continua em segundo plano e substitui a tela quando
+ *    a API responder.
+ * 3) Requisições de leitura não entram mais na fila única de API. A fila fica
+ *    reservada para gravações/uploads/ações críticas.
+ * ===================================================================== */
+(function(){
+  const PSSV180_PREFIX='PSS_BLE_VIEW_CACHE_V179_';
+  const PSSV180_STALE_MAX=1000*60*60*24*7; // 7 dias
+
+  let pssV180AtualizandoView='';
+  const pssV180SetViewBase=setView;
+  const pssV180LoadingBase=loading;
+  const pssV180NavegarBase=navegar;
+  const pssV180ApiBase=api;
+
+  function pssV180Perfil_(){
+    try{return (typeof isAdmin==='function' && isAdmin())?'admin':'user'}catch(e){return 'user'}
+  }
+
+  function pssV180StorageKey_(view){
+    const email=(ESTADO.email||'publico').toLowerCase().replace(/[^a-z0-9]+/g,'_');
+    return PSSV180_PREFIX+pssV180Perfil_()+'_'+email+'_'+view;
+  }
+
+  function pssV180GetCacheMesmoVencido_(view){
+    try{
+      const key=pssV180StorageKey_(view);
+      const raw=sessionStorage.getItem(key) || localStorage.getItem(key);
+      if(!raw)return null;
+      const obj=JSON.parse(raw);
+      if(!obj || !obj.html)return null;
+
+      const idade=Date.now()-Number(obj.ts||0);
+      if(idade>PSSV180_STALE_MAX)return null;
+
+      obj.stale=true;
+      obj.idadeMs=idade;
+      return obj;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function pssV180HtmlIntermediario_(html){
+    html=String(html||'');
+    return html.includes('Carregando') ||
+           html.includes('Aguarde...') ||
+           html.includes('fast-skeleton') ||
+           html.includes('Carregando dados...');
+  }
+
+  function pssV180BadgeStale_(){
+    return '<div class="fast-cache-badge stale">Tela aberta instantaneamente • atualizando dados reais em segundo plano</div>';
+  }
+
+  setView=function(html){
+    if(pssV180AtualizandoView && pssV180HtmlIntermediario_(html)){
+      return;
+    }
+
+    pssV180SetViewBase(html);
+
+    if(pssV180AtualizandoView && !pssV180HtmlIntermediario_(html)){
+      pssV180AtualizandoView='';
+    }
+  };
+
+  loading=function(titulo){
+    if(pssV180AtualizandoView){
+      return;
+    }
+    return pssV180LoadingBase(titulo);
+  };
+
+  navegar=function(view){
+    ESTADO.view=view;
+
+    document.querySelectorAll('#navMenu button[data-view]').forEach(b=>{
+      b.classList.toggle('active',b.dataset.view===view);
+    });
+
+    const cache=pssV180GetCacheMesmoVencido_(view);
+
+    if(cache && cache.html){
+      pssV180AtualizandoView=view;
+      pssV180SetViewBase(pssV180BadgeStale_()+cache.html);
+      setTimeout(()=>pssV180NavegarBase(view),30);
+      return;
+    }
+
+    return pssV180NavegarBase(view);
+  };
+
+  function pssV180EhAcaoLeitura_(action){
+    action=String(action||'');
+    const escrita=[
+      'salvar','upload','enviar','confirmar','reprocessar','excluir','deletar',
+      'aprovar','recusar','inativar','ativar','registrar','criar','atualizar',
+      'processar','autorizar'
+    ];
+    return !escrita.some(x=>action.toLowerCase().includes(x));
+  }
+
+  api=function(action,dados={},args=null){
+    if(pssV180EhAcaoLeitura_(action)){
+      try{
+        return apiHibridaComFallback_(action,dados,args);
+      }catch(e){
+        return pssV180ApiBase(action,dados,args);
+      }
+    }
+    return pssV180ApiBase(action,dados,args);
+  };
+
+  window.pssLimparCacheMenusCompleto = function(){
+    try{
+      Object.keys(sessionStorage).forEach(k=>{
+        if(k.indexOf(PSSV180_PREFIX)===0)sessionStorage.removeItem(k);
+      });
+      Object.keys(localStorage).forEach(k=>{
+        if(k.indexOf(PSSV180_PREFIX)===0)localStorage.removeItem(k);
+      });
+      if(typeof pssLimparCacheMenus==='function')pssLimparCacheMenus();
+      toast('Cache completo dos menus limpo.');
+    }catch(e){
+      toast('Não foi possível limpar o cache completo.','error');
+    }
+  };
 })();
 
 </script>
