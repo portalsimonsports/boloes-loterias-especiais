@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V166_UPLOAD_PROGRESS_RELOGIO_TEMPO_REAL -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V167_SOLICITACOES_CADASTRO_ACOES_COMPLETO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -117,6 +117,24 @@
     .upload-progress-ok{color:#0b6b2b}
     .upload-progress-error{color:#a21818}
 
+
+    .solicitacoes-grid{display:grid;gap:12px;margin-top:14px}
+    .sol-card{border:1px solid #cbded0;background:#fff;border-radius:14px;padding:14px;box-shadow:0 5px 16px rgba(0,0,0,.05)}
+    .sol-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+    .sol-card h3{margin:0;color:#003b12;font-size:16px}
+    .sol-card small{color:#5b6b7d;font-weight:800}
+    .sol-info{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;margin:10px 0}
+    .sol-info div{background:#f7fbf8;border:1px solid #e0ebe3;border-radius:10px;padding:8px;color:#263445;font-size:12px;word-break:break-word}
+    .sol-info b{display:block;color:#0b4b1d;font-size:10px;text-transform:uppercase;margin-bottom:4px}
+    .sol-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .sol-actions .btn{min-height:36px;padding:8px 12px;border-radius:10px;font-size:12px}
+    .btn-muted{background:#e9eef2;color:#43556a}
+    .btn-muted:disabled{opacity:.5}
+    .btn-outline-danger{background:#fff;color:#b91c1c;border:1px solid #f1b7b7}
+    .sol-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+    .sol-toolbar .field{margin:0;min-width:240px}
+    @media(max-width:920px){.sol-info{grid-template-columns:1fr}.sol-card{padding:12px}.sol-actions .btn{width:100%}.sol-toolbar{align-items:stretch}.sol-toolbar .field{width:100%;min-width:0}}
+
 </style>
 </head>
 <body>
@@ -126,7 +144,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V166_UPLOAD_PROGRESS_RELOGIO_TEMPO_REAL',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V167_SOLICITACOES_CADASTRO_ACOES_COMPLETO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
@@ -1530,7 +1548,178 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     async function adminDados(aba){return await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:aba},args:[aba]}])}
 
     async function renderUsuariosAdmin(){return renderAdminTable('Usuarios','Usuários')}
-    async function renderSolicitacoesAdmin(){return renderAdminTable('SOLICITACOES_CADASTRO','Solicitações de cadastro')}
+    async function renderSolicitacoesAdmin(){
+      if(!isAdmin()){
+        setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');
+        return;
+      }
+
+      loading('Carregando solicitações');
+
+      try{
+        const r=await adminDados('SOLICITACOES_CADASTRO');
+        const headers=r.headers||[];
+        const rows=r.rows||[];
+
+        window.PSS_SOLICITACOES_CACHE={headers,rows};
+
+        setView(`
+          <div class="panel">
+            <h2>Solicitações de cadastro</h2>
+            <p>Analise as solicitações, aprove participantes, recuse registros inválidos, exclua duplicidades e defina administrador após aprovação.</p>
+
+            <div class="sol-toolbar">
+              <div class="actions">
+                <button class="btn" onclick="renderSolicitacoesAdmin()">Atualizar</button>
+                <button class="btn btn-light" onclick="filtrarSolicitacoesAdmin('TODAS')">Todas</button>
+                <button class="btn btn-light" onclick="filtrarSolicitacoesAdmin('PENDENTE')">Pendentes</button>
+                <button class="btn btn-light" onclick="filtrarSolicitacoesAdmin('APROVADO')">Aprovadas</button>
+                <button class="btn btn-light" onclick="filtrarSolicitacoesAdmin('RECUSADO')">Recusadas</button>
+              </div>
+              <div class="field">
+                <input id="buscaSolicitacaoAdmin" placeholder="Buscar por nome, e-mail, loteria..." oninput="filtrarSolicitacoesAdmin()">
+              </div>
+            </div>
+
+            <div id="solicitacoesAdminBox">
+              ${renderSolicitacoesCards_(headers,rows,'TODAS','')}
+            </div>
+          </div>
+        `);
+      }catch(err){
+        setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+      }
+    }
+
+    function filtrarSolicitacoesAdmin(status=''){
+      const cache=window.PSS_SOLICITACOES_CACHE||{headers:[],rows:[]};
+      const termoEl=document.getElementById('buscaSolicitacaoAdmin');
+      const termo=termoEl?termoEl.value:'';
+      const box=document.getElementById('solicitacoesAdminBox');
+      if(!box)return;
+      box.innerHTML=renderSolicitacoesCards_(cache.headers,cache.rows,status||'TODAS',termo);
+    }
+
+    function renderSolicitacoesCards_(headers,rows,statusFiltro='TODAS',termo=''){
+      headers=headers||[];
+      rows=rows||[];
+
+      if(!headers.length){
+        return '<div class="notice warn">Nenhuma solicitação localizada.</div>';
+      }
+
+      const termoNorm=normalizar(termo||'');
+      const statusFiltroNorm=normalizar(statusFiltro||'TODAS');
+
+      const lista=rows.map((row,idx)=>({row,linha:idx+2}))
+        .filter(item=>{
+          const status=normalizar(getCelulaPorAlias_(headers,item.row,['STATUS','SITUACAO','SITUAÇÃO'])||'');
+          const texto=normalizar(item.row.join(' | '));
+
+          if(statusFiltroNorm&&statusFiltroNorm!=='TODAS'&&!status.includes(statusFiltroNorm))return false;
+          if(termoNorm&&!texto.includes(termoNorm))return false;
+          return true;
+        });
+
+      if(!lista.length){
+        return '<div class="notice warn">Nenhuma solicitação encontrada para o filtro aplicado.</div>';
+      }
+
+      return `
+        <div class="solicitacoes-grid">
+          ${lista.map(item=>renderSolicitacaoCard_(headers,item.row,item.linha)).join('')}
+        </div>
+      `;
+    }
+
+    function renderSolicitacaoCard_(headers,row,linha){
+      const nome=getCelulaPorAlias_(headers,row,['NOME','NOME_COMPLETO','PARTICIPANTE'])||'Participante';
+      const email=getCelulaPorAlias_(headers,row,['EMAIL','E-MAIL'])||'-';
+      const celular=getCelulaPorAlias_(headers,row,['CELULAR','TELEFONE','WHATSAPP'])||'-';
+      const status=getCelulaPorAlias_(headers,row,['STATUS','SITUACAO','SITUAÇÃO'])||'Pendente';
+      const cotas=getCelulaPorAlias_(headers,row,['COTAS','QTD_COTAS','QUANTIDADE_COTAS'])||'-';
+      const loteria=getCelulaPorAlias_(headers,row,['LOTERIA','BOLAO','BOLÃO','EVENTO','NOME_BOLAO','LOTERIA_BOLAO'])||'-';
+      const cpf=getCelulaPorAlias_(headers,row,['CPF'])||'-';
+      const tipo=getCelulaPorAlias_(headers,row,['TIPO_SOLICITACAO','TIPO SOLICITACAO','TIPO'])||'-';
+      const aceite=getCelulaPorAlias_(headers,row,['ACEITOU_REGULAMENTO','ACEITE_REGULAMENTO','ACEITE REGULAMENTO'])||'-';
+      const dataAceite=getCelulaPorAlias_(headers,row,['DATA_ACEITE_REGULAMENTO','DATA ACEITE REGULAMENTO','CRIADO_EM','DATA'])||'-';
+      const versao=getCelulaPorAlias_(headers,row,['VERSAO_REGULAMENTO','VERSÃO_REGULAMENTO'])||'-';
+
+      const stNorm=normalizar(status);
+      const aprovado=stNorm.includes('APROV');
+      const recusado=stNorm.includes('RECUS')||stNorm.includes('REPROV');
+      const pendente=!aprovado&&!recusado;
+
+      return `
+        <article class="sol-card" id="sol-card-${linha}">
+          <div class="sol-card-head">
+            <div>
+              <h3>${escapeHtml(nome)}</h3>
+              <small>${escapeHtml(email)}</small>
+            </div>
+            <span class="status-pill ${recusado?'danger':(pendente?'warn':'')}">${escapeHtml(status)}</span>
+          </div>
+
+          <div class="sol-info">
+            <div><b>Linha</b>${escapeHtml(linha)}</div>
+            <div><b>Loteria/Bolão</b>${escapeHtml(loteria)}</div>
+            <div><b>Cotas</b>${escapeHtml(cotas)}</div>
+            <div><b>Celular</b>${escapeHtml(celular)}</div>
+            <div><b>CPF</b>${escapeHtml(cpf)}</div>
+            <div><b>Tipo</b>${escapeHtml(tipo)}</div>
+            <div><b>Aceite regulamento</b>${escapeHtml(aceite)}</div>
+            <div><b>Data aceite</b>${escapeHtml(formatarDataHoraPtBR(dataAceite))}</div>
+            <div><b>Versão regulamento</b>${escapeHtml(versao)}</div>
+          </div>
+
+          <div class="sol-actions">
+            ${!aprovado?`<button class="btn" onclick="confirmarAcaoSolicitacaoAdmin('aprovarSolicitacaoCadastro',${linha},'Aprovar esta solicitação e criar/ativar o usuário?')">Aprovar</button>`:''}
+            ${!recusado?`<button class="btn btn-light" onclick="confirmarAcaoSolicitacaoAdmin('recusarSolicitacaoCadastro',${linha},'Recusar esta solicitação?')">Recusar</button>`:''}
+            ${aprovado?`<button class="btn btn-light" onclick="confirmarAcaoSolicitacaoAdmin('tornarUsuarioAdministradorLinha',${linha},'Tornar este usuário administrador?')">Tornar administrador</button>`:`<button class="btn btn-muted" disabled title="Disponível após aprovar a solicitação">Tornar administrador após aprovar</button>`}
+            <button class="btn btn-outline-danger" onclick="confirmarAcaoSolicitacaoAdmin('excluirSolicitacaoCadastro',${linha},'Excluir definitivamente esta solicitação?')">Excluir</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function getCelulaPorAlias_(headers,row,aliases){
+      const alvo=(aliases||[]).map(a=>normalizar(a));
+      for(let i=0;i<headers.length;i++){
+        if(alvo.includes(normalizar(headers[i])))return row[i]===undefined||row[i]===null?'':row[i];
+      }
+      return '';
+    }
+
+    function confirmarAcaoSolicitacaoAdmin(action,linha,msg){
+      window.PSS_SOLICITACAO_ACAO={action,linha};
+      abrirModal('Confirmar ação',`
+        <div class="notice warn">${escapeHtml(msg||'Confirma esta ação?')}</div>
+        <p style="margin:8px 0 16px;color:#546173;">
+          Linha da solicitação: <strong>${escapeHtml(linha)}</strong>
+        </p>
+        <div class="actions" style="justify-content:flex-end;">
+          <button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+          <button type="button" class="btn" onclick="executarAcaoSolicitacaoAdmin()">Confirmar</button>
+        </div>
+      `);
+    }
+
+    async function executarAcaoSolicitacaoAdmin(){
+      const cfg=window.PSS_SOLICITACAO_ACAO||{};
+      window.PSS_SOLICITACAO_ACAO=null;
+      fecharModal();
+
+      if(!cfg.action||!cfg.linha)return;
+
+      try{
+        toast('Processando solicitação...','info');
+        await apiMulti([{action:cfg.action,dados:{linha:cfg.linha},args:[cfg.linha]}]);
+        toast('Ação realizada com sucesso.');
+        await renderSolicitacoesAdmin();
+      }catch(err){
+        toast(err.message,'error');
+      }
+    }
 
     async function renderPagamentosAdmin(){
       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
