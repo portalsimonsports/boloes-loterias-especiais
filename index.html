@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V177_MENU_SUPERIOR_FIXO_STICKY -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V178_CONSULTA_ADMIN_PARTICIPANTE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -262,16 +262,34 @@
       }
     }
 
+
+    /* =========================================================
+     * V178 — CONSULTA ADMINISTRATIVA DE PARTICIPANTE
+     * ========================================================= */
+    .consulta-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}
+    .consulta-card{border:1px solid #d7e7dc;background:#f8fcf9;border-radius:14px;padding:12px}
+    .consulta-card small{display:block;text-transform:uppercase;font-weight:900;color:#64748b;margin-bottom:6px;font-size:11px}
+    .consulta-card strong{display:block;color:#003b12;font-size:18px;line-height:1.2;word-break:break-word}
+    .consulta-section{border:1px solid #d7e7dc;border-radius:16px;padding:14px;margin:16px 0;background:#fff}
+    .consulta-section h3{margin:0 0 10px;color:#003b12}
+    .consulta-empty{border:1px dashed #cbd5e1;border-radius:12px;padding:14px;color:#64748b;background:#f8fafc}
+    .consulta-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0}
+    .consulta-actions .field{flex:1;min-width:260px}
+    .consulta-table table td,.consulta-table table th{font-size:13px;vertical-align:top}
+    .admin-shortcut{margin-top:18px;border:1px solid #cfe3d3;background:#f8fcf9;border-radius:16px;padding:16px}
+    .admin-shortcut h3{margin:0 0 6px;color:#003b12}
+    @media(max-width:920px){.consulta-admin-grid{grid-template-columns:1fr}.consulta-actions .field{min-width:100%}}
+
 </style>
 </head>
 <body>
   <header class="public-header" id="publicHeader"><div class="public-header-inner"><h1>Bolões de Loterias Especiais</h1><p>Portal SimonSports • transparência, organização e gestão de participantes</p></div></header>
-  <div id="appHeader" class="hidden"><div class="top-clock"><span id="clock">--/--/----, --:--:--</span><span class="user" id="userDisplay">Usuário</span></div><nav class="nav" id="navMenu"><button type="button" data-view="inicio" class="active">Início</button><button type="button" data-view="boloes">Bolões</button><button type="button" data-view="palpite">Palpite</button><button type="button" data-view="comprovante">Comprovante</button><button type="button" data-view="jogos">Jogos</button><button type="button" data-view="especiais" class="admin-only hidden">Especiais</button><button type="button" data-view="regulamento">Regulamento</button><button type="button" data-view="config" class="admin-only hidden">Config</button><button type="button" data-view="pagamentos" class="admin-only hidden">Pagamentos</button><button type="button" data-view="usuarios" class="admin-only hidden">Usuários</button><button type="button" data-view="solicitacoes" class="admin-only hidden">Solicitações Cadastro</button><button type="button" data-view="baseLoterias" class="admin-only hidden">Base Loterias</button><button type="button" data-view="participantes" class="admin-only hidden">Participantes Bolão</button><button type="button" class="sair" onclick="logout()">Sair</button></nav></div>
+  <div id="appHeader" class="hidden"><div class="top-clock"><span id="clock">--/--/----, --:--:--</span><span class="user" id="userDisplay">Usuário</span></div><nav class="nav" id="navMenu"><button type="button" data-view="inicio" class="active">Início</button><button type="button" data-view="boloes">Bolões</button><button type="button" data-view="palpite">Palpite</button><button type="button" data-view="comprovante">Comprovante</button><button type="button" data-view="jogos">Jogos</button><button type="button" data-view="especiais" class="admin-only hidden">Especiais</button><button type="button" data-view="regulamento">Regulamento</button><button type="button" data-view="config" class="admin-only hidden">Config</button><button type="button" data-view="pagamentos" class="admin-only hidden">Pagamentos</button><button type="button" data-view="usuarios" class="admin-only hidden">Usuários</button><button type="button" data-view="solicitacoes" class="admin-only hidden">Solicitações Cadastro</button><button type="button" data-view="baseLoterias" class="admin-only hidden">Base Loterias</button><button type="button" data-view="consulta" class="admin-only hidden">Consulta</button><button type="button" data-view="participantes" class="admin-only hidden">Participantes Bolão</button><button type="button" class="sair" onclick="logout()">Sair</button></nav></div>
   <main class="app"><div class="content" id="view"></div></main>
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V177_MENU_SUPERIOR_FIXO_STICKY',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V178_CONSULTA_ADMIN_PARTICIPANTE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
@@ -3826,6 +3844,202 @@ function renderMetodoPagamento_(m,b,i){
     setTimeout(pssSetStickyOffsets, 500);
     setTimeout(pssSetStickyOffsets, 1500);
   });
+})();
+
+
+/* =====================================================================
+ * PATCH V178 — CONSULTA ADMINISTRATIVA DE PARTICIPANTE
+ * Menu exclusivo do administrador.
+ * ===================================================================== */
+(function(){
+  const PSSV178_navegarBase = navegar;
+  navegar = function(v){
+    if(v==='consulta'){
+      ESTADO.view=v;
+      document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+      return renderConsultaParticipanteAdmin();
+    }
+    return PSSV178_navegarBase(v);
+  };
+
+  const PSSV178_aplicarLayoutLogadoBase = aplicarLayoutLogado;
+  aplicarLayoutLogado = function(){
+    PSSV178_aplicarLayoutLogadoBase();
+    garantirMenuConsultaAdmin_();
+  };
+
+  const PSSV178_renderInicioBase = renderInicio;
+  renderInicio = async function(){
+    await PSSV178_renderInicioBase();
+    if(isAdmin()) inserirAtalhoConsultaInicio_();
+  };
+
+  function garantirMenuConsultaAdmin_(){
+    try{
+      const nav=document.getElementById('navMenu');
+      if(!nav)return;
+      if(!nav.querySelector('button[data-view="consulta"]')){
+        const sair=nav.querySelector('button.sair');
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.dataset.view='consulta';
+        btn.className='admin-only hidden';
+        btn.textContent='Consulta';
+        btn.addEventListener('click',()=>navegar('consulta'));
+        nav.insertBefore(btn,sair||null);
+      }
+      nav.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()));
+    }catch(e){}
+  }
+
+  function inserirAtalhoConsultaInicio_(){
+    try{
+      const view=document.getElementById('view');
+      if(!view || document.getElementById('atalhoConsultaAdminInicio'))return;
+      const bloco=document.createElement('div');
+      bloco.id='atalhoConsultaAdminInicio';
+      bloco.className='admin-shortcut';
+      bloco.innerHTML=`
+        <h3>Consulta administrativa de participante</h3>
+        <p>Área restrita para consultar vínculos, cotas, comprovantes, pagamentos, palpites e histórico de cada participante.</p>
+        <div class="actions">
+          <button type="button" class="btn" onclick="navegar('consulta')">Abrir consulta</button>
+        </div>
+      `;
+      view.appendChild(bloco);
+    }catch(e){}
+  }
+
+  window.renderConsultaParticipanteAdmin = async function(){
+    if(!isAdmin()){
+      setView(`<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>`);
+      return;
+    }
+
+    loading('Carregando consulta administrativa');
+
+    try{
+      const dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email},[{adminEmail:ESTADO.email}]);
+      const participantes=Array.isArray(dados.participantes)?dados.participantes:[];
+      ESTADO.consultaAdminParticipantes=participantes;
+
+      setView(`
+        <div class="panel">
+          <h2>🔎 Consulta administrativa de participante</h2>
+          <p>Consulte dados completos do participante, bolões vinculados, cotas, comprovantes, pagamentos, palpites e histórico.</p>
+
+          <div class="consulta-actions">
+            <div class="field">
+              <label>Participante</label>
+              <select id="consultaAdminEmail">
+                <option value="">Selecione um participante...</option>
+                ${participantes.map(p=>`<option value="${escapeAttr(p.email)}">${escapeHtml((p.nome||p.email||'Participante')+' — '+(p.email||''))}</option>`).join('')}
+              </select>
+            </div>
+            <button type="button" class="btn" onclick="executarConsultaParticipanteAdmin()">Consultar</button>
+            <button type="button" class="btn btn-light" onclick="renderConsultaParticipanteAdmin()">Atualizar lista</button>
+          </div>
+
+          <div id="resultadoConsultaParticipanteAdmin">
+            <div class="consulta-empty">Selecione um participante para carregar a consulta detalhada.</div>
+          </div>
+        </div>
+      `);
+    }catch(err){
+      setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+    }
+  };
+
+  window.executarConsultaParticipanteAdmin = async function(){
+    const email=(document.getElementById('consultaAdminEmail')||{}).value||'';
+    const box=document.getElementById('resultadoConsultaParticipanteAdmin');
+    if(!email){
+      toast('Selecione um participante.','warn');
+      return;
+    }
+
+    if(box)box.innerHTML='<div class="notice info">Carregando dados do participante...</div>';
+
+    try{
+      const dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email,participanteEmail:email},[{adminEmail:ESTADO.email,participanteEmail:email}]);
+      if(box)box.innerHTML=renderResultadoConsultaParticipanteAdmin_(dados);
+    }catch(err){
+      if(box)box.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
+    }
+  };
+
+  function renderResultadoConsultaParticipanteAdmin_(d){
+    d=d||{};
+    const u=d.usuario||{};
+    const resumo=d.resumo||{};
+    return `
+      <div class="consulta-admin-grid">
+        ${consultaCard_('Nome',u.nome||'-')}
+        ${consultaCard_('E-mail',u.email||'-')}
+        ${consultaCard_('Status',u.status||'-')}
+        ${consultaCard_('Perfil',u.perfil||'-')}
+        ${consultaCard_('Cotas confirmadas',resumo.cotasConfirmadas||0)}
+        ${consultaCard_('Cotas reservadas',resumo.cotasReservadas||0)}
+        ${consultaCard_('Total pago',moeda(resumo.totalPago||0))}
+        ${consultaCard_('Em análise',moeda(resumo.totalAnalise||0))}
+      </div>
+
+      ${renderSecaoConsulta_('Bolões vinculados',d.boloes||[],['loteria','cotas','status','origem','data'])}
+      ${renderSecaoConsulta_('Aquisições/reservas de cotas',d.aquisicoes||[],['data','loteria','cotas','valorTotal','valorAgora','parcelado','status','validadeReserva'])}
+      ${renderSecaoConsulta_('Pagamentos e comprovantes',d.pagamentos||[],['data','loteria','valor','status','pagador','recebedor','idTransacao','mesReferencia','urlComprovante'])}
+      ${renderSecaoConsulta_('Palpites registrados',d.palpites||[],['data','loteria','jogo','numeros','status'])}
+      ${renderSecaoConsulta_('Jogos realizados disponíveis',d.jogos||[],['data','loteria','concurso','arquivo','url'])}
+      ${renderSecaoConsulta_('Solicitações e histórico',d.solicitacoes||[],['data','loteria','cotas','status','tipo','aceiteRegulamento'])}
+    `;
+  }
+
+  function consultaCard_(label,value){
+    return `<div class="consulta-card"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value===undefined||value===null||value===''?'-':value)}</strong></div>`;
+  }
+
+  function renderSecaoConsulta_(titulo,lista,campos){
+    lista=Array.isArray(lista)?lista:[];
+    if(!lista.length){
+      return `<div class="consulta-section"><h3>${escapeHtml(titulo)}</h3><div class="consulta-empty">Nenhum registro localizado.</div></div>`;
+    }
+
+    return `
+      <div class="consulta-section">
+        <h3>${escapeHtml(titulo)}</h3>
+        <div class="table-wrap consulta-table">
+          <table>
+            <thead><tr>${campos.map(c=>`<th>${escapeHtml(labelConsultaCampo_(c))}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${lista.map(row=>`<tr>${campos.map(c=>`<td>${formatConsultaValor_(row,c)}</td>`).join('')}</tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function labelConsultaCampo_(c){
+    const map={
+      loteria:'Bolão/Loteria',cotas:'Cotas',status:'Status',origem:'Origem',data:'Data',
+      valorTotal:'Valor total',valorAgora:'Valor agora',parcelado:'Parcelado',validadeReserva:'Validade reserva',
+      valor:'Valor',pagador:'Pagador',recebedor:'Recebedor',idTransacao:'ID transação',mesReferencia:'Mês referência',urlComprovante:'Comprovante',
+      jogo:'Jogo',numeros:'Números',concurso:'Concurso',arquivo:'Arquivo',url:'Link',tipo:'Tipo',aceiteRegulamento:'Aceite regulamento'
+    };
+    return map[c]||c;
+  }
+
+  function formatConsultaValor_(row,c){
+    let v=row&&row[c]!==undefined?row[c]:'';
+    if(c==='urlComprovante'||c==='url'){
+      if(!v)return '-';
+      return `<a href="${escapeAttr(v)}" target="_blank" rel="noopener">Abrir</a>`;
+    }
+    if(c==='valor'||c==='valorTotal'||c==='valorAgora'){
+      if(v===''||v===null||v===undefined)return '-';
+      return escapeHtml(typeof v==='number'?moeda(v):v);
+    }
+    return escapeHtml(v===undefined||v===null||v===''?'-':v);
+  }
 })();
 
 </script>
