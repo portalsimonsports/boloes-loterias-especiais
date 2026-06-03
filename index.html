@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V172_CORRECAO_NULL_STARTUP_CACHE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V173_PAGAMENTOS_LINHA_REAL_REPROCESSAMENTO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V172</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V173</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -166,7 +166,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V172_CORRECAO_NULL_STARTUP_CACHE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V173_PAGAMENTOS_LINHA_REAL_REPROCESSAMENTO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
@@ -2289,7 +2289,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
 
     function renderPagamentoCardAdmin_(headers,row,i){
       const o=pagamentoObj_(headers,row);
-      const linha=i+2;
+      const linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
       const cls=pagamentoStatusClasse_(o.status);
       const url=o.urlComprovante||o.arquivoUrl||'';
       return `
@@ -2341,7 +2341,9 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA']),
-        participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA'])
+        participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA']),
+        linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
+        _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
       };
     }
 
@@ -2377,19 +2379,23 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     }
 
     async function executarConfirmarPagamentoManualAdmin(linha){
+      linha=Number(linha||0);
       fecharModal();
+      if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
       try{
-        await api('confirmarPagamentoManual',{},[linha]);
+        await api('confirmarPagamentoManual',{linha:linha},[linha]);
         toast('Pagamento confirmado.');
         renderPagamentosAdminTab('efetuados');
       }catch(err){toast(err.message,'error')}
     }
 
     async function reprocessarPagamentoAdmin(linha){
+      linha=Number(linha||0);
+      if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
       try{
-        toast('Solicitando reprocessamento OCR...','info');
-        await api('reprocessarPagamentoLinha',{},[linha]);
-        toast('Reprocessamento solicitado.');
+        toast('Solicitando reprocessamento OCR da linha '+linha+'...','info');
+        await api('reprocessarPagamentoLinha',{linha:linha},[linha]);
+        toast('Reprocessamento concluído/solicitado.');
         renderPagamentosAdminTab('efetuados');
       }catch(err){toast(err.message,'error')}
     }
