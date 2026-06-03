@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V164_INICIO_PTBR_PAGAMENTO_RECEBIMENTO_API_V160 -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V165_CACHE_PRELOAD_JOGOS_REGULAMENTO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -102,6 +102,11 @@
     .recebimento-grid .field{margin-bottom:0}
     @media(max-width:920px){.inicio-grid-boloes,.pay-method-grid,.recebimento-grid{grid-template-columns:1fr}.inicio-mini{grid-template-columns:1fr}}
 
+
+    .cache-hint{font-size:12px;color:#5b6b7d;font-weight:800;margin:8px 0 0}
+    .cache-hint.ok{color:#0b6b2b}
+    .cache-hint.warn{color:#8a5a00}
+
 </style>
 </head>
 <body>
@@ -111,9 +116,9 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V164_INICIO_PTBR_PAGAMENTO_RECEBIMENTO_API_V160',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V165_CACHE_PRELOAD_JOGOS_REGULAMENTO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
-    document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderHomePublica()});
+    document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
 
     function api(action,dados={},args=null){
@@ -503,59 +508,204 @@
     }
 
     async function abrirRegulamentoPublico(){
-      abrirModal('Regulamento',`<div class="reg-box" id="regPublicoBox">Carregando regulamento...</div>`);
+      const cached=cacheGet_('regulamento',true);
+      abrirModal('Regulamento',`<div class="reg-box" id="regPublicoBox">${cached?escapeHtml(typeof cached==='string'?cached:(cached.texto||cached.regulamento||'Regulamento definido pela administração.')):'Carregando regulamento...'}</div>${cached?'<div class="cache-hint ok">Regulamento exibido imediatamente. Atualizando em segundo plano...</div>':''}`);
       try{
-        const texto=await apiMulti([{action:'getRegulamento',args:[]},{action:'obterRegulamento',args:[]}]);
+        const texto=await carregarRegulamentoCache_(true);
         const conteudo=typeof texto==='string'?texto:(texto.texto||texto.regulamento||'Regulamento definido pela administração.');
-        document.getElementById('regPublicoBox').textContent=conteudo;
+        const box=document.getElementById('regPublicoBox');
+        if(box)box.textContent=conteudo;
       }catch(err){
-        document.getElementById('regPublicoBox').textContent='Regulamento definido pela administração.';
+        const box=document.getElementById('regPublicoBox');
+        if(box&&!cached)box.textContent='Regulamento definido pela administração.';
       }
     }
 
     function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button></div></div>`)}
-    async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario={nome:u.nome||u.usuario||'Usuário',email:u.email||email,role:String(u.role||u.perfil||'usuario').toLowerCase(),perfil:u.perfil||u.role||'usuario'};ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
+    async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario={nome:u.nome||u.usuario||'Usuário',email:u.email||email,role:String(u.role||u.perfil||'usuario').toLowerCase(),perfil:u.perfil||u.role||'usuario'};ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(u||{}))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');renderHomePublica()}
     function aplicarLayoutLogado(){document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');document.getElementById('userDisplay').textContent=`${ESTADO.usuario.nome||'Usuário'}${ESTADO.usuario.email?' • '+ESTADO.usuario.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
     function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
     function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
-    async function carregarBoloes(){
-      const lista=await apiMulti([{action:'getLoteriasPagamentoAtivas',args:[]},{action:'listarBoloes',args:[ESTADO.email]}]);
-      const arr=Array.isArray(lista)?lista:(lista.boloes||lista.ativas||[]),map={};
-      arr.forEach(b=>{
-        const nome=b.loteria||b.nome||b.NOME||b.id||'';
-        if(!nome)return;
-        const key=normalizar(nome+'|'+(b.dataSorteio||b.sorteio||''));
-        const item={
-          id:b.id||b.ID||b.eventoId||b.EVENTO_ID||nome,
-          nome:b.nome||b.NOME||nome,
-          loteria:b.loteria||b.LOTERIA||nome,
-          status:b.status||b.STATUS||'ATIVO',
-          dataSorteio:b.dataSorteio||b.DATA_SORTEIO||b.sorteio||'',
-          inicioPagamento:b.inicioPagamento||b.INI_BOL||b.iniBol||b.INICIO_PAGAMENTO||'',
-          fimPagamento:b.fimPagamento||b.FIM_BOL||b.fimBol||b.FIM_PAGAMENTO||'',
-          inicioPalpite:b.inicioPalpite||b.inicioPalpites||b.INI_PAL||b.iniPal||b.INICIO_PALPITES||'',
-          fimPalpite:b.fimPalpite||b.fimPalpites||b.FIM_PAL||b.fimPal||b.PRAZO_PALPITES||'',
-          valorCota:b.valorCota||b.VALOR_COTA||'',
-          totalCotas:b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
-          cotasTotal:b.cotasTotal||b.totalCotas||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
-          cotasAdquiridas:b.cotasAdquiridas||b.cotasTotaisAdquiridas||b.COTAS_TOTAIS_ADQUIRIDAS||b.COTAS_ADQUIRIDAS||0,
-          cotasDisponiveis:(b.cotasDisponiveis!==undefined?b.cotasDisponiveis:(b.cotasDisponíveis!==undefined?b.cotasDisponíveis:'')),
-          qtdParcelas:b.qtdParcelas||b.QTD_PARCELAS||'1',
-          premiacao:b.premiacao||b.premiacaoEstimado||b.premioEstimado||b.PREMIACAO||b.PREMIO||'',
-          premioPorCota:b.premioPorCota||b.premiacaoPorCota||b.PREMIO_POR_COTA||b.PREMIACAO_POR_COTA||b.PREMIO_COTA||b.valorPremioPorCota||'',
-          range:b.range||b.RANGE||'',
-          qtdMin:b.qtdMin||b.QTD_MIN||'',
-          qtdMax:b.qtdMax||b.QTD_MAX||'',
-          qtdPalpite:b.qtdPalpite||b.QTD_PALPITE||b.qtdEscolha||b.qtdEscolhaPalpite||'',
-          participanteInscrito:b.participanteInscrito!==false
-        };
-        if((item.cotasDisponiveis===''||item.cotasDisponiveis===undefined) && item.totalCotas!=='') item.cotasDisponiveis=Math.max(0,num(item.totalCotas)-num(item.cotasAdquiridas));
-        if(!map[key]) map[key]=item;
-        else map[key]=Object.assign(map[key],Object.fromEntries(Object.entries(item).filter(([k,v])=>v!==''&&v!==undefined&&v!==null)));
+
+    /**************** CACHE E PRÉ-CARREGAMENTO — V165 ****************/
+
+    const CACHE_TTL = {
+      curto: 2 * 60 * 1000,
+      medio: 10 * 60 * 1000,
+      longo: 6 * 60 * 60 * 1000
+    };
+
+    function cacheKey_(nome){
+      return 'PSS_BOLAO_CACHE_' + CONFIG.versao + '_' + nome;
+    }
+
+    function cacheSet_(nome,dados,ttlMs){
+      try{
+        localStorage.setItem(cacheKey_(nome),JSON.stringify({
+          ts:Date.now(),
+          ttl:ttlMs||CACHE_TTL.medio,
+          dados:dados
+        }));
+      }catch(e){}
+    }
+
+    function cacheGet_(nome,aceitarExpirado=false){
+      try{
+        const raw=localStorage.getItem(cacheKey_(nome));
+        if(!raw)return null;
+        const obj=JSON.parse(raw);
+        if(!obj||obj.dados===undefined)return null;
+        const expirado=Date.now()-(obj.ts||0)>(obj.ttl||CACHE_TTL.medio);
+        if(expirado&&!aceitarExpirado)return null;
+        return obj.dados;
+      }catch(e){
+        return null;
+      }
+    }
+
+    function cacheDel_(nome){
+      try{localStorage.removeItem(cacheKey_(nome));}catch(e){}
+    }
+
+    function promiseTimeout_(promise,ms,msg){
+      let timer=null;
+      const tempo=new Promise((_,reject)=>{
+        timer=setTimeout(()=>reject(new Error(msg||'Tempo limite excedido.')),ms);
       });
-      ESTADO.boloes=Object.values(map).sort((a,b)=>String(a.dataSorteio).localeCompare(String(b.dataSorteio)));
-      return ESTADO.boloes
+      return Promise.race([promise,tempo]).finally(()=>clearTimeout(timer));
+    }
+
+    function cacheKeyLoteria_(prefixo,loteria){
+      return prefixo + '_' + normalizar(loteria||'geral').replace(/[^A-Z0-9]+/g,'_');
+    }
+
+    async function apiCached_(cacheNome,ttlMs,loader,opts={}){
+      const cached=cacheGet_(cacheNome,!!opts.aceitarExpirado);
+      if(cached!==null&&opts.usarCachePrimeiro!==false){
+        if(opts.atualizarSegundoPlano!==false){
+          loader().then(d=>{
+            cacheSet_(cacheNome,d,ttlMs);
+            if(typeof opts.onRefresh==='function')opts.onRefresh(d);
+          }).catch(()=>{});
+        }
+        return cached;
+      }
+
+      const dados=await loader();
+      cacheSet_(cacheNome,dados,ttlMs);
+      return dados;
+    }
+
+    function preCarregarDadosEstaticos(){
+      setTimeout(async()=>{
+        try{await carregarBoloes(true);}catch(e){}
+        try{await carregarRegulamentoCache_(true);}catch(e){}
+        try{await carregarTelegramCache_(true);}catch(e){}
+        try{await preCarregarJogosAtivos_();}catch(e){}
+      },500);
+    }
+
+    async function carregarRegulamentoCache_(segundoPlano=false){
+      return apiCached_(
+        'regulamento',
+        CACHE_TTL.longo,
+        async()=>await promiseTimeout_(apiMulti([{action:'getRegulamento',args:[]},{action:'obterRegulamento',args:[]}]),15000,'Tempo limite ao carregar regulamento.'),
+        {usarCachePrimeiro:true,atualizarSegundoPlano:segundoPlano}
+      );
+    }
+
+    async function carregarTelegramCache_(segundoPlano=false){
+      return apiCached_(
+        'telegram',
+        CACHE_TTL.medio,
+        async()=>await promiseTimeout_(apiMulti([{action:'getTelegramCanalLink',args:[]},{action:'getConfigPublica',args:[]}]),12000,'Tempo limite ao carregar Telegram.'),
+        {usarCachePrimeiro:true,atualizarSegundoPlano:segundoPlano}
+      );
+    }
+
+    async function carregarJogosCache_(loteria,segundoPlano=false,onRefresh=null){
+      const key=cacheKeyLoteria_('jogos',loteria);
+      return apiCached_(
+        key,
+        CACHE_TTL.medio,
+        async()=>await promiseTimeout_(apiMulti([
+          {action:'getJogosRealizadosBolao',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]},
+          {action:'listarJogosRealizadosBolao',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]},
+          {action:'getJogosBolao',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]}
+        ]),14000,'Tempo limite ao buscar jogos enviados.'),
+        {usarCachePrimeiro:true,atualizarSegundoPlano:segundoPlano,onRefresh:onRefresh}
+      );
+    }
+
+    async function preCarregarJogosAtivos_(){
+      const lista=ESTADO.boloes&&ESTADO.boloes.length?ESTADO.boloes:await carregarBoloes(true);
+      const ativos=(lista||[]).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO')).slice(0,5);
+      ativos.forEach((b,i)=>{
+        setTimeout(()=>carregarJogosCache_(b.loteria,true).catch(()=>{}),600+i*700);
+      });
+    }
+
+    async function carregarBoloes(usarCacheRapido=false){
+      const cacheNome=ESTADO.email?'boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'):'boloes_publicos';
+      const cached=cacheGet_(cacheNome,true);
+
+      if(usarCacheRapido&&cached){
+        ESTADO.boloes=cached;
+        return cached;
+      }
+
+      const loader=async()=>{
+        const lista=await promiseTimeout_(apiMulti([{action:'getLoteriasPagamentoAtivas',args:[]},{action:'listarBoloes',args:[ESTADO.email]}]),16000,'Tempo limite ao carregar bolões.');
+        const arr=Array.isArray(lista)?lista:(lista.boloes||lista.ativas||[]),map={};
+        arr.forEach(b=>{
+          const nome=b.loteria||b.nome||b.NOME||b.id||'';
+          if(!nome)return;
+          const key=normalizar(nome+'|'+(b.dataSorteio||b.sorteio||''));
+          const item={
+            id:b.id||b.ID||b.eventoId||b.EVENTO_ID||nome,
+            nome:b.nome||b.NOME||nome,
+            loteria:b.loteria||b.LOTERIA||nome,
+            status:b.status||b.STATUS||'ATIVO',
+            dataSorteio:b.dataSorteio||b.DATA_SORTEIO||b.sorteio||'',
+            inicioPagamento:b.inicioPagamento||b.INI_BOL||b.iniBol||b.INICIO_PAGAMENTO||'',
+            fimPagamento:b.fimPagamento||b.FIM_BOL||b.fimBol||b.FIM_PAGAMENTO||'',
+            inicioPalpite:b.inicioPalpite||b.inicioPalpites||b.INI_PAL||b.iniPal||b.INICIO_PALPITES||'',
+            fimPalpite:b.fimPalpite||b.fimPalpites||b.FIM_PAL||b.fimPal||b.PRAZO_PALPITES||'',
+            valorCota:b.valorCota||b.VALOR_COTA||'',
+            totalCotas:b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
+            cotasTotal:b.cotasTotal||b.totalCotas||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
+            cotasAdquiridas:b.cotasAdquiridas||b.cotasTotaisAdquiridas||b.COTAS_TOTAIS_ADQUIRIDAS||b.COTAS_ADQUIRIDAS||0,
+            cotasDisponiveis:(b.cotasDisponiveis!==undefined?b.cotasDisponiveis:(b.cotasDisponíveis!==undefined?b.cotasDisponíveis:'')),
+            qtdParcelas:b.qtdParcelas||b.QTD_PARCELAS||'1',
+            premiacao:b.premiacao||b.premiacaoEstimado||b.premioEstimado||b.PREMIACAO||b.PREMIO||'',
+            premioPorCota:b.premioPorCota||b.premiacaoPorCota||b.PREMIO_POR_COTA||b.PREMIACAO_POR_COTA||b.PREMIO_COTA||b.valorPremioPorCota||'',
+            range:b.range||b.RANGE||'',
+            qtdMin:b.qtdMin||b.QTD_MIN||'',
+            qtdMax:b.qtdMax||b.QTD_MAX||'',
+            qtdPalpite:b.qtdPalpite||b.QTD_PALPITE||b.qtdEscolha||b.qtdEscolhaPalpite||'',
+            participanteInscrito:b.participanteInscrito!==false
+          };
+          if((item.cotasDisponiveis===''||item.cotasDisponiveis===undefined) && item.totalCotas!=='') item.cotasDisponiveis=Math.max(0,num(item.totalCotas)-num(item.cotasAdquiridas));
+          if(!map[key]) map[key]=item;
+          else map[key]=Object.assign(map[key],Object.fromEntries(Object.entries(item).filter(([k,v])=>v!==''&&v!==undefined&&v!==null)));
+        });
+        return Object.values(map).sort((a,b)=>String(a.dataSorteio).localeCompare(String(b.dataSorteio)));
+      };
+
+      if(cached){
+        ESTADO.boloes=cached;
+        loader().then(novos=>{
+          ESTADO.boloes=novos;
+          cacheSet_(cacheNome,novos,CACHE_TTL.curto);
+        }).catch(()=>{});
+        return cached;
+      }
+
+      const novos=await loader();
+      ESTADO.boloes=novos;
+      cacheSet_(cacheNome,novos,CACHE_TTL.curto);
+      return novos;
     }
     async function renderInicio(){
   loading('Carregando início');
@@ -940,7 +1090,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
             `:''}
 
             <div id="jogosRealizadosConteudo">
-              <div class="notice info">Carregando jogos do bolão selecionado...</div>
+              <div class="notice info">Preparando jogos do bolão selecionado...</div>
             </div>
           </div>
         `);
@@ -960,24 +1110,38 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       ESTADO.bolaoSelecionado=loteria;
       localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);
 
-      box.innerHTML='<div class="notice info">Buscando jogos enviados...</div>';
+      const cacheNome=cacheKeyLoteria_('jogos',loteria);
+      const cached=cacheGet_(cacheNome,true);
+
+      if(cached){
+        const listaCache=extrairListaGenericaJogos_(cached);
+        box.innerHTML=renderListaJogosRealizados(listaCache,loteria)+`<div class="cache-hint ok">Jogos exibidos imediatamente. Atualizando em segundo plano...</div>`;
+      }else{
+        box.innerHTML='<div class="notice info"><span class="loading-fast">Buscando jogos enviados...</span></div>';
+      }
 
       try{
-        const r=await apiMulti([
-          {action:'getJogosRealizadosBolao',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]},
-          {action:'listarJogosRealizadosBolao',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]},
-          {action:'getJogosBolao',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]}
-        ]);
+        const r=await carregarJogosCache_(loteria,true,(novo)=>{
+          const boxAtual=document.getElementById('jogosRealizadosConteudo');
+          const selAtual=document.getElementById('jogosBolao');
+          if(boxAtual&&selAtual&&selAtual.value===loteria){
+            boxAtual.innerHTML=renderListaJogosRealizados(extrairListaGenericaJogos_(novo),loteria);
+          }
+        });
 
         const lista=extrairListaGenericaJogos_(r);
         box.innerHTML=renderListaJogosRealizados(lista,loteria);
       }catch(err){
-        box.innerHTML=`
-          <div class="notice warn">
-            Nenhum jogo foi carregado para este bolão ou a rota de jogos ainda não foi criada no Code_API.gs.
-          </div>
-          ${isAdmin()?`<p style="color:#546173;">Para salvar arquivos no Drive igual aos comprovantes, o GS precisa ter a função <strong>uploadJogoRealizadoBolao</strong> criando a pasta por bolão.</p>`:''}
-        `;
+        if(!cached){
+          box.innerHTML=`
+            <div class="notice warn">
+              Não foi possível carregar os jogos agora. Tente novamente em instantes.
+            </div>
+            <div class="actions" style="margin-top:10px;">
+              <button class="btn btn-light" onclick="carregarJogosRealizadosBolao()">Tentar novamente</button>
+            </div>
+          `;
+        }
       }
     }
 
@@ -1052,6 +1216,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         }
 
         toast('Jogos realizados enviados com sucesso.');
+        cacheDel_(cacheKeyLoteria_('jogos',loteria));
         input.value='';
         carregarJogosRealizadosBolao();
       }catch(err){
@@ -1284,7 +1449,20 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       if(p.length !== 3) return v;
       return `${p[2]}/${p[1]}/${p[0]}`;
     }
-    async function renderRegulamento(){loading('Carregando regulamento');try{const texto=await apiMulti([{action:'getRegulamento',args:[]},{action:'obterRegulamento',args:[]}]);setView(`<div class="panel"><h2>Regulamento</h2><div class="reg-box">${escapeHtml(typeof texto==='string'?texto:(texto.texto||''))}</div></div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderRegulamento(){
+      const cached=cacheGet_('regulamento',true);
+      if(cached){
+        setView(`<div class="panel"><h2>Regulamento</h2><div class="reg-box">${escapeHtml(typeof cached==='string'?cached:(cached.texto||cached.regulamento||''))}</div><div class="cache-hint ok">Regulamento carregado imediatamente. Atualizando em segundo plano...</div></div>`);
+      }else{
+        loading('Carregando regulamento');
+      }
+      try{
+        const texto=await carregarRegulamentoCache_(true);
+        setView(`<div class="panel"><h2>Regulamento</h2><div class="reg-box">${escapeHtml(typeof texto==='string'?texto:(texto.texto||texto.regulamento||''))}</div></div>`);
+      }catch(err){
+        if(!cached)setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+      }
+    }
     async function renderAdminTable(aba,titulo){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando '+titulo);try{const r=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:aba},args:[aba]}]),headers=r.headers||[],rows=r.rows||[];setView(`<div class="panel"><h2>${escapeHtml(titulo)}</h2>${headers.length?`<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(c=>`<td>${formatarCelula(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<div class="notice warn">Nenhum dado localizado.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
 
     async function adminDados(aba){return await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:aba},args:[aba]}])}
