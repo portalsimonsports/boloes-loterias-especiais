@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V153_VALORES_RS_MENU_JOGOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V154_COMPATIVEL_API_V155_ABAS_PARTICIPANTES -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V153</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V154</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -48,7 +48,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V153_VALORES_RS_MENU_JOGOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V154_COMPATIVEL_API_V155_ABAS_PARTICIPANTES',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
     function api(action,dados={},args=null){return new Promise((resolve,reject)=>{const cb='PSS_CB_'+Date.now()+'_'+Math.floor(Math.random()*1e6),payload=Object.assign({},dados||{});payload.action=action;payload.fnName=action;if(Array.isArray(args))payload.args=args;const p=new URLSearchParams();p.set('action',action);p.set('fn',action);p.set('fnName',action);p.set('callback',cb);p.set('payload',JSON.stringify(payload));p.set('email',ESTADO.email||dados.email||'');p.set('_',String(Date.now()));const s=document.createElement('script');let timer=null;window[cb]=r=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();if(!r||r.ok!==true){reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));return}resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r))};s.onerror=()=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Falha ao conectar à API.'))};timer=setTimeout(()=>{try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Tempo limite excedido ao conectar à API.'))},30000);s.src=CONFIG.apiUrl+'?'+p.toString();document.body.appendChild(s)})}
@@ -564,7 +564,7 @@
     function rowObj(headers,row){const o={};(headers||[]).forEach((h,i)=>o[normalizar(h)]=row[i]);return o}
     function cellObj(o,names){for(const n of names){const k=normalizar(n);if(Object.prototype.hasOwnProperty.call(o,k))return o[k]}return ''}
     function linhaPlanilha(i){return Number(i)+2}
-    async function chamarAcaoAdmin(action,args,okMsg){try{const r=await api(action,{},args||[]);toast((r&&r.msg)||okMsg||'Ação executada.');if(ESTADO.view==='solicitacoes')renderSolicitacoesAdmin();else if(ESTADO.view==='pagamentos')renderPagamentosAdmin();else if(ESTADO.view==='usuarios')renderUsuariosAdmin();else if(ESTADO.view==='config')renderConfigBoloesAdmin();else if(ESTADO.view==='baseLoterias')renderBaseLoteriasAdmin();else if(ESTADO.view==='boloes')renderBoloes('ativos')}catch(err){toast(err.message,'error')}}
+    async function chamarAcaoAdmin(action,args,okMsg){try{const r=await api(action,{},args||[]);toast((r&&r.msg)||okMsg||'Ação executada.');if(ESTADO.view==='solicitacoes')renderSolicitacoesAdmin();else if(ESTADO.view==='pagamentos')renderPagamentosAdmin();else if(ESTADO.view==='usuarios')renderUsuariosAdmin();else if(ESTADO.view==='config')renderConfigBoloesAdmin();else if(ESTADO.view==='baseLoterias')renderBaseLoteriasAdmin();else if(ESTADO.view==='participantes')renderParticipantesBolaoAdmin();else if(ESTADO.view==='boloes')renderBoloes('ativos')}catch(err){toast(err.message,'error')}}
 
     async function renderBaseLoteriasAdmin(){
       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
@@ -671,7 +671,18 @@
         setView(`
           <div class="panel">
             <h2>Participantes Bolão</h2>
-            <p>Dados carregados da aba <strong>${escapeHtml(r.aba || 'PARTICIPANTES_BOLAO')}</strong>.</p>
+            <p>
+              Dados carregados da aba <strong>${escapeHtml(r.aba || 'PARTICIPANTES_BOLAO')}</strong>.
+              Use a sincronização para criar ou atualizar as abas individuais dos participantes antigos e novos.
+            </p>
+
+            <div class="actions">
+              <button class="btn" id="btnSincronizarAbasParticipantes" onclick="sincronizarAbasParticipantesAdmin()">Sincronizar abas individuais</button>
+              <button class="btn btn-light" onclick="renderParticipantesBolaoAdmin()">Atualizar lista</button>
+            </div>
+
+            <div id="syncAbasParticipantesResultado"></div>
+
             ${headers.length ? `
               <div class="table-wrap">
                 <table>
@@ -686,6 +697,60 @@
         `);
       }catch(err){
         setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+      }
+    }
+
+    async function sincronizarAbasParticipantesAdmin(){
+      if(!isAdmin()){
+        toast('Acesso restrito ao administrador.','error');
+        return;
+      }
+
+      const btn=document.getElementById('btnSincronizarAbasParticipantes');
+      const box=document.getElementById('syncAbasParticipantesResultado');
+
+      if(btn){
+        btn.disabled=true;
+        btn.textContent='Sincronizando...';
+      }
+
+      if(box){
+        box.innerHTML='<div class="notice info">Criando e atualizando abas individuais dos participantes. Aguarde...</div>';
+      }
+
+      try{
+        const r=await apiMulti([
+          {action:'sincronizarAbasParticipantes',dados:{email:ESTADO.email},args:[]},
+          {action:'corrigirAbasParticipantes',dados:{email:ESTADO.email},args:[]},
+          {action:'recriarAbasParticipantes',dados:{email:ESTADO.email},args:[]}
+        ]);
+
+        const criadas = r && r.criadas !== undefined ? r.criadas : '-';
+        const atualizadas = r && r.atualizadas !== undefined ? r.atualizadas : '-';
+        const erros = r && Array.isArray(r.erros) ? r.erros : [];
+
+        if(box){
+          box.innerHTML=`
+            <div class="notice">
+              Sincronização concluída.<br>
+              Abas criadas: <strong>${escapeHtml(criadas)}</strong><br>
+              Abas atualizadas: <strong>${escapeHtml(atualizadas)}</strong><br>
+              Erros: <strong>${escapeHtml(erros.length)}</strong>
+            </div>
+            ${erros.length ? `<div class="notice error">${erros.map(e=>escapeHtml(e)).join('<br>')}</div>` : ''}
+          `;
+        }
+
+        toast((r&&r.msg)||'Abas individuais sincronizadas.');
+        setTimeout(()=>renderParticipantesBolaoAdmin(),900);
+      }catch(err){
+        if(box)box.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
+        toast(err.message,'error');
+      }finally{
+        if(btn){
+          btn.disabled=false;
+          btn.textContent='Sincronizar abas individuais';
+        }
       }
     }
 
