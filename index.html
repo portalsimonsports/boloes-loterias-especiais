@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V156_JSONP_ROBUSTO_MOBILE_API_V155 -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V157_FETCH_JSONP_MOBILE_FIX -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -48,7 +48,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V156_JSONP_ROBUSTO_MOBILE_API_V155',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V157_FETCH_JSONP_MOBILE_FIX',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
     let PSS_API_FILA=Promise.resolve();
@@ -58,7 +58,57 @@
       return PSS_API_FILA;
     }
 
-    function apiJsonpRobustoMobile_(action,dados={},args=null){
+    /* ── V157: fetch-first com fallback JSONP ────────────────────────────
+       Estratégia:
+       1) Tenta fetch() com mode:'cors' (funciona quando GAS está publicada
+          como "Qualquer pessoa, mesmo anônima").
+       2) Se fetch falhar ou retornar HTML (redirect de login), tenta JSONP
+          com 3 nomes de callback diferentes.
+       3) Mensagens de erro são detalhadas para facilitar diagnóstico.
+    ────────────────────────────────────────────────────────────────────── */
+    async function apiJsonpRobustoMobile_(action,dados={},args=null){
+      const payload=Object.assign({},dados||{});
+      payload.action=action;
+      payload.fnName=action;
+      if(Array.isArray(args))payload.args=args;
+
+      const p=new URLSearchParams();
+      p.set('action',action);
+      p.set('fn',action);
+      p.set('fnName',action);
+      p.set('payload',JSON.stringify(payload));
+      p.set('email',ESTADO.email||dados.email||'');
+      p.set('_',String(Date.now()));
+
+      /* ── 1. Tentativa via fetch (modo cors) ── */
+      try{
+        const resp=await fetch(CONFIG.apiUrl+'?'+p.toString(),{
+          method:'GET',
+          mode:'cors',
+          redirect:'follow',
+          signal:AbortSignal.timeout?AbortSignal.timeout(30000):undefined
+        });
+        if(!resp.ok)throw new Error('HTTP '+resp.status);
+        const ct=resp.headers.get('content-type')||'';
+        /* Se GAS redirecionar para login, retorna HTML — detectar e rejeitar */
+        if(!ct.includes('json')&&!ct.includes('javascript')){
+          const texto=await resp.text();
+          if(texto.trim().startsWith('<'))
+            throw new Error('API retornou HTML — verifique se a implantação GAS permite acesso anônimo.');
+          /* Tentar parsear mesmo assim (às vezes GAS manda text/plain com JSON) */
+          const r=JSON.parse(texto);
+          if(!r||r.ok!==true)throw new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.');
+          return r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r);
+        }
+        const r=await resp.json();
+        if(!r||r.ok!==true)throw new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.');
+        return r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r);
+      }catch(fetchErr){
+        /* fetch falhou — tentar JSONP como fallback */
+        console.warn('[PSS-API] fetch falhou, tentando JSONP:',fetchErr.message);
+      }
+
+      /* ── 2. Fallback JSONP ── */
       const dinamico='PSS_CB_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
       const tentativas=['callback','teste',dinamico];
       let indice=0;
@@ -67,24 +117,17 @@
       return new Promise((resolve,reject)=>{
         const tentar=()=>{
           if(indice>=tentativas.length){
-            reject(ultimoErro||new Error('Falha ao conectar à API.'));
+            reject(ultimoErro||new Error(
+              'Não foi possível conectar à API. Verifique se a implantação do Google Apps Script '
+              +'está publicada como "Qualquer pessoa, mesmo anônima" e tente novamente.'
+            ));
             return;
           }
 
           const cb=tentativas[indice++];
-          const payload=Object.assign({},dados||{});
-          payload.action=action;
-          payload.fnName=action;
-          if(Array.isArray(args))payload.args=args;
-
-          const p=new URLSearchParams();
-          p.set('action',action);
-          p.set('fn',action);
-          p.set('fnName',action);
-          p.set('callback',cb);
-          p.set('payload',JSON.stringify(payload));
-          p.set('email',ESTADO.email||dados.email||'');
-          p.set('_',String(Date.now()));
+          const pj=new URLSearchParams(p);
+          pj.set('callback',cb);
+          pj.set('_',String(Date.now()));
 
           const s=document.createElement('script');
           let finalizado=false;
@@ -98,23 +141,17 @@
             finalizado=true;
             clearTimeout(timer);
             limpar();
-
             if(!r||r.ok!==true){
               reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));
               return;
             }
-
             resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r));
           };
 
           function limpar(){
             nomesProtegidos.forEach(n=>{
-              try{
-                if(anteriores[n]===undefined)delete window[n];
-                else window[n]=anteriores[n];
-              }catch(e){
-                window[n]=anteriores[n];
-              }
+              try{if(anteriores[n]===undefined)delete window[n];else window[n]=anteriores[n];}
+              catch(e){window[n]=anteriores[n];}
             });
             if(s&&s.parentNode)s.parentNode.removeChild(s);
           }
@@ -125,21 +162,24 @@
             if(finalizado)return;
             finalizado=true;
             limpar();
-            ultimoErro=new Error('Tempo limite excedido ao conectar à API.');
+            ultimoErro=new Error('Tempo limite excedido ao conectar à API (30s). Verifique sua conexão.');
             tentar();
-          },45000);
+          },30000);
 
           s.onerror=()=>{
             if(finalizado)return;
             finalizado=true;
             clearTimeout(timer);
             limpar();
-            ultimoErro=new Error('Falha ao carregar a API no navegador.');
+            ultimoErro=new Error(
+              'Falha ao carregar o script da API. '
+              +'Confirme se a URL da implantação GAS está correta e acessível.'
+            );
             tentar();
           };
 
           s.async=true;
-          s.src=CONFIG.apiUrl+'?'+p.toString();
+          s.src=CONFIG.apiUrl+'?'+pj.toString();
           document.body.appendChild(s);
         };
 
@@ -417,6 +457,7 @@
             {action:'enviarJogoRealizado',dados:{fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs},args:[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs]}
           ]);
         }
+
         toast('Jogos realizados enviados com sucesso.');
         input.value='';
         carregarJogosRealizadosBolao();
@@ -500,6 +541,7 @@
           }
         }
       }catch(e){}
+
       return base;
     }
 
@@ -604,6 +646,7 @@
         toast('Informe o nome da loteria.','error');
         return;
       }
+
       const dados = {
         nome: nome,
         loteria: nome,
@@ -624,6 +667,7 @@
         qtdMax: valorNumeroConfig(document.getElementById('esp_qtdMax').value,''),
         qtdPalpite: valorNumeroConfig(document.getElementById('esp_qtdPalpite').value,'')
       };
+
       btn.disabled = true;
       btn.textContent = 'Ativando...';
 
@@ -707,6 +751,7 @@
       elResultado.value=calcularPremioPorCotaValor(elPremio.value,elCotas.value);
     }
 
+
     function formatarMoedaCampoConfig(valor){
       if(valor===undefined||valor===null||valor==='')return '';
       return moeda(valor);
@@ -769,6 +814,7 @@
               <button class="btn" id="btnSincronizarAbasParticipantes" onclick="sincronizarAbasParticipantesAdmin()">Sincronizar abas individuais</button>
               <button class="btn btn-light" onclick="renderParticipantesBolaoAdmin()">Atualizar lista</button>
             </div>
+
             <div id="syncAbasParticipantesResultado"></div>
 
             ${headers.length ? `
