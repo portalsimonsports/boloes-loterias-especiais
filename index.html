@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V178_CONSULTA_ADMIN_PARTICIPANTE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V179_MENUS_INSTANTANEOS_CACHE_TURBO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -280,6 +280,51 @@
     .admin-shortcut h3{margin:0 0 6px;color:#003b12}
     @media(max-width:920px){.consulta-admin-grid{grid-template-columns:1fr}.consulta-actions .field{min-width:100%}}
 
+
+    /* =========================================================
+     * V179 — MENUS INSTANTÂNEOS COM CACHE DE TELA
+     * A tela abre com o último conteúdo salvo e atualiza em segundo plano.
+     * ========================================================= */
+    .fast-cache-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid #cfe3d3;
+      background:#f0f8f2;
+      color:#064e1f;
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:11px;
+      font-weight:900;
+      margin:0 0 10px;
+      text-transform:uppercase;
+      letter-spacing:.02em;
+    }
+    .fast-cache-badge.updating{
+      background:#eaf3ff;
+      border-color:#bfdbfe;
+      color:#1d4ed8;
+    }
+    .fast-skeleton{
+      border:1px solid #d7e7dc;
+      border-radius:18px;
+      background:#fff;
+      padding:18px;
+      box-shadow:0 10px 24px rgba(0,0,0,.04);
+    }
+    .fast-skeleton-line{
+      height:14px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);
+      background-size:200% 100%;
+      animation:pssSkeleton 1.15s infinite linear;
+      margin:10px 0;
+    }
+    .fast-skeleton-line.w40{width:40%}
+    .fast-skeleton-line.w60{width:60%}
+    .fast-skeleton-line.w90{width:90%}
+    @keyframes pssSkeleton{0%{background-position:0 0}100%{background-position:-200% 0}}
+
 </style>
 </head>
 <body>
@@ -289,7 +334,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V178_CONSULTA_ADMIN_PARTICIPANTE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V179_MENUS_INSTANTANEOS_CACHE_TURBO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
@@ -4040,6 +4085,194 @@ function renderMetodoPagamento_(m,b,i){
     }
     return escapeHtml(v===undefined||v===null||v===''?'-':v);
   }
+})();
+
+
+/* =====================================================================
+ * PATCH V179 — MENUS INSTANTÂNEOS / CACHE TURBO / STALE-WHILE-REFRESH
+ *
+ * Objetivo:
+ * - Ao clicar em um menu, exibir instantaneamente a última tela carregada.
+ * - Atualizar os dados em segundo plano sem mostrar "Carregando..." por cima.
+ * - Manter menus pesados mais ágeis: Bolões, Palpite, Comprovante, Jogos,
+ *   Regulamento, Pagamentos, Config, Consulta e demais menus.
+ * ===================================================================== */
+(function(){
+  const PSSV179_CACHE_PREFIX='PSS_BLE_VIEW_CACHE_V179_';
+  const PSSV179_TTL_PADRAO=1000*60*8;        // 8 minutos
+  const PSSV179_TTL_ESTATICO=1000*60*60*6;   // 6 horas
+  const PSSV179_TTL_ADMIN=1000*60*3;         // 3 minutos
+
+  let pssV179ViewAtual='';
+  let pssV179SkipLoadingView='';
+  let pssV179TemCache=false;
+
+  const pssV179SetViewBase=setView;
+  const pssV179LoadingBase=loading;
+  const pssV179NavegarBase=navegar;
+
+  function pssV179StorageKey_(view){
+    const email=(ESTADO.email||'publico').toLowerCase().replace(/[^a-z0-9]+/g,'_');
+    const perfil=(typeof isAdmin==='function' && isAdmin())?'admin':'user';
+    return PSSV179_CACHE_PREFIX+perfil+'_'+email+'_'+view;
+  }
+
+  function pssV179TtlView_(view){
+    if(['regulamento','baseLoterias'].includes(view))return PSSV179_TTL_ESTATICO;
+    if(['config','pagamentos','usuarios','solicitacoes','consulta','participantes'].includes(view))return PSSV179_TTL_ADMIN;
+    return PSSV179_TTL_PADRAO;
+  }
+
+  function pssV179IsLoadingHtml_(html){
+    html=String(html||'');
+    return html.includes('Carregando') || html.includes('Aguarde...');
+  }
+
+  function pssV179PodeCachear_(html){
+    html=String(html||'');
+    if(!html || html.length<120)return false;
+    if(pssV179IsLoadingHtml_(html))return false;
+    if(html.includes('notice error'))return false;
+    if(html.includes('Cannot read properties'))return false;
+    if(html.includes('Erro retornado pela API'))return false;
+    return true;
+  }
+
+  function pssV179CacheGet_(view){
+    try{
+      const raw=sessionStorage.getItem(pssV179StorageKey_(view)) || localStorage.getItem(pssV179StorageKey_(view));
+      if(!raw)return null;
+      const obj=JSON.parse(raw);
+      if(!obj || !obj.html)return null;
+      const idade=Date.now()-Number(obj.ts||0);
+      if(idade>pssV179TtlView_(view)){
+        try{sessionStorage.removeItem(pssV179StorageKey_(view));}catch(e){}
+        return null;
+      }
+      return obj;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function pssV179CachePut_(view,html){
+    try{
+      if(!view || !pssV179PodeCachear_(html))return;
+      const obj={ts:Date.now(),html:String(html||'')};
+      sessionStorage.setItem(pssV179StorageKey_(view),JSON.stringify(obj));
+
+      // Só alguns menus entram também no localStorage para abrir rápido após F5.
+      if(['inicio','boloes','regulamento','jogos','palpite','comprovante'].includes(view)){
+        localStorage.setItem(pssV179StorageKey_(view),JSON.stringify(obj));
+      }
+    }catch(e){}
+  }
+
+  function pssV179Badge_(){
+    return '<div class="fast-cache-badge">Tela aberta instantaneamente • atualizando em segundo plano</div>';
+  }
+
+  function pssV179Skeleton_(view){
+    const nome={
+      inicio:'Início',
+      boloes:'Bolões',
+      palpite:'Palpites',
+      comprovante:'Comprovantes',
+      jogos:'Jogos realizados',
+      especiais:'Especiais',
+      regulamento:'Regulamento',
+      config:'Configurações',
+      pagamentos:'Pagamentos',
+      usuarios:'Usuários',
+      solicitacoes:'Solicitações de cadastro',
+      baseLoterias:'Base Loterias',
+      participantes:'Participantes',
+      consulta:'Consulta'
+    }[view]||'Menu';
+
+    return `
+      <div class="panel">
+        <h2>${escapeHtml(nome)}</h2>
+        <div class="fast-skeleton">
+          <div class="fast-skeleton-line w40"></div>
+          <div class="fast-skeleton-line w90"></div>
+          <div class="fast-skeleton-line w60"></div>
+          <div class="fast-skeleton-line w90"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  setView=function(html){
+    if(pssV179SkipLoadingView && pssV179TemCache && pssV179IsLoadingHtml_(html)){
+      return;
+    }
+
+    pssV179SetViewBase(html);
+
+    if(pssV179ViewAtual && pssV179PodeCachear_(html)){
+      pssV179CachePut_(pssV179ViewAtual,html);
+      pssV179SkipLoadingView='';
+      pssV179TemCache=false;
+    }
+  };
+
+  loading=function(titulo){
+    if(pssV179SkipLoadingView && pssV179TemCache){
+      return;
+    }
+    return pssV179LoadingBase(titulo);
+  };
+
+  navegar=function(view){
+    pssV179ViewAtual=view;
+    ESTADO.view=view;
+
+    document.querySelectorAll('#navMenu button[data-view]').forEach(b=>{
+      b.classList.toggle('active',b.dataset.view===view);
+    });
+
+    const cached=pssV179CacheGet_(view);
+    if(cached){
+      pssV179TemCache=true;
+      pssV179SkipLoadingView=view;
+      pssV179SetViewBase(pssV179Badge_()+cached.html);
+      setTimeout(()=>pssV179NavegarBase(view),20);
+      return;
+    }
+
+    // Sem cache: mostra uma estrutura leve instantânea antes da API responder.
+    pssV179TemCache=false;
+    pssV179SkipLoadingView='';
+    pssV179SetViewBase(pssV179Skeleton_(view));
+    setTimeout(()=>pssV179NavegarBase(view),20);
+  };
+
+  window.pssLimparCacheMenus = function(){
+    try{
+      Object.keys(sessionStorage).forEach(k=>{if(k.indexOf(PSSV179_CACHE_PREFIX)===0)sessionStorage.removeItem(k)});
+      Object.keys(localStorage).forEach(k=>{if(k.indexOf(PSSV179_CACHE_PREFIX)===0)localStorage.removeItem(k)});
+      toast('Cache dos menus limpo.');
+    }catch(e){
+      toast('Não foi possível limpar o cache dos menus.','error');
+    }
+  };
+
+  // Pré-aquecimento leve após login: abre rápido porque dados principais já ficam em cache.
+  function pssV179PreAquecerDados_(){
+    if(!ESTADO || !ESTADO.email)return;
+    try{
+      if(typeof carregarBoloes==='function')carregarBoloes();
+    }catch(e){}
+    try{
+      if(typeof carregarRecebimentosTodosTurbo_==='function')carregarRecebimentosTodosTurbo_(false);
+    }catch(e){}
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(pssV179PreAquecerDados_,1200);
+    setTimeout(pssV179PreAquecerDados_,5000);
+  });
 })();
 
 </script>
