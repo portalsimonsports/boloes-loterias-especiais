@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V157_FETCH_JSONP_MOBILE_FIX -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V158_CREDENTIALS_OMIT_COOKIE_FIX -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -48,9 +48,26 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V157_FETCH_JSONP_MOBILE_FIX',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V158_CREDENTIALS_OMIT_COOKIE_FIX',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
-    document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
+    document.addEventListener('DOMContentLoaded',()=>{
+      atualizarRelogio();
+      setInterval(atualizarRelogio,1000);
+      document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));
+      /* V158: validar sessão salva — se corrompida, limpar silenciosamente */
+      const s=carregarSessao();
+      if(s&&s.email&&s.nome){
+        ESTADO.usuario=s;
+        ESTADO.email=s.email;
+        ESTADO.role=String(s.role||s.perfil||'').toLowerCase();
+        aplicarLayoutLogado();
+        navegar('inicio');
+      }else{
+        /* Limpar qualquer resquício de sessão inválida */
+        localStorage.removeItem('PSS_BOLAO_SESSAO');
+        renderLogin();
+      }
+    });
     let PSS_API_FILA=Promise.resolve();
     function api(action,dados={},args=null){
       const executar=()=>apiJsonpRobustoMobile_(action,dados,args);
@@ -80,11 +97,12 @@
       p.set('email',ESTADO.email||dados.email||'');
       p.set('_',String(Date.now()));
 
-      /* ── 1. Tentativa via fetch (modo cors) ── */
+      /* ── 1. Tentativa via fetch (modo cors, sem cookies) ── */
       try{
         const resp=await fetch(CONFIG.apiUrl+'?'+p.toString(),{
           method:'GET',
           mode:'cors',
+          credentials:'omit',   /* ← V158: nunca envia cookies Google — evita redirect de auth */
           redirect:'follow',
           signal:AbortSignal.timeout?AbortSignal.timeout(30000):undefined
         });
@@ -187,7 +205,36 @@
       });
     }
     async function apiMulti(t){let e=null;for(const x of t){try{return await api(x.action,x.dados||{},x.args||null)}catch(err){e=err}}throw e||new Error('Nenhuma rota respondeu.')}
-    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse usando o e-mail e a senha cadastrados na planilha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button></div></div>`)}
+    function renderLogin(){
+      document.getElementById('publicHeader').classList.remove('hidden');
+      document.getElementById('appHeader').classList.add('hidden');
+      setView(`<div class="login-wrap">
+        <h1>Acesso ao sistema</h1>
+        <p>Acesse usando o e-mail e a senha cadastrados na planilha.</p>
+        <div id="loginMsg"></div>
+        <form onsubmit="fazerLogin(event)">
+          <div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div>
+          <div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div>
+          <label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label>
+          <button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button>
+        </form>
+        <div class="actions" style="justify-content:center;margin-top:16px;">
+          <button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button>
+          <button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button>
+        </div>
+        <div style="margin-top:18px;text-align:center;">
+          <button class="btn btn-light btn-pill" style="font-size:11px;color:#546173;" onclick="limparCacheLocal()">🔄 Problemas para entrar? Limpar cache local</button>
+        </div>
+      </div>`);
+    }
+    function limparCacheLocal(){
+      try{
+        localStorage.removeItem('PSS_BOLAO_SESSAO');
+        localStorage.removeItem('PSS_BOLAO_SELECIONADO');
+        /* Não remove o e-mail salvo para não incomodar o usuário */
+      }catch(e){}
+      toast('Cache local limpo. Tente entrar novamente.','info');
+    }
     async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario={nome:u.nome||u.usuario||'Usuário',email:u.email||email,role:String(u.role||u.perfil||'usuario').toLowerCase(),perfil:u.perfil||u.role||'usuario'};ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(u||{}))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');renderLogin()}
     function aplicarLayoutLogado(){document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');document.getElementById('userDisplay').textContent=`${ESTADO.usuario.nome||'Usuário'}${ESTADO.usuario.email?' • '+ESTADO.usuario.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
