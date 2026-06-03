@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V160_HOME_PUBLICA_WINDOW_NAME_API_V158 -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V161_HOME_PUBLICA_API_HIBRIDA_FALLBACK -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -74,25 +74,173 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V160_HOME_PUBLICA_WINDOW_NAME_API_V158',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V161_HOME_PUBLICA_API_HIBRIDA_FALLBACK',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
 
     function api(action,dados={},args=null){
-      const executar=()=>apiWindowNameBridge_(action,dados,args);
+      const executar=()=>apiHibridaComFallback_(action,dados,args);
       PSS_API_FILA=PSS_API_FILA.then(executar,executar);
       return PSS_API_FILA;
     }
 
-    function apiWindowNameBridge_(action,dados={},args=null){
+    function apiHibridaComFallback_(action,dados={},args=null){
+      return apiJsonpDireto_(action,dados,args,18000)
+        .catch(()=>apiPostMessageBridge_(action,dados,args,22000))
+        .catch(()=>apiWindowNameBridge_(action,dados,args,30000));
+    }
+
+    function montarPayloadApi_(action,dados,args){
+      const payload=Object.assign({},dados||{});
+      payload.action=action;
+      payload.fnName=action;
+      if(Array.isArray(args))payload.args=args;
+      return payload;
+    }
+
+    function tratarRespostaApi_(r){
+      if(!r||r.ok!==true){
+        throw new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.');
+      }
+      return r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r);
+    }
+
+    function apiJsonpDireto_(action,dados={},args=null,timeoutMs=18000){
+      return new Promise((resolve,reject)=>{
+        const cb='PSS_CB_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const params=new URLSearchParams();
+        params.set('action',action);
+        params.set('fn',action);
+        params.set('fnName',action);
+        params.set('callback',cb);
+        params.set('payload',JSON.stringify(payload));
+        params.set('email',ESTADO.email||dados.email||'');
+        params.set('_',String(Date.now()));
+
+        const script=document.createElement('script');
+        let finalizado=false;
+
+        const aliases=[cb,'callback','teste'];
+        const anteriores={};
+        aliases.forEach(n=>anteriores[n]=window[n]);
+
+        function limpar(){
+          aliases.forEach(n=>{
+            try{
+              if(anteriores[n]===undefined)delete window[n];
+              else window[n]=anteriores[n];
+            }catch(e){window[n]=anteriores[n];}
+          });
+          if(script&&script.parentNode)script.parentNode.removeChild(script);
+        }
+
+        const handler=r=>{
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(r));}catch(e){reject(e);}
+        };
+
+        aliases.forEach(n=>{window[n]=handler;});
+
+        const timer=setTimeout(()=>{
+          if(finalizado)return;
+          finalizado=true;
+          limpar();
+          reject(new Error('Tempo limite JSONP.'));
+        },timeoutMs);
+
+        script.onerror=()=>{
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(new Error('Falha JSONP.'));
+        };
+
+        script.async=true;
+        script.src=CONFIG.apiUrl+'?'+params.toString();
+        document.body.appendChild(script);
+      });
+    }
+
+    function apiPostMessageBridge_(action,dados={},args=null,timeoutMs=22000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSBRIDGE_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const params=new URLSearchParams();
+        params.set('mode','bridge');
+        params.set('action',action);
+        params.set('fn',action);
+        params.set('fnName',action);
+        params.set('payload',JSON.stringify(payload));
+        params.set('email',ESTADO.email||dados.email||'');
+        params.set('token',token);
+        params.set('_',String(Date.now()));
+
+        const iframe=document.createElement('iframe');
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        let finalizado=false;
+
+        function limpar(){
+          window.removeEventListener('message',receber);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        const timer=setTimeout(()=>{
+          if(finalizado)return;
+          finalizado=true;
+          limpar();
+          reject(new Error('Tempo limite postMessage.'));
+        },timeoutMs);
+
+        function normalizarMensagemBridge_(data){
+          if(!data)return null;
+          if(typeof data==='string'){
+            try{
+              const parsed=JSON.parse(data);
+              if(parsed&&parsed.pssBoloesApi===true)return parsed;
+            }catch(e){}
+            return null;
+          }
+          if(typeof data==='object'&&data.pssBoloesApi===true)return data;
+          return null;
+        }
+
+        function receber(ev){
+          const msg=normalizarMensagemBridge_(ev&&ev.data);
+          if(!msg||msg.token!==token)return;
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+
+          try{resolve(tratarRespostaApi_(msg.response));}catch(e){reject(e);}
+        }
+
+        window.addEventListener('message',receber);
+        document.body.appendChild(iframe);
+        iframe.src=CONFIG.apiUrl+'?'+params.toString();
+      });
+    }
+
+    function apiWindowNameBridge_(action,dados={},args=null,timeoutMs=30000){
       return new Promise((resolve,reject)=>{
         const token='PSSWN_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
-        const payload=Object.assign({},dados||{});
-        payload.action=action;
-        payload.fnName=action;
-        if(Array.isArray(args))payload.args=args;
-
+        const payload=montarPayloadApi_(action,dados,args);
         const returnUrl=location.origin+location.pathname+'?pss_bridge_return=1&v='+encodeURIComponent(CONFIG.versao)+'&t='+Date.now();
 
         const params=new URLSearchParams();
@@ -117,7 +265,6 @@
         iframe.setAttribute('aria-hidden','true');
 
         let finalizado=false;
-        let tentativasLeitura=0;
 
         function limpar(){
           if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
@@ -127,50 +274,33 @@
           if(finalizado)return;
           finalizado=true;
           limpar();
-          reject(new Error('Tempo limite excedido ao conectar à API mobile.'));
-        },70000);
+          reject(new Error('Tempo limite window.name.'));
+        },timeoutMs);
 
-        function tentarLerWindowName(){
+        function tentarLer(){
           if(finalizado)return;
-
-          tentativasLeitura++;
 
           try{
             const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
-
             if(raw){
               const msg=JSON.parse(raw);
-
               if(msg&&msg.pssBoloesApi===true&&msg.token===token){
                 finalizado=true;
                 clearTimeout(timer);
                 limpar();
-
-                const r=msg.response;
-
-                if(!r||r.ok!==true){
-                  reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));
-                  return;
-                }
-
-                resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r));
+                try{resolve(tratarRespostaApi_(msg.response));}catch(e){reject(e);}
                 return;
               }
             }
           }catch(e){}
 
-          if(tentativasLeitura<280){
-            setTimeout(tentarLerWindowName,250);
-          }
+          setTimeout(tentarLer,250);
         }
 
-        iframe.onload=()=>{
-          setTimeout(tentarLerWindowName,60);
-        };
-
+        iframe.onload=()=>setTimeout(tentarLer,80);
         document.body.appendChild(iframe);
         iframe.src=CONFIG.apiUrl+'?'+params.toString();
-        setTimeout(tentarLerWindowName,350);
+        setTimeout(tentarLer,400);
       });
     }
 
@@ -252,8 +382,10 @@
       const lotBox=document.getElementById('homeTodasLoteriasConteudo');
       if(!box)return;
 
+      const timeoutHome=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout_home_publica')),12000));
+
       try{
-        const lista=await carregarBoloes();
+        const lista=await Promise.race([carregarBoloes(),timeoutHome]);
         const ativos=(lista||[]).filter(b=>!isHistorico(b)).slice(0,6);
         const nomes=[...new Set((lista||[]).map(b=>b.loteria||b.nome).filter(Boolean))];
 
@@ -277,7 +409,12 @@
       }catch(err){
         box.innerHTML=`
           <div class="home-note">
-            Não foi possível carregar os bolões públicos agora. O acesso ao sistema continua disponível pelo botão Entrar.
+            Não foi possível carregar os bolões ativos automaticamente neste momento. 
+            Clique em <strong>Entrar no sistema</strong> para acessar a área restrita ou tente atualizar a página.
+          </div>
+          <div class="actions" style="margin-top:14px;">
+            <button class="btn" onclick="renderLogin()">Entrar no sistema</button>
+            <button class="btn btn-light" onclick="carregarHomePublicaBoloes()">Tentar novamente</button>
           </div>
         `;
       }
