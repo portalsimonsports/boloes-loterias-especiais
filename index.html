@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V176_BLOQUEIO_COTAS_RESERVA_TURBO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V177_MENU_SUPERIOR_FIXO_STICKY -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -178,6 +178,90 @@
     .btn[disabled], .btn.disabled{opacity:.55!important;cursor:not-allowed!important;filter:grayscale(.2)}
     .acq-limite-info{font-size:12px;color:#334155;margin-top:6px;font-weight:800}
 
+
+    /* =========================================================
+     * V177 — MENU SUPERIOR FIXO/STICKY
+     * Mantém data/hora, usuário e navegação visíveis durante a rolagem.
+     * O conteúdo passa por baixo da barra, sem sumir o menu.
+     * ========================================================= */
+    :root{
+      --pss-topbar-offset: 0px;
+    }
+
+    header,
+    .topbar,
+    .pss-topbar,
+    #topbar,
+    #appHeader,
+    .app-header{
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 9990 !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,.12);
+    }
+
+    .menu,
+    .nav,
+    nav,
+    #menuPrincipal,
+    .menu-principal,
+    .navbar,
+    .nav-wrap{
+      position: sticky !important;
+      top: var(--pss-topbar-offset) !important;
+      z-index: 9989 !important;
+    }
+
+    .menu,
+    #menuPrincipal,
+    .menu-principal,
+    .navbar{
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    main,
+    .main,
+    #app,
+    #view,
+    .content,
+    .page{
+      scroll-margin-top: 120px;
+    }
+
+    .modal-backdrop,
+    #modalBackdrop{
+      z-index: 10050 !important;
+    }
+
+    .modal,
+    .dialog,
+    .modal-content{
+      z-index: 10060 !important;
+    }
+
+    @media (max-width: 920px){
+      header,
+      .topbar,
+      .pss-topbar,
+      #topbar,
+      #appHeader,
+      .app-header{
+        position: sticky !important;
+        top: 0 !important;
+      }
+
+      .menu,
+      .nav,
+      nav,
+      #menuPrincipal,
+      .menu-principal,
+      .navbar,
+      .nav-wrap{
+        top: var(--pss-topbar-offset) !important;
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -187,7 +271,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V176_BLOQUEIO_COTAS_RESERVA_TURBO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V177_MENU_SUPERIOR_FIXO_STICKY',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
@@ -3696,6 +3780,52 @@ function renderMetodoPagamento_(m,b,i){
       `;
     }).join('')}</div>`;
   };
+})();
+
+
+/* =====================================================================
+ * PATCH V177 — CÁLCULO AUTOMÁTICO DO OFFSET DO MENU FIXO
+ * Evita sobreposição quando existe faixa superior com data/hora/usuário.
+ * ===================================================================== */
+(function(){
+  function pssSetStickyOffsets(){
+    try{
+      var header =
+        document.querySelector('.topbar') ||
+        document.querySelector('.pss-topbar') ||
+        document.querySelector('#topbar') ||
+        document.querySelector('#appHeader') ||
+        document.querySelector('.app-header') ||
+        document.querySelector('header');
+
+      var menu =
+        document.querySelector('#menuPrincipal') ||
+        document.querySelector('.menu-principal') ||
+        document.querySelector('.navbar') ||
+        document.querySelector('.menu') ||
+        document.querySelector('nav');
+
+      var offset = 0;
+
+      if(header && menu && !header.contains(menu)){
+        offset = Math.ceil(header.getBoundingClientRect().height || 0);
+      }
+
+      document.documentElement.style.setProperty('--pss-topbar-offset', offset + 'px');
+    }catch(e){}
+  }
+
+  window.addEventListener('load', pssSetStickyOffsets);
+  window.addEventListener('resize', pssSetStickyOffsets);
+  window.addEventListener('orientationchange', function(){
+    setTimeout(pssSetStickyOffsets, 250);
+  });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    pssSetStickyOffsets();
+    setTimeout(pssSetStickyOffsets, 500);
+    setTimeout(pssSetStickyOffsets, 1500);
+  });
 })();
 
 </script>
