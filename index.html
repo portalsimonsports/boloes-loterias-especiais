@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V168_UPLOAD_JOGOS_POST_REAL_PROGRESS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V169_UPLOADS_POSTMESSAGE_COMPROVANTE_JOGOS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V154</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V169</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -148,7 +148,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V168_UPLOAD_JOGOS_POST_REAL_PROGRESS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V169_UPLOADS_POSTMESSAGE_COMPROVANTE_JOGOS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
@@ -565,7 +565,6 @@
       return new Promise((resolve,reject)=>{
         const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
         const payload=montarPayloadApi_(action,dados,args);
-        const returnUrl=location.origin+location.pathname+'?pss_bridge_return=1&v='+encodeURIComponent(CONFIG.versao)+'&t='+Date.now();
 
         const iframe=document.createElement('iframe');
         iframe.name='pss_upload_iframe_'+token;
@@ -594,54 +593,87 @@
           form.appendChild(input);
         }
 
-        add('mode','post_windowname');
+        add('mode','postmessage');
         add('action',action);
         add('fn',action);
         add('fnName',action);
         add('callback','callback');
         add('token',token);
-        add('returnUrl',returnUrl);
         add('email',ESTADO.email||dados.email||'');
         add('payload',JSON.stringify(payload));
         add('_',String(Date.now()));
 
         let finalizado=false;
+        let timer=null;
 
         function limpar(){
+          window.removeEventListener('message',onMessage);
           if(form&&form.parentNode)form.parentNode.removeChild(form);
           if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
         }
 
-        const timer=setTimeout(()=>{
+        function finalizarOk(resposta){
           if(finalizado)return;
           finalizado=true;
+          clearTimeout(timer);
           limpar();
-          reject(new Error('Tempo limite ao enviar arquivo. Tente reduzir a quantidade ou tamanho dos arquivos.'));
-        },timeoutMs);
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
 
-        function tentarLer(){
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
           if(finalizado)return;
           try{
             const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
             if(raw){
               const msg=JSON.parse(raw);
               if(msg&&msg.pssBoloesApi===true&&msg.token===token){
-                finalizado=true;
-                clearTimeout(timer);
-                limpar();
-                try{resolve(tratarRespostaApi_(msg.response));}catch(e){reject(e);}
+                finalizarOk(msg.response);
                 return;
               }
             }
           }catch(e){}
-          setTimeout(tentarLer,250);
+          setTimeout(tentarWindowNameFallback,500);
         }
 
-        iframe.onload=()=>setTimeout(tentarLer,120);
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
         document.body.appendChild(iframe);
         document.body.appendChild(form);
-        form.submit();
-        setTimeout(tentarLer,500);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
       });
     }
 
@@ -657,6 +689,28 @@
             {action:'uploadJogoRealizadoBolao',dados,args},
             {action:'salvarJogoRealizadoBolao',dados,args},
             {action:'enviarJogoRealizado',dados,args}
+          ]);
+        }
+        throw errPost;
+      }
+    }
+
+
+    async function apiUploadComprovante_(base64,file,loteria){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria};
+      const args=[base64,file.name,ESTADO.email,loteria];
+
+      try{
+        return await apiPostFormWindowName_('uploadComprovante',dados,args,90000);
+      }catch(errPost){
+        /*
+         * Fallback apenas para comprovantes pequenos.
+         * Para arquivos grandes, o POST é obrigatório para evitar limite de URL/JSONP.
+         */
+        if(String(base64||'').length<350000){
+          return await apiMulti([
+            {action:'uploadComprovante',dados,args},
+            {action:'enviarComprovante',dados,args}
           ]);
         }
         throw errPost;
@@ -1166,10 +1220,83 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     }
     async function salvarPalpite(){const btn=document.getElementById('btnSalvarPalpite');btn.disabled=true;btn.textContent='Salvando...';try{const nums=ESTADO.numerosSelecionados.slice().sort((a,b)=>a-b),r=await apiMulti([{action:'salvarPalpite',dados:{numeros:nums,email:ESTADO.email,jogo:1,loteria:ESTADO.bolaoSelecionado},args:[nums,ESTADO.email,1,ESTADO.bolaoSelecionado]},{action:'registrarPalpite',dados:{numeros:nums,email:ESTADO.email,loteria:ESTADO.bolaoSelecionado},args:[ESTADO.email,ESTADO.bolaoSelecionado,nums]}]);toast((r&&r.msg)||'Palpite salvo com sucesso.');renderPalpiteAberto(ESTADO.bolaoSelecionado)}catch(err){toast(err.message,'error');btn.disabled=false}}
     function getPrazoBolao(nome){const b=ESTADO.boloes.find(x=>normalizar(x.loteria)===normalizar(nome)||normalizar(x.nome)===normalizar(nome));return b?(b.fimPalpite||'-'):'-'}
-    async function renderComprovante(){loading('Carregando comprovante');try{const lista=await carregarBoloes(),hist=await apiMulti([{action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},{action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}]).catch(()=>[]);setView(`<div class="panel no-left"><form onsubmit="enviarComprovante(event)"><div class="wide-control"><label>Tipo de cota:</label><select id="tipoCota" onchange="renderCamposPartes()"><option value="unica">Cota única</option><option value="dividida">Cota dividida</option></select></div><div id="partesBox"></div><div class="upload-center"><label>Selecione a loteria do depósito:</label><select id="uploadBolao" required><option value="">Selecione...</option>${lista.map(b=>`<option value="${escapeAttr(b.loteria)}" ${b.loteria===ESTADO.bolaoSelecionado?'selected':''}>${escapeHtml(b.loteria)}</option>`).join('')}</select><h3>Enviar Comprovante</h3><small>Formatos aceitos: JPG, PNG, PDF</small><input id="arquivoComprovante" type="file" accept="image/*,.pdf,application/pdf" required style="margin:16px 0 10px;" /><button class="btn btn-block" id="btnEnviarComprovante" type="submit">Enviar agora</button></div></form><hr style="border:0;border-top:1px solid #ddd;margin:24px 0;"><h3>🕘 Meus Envios Recentes</h3>${renderHistoricoComprovantes(hist)}</div>`);renderCamposPartes()}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderComprovante(){loading('Carregando comprovante');try{const lista=await carregarBoloes(),hist=await apiMulti([{action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},{action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}]).catch(()=>[]);setView(`<div class="panel no-left"><form onsubmit="enviarComprovante(event)"><div class="wide-control"><label>Tipo de cota:</label><select id="tipoCota" onchange="renderCamposPartes()"><option value="unica">Cota única</option><option value="dividida">Cota dividida</option></select></div><div id="partesBox"></div><div class="upload-center"><label>Selecione a loteria do depósito:</label><select id="uploadBolao" required><option value="">Selecione...</option>${lista.map(b=>`<option value="${escapeAttr(b.loteria)}" ${b.loteria===ESTADO.bolaoSelecionado?'selected':''}>${escapeHtml(b.loteria)}</option>`).join('')}</select><h3>Enviar Comprovante</h3><small>Formatos aceitos: JPG, PNG, PDF</small><input id="arquivoComprovante" type="file" accept="image/*,.pdf,application/pdf" required style="margin:16px 0 10px;" /><button class="btn btn-block" id="btnEnviarComprovante" type="submit">Enviar agora</button>
+<div class="upload-progress-box" id="comprovanteUploadProgressBox">
+  <div class="upload-progress-top">
+    <span id="comprovanteUploadTitulo">Preparando envio...</span>
+    <span id="comprovanteUploadPercentual">0%</span>
+  </div>
+  <div class="upload-progress-bar">
+    <div class="upload-progress-fill" id="comprovanteUploadFill"></div>
+  </div>
+  <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Aguardando arquivo...</div>
+</div></div></form><hr style="border:0;border-top:1px solid #ddd;margin:24px 0;"><h3>🕘 Meus Envios Recentes</h3>${renderHistoricoComprovantes(hist)}</div>`);renderCamposPartes()}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
     function renderCamposPartes(){const box=document.getElementById('partesBox');if(!box)return;const tipo=document.getElementById('tipoCota').value;if(tipo!=='dividida'){box.innerHTML='';return}box.innerHTML=`<div class="wide-control"><label>Em quantas partes a cota foi dividida?</label><select id="qtdPartes" onchange="renderNomesPartes()"><option value="2">2 partes</option><option value="3">3 partes</option><option value="4">4 partes</option><option value="5">5 partes</option></select></div><div id="nomesPartes"></div>`;renderNomesPartes()}function renderNomesPartes(){const box=document.getElementById('nomesPartes'),qtd=Number(document.getElementById('qtdPartes').value||2);let h='';for(let i=1;i<=qtd;i++)h+=`<input style="margin-bottom:12px;" placeholder="Nome do participante ${i}" />`;box.innerHTML=h}
     function renderHistoricoComprovantes(lista){lista=Array.isArray(lista)?lista:[];if(!lista.length)return '<div class="notice warn">Nenhum envio localizado.</div>';return `<div class="table-wrap"><table><thead><tr><th>Data/Hora</th><th>Status</th><th>Link</th></tr></thead><tbody>${lista.map(x=>`<tr><td>${escapeHtml(formatarDataHoraPtBR(x.data||x.DATA||x.dataHora||x.DATA_HORA||'-'))}</td><td>${escapeHtml(x.status||'Pendente')}</td><td>${x.url?`<a href="${escapeAttr(x.url)}" target="_blank" rel="noopener">Ver Arquivo</a>`:'-'}</td></tr>`).join('')}</tbody></table></div>`}
-    async function enviarComprovante(ev){ev.preventDefault();const loteria=document.getElementById('uploadBolao').value,file=document.getElementById('arquivoComprovante').files[0],btn=document.getElementById('btnEnviarComprovante');if(!loteria)return toast('Selecione a loteria do depósito.','error');if(!file)return toast('Selecione o arquivo do comprovante.','error');ESTADO.bolaoSelecionado=loteria;localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);btn.disabled=true;btn.textContent='Enviando...';try{const base64=await lerArquivoBase64(file),r=await apiMulti([{action:'uploadComprovante',dados:{fileData:base64,fileName:file.name,email:ESTADO.email,loteria},args:[base64,file.name,ESTADO.email,loteria]},{action:'enviarComprovante',dados:{fileData:base64,fileName:file.name,email:ESTADO.email,loteria},args:[base64,file.name,ESTADO.email,loteria]}]);toast((r&&r.msg)||'Comprovante enviado com sucesso.');renderComprovante()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar agora'}}
+    async function enviarComprovante(ev){
+      ev.preventDefault();
+
+      const loteria=document.getElementById('uploadBolao').value;
+      const input=document.getElementById('arquivoComprovante');
+      const file=input&&input.files?input.files[0]:null;
+      const btn=document.getElementById('btnEnviarComprovante');
+
+      if(!loteria)return toast('Selecione a loteria do depósito.','error');
+      if(!file)return toast('Selecione o arquivo do comprovante.','error');
+
+      ESTADO.bolaoSelecionado=loteria;
+      localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);
+
+      btn.disabled=true;
+      btn.textContent='Enviando...';
+      atualizarProgressoUploadComprovante_(5,'Preparando envio...','Lendo arquivo selecionado.','run');
+
+      try{
+        await aguardarFrame_();
+
+        atualizarProgressoUploadComprovante_(18,'Lendo arquivo...','Preparando '+file.name,'run');
+        const base64=await lerArquivoBase64(file);
+
+        atualizarProgressoUploadComprovante_(45,'Enviando comprovante...','Gravando arquivo no Drive.','run');
+        const r=await apiUploadComprovante_(base64,file,loteria);
+
+        atualizarProgressoUploadComprovante_(100,'Envio concluído',(r&&r.msg)||'Comprovante enviado com sucesso.','ok');
+
+        toast((r&&r.msg)||'Comprovante enviado com sucesso.');
+        input.value='';
+        cacheDel_(cacheKeyLoteria_('historicoComprovantes',loteria));
+        setTimeout(()=>renderComprovante(),700);
+      }catch(err){
+        atualizarProgressoUploadComprovante_(0,'Falha no envio',err.message,'error');
+        toast(err.message,'error');
+      }finally{
+        btn.disabled=false;
+        btn.textContent='Enviar agora';
+      }
+    }
+
+    function atualizarProgressoUploadComprovante_(percentual,titulo,detalhe,tipo){
+      const box=document.getElementById('comprovanteUploadProgressBox');
+      const fill=document.getElementById('comprovanteUploadFill');
+      const pct=document.getElementById('comprovanteUploadPercentual');
+      const tit=document.getElementById('comprovanteUploadTitulo');
+      const det=document.getElementById('comprovanteUploadDetalhe');
+
+      if(!box)return;
+
+      box.classList.add('open');
+      const p=Math.max(0,Math.min(100,Math.round(Number(percentual||0))));
+
+      if(fill)fill.style.width=p+'%';
+      if(pct)pct.textContent=p+'%';
+      if(tit)tit.textContent=titulo||'Enviando...';
+      if(det){
+        det.textContent=detalhe||'Processando...';
+        det.classList.remove('upload-progress-ok','upload-progress-error');
+        if(tipo==='ok')det.classList.add('upload-progress-ok');
+        if(tipo==='error')det.classList.add('upload-progress-error');
+      }
+    }
 
     async function renderJogosRealizados(){
       loading('Carregando jogos realizados');
