@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V181_CACHE_SEGURO_SEM_TIMEOUT_BOLOES -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V183_FIX_LOGIN_MOBILE_REVALIDACAO_CACHE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V174</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V183</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -345,9 +348,56 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V181_CACHE_SEGURO_SEM_TIMEOUT_BOLOES',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V183_FIX_LOGIN_MOBILE_REVALIDACAO_CACHE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
-    document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
+    document.addEventListener('DOMContentLoaded',()=>{iniciarAplicacao_();});
+
+    async function iniciarAplicacao_(){
+      try{
+        if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){
+          document.body.style.display='none';
+          return;
+        }
+
+        prepararFeedbackBotoes();
+        atualizarRelogio();
+        setInterval(atualizarRelogio,1000);
+        document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));
+
+        const s=carregarSessao();
+        if(s&&s.email){
+          renderVerificandoSessao_();
+          try{
+            const u=await validarSessaoSalva_(s);
+            ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},s,u||{},{email:(u&&u.email)||s.email}));
+            ESTADO.email=ESTADO.usuario.email;
+            ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();
+            aplicarLayoutLogado();
+            preCarregarDadosEstaticos();
+            navegar('inicio');
+            return;
+          }catch(sessErr){
+            console.warn('Sessão salva inválida ou expirada:',sessErr);
+            const emailAnterior=String((s&&s.email)||ESTADO.email||'').trim().toLowerCase();
+            limparAcessoSalvoNoAparelho_({silencioso:true,manterEmail:true});
+            ESTADO.email=emailAnterior;
+            if(emailAnterior)localStorage.setItem('PSS_BOLAO_EMAIL',emailAnterior);
+            renderLogin();
+            const msg=document.getElementById('loginMsg');
+            if(msg)msg.innerHTML='<div class="notice warn">Sessão anterior expirada ou cache antigo detectado neste navegador. Informe a senha novamente para validar o acesso na planilha.</div>';
+            return;
+          }
+        }
+
+        renderHomePublica();
+      }catch(err){
+        console.error(err);
+        limparEstadoCorrompido_();
+        renderLogin();
+        const msg=document.getElementById('loginMsg');
+        if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';
+      }
+    }
     let PSS_API_FILA=Promise.resolve();
 
     function api(action,dados={},args=null){
@@ -589,12 +639,89 @@
       };
     }
 
-    function limparEstadoCorrompido_(){
-      try{localStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){}
-      try{Object.keys(localStorage).filter(k=>k.indexOf('PSS_BOLAO_CACHE_')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}
+    function renderVerificandoSessao_(){
+      try{document.getElementById('publicHeader').classList.add('hidden');}catch(e){}
+      try{document.getElementById('appHeader').classList.add('hidden');}catch(e){}
+      setView(`
+        <div class="login-wrap">
+          <h1>Validando acesso</h1>
+          <p>Conferindo a sessão salva com a base da planilha...</p>
+          <div class="notice info"><span class="loading-fast">Verificando credenciais salvas neste aparelho</span></div>
+          <div class="actions" style="justify-content:center;margin-top:16px;">
+            <button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button>
+          </div>
+        </div>
+      `);
+    }
+
+    async function validarSessaoSalva_(sessao){
+      const email=String((sessao&&sessao.email)||'').trim().toLowerCase();
+      if(!email)throw new Error('Sessão sem e-mail válido.');
+      const u=await promiseTimeout_(apiMulti([
+        {action:'validarSessao',dados:{email},args:[email]},
+        {action:'validarLoginSalvo',dados:{email},args:[email]},
+        {action:'validarUsuarioSessao',dados:{email},args:[email]}
+      ]),14000,'Tempo limite ao validar sessão salva.');
+      return normalizarUsuarioSessao_(Object.assign({},sessao,u||{},{email:(u&&u.email)||email}));
+    }
+
+    function limparCachesLocaisBoloes_(opts){
+      opts=opts||{};
+      const removerSessao=opts.removerSessao!==false;
+      const removerEmail=opts.removerEmail===true;
+      const removerSelecionado=opts.removerSelecionado!==false;
+      const prefixos=['PSS_BOLAO_CACHE_','PSS_BLE_VIEW_CACHE_V179_'];
+
+      try{if(removerSessao)localStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){}
+      try{if(removerEmail)localStorage.removeItem('PSS_BOLAO_EMAIL');}catch(e){}
+      try{if(removerSelecionado)localStorage.removeItem('PSS_BOLAO_SELECIONADO');}catch(e){}
+
+      try{
+        Object.keys(localStorage).forEach(k=>{
+          if(prefixos.some(p=>k.indexOf(p)===0))localStorage.removeItem(k);
+        });
+      }catch(e){}
+
+      try{
+        Object.keys(sessionStorage).forEach(k=>{
+          if(prefixos.some(p=>k.indexOf(p)===0))sessionStorage.removeItem(k);
+        });
+      }catch(e){}
+    }
+
+    function limparAcessoSalvoNoAparelho_(opts){
+      opts=opts||{};
+      const emailAnterior=String(localStorage.getItem('PSS_BOLAO_EMAIL')||ESTADO.email||'').trim().toLowerCase();
+      limparCachesLocaisBoloes_({removerSessao:true,removerEmail:!opts.manterEmail,removerSelecionado:true});
       ESTADO.usuario=null;
       ESTADO.role='';
       ESTADO.boloes=[];
+      ESTADO.bolaoSelecionado='';
+      if(opts.manterEmail&&emailAnterior){
+        ESTADO.email=emailAnterior;
+        try{localStorage.setItem('PSS_BOLAO_EMAIL',emailAnterior);}catch(e){}
+      }else{
+        ESTADO.email='';
+      }
+      if(!opts.silencioso){
+        renderLogin();
+        const msg=document.getElementById('loginMsg');
+        if(msg)msg.innerHTML='<div class="notice ok">Acesso salvo, sessão e cache deste aparelho foram limpos. Faça login novamente.</div>';
+      }
+    }
+
+    function limparCacheDepoisDoLogin_(){
+      limparCachesLocaisBoloes_({removerSessao:false,removerEmail:false,removerSelecionado:false});
+    }
+
+    window.limparAcessoSalvoNoAparelho_=limparAcessoSalvoNoAparelho_;
+
+    function limparEstadoCorrompido_(){
+      limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true});
+      ESTADO.usuario=null;
+      ESTADO.role='';
+      ESTADO.boloes=[];
+      ESTADO.bolaoSelecionado='';
     }
 
     function listaSegura_(lista){
@@ -775,9 +902,9 @@
       }
     }
 
-    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button></div></div>`)}
-    async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},u||{},{email:(u&&u.email)||email}));ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
-    function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(u||{}))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');renderHomePublica()}
+    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button><button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button></div><div class="cache-hint warn">Se abrir em aba anônima, mas falhar no navegador normal do celular, use “Limpar acesso salvo” para remover sessão e cache antigos deste aparelho.</div></div>`)}
+    async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);limparCacheDepoisDoLogin_();ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},u||{},{email:(u&&u.email)||email}));ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
+    function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true});ESTADO.usuario=null;ESTADO.role='';ESTADO.boloes=[];renderHomePublica()}
     function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
     function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
     function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
@@ -4396,6 +4523,183 @@ function renderMetodoPagamento_(m,b,i){
       toast('Cache completo dos menus limpo.');
     }catch(e){
       toast('Não foi possível limpar o cache completo.','error');
+    }
+  };
+})();
+
+
+/* =====================================================================
+ * PATCH V183 — LOGIN MOBILE / REVALIDAÇÃO DE SESSÃO / LIMPEZA DE CACHE
+ * Base preservada: V182_UPLOAD_FORM_DIRETO_DRIVE_ROBUSTO
+ *
+ * Correção:
+ * - Sessão salva no navegador normal do celular agora é revalidada na API
+ *   antes de liberar o painel.
+ * - Botão "Limpar acesso salvo" remove localStorage/sessionStorage do sistema.
+ * - Login bem-sucedido limpa cache antigo de telas/dados para evitar abertura
+ *   com HTML velho no mobile.
+ * ===================================================================== */
+
+/* =====================================================================
+ * PATCH V182 — UPLOAD FORM DIRETO / DRIVE ROBUSTO
+ * Base preservada: V181_CACHE_SEGURO_SEM_TIMEOUT_BOLOES
+ *
+ * Correção:
+ * - O POST de upload agora envia o payload JSON e também campos diretos
+ *   (fileData, fileName, email, loteria, concurso, dataJogo, obs).
+ * - Isso evita falha quando o Apps Script não interpreta corretamente o
+ *   payload grande com base64 dentro de JSON.
+ * ===================================================================== */
+(function(){
+  apiPostFormWindowName_ = function(action,dados={},args=null,timeoutMs=180000){
+    return new Promise((resolve,reject)=>{
+      const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+      const payload=montarPayloadApi_(action,dados,args);
+
+      const iframe=document.createElement('iframe');
+      iframe.name='pss_upload_iframe_'+token;
+      iframe.style.position='fixed';
+      iframe.style.left='-9999px';
+      iframe.style.top='-9999px';
+      iframe.style.width='1px';
+      iframe.style.height='1px';
+      iframe.style.opacity='0';
+      iframe.style.pointerEvents='none';
+      iframe.setAttribute('aria-hidden','true');
+
+      const form=document.createElement('form');
+      form.method='POST';
+      form.action=CONFIG.apiUrl;
+      form.target=iframe.name;
+      form.acceptCharset='UTF-8';
+      form.enctype='application/x-www-form-urlencoded';
+      form.style.display='none';
+
+      function add(name,value){
+        const input=document.createElement('input');
+        input.type='hidden';
+        input.name=name;
+        input.value=value==null?'':String(value);
+        form.appendChild(input);
+      }
+
+      add('mode','postmessage');
+      add('action',action);
+      add('fn',action);
+      add('fnName',action);
+      add('callback','callback');
+      add('token',token);
+      add('email',ESTADO.email||dados.email||'');
+      add('payload',JSON.stringify(payload));
+      add('_',String(Date.now()));
+
+      // Campos diretos para upload. O Code_API V176 lê esses campos mesmo se o JSON falhar.
+      Object.keys(dados||{}).forEach(k=>{
+        if(dados[k]!==undefined && dados[k]!==null)add(k,dados[k]);
+      });
+      if(Array.isArray(args))add('args',JSON.stringify(args));
+
+      let finalizado=false;
+      let timer=null;
+
+      function limpar(){
+        window.removeEventListener('message',onMessage);
+        if(form&&form.parentNode)form.parentNode.removeChild(form);
+        if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+      }
+
+      function finalizarOk(resposta){
+        if(finalizado)return;
+        finalizado=true;
+        clearTimeout(timer);
+        limpar();
+        try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+      }
+
+      function finalizarErro(err){
+        if(finalizado)return;
+        finalizado=true;
+        clearTimeout(timer);
+        limpar();
+        reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+      }
+
+      function onMessage(ev){
+        if(finalizado)return;
+        let msg=ev.data;
+        if(typeof msg==='string'){
+          try{msg=JSON.parse(msg);}catch(e){}
+        }
+        if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+          finalizarOk(msg.response);
+        }
+      }
+
+      function tentarWindowNameFallback(){
+        if(finalizado)return;
+        try{
+          const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+          if(raw){
+            const msg=JSON.parse(raw);
+            if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+              finalizarOk(msg.response);
+              return;
+            }
+          }
+        }catch(e){}
+        setTimeout(tentarWindowNameFallback,500);
+      }
+
+      window.addEventListener('message',onMessage);
+      timer=setTimeout(()=>{
+        finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+      },timeoutMs||180000);
+
+      iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+      iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+      document.body.appendChild(iframe);
+      document.body.appendChild(form);
+
+      try{
+        form.submit();
+        setTimeout(tentarWindowNameFallback,800);
+      }catch(err){
+        finalizarErro(err);
+      }
+    });
+  };
+
+  apiUploadComprovante_ = async function(base64,file,loteria){
+    const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria};
+    const args=[base64,file.name,ESTADO.email,loteria];
+    try{
+      return await apiPostFormWindowName_('uploadComprovante',dados,args,180000);
+    }catch(errPost){
+      if(String(base64||'').length<350000){
+        return await apiMulti([
+          {action:'uploadComprovante',dados,args},
+          {action:'enviarComprovante',dados,args}
+        ]);
+      }
+      throw errPost;
+    }
+  };
+
+  apiUploadJogoRealizado_ = async function(base64,file,loteria,concurso,dataJogo,obs){
+    const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+    const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+    try{
+      return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000);
+    }catch(errPost){
+      if(String(base64||'').length<350000){
+        return await apiMulti([
+          {action:'uploadJogoRealizadoBolao',dados,args},
+          {action:'salvarJogoRealizadoBolao',dados,args},
+          {action:'enviarJogoRealizado',dados,args}
+        ]);
+      }
+      throw errPost;
     }
   };
 })();
