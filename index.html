@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V169_UPLOADS_POSTMESSAGE_COMPROVANTE_JOGOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V171_PAGAMENTOS_SUBMENU_RECORRENCIA -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V169</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V171</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -139,6 +139,24 @@
     .upload-progress-fill.indeterminate{position:relative;min-width:8%;animation:uploadPulse 1.1s ease-in-out infinite}
     @keyframes uploadPulse{0%{filter:brightness(.95)}50%{filter:brightness(1.25)}100%{filter:brightness(.95)}}
 
+
+    .admin-subtabs{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 18px;padding:8px;background:#f4f8f5;border:1px solid #dceae0;border-radius:14px}
+    .admin-subtabs .btn-tab{min-height:40px;border-radius:10px;text-transform:uppercase}
+    .payment-clean-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+    .payment-clean-header p{margin:6px 0 0;color:#43556a}
+    .pay-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin:12px 0 18px}
+    .pay-summary-card{border:1px solid #dfe8e2;background:#fff;border-radius:12px;padding:13px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+    .pay-summary-card b{display:block;text-transform:uppercase;color:#5a6879;font-size:10px;margin-bottom:6px;letter-spacing:.3px}.pay-summary-card strong{font-size:22px;color:#003b12;line-height:1.1}.pay-summary-card.warn strong{color:#cc6a00}.pay-summary-card.danger strong{color:#b91c1c}
+    .pay-filterbar{display:grid;grid-template-columns:1.6fr .8fr .8fr auto;gap:10px;align-items:end;margin:12px 0 16px;background:#fbfdfb;border:1px solid #dfe8e2;border-radius:12px;padding:12px}
+    .pay-filterbar .field{margin:0}.pay-list{display:grid;gap:12px;margin-top:12px}
+    .pay-admin-card-pro{background:#fff;border:1px solid #dce6df;border-left:5px solid #0b6f28;border-radius:13px;padding:14px;box-shadow:0 5px 15px rgba(0,0,0,.06)}
+    .pay-admin-card-pro.warn{border-left-color:#ff8a00}.pay-admin-card-pro.danger{border-left-color:#c1121f}.pay-admin-card-pro.muted{border-left-color:#7c8794}
+    .pay-admin-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}.pay-admin-title{font-size:15px;font-weight:950;color:#0b2f12}.pay-admin-sub{font-size:12px;color:#5d6b7d;font-weight:800;margin-top:4px}.pay-admin-status{font-weight:950;text-transform:uppercase;font-size:12px;padding:7px 12px;border-radius:999px;background:#d9f5df;color:#064d1a}.pay-admin-status.warn{background:#fff4d8;color:#a15c00}.pay-admin-status.danger{background:#fee2e2;color:#a21818}.pay-admin-status.muted{background:#eef2f7;color:#465567}
+    .pay-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.pay-admin-info{background:#f9fbfa;border:1px solid #e1e9e4;border-radius:9px;padding:9px;min-height:56px;word-break:break-word}.pay-admin-info b{display:block;color:#596879;text-transform:uppercase;font-size:10px;margin-bottom:5px}.pay-admin-info span{font-size:12px;color:#111;font-weight:700}.pay-admin-info.full{grid-column:1/-1}
+    .pay-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pay-card-actions .btn{min-height:34px;padding:8px 12px;border-radius:8px;font-size:11px}.recebimento-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}.recebimento-type-pill{display:inline-flex;border-radius:999px;background:#e8f5ed;color:#064d1a;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase}.rec-section-label{grid-column:1/-1;font-weight:950;color:#0b4b1d;border-bottom:1px solid #dbe9df;padding:7px 0 2px;margin-top:4px}.recebimento-card.compact{box-shadow:0 6px 20px rgba(0,0,0,.05)}.recebimento-grid.pro{grid-template-columns:repeat(4,minmax(180px,1fr))}.rec-hidden{display:none!important}.rec-hint{font-size:12px;color:#596879;margin:6px 0 0}
+    .pag-recorrente-box{border:1px solid #dce8e1;background:#f8fcf9;border-radius:14px;padding:12px;margin:12px 0}.pag-recorrente-box h4{margin:0 0 8px;color:#003b12}.pag-recorrente-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.pay-copy-label{font-size:11px;font-weight:900;color:#526070;text-transform:uppercase;margin:8px 0 4px}
+    @media(max-width:920px){.pay-summary-grid,.pay-admin-grid,.recebimento-grid.pro,.pay-filterbar,.pag-recorrente-inline{grid-template-columns:1fr}.payment-clean-header{display:block}.pay-card-actions .btn{width:100%}}
+
 </style>
 </head>
 <body>
@@ -148,7 +166,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V169_UPLOADS_POSTMESSAGE_COMPROVANTE_JOGOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V171_PAGAMENTOS_SUBMENU_RECORRENCIA',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()});
     let PSS_API_FILA=Promise.resolve();
@@ -1063,6 +1081,20 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
             </div>
           </div>
 
+          ${Number(b.qtdParcelas||b.parcelas||1)>1?`
+            <div class="pag-recorrente-box">
+              <h4>Pagamento recorrente opcional</h4>
+              <label class="checkline"><input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal()"><span>Quero planejar pagamento recorrente para este bolão.</span></label>
+              <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
+                <div class="field"><label>Meses/parcelas</label><input id="pagRecMeses" value="${escapeAttr(b.qtdParcelas||1)}"></div>
+                <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10"></div>
+                <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+                <div class="field" style="align-self:end;"><button type="button" class="btn btn-light btn-block" onclick="salvarPlanejamentoRecorrenteModal('${escapeAttr(b.loteria||b.nome||loteria)}')">Salvar planejamento</button></div>
+              </div>
+              <div class="rec-hint">Disponível apenas quando o bolão possui mais de uma parcela. Esta opção ajuda o participante a organizar pagamentos recorrentes, sem obrigatoriedade.</div>
+            </div>
+          `:''}
+
           ${lista.length?`
             <div class="pay-method-grid">
               ${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}
@@ -1092,6 +1124,27 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       });
     }
 
+    function togglePagamentoRecorrenteModal(){
+      const chk=document.getElementById('pagRecorrente');
+      const box=document.getElementById('pagRecorrenteCampos');
+      if(box)box.classList.toggle('hidden',!(chk&&chk.checked));
+    }
+
+    async function salvarPlanejamentoRecorrenteModal(loteria){
+      const chk=document.getElementById('pagRecorrente');
+      if(!(chk&&chk.checked))return toast('Marque a opção de pagamento recorrente antes de salvar.','warn');
+      const qtd=Math.max(1,num(document.getElementById('pagQtdCotas')?document.getElementById('pagQtdCotas').value:1));
+      const valor=document.getElementById('pagValorTotal')?document.getElementById('pagValorTotal').value:'';
+      const parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+      const dia=Math.max(1,Math.min(31,num(document.getElementById('pagRecDia')?document.getElementById('pagRecDia').value:10)));
+      const obs=document.getElementById('pagRecObs')?document.getElementById('pagRecObs').value:'';
+      if(parcelas<=1)return toast('Pagamento recorrente só fica disponível para bolões com mais de uma parcela.','warn');
+      try{
+        const r=await api('salvarPlanejamentoPagamentoRecorrente',{},[{email:ESTADO.email,loteria,qtdCotas:qtd,valorTotal:valor,qtdParcelas:parcelas,diaPreferencial:dia,obs}]);
+        toast((r&&r.msg)||'Planejamento salvo.');
+      }catch(err){toast(err.message,'error')}
+    }
+
     function renderMetodoPagamento_(m,b,i){
       const valor=num(b.valorCota||0)*Math.max(1,num(b.cotasUsuario||b.minhasCotas||1)||1);
       const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
@@ -1100,7 +1153,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
 
       return `
         <div class="pay-method">
-          <h4>${escapeHtml(m.tipoRecebimento||'Recebimento')}</h4>
+          <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
           <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
           ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
           ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
@@ -1115,6 +1168,14 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
           `:''}
         </div>
       `;
+    }
+
+    function labelTipoRecebimento_(tipo){
+      const t=normalizar(tipo);
+      if(t.includes('DADOS')&&t.includes('PIX'))return 'Pix + dados bancários';
+      if(t.includes('DADOS')||t.includes('BANC'))return 'Dados bancários';
+      if(t.includes('PIX'))return 'PIX';
+      return String(tipo||'Recebimento').replace(/_/g,' ');
     }
 
     function copiarTextoPagamento(txt){
@@ -1964,45 +2025,73 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       }
     }
 
-    async function renderPagamentosAdmin(){
+    async function renderPagamentosAdmin(tab='efetuados'){
       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+      await renderPagamentosAdminTab(tab||'efetuados');
+    }
+
+    async function renderPagamentosAdminTab(tab){
+      if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+      ESTADO.pagamentosSubView=tab||'efetuados';
       loading('Carregando pagamentos');
 
       try{
-        const pag=await adminDados('PAGAMENTOS').catch(()=>({headers:[],rows:[]}));
-        const rec=await apiMulti([{action:'getDadosRecebimentoAdmin',args:[]}]).catch(()=>({dados:[]}));
-        ESTADO.dadosRecebimentoAdmin=rec.dados||[];
+        const dados=await carregarDadosPagamentosAdmin_();
+        const subtabs=renderSubmenuPagamentosAdmin_(ESTADO.pagamentosSubView);
 
-        setView(`
-          <div class="panel">
-            <h2>Pagamentos e dados de recebimento</h2>
-            <p>Gerencie os meios de recebimento usados nos bolões ativos e acompanhe os registros de pagamento.</p>
-
-            <div class="actions">
-              <button class="btn" onclick="adicionarRecebimentoAdmin()">Adicionar meio de recebimento</button>
-              <button class="btn btn-light" onclick="renderPagamentosAdmin()">Atualizar</button>
-            </div>
-
-            <div id="dadosRecebimentoAdminBox">
-              ${renderDadosRecebimentoAdmin_()}
-            </div>
-          </div>
-
-          <div class="panel">
-            <h2>Registros de pagamentos</h2>
-            ${pag.headers&&pag.headers.length?`
-              <div class="table-wrap">
-                <table>
-                  <thead><tr>${pag.headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
-                  <tbody>${(pag.rows||[]).map(row=>`<tr>${row.map(c=>`<td>${formatarCelula(c)}</td>`).join('')}</tr>`).join('')}</tbody>
-                </table>
+        if(ESTADO.pagamentosSubView==='dados'){
+          setView(`
+            <div class="panel">
+              <div class="payment-clean-header">
+                <div>
+                  <h2>Dados para pagamento</h2>
+                  <p>Cadastre os meios de recebimento disponíveis por bolão/loteria. Estes dados alimentam a geração de Pix, QR Code e instruções de pagamento.</p>
+                </div>
+                <button class="btn" onclick="adicionarRecebimentoAdmin()">Adicionar meio</button>
               </div>
-            `:'<div class="notice warn">Nenhum pagamento localizado.</div>'}
-          </div>
-        `);
+              ${subtabs}
+              <div class="notice info">Use <strong>PIX</strong> para chave Pix/QR Code, <strong>Dados bancários</strong> para transferência, ou <strong>Pix + dados bancários</strong> quando quiser deixar as duas opções cadastradas.</div>
+              <div id="dadosRecebimentoAdminBox">
+                ${renderDadosRecebimentoAdmin_()}
+              </div>
+            </div>
+          `);
+          setTimeout(()=>{(ESTADO.dadosRecebimentoAdmin||[]).forEach((_,i)=>atualizarCamposRecebimentoAdmin(i));},80);
+        }else{
+          setView(`
+            <div class="panel">
+              <div class="payment-clean-header">
+                <div>
+                  <h2>Pagamentos efetuados</h2>
+                  <p>Acompanhe comprovantes enviados, status do OCR, validações e confirme manualmente quando necessário.</p>
+                </div>
+                <button class="btn btn-light" onclick="renderPagamentosAdminTab('efetuados')">Atualizar</button>
+              </div>
+              ${subtabs}
+              ${renderPagamentosEfetuadosAdmin_(dados.pag.headers||[],dados.pag.rows||[])}
+            </div>
+          `);
+        }
       }catch(err){
         setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
       }
+    }
+
+    async function carregarDadosPagamentosAdmin_(){
+      const pag=await adminDados('PAGAMENTOS').catch(()=>({headers:[],rows:[]}));
+      const rec=await apiMulti([{action:'getDadosRecebimentoAdmin',args:[]}]).catch(()=>({dados:[]}));
+      ESTADO.dadosRecebimentoAdmin=rec.dados||[];
+      ESTADO.pagamentosAdminCache={headers:pag.headers||[],rows:pag.rows||[]};
+      return {pag,rec};
+    }
+
+    function renderSubmenuPagamentosAdmin_(tab){
+      return `
+        <div class="admin-subtabs">
+          <button type="button" class="btn-tab ${tab==='efetuados'?'active':''}" onclick="renderPagamentosAdminTab('efetuados')">Pagamentos efetuados</button>
+          <button type="button" class="btn-tab ${tab==='dados'?'active':''}" onclick="renderPagamentosAdminTab('dados')">Dados para pagamento</button>
+        </div>
+      `;
     }
 
     function renderDadosRecebimentoAdmin_(){
@@ -2014,33 +2103,61 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     }
 
     function renderRecebimentoCardAdmin_(m,i){
+      const tipo=normalizar(m.tipoRecebimento||'PIX');
+      const tipoValue=tipo.includes('DADOS')&&!tipo.includes('PIX')?'DADOS_BANCARIOS':(tipo.includes('DADOS')&&tipo.includes('PIX')?'PIX_E_DADOS_BANCARIOS':'PIX');
       return `
-        <div class="recebimento-card" data-rec-index="${i}">
-          <div class="recebimento-grid">
+        <div class="recebimento-card compact" data-rec-index="${i}">
+          <div class="recebimento-head">
+            <div>
+              <h3 style="margin:0;color:#003b12;">${escapeHtml(m.loteria||'Novo meio de recebimento')}</h3>
+              <div class="rec-hint">Configure somente os campos necessários para o tipo escolhido.</div>
+            </div>
+            <span class="recebimento-type-pill" id="rec_tipo_pill_${i}">${escapeHtml(tipoValue.replace(/_/g,' '))}</span>
+          </div>
+
+          <div class="recebimento-grid pro">
             <div class="field"><label>Loteria</label><input id="rec_loteria_${i}" value="${escapeAttr(m.loteria||'')}"></div>
-            <div class="field"><label>Tipo recebimento</label><input id="rec_tipo_${i}" value="${escapeAttr(m.tipoRecebimento||'PIX')}"></div>
-            <div class="field"><label>Nome completo</label><input id="rec_nome_${i}" value="${escapeAttr(m.nomeCompleto||'')}"></div>
+            <div class="field"><label>Tipo recebimento</label><select id="rec_tipo_${i}" onchange="atualizarCamposRecebimentoAdmin(${i})"><option value="PIX" ${tipoValue==='PIX'?'selected':''}>PIX</option><option value="DADOS_BANCARIOS" ${tipoValue==='DADOS_BANCARIOS'?'selected':''}>Dados bancários</option><option value="PIX_E_DADOS_BANCARIOS" ${tipoValue==='PIX_E_DADOS_BANCARIOS'?'selected':''}>Pix + dados bancários</option></select></div>
+            <div class="field"><label>Nome completo / Recebedor</label><input id="rec_nome_${i}" value="${escapeAttr(m.nomeCompleto||'')}"></div>
             <div class="field"><label>Ativo</label><select id="rec_ativo_${i}"><option ${normalizar(m.ativo).includes('SIM')||normalizar(m.ativo).includes('ATIVO')?'selected':''}>SIM</option><option ${normalizar(m.ativo).includes('NAO')||normalizar(m.ativo).includes('NÃO')?'selected':''}>NÃO</option></select></div>
-            <div class="field"><label>Tipo Pix</label><input id="rec_tipoPix_${i}" value="${escapeAttr(m.tipoPix||'')}"></div>
-            <div class="field"><label>Chave Pix</label><input id="rec_chave_${i}" value="${escapeAttr(m.chavePix||'')}"></div>
-            <div class="field"><label>Banco</label><input id="rec_banco_${i}" value="${escapeAttr(m.banco||'')}"></div>
-            <div class="field"><label>Agência</label><input id="rec_agencia_${i}" value="${escapeAttr(m.agencia||'')}"></div>
-            <div class="field"><label>Conta</label><input id="rec_conta_${i}" value="${escapeAttr(m.conta||'')}"></div>
-            <div class="field"><label>Operação</label><input id="rec_operacao_${i}" value="${escapeAttr(m.operacao||'')}"></div>
-            <div class="field" style="grid-column:span 2;"><label>Observação</label><input id="rec_obs_${i}" value="${escapeAttr(m.obs||'')}"></div>
+
+            <div class="rec-section-label" data-rec-pix="${i}">Dados PIX</div>
+            <div class="field" data-rec-pix="${i}"><label>Tipo Pix</label><select id="rec_tipoPix_${i}"><option ${normalizar(m.tipoPix).includes('CELULAR')?'selected':''}>CELULAR</option><option ${normalizar(m.tipoPix).includes('CPF')?'selected':''}>CPF</option><option ${normalizar(m.tipoPix).includes('CNPJ')?'selected':''}>CNPJ</option><option ${normalizar(m.tipoPix).includes('EMAIL')||normalizar(m.tipoPix).includes('E-MAIL')?'selected':''}>E-MAIL</option><option ${normalizar(m.tipoPix).includes('ALEATORIA')||normalizar(m.tipoPix).includes('ALEATÓRIA')?'selected':''}>ALEATÓRIA</option></select></div>
+            <div class="field" data-rec-pix="${i}"><label>Chave Pix</label><input id="rec_chave_${i}" value="${escapeAttr(m.chavePix||'')}"></div>
+
+            <div class="rec-section-label" data-rec-bank="${i}">Dados bancários</div>
+            <div class="field" data-rec-bank="${i}"><label>Banco</label><input id="rec_banco_${i}" value="${escapeAttr(m.banco||'')}"></div>
+            <div class="field" data-rec-bank="${i}"><label>Agência</label><input id="rec_agencia_${i}" value="${escapeAttr(m.agencia||'')}"></div>
+            <div class="field" data-rec-bank="${i}"><label>Conta</label><input id="rec_conta_${i}" value="${escapeAttr(m.conta||'')}"></div>
+            <div class="field" data-rec-bank="${i}"><label>Operação / Tipo de conta</label><input id="rec_operacao_${i}" value="${escapeAttr(m.operacao||'')}"></div>
+
+            <div class="field" style="grid-column:1/-1;"><label>Observação</label><input id="rec_obs_${i}" value="${escapeAttr(m.obs||'')}"></div>
           </div>
           <div class="actions" style="margin-top:12px;">
-            <button class="btn" onclick="salvarDadosRecebimentoAdmin()">Salvar recebimentos</button>
+            <button class="btn" onclick="salvarDadosRecebimentoAdmin()">Salvar dados para pagamento</button>
             <button class="btn btn-danger" onclick="excluirRecebimentoAdmin(${i})">Excluir</button>
           </div>
         </div>
       `;
     }
 
+    function atualizarCamposRecebimentoAdmin(i){
+      const sel=document.getElementById('rec_tipo_'+i);
+      const tipo=sel?sel.value:'PIX';
+      const showPix=tipo==='PIX'||tipo==='PIX_E_DADOS_BANCARIOS';
+      const showBank=tipo==='DADOS_BANCARIOS'||tipo==='PIX_E_DADOS_BANCARIOS';
+      document.querySelectorAll(`[data-rec-pix="${i}"]`).forEach(el=>el.classList.toggle('rec-hidden',!showPix));
+      document.querySelectorAll(`[data-rec-bank="${i}"]`).forEach(el=>el.classList.toggle('rec-hidden',!showBank));
+      const pill=document.getElementById('rec_tipo_pill_'+i);
+      if(pill)pill.textContent=tipo.replace(/_/g,' ');
+    }
+
     function adicionarRecebimentoAdmin(){
       if(!ESTADO.dadosRecebimentoAdmin)ESTADO.dadosRecebimentoAdmin=[];
       ESTADO.dadosRecebimentoAdmin.push({linha:'',loteria:'',tipoRecebimento:'PIX',nomeCompleto:'',tipoPix:'CELULAR',chavePix:'',banco:'',agencia:'',conta:'',operacao:'',obs:'',ativo:'SIM'});
-      document.getElementById('dadosRecebimentoAdminBox').innerHTML=renderDadosRecebimentoAdmin_();
+      const box=document.getElementById('dadosRecebimentoAdminBox');
+      if(box)box.innerHTML=renderDadosRecebimentoAdmin_();
+      setTimeout(()=>{(ESTADO.dadosRecebimentoAdmin||[]).forEach((_,idx)=>atualizarCamposRecebimentoAdmin(idx));},50);
     }
 
     async function salvarDadosRecebimentoAdmin(){
@@ -2050,19 +2167,19 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         tipoRecebimento:document.getElementById('rec_tipo_'+i).value,
         nomeCompleto:document.getElementById('rec_nome_'+i).value,
         ativo:document.getElementById('rec_ativo_'+i).value,
-        tipoPix:document.getElementById('rec_tipoPix_'+i).value,
-        chavePix:document.getElementById('rec_chave_'+i).value,
-        banco:document.getElementById('rec_banco_'+i).value,
-        agencia:document.getElementById('rec_agencia_'+i).value,
-        conta:document.getElementById('rec_conta_'+i).value,
-        operacao:document.getElementById('rec_operacao_'+i).value,
+        tipoPix:document.getElementById('rec_tipoPix_'+i)?document.getElementById('rec_tipoPix_'+i).value:'',
+        chavePix:document.getElementById('rec_chave_'+i)?document.getElementById('rec_chave_'+i).value:'',
+        banco:document.getElementById('rec_banco_'+i)?document.getElementById('rec_banco_'+i).value:'',
+        agencia:document.getElementById('rec_agencia_'+i)?document.getElementById('rec_agencia_'+i).value:'',
+        conta:document.getElementById('rec_conta_'+i)?document.getElementById('rec_conta_'+i).value:'',
+        operacao:document.getElementById('rec_operacao_'+i)?document.getElementById('rec_operacao_'+i).value:'',
         obs:document.getElementById('rec_obs_'+i).value
       }));
 
       try{
         const r=await api('salvarDadosRecebimentoAdmin',{},[lista]);
         toast((r&&r.msg)||'Dados de recebimento salvos.');
-        renderPagamentosAdmin();
+        renderPagamentosAdminTab('dados');
       }catch(err){
         toast(err.message,'error');
       }
@@ -2071,7 +2188,20 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     async function excluirRecebimentoAdmin(i){
       const item=(ESTADO.dadosRecebimentoAdmin||[])[i];
       if(!item)return;
-      if(!confirm('Deseja excluir este meio de recebimento?'))return;
+      abrirModal('Excluir meio de recebimento',`
+        <div class="notice warn">Confirma excluir este meio de recebimento?</div>
+        <p><strong>${escapeHtml(item.loteria||'Sem loteria informada')}</strong></p>
+        <div class="actions" style="justify-content:flex-end;">
+          <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+          <button class="btn btn-danger" onclick="executarExcluirRecebimentoAdmin(${i})">Excluir</button>
+        </div>
+      `);
+    }
+
+    async function executarExcluirRecebimentoAdmin(i){
+      const item=(ESTADO.dadosRecebimentoAdmin||[])[i];
+      fecharModal();
+      if(!item)return;
       try{
         if(item.linha){
           await api('excluirDadosRecebimentoAdmin',{},[item.linha]);
@@ -2079,12 +2209,193 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
           ESTADO.dadosRecebimentoAdmin.splice(i,1);
         }
         toast('Meio de recebimento excluído.');
-        renderPagamentosAdmin();
+        renderPagamentosAdminTab('dados');
       }catch(err){
         toast(err.message,'error');
       }
     }
 
+    function renderPagamentosEfetuadosAdmin_(headers,rows){
+      headers=headers||[];rows=rows||[];
+      if(!headers.length){
+        return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+      }
+      return `
+        ${renderResumoPagamentosAdmin_(headers,rows)}
+        <div class="pay-filterbar">
+          <div class="field"><label>Buscar</label><input id="payBuscaAdmin" placeholder="Buscar por e-mail, loteria, pagador, ID..." oninput="filtrarPagamentosAdmin()"></div>
+          <div class="field"><label>Status</label><select id="payStatusAdmin" onchange="filtrarPagamentosAdmin()"><option value="TODOS">Todos</option><option value="PAGO">Pago</option><option value="ANALISE">Em análise</option><option value="PENDENTE">Pendente</option><option value="ERRO">Erro/Duplicado</option></select></div>
+          <div class="field"><label>Mês</label><input id="payMesAdmin" placeholder="MM/AAAA" oninput="filtrarPagamentosAdmin()"></div>
+          <button class="btn btn-light" onclick="limparFiltrosPagamentosAdmin()">Limpar</button>
+        </div>
+        <div id="pagamentosCardsAdminBox">
+          ${renderListaPagamentosCardsAdmin_(headers,rows)}
+        </div>
+      `;
+    }
+
+    function renderResumoPagamentosAdmin_(headers,rows){
+      let totalPago=0,totalAnalise=0,totalPendente=0,totalErro=0,qtdPago=0,qtdAnalise=0,qtdPendente=0,qtdErro=0;
+      (rows||[]).forEach(row=>{
+        const o=pagamentoObj_(headers,row);
+        const st=normalizar(o.status);
+        const valor=num(o.valor);
+        if(st.includes('PAGO')||st.includes('APROV')){totalPago+=valor;qtdPago++;}
+        else if(st.includes('ANALISE')||st.includes('ANÁLISE')){totalAnalise+=valor;qtdAnalise++;}
+        else if(st.includes('ERRO')||st.includes('DUPLIC')){totalErro+=valor;qtdErro++;}
+        else {totalPendente+=valor;qtdPendente++;}
+      });
+      return `
+        <div class="pay-summary-grid">
+          <div class="pay-summary-card"><b>Pago confirmado</b><strong>${escapeHtml(moeda(totalPago))}</strong><div class="pay-admin-sub">${qtdPago} registro(s)</div></div>
+          <div class="pay-summary-card warn"><b>Em análise</b><strong>${escapeHtml(moeda(totalAnalise))}</strong><div class="pay-admin-sub">${qtdAnalise} registro(s)</div></div>
+          <div class="pay-summary-card warn"><b>Pendente</b><strong>${escapeHtml(moeda(totalPendente))}</strong><div class="pay-admin-sub">${qtdPendente} registro(s)</div></div>
+          <div class="pay-summary-card danger"><b>Erro/Duplicado</b><strong>${escapeHtml(moeda(totalErro))}</strong><div class="pay-admin-sub">${qtdErro} registro(s)</div></div>
+        </div>
+      `;
+    }
+
+    function renderListaPagamentosCardsAdmin_(headers,rows){
+      rows=rows||[];
+      if(!rows.length)return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+      return `<div class="pay-list">${rows.map((row,i)=>renderPagamentoCardAdmin_(headers,row,i)).join('')}</div>`;
+    }
+
+    function renderPagamentoCardAdmin_(headers,row,i){
+      const o=pagamentoObj_(headers,row);
+      const linha=i+2;
+      const cls=pagamentoStatusClasse_(o.status);
+      const url=o.urlComprovante||o.arquivoUrl||'';
+      return `
+        <article class="pay-admin-card-pro ${cls.card}" data-pay-row="${linha}">
+          <div class="pay-admin-head">
+            <div>
+              <div class="pay-admin-title">${escapeHtml(o.loteria||'Pagamento sem loteria informada')}</div>
+              <div class="pay-admin-sub">${escapeHtml(o.email||'-')} • ${escapeHtml(formatarDataHoraPtBR(o.data||'-'))}</div>
+            </div>
+            <span class="pay-admin-status ${cls.badge}">${escapeHtml(o.status||'Pendente')}</span>
+          </div>
+          <div class="pay-admin-grid">
+            <div class="pay-admin-info"><b>Valor</b><span>${escapeHtml(o.valor?moeda(o.valor):'-')}</span></div>
+            <div class="pay-admin-info"><b>Pagador</b><span>${escapeHtml(o.pagador||'-')}</span></div>
+            <div class="pay-admin-info"><b>Recebedor</b><span>${escapeHtml(o.recebedor||'-')}</span></div>
+            <div class="pay-admin-info"><b>Mês referência</b><span>${escapeHtml(o.mesReferencia||'-')}</span></div>
+            <div class="pay-admin-info"><b>ID transação</b><span>${escapeHtml(o.idTransacao||'-')}</span></div>
+            <div class="pay-admin-info"><b>Autenticação</b><span>${escapeHtml(o.autenticacao||'-')}</span></div>
+            <div class="pay-admin-info"><b>Tipo cota</b><span>${escapeHtml(o.tipoCota||'-')}</span></div>
+            <div class="pay-admin-info"><b>Partes</b><span>${escapeHtml(formatarPartesPagamento_(o.partesCota))}</span></div>
+            <div class="pay-admin-info full"><b>Validação / observação</b><span>${escapeHtml(o.validacao||'-')}</span></div>
+            ${o.participantesCota?`<div class="pay-admin-info full"><b>Participantes da cota</b><span>${escapeHtml(o.participantesCota)}</span></div>`:''}
+          </div>
+          <div class="pay-card-actions">
+            ${url?`<button class="btn btn-blue" onclick="abrirComprovanteAdmin('${escapeAttr(url)}')">Ver comprovante</button>`:''}
+            <button class="btn btn-light" onclick="reprocessarPagamentoAdmin(${linha})">Reprocessar OCR</button>
+            ${!normalizar(o.status).includes('PAGO')?`<button class="btn" onclick="confirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>`:''}
+          </div>
+        </article>
+      `;
+    }
+
+    function pagamentoObj_(headers,row){
+      const o=rowObj(headers,row);
+      return {
+        data:cellObj(o,['DATA']),
+        email:cellObj(o,['EMAIL','E-MAIL']),
+        loteria:cellObj(o,['LOTERIA','BOLAO','BOLÃO']),
+        urlComprovante:cellObj(o,['URL_COMPROVANTE','URL COMPROVANTE']),
+        status:cellObj(o,['STATUS']),
+        pagador:cellObj(o,['PAGADOR']),
+        valor:cellObj(o,['VALOR']),
+        idTransacao:cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO','ID TRANSACAO']),
+        autenticacao:cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO']),
+        arquivoUrl:cellObj(o,['ARQUIVO_URL','ARQUIVO URL']),
+        recebedor:cellObj(o,['RECEBEDOR']),
+        pixDestino:cellObj(o,['PIX_DESTINO','PIX DESTINO']),
+        validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
+        mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
+        tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
+        partesCota:cellObj(o,['PARTES_COTA','PARTES COTA']),
+        participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA'])
+      };
+    }
+
+    function pagamentoStatusClasse_(status){
+      const st=normalizar(status);
+      if(st.includes('PAGO')||st.includes('APROV'))return {card:'',badge:''};
+      if(st.includes('ANALISE')||st.includes('ANÁLISE'))return {card:'warn',badge:'warn'};
+      if(st.includes('ERRO')||st.includes('DUPLIC')||st.includes('RECUS'))return {card:'danger',badge:'danger'};
+      return {card:'muted',badge:'muted'};
+    }
+
+    function formatarPartesPagamento_(v){
+      const n=num(v);
+      if(!n)return '-';
+      if(n===1)return 'Integral';
+      return '1/'+n;
+    }
+
+    function abrirComprovanteAdmin(url){
+      if(!url)return toast('Comprovante não localizado.','warn');
+      window.open(url,'_blank','noopener');
+    }
+
+    function confirmarPagamentoManualAdmin(linha){
+      abrirModal('Confirmar pagamento',`
+        <div class="notice warn">Deseja marcar este pagamento como <strong>Pago</strong>?</div>
+        <p>Essa ação registra a confirmação manual do administrador na linha ${escapeHtml(linha)}.</p>
+        <div class="actions" style="justify-content:flex-end;">
+          <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+          <button class="btn" onclick="executarConfirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>
+        </div>
+      `);
+    }
+
+    async function executarConfirmarPagamentoManualAdmin(linha){
+      fecharModal();
+      try{
+        await api('confirmarPagamentoManual',{},[linha]);
+        toast('Pagamento confirmado.');
+        renderPagamentosAdminTab('efetuados');
+      }catch(err){toast(err.message,'error')}
+    }
+
+    async function reprocessarPagamentoAdmin(linha){
+      try{
+        toast('Solicitando reprocessamento OCR...','info');
+        await api('reprocessarPagamentoLinha',{},[linha]);
+        toast('Reprocessamento solicitado.');
+        renderPagamentosAdminTab('efetuados');
+      }catch(err){toast(err.message,'error')}
+    }
+
+    function filtrarPagamentosAdmin(){
+      const cache=ESTADO.pagamentosAdminCache||{headers:[],rows:[]};
+      const termo=normalizar(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+      const status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+      const mes=normalizar(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'');
+      const filtradas=(cache.rows||[]).filter(row=>{
+        const o=pagamentoObj_(cache.headers,row);
+        const texto=normalizar(Object.values(o).join(' | '));
+        const st=normalizar(o.status);
+        const mesLinha=normalizar(o.mesReferencia||o.data||'');
+        if(termo&&!texto.includes(termo))return false;
+        if(mes&&!mesLinha.includes(mes))return false;
+        if(status==='PAGO'&&!(st.includes('PAGO')||st.includes('APROV')))return false;
+        if(status==='ANALISE'&&!(st.includes('ANALISE')||st.includes('ANÁLISE')))return false;
+        if(status==='PENDENTE'&&(st.includes('PAGO')||st.includes('APROV')||st.includes('ANALISE')||st.includes('ANÁLISE')||st.includes('ERRO')||st.includes('DUPLIC')))return false;
+        if(status==='ERRO'&&!(st.includes('ERRO')||st.includes('DUPLIC')))return false;
+        return true;
+      });
+      const box=document.getElementById('pagamentosCardsAdminBox');
+      if(box)box.innerHTML=renderListaPagamentosCardsAdmin_(cache.headers,filtradas);
+    }
+
+    function limparFiltrosPagamentosAdmin(){
+      if(document.getElementById('payBuscaAdmin'))document.getElementById('payBuscaAdmin').value='';
+      if(document.getElementById('payStatusAdmin'))document.getElementById('payStatusAdmin').value='TODOS';
+      if(document.getElementById('payMesAdmin'))document.getElementById('payMesAdmin').value='';
+      filtrarPagamentosAdmin();
+    }
 
     function rowObj(headers,row){const o={};(headers||[]).forEach((h,i)=>o[normalizar(h)]=row[i]);return o}
     function cellObj(o,names){for(const n of names){const k=normalizar(n);if(Object.prototype.hasOwnProperty.call(o,k))return o[k]}return ''}
