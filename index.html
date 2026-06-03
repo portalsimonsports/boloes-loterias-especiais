@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V173_PAGAMENTOS_LINHA_REAL_REPROCESSAMENTO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V174_ADQUIRIR_COTAS_ACESSO_PARTICIPANTE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V173</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V174</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -157,6 +157,16 @@
     .pag-recorrente-box{border:1px solid #dce8e1;background:#f8fcf9;border-radius:14px;padding:12px;margin:12px 0}.pag-recorrente-box h4{margin:0 0 8px;color:#003b12}.pag-recorrente-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.pay-copy-label{font-size:11px;font-weight:900;color:#526070;text-transform:uppercase;margin:8px 0 4px}
     @media(max-width:920px){.pay-summary-grid,.pay-admin-grid,.recebimento-grid.pro,.pay-filterbar,.pag-recorrente-inline{grid-template-columns:1fr}.payment-clean-header{display:block}.pay-card-actions .btn{width:100%}}
 
+
+    .acq-box{border:1px solid #d7e7dc;background:#f8fcf9;border-radius:16px;padding:14px;margin:12px 0}
+    .acq-box h4{margin:0 0 8px;color:#003b12}
+    .acq-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .acq-value{font-weight:950;background:#f3f8f4!important;color:#003b12!important}
+    .acq-help{font-size:12px;color:#516274;line-height:1.45;margin-top:8px}
+    .locked-action{opacity:.72}
+    .status-pill.locked{background:#fff3cd;color:#8a5a00;border:1px solid #f3d37a}
+    @media(max-width:920px){.acq-row{grid-template-columns:1fr}.acq-box .btn{width:100%}}
+
 </style>
 </head>
 <body>
@@ -166,7 +176,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V173_PAGAMENTOS_LINHA_REAL_REPROCESSAMENTO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V174_ADQUIRIR_COTAS_ACESSO_PARTICIPANTE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=normalizarUsuarioSessao_(s);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}else renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';}});
     let PSS_API_FILA=Promise.resolve();
@@ -2759,6 +2769,445 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       document.querySelectorAll('[data-live-clock]').forEach(el=>el.textContent=curto);
     }
     function dataHoraAtualCurta(){return new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')}
-  </script>
+  
+/* =====================================================================
+ * PATCH V174 — ADQUIRIR COTAS + ACESSO POR PARTICIPAÇÃO
+ * ===================================================================== */
+
+function usuarioParticipaBolaoUI_(b){
+  b=b||{};
+  if(isAdmin())return true;
+  const minhas=num(b.cotasUsuario||b.minhasCotas||0);
+  const flag=b.participanteInscrito===true||String(b.participanteInscrito).toLowerCase()==='true';
+  return minhas>0 && flag!==false;
+}
+
+function usuarioTemAquisicaoPendenteUI_(b){
+  b=b||{};
+  return !!(b.aquisicaoPendente||b.preAquisicaoPendente||b.cotasPendentes);
+}
+
+function getBolaoByNome_(nome){
+  const alvo=normalizar(nome||'');
+  return listaSegura_(ESTADO.boloes).find(x=>normalizar(x.loteria||x.nome||x.id)===alvo)||{loteria:nome,nome:nome};
+}
+
+function labelBotaoPrincipalBolao_(b,origem){
+  if(isHistorico(b))return 'Abrir';
+  if(origem==='palpite')return usuarioParticipaBolaoUI_(b)?'Abrir palpite':'Adquirir cotas';
+  if(usuarioParticipaBolaoUI_(b))return 'Ver opções';
+  return 'Adquirir cotas';
+}
+
+function abrirAdquirirCotasBolao(nome){
+  return abrirPagamentoBolao(nome);
+}
+
+async function renderInicio(){
+  loading('Carregando início');
+
+  try{
+    if(!ESTADO.usuario)ESTADO.usuario=normalizarUsuarioSessao_({email:ESTADO.email});
+    const dash=await apiMulti([
+      {action:'getEstatisticasAtivaUsuario',dados:{email:ESTADO.email},args:[ESTADO.email]},
+      {action:'getEstatisticasAtiva',args:[]},
+      {action:'dashboard',args:[ESTADO.email]}
+    ]).catch(()=>({}));
+
+    const lista=listaSegura_(await carregarBoloes());
+    const ativos=lista
+      .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
+      .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
+
+    const cfg=await apiMulti([{action:'getConfigPublica',args:[]}]).catch(()=>({}));
+    const telegramLink=(cfg&&cfg.telegramCanalLink)||dash.telegramCanalLink||'';
+
+    const minhasCotas=ativos.reduce((s,b)=>s+num(b.cotasUsuario||b.minhasCotas||0),0);
+    const totalCotas=ativos.reduce((s,b)=>s+num(b.totalCotas||b.cotasTotal||0),0);
+    const cotasDisponiveis=ativos.reduce((s,b)=>s+num(b.cotasDisponiveis||0),0);
+    const pendentes=ativos.reduce((s,b)=>s+(usuarioTemAquisicaoPendenteUI_(b)?1:0),0);
+
+    setView(`
+      <div class="panel no-left">
+        <div class="grid">
+          <div class="col-8">
+            <div class="panel no-left" style="margin:0;padding:24px;">
+              <h2 style="font-size:32px;">Olá, ${escapeHtml((ESTADO.usuario&&ESTADO.usuario.nome)||'Usuário')}</h2>
+              <p>Painel de acompanhamento dos bolões ativos, cotas, comprovantes, palpites, jogos realizados e atualizações oficiais.</p>
+              <div class="actions">
+                <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
+                <button class="btn btn-light" onclick="navegar('palpite')">Fazer palpite</button>
+                <button class="btn btn-light" onclick="navegar('comprovante')">Comprovantes</button>
+                <button class="btn btn-light" onclick="navegar('jogos')">Jogos</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
+              <h2 style="color:#fff;font-size:42px;">${escapeHtml(ativos.length)}</h2>
+              <p style="color:#fff;">Bolões ativos em acompanhamento.</p>
+              <div style="margin-top:40px;font-weight:800;" data-live-clock>${escapeHtml(dataHoraAtualCurta())}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:18px;">
+          ${statCard('Bolões ativos',ativos.length)}
+          ${statCard('Minhas cotas',minhasCotas)}
+          ${statCard('Cotas disponíveis',cotasDisponiveis)}
+          ${statCard('Total de cotas',totalCotas)}
+        </div>
+
+        ${pendentes?`<div class="notice warn" style="margin-top:14px;">Você possui aquisição de cota pendente de envio/validação de comprovante.</div>`:''}
+
+        ${telegramLink?`
+          <div class="telegram-card">
+            <div>
+              <strong>Canal oficial de atualizações no Telegram</strong>
+              <p style="margin:4px 0 0;color:#385066;">Entre no canal para acompanhar avisos, resultados, jogos realizados e atualizações dos bolões em andamento.</p>
+            </div>
+            <a class="btn" href="${escapeAttr(telegramLink)}" target="_blank" rel="noopener">Entrar no canal</a>
+          </div>
+        `:''}
+      </div>
+
+      <div class="panel">
+        <h2>Bolões ativos</h2>
+        <p>Clique em uma loteria para abrir o resumo detalhado. Para novos bolões, use <strong>Adquirir cotas</strong>.</p>
+        ${ativos.length?`<div class="inicio-grid-boloes">${ativos.map((b,i)=>renderInicioBolaoCard_(b,i)).join('')}</div>`:'<div class="notice warn">Nenhum bolão ativo localizado.</div>'}
+      </div>
+    `);
+  }catch(err){
+    setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+  }
+}
+
+function renderInicioBolaoCard_(b,i){
+  const participa=usuarioParticipaBolaoUI_(b);
+  const minhas=num(b.cotasUsuario||b.minhasCotas||0);
+  const total=b.totalCotas||b.cotasTotal||'-';
+  const disponiveis=(b.cotasDisponiveis!==undefined&&b.cotasDisponiveis!==null&&b.cotasDisponiveis!=='')?b.cotasDisponiveis:'-';
+  const nome=b.loteria||b.nome||'Bolão';
+
+  return `
+    <article class="inicio-bolao-card">
+      <h3 onclick="toggleResumoInicio(${i})" style="cursor:pointer;">🎯 ${escapeHtml(nome)}</h3>
+      <div class="inicio-badges">
+        <span class="inicio-badge">${escapeHtml(b.status||'ATIVO')}</span>
+        <span class="inicio-badge ${participa?'':'warn'}">${participa?'Minhas cotas: '+escapeHtml(minhas):'Não inscrito neste bolão'}</span>
+        <span class="inicio-badge warn">Disponíveis: ${escapeHtml(disponiveis)}</span>
+      </div>
+      <div class="inicio-mini">
+        <div><b>Sorteio</b>${escapeHtml(formatarDataHoraPtBR(b.dataSorteio||'-'))}</div>
+        <div><b>Valor da cota</b>${escapeHtml(b.valorCota?moeda(b.valorCota):'-')}</div>
+        <div><b>Pagamento</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPagamento||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPagamento||'-'))}</div>
+        <div><b>Palpites</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPalpite||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPalpite||'-'))}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-light" onclick="toggleResumoInicio(${i})">Ver resumo</button>
+        <button class="btn" onclick="abrirAdquirirCotasBolao('${escapeAttr(nome)}')">Adquirir cotas</button>
+        ${participa?`<button class="btn btn-light" onclick="ESTADO.bolaoSelecionado='${escapeAttr(nome)}';localStorage.setItem('PSS_BOLAO_SELECIONADO','${escapeAttr(nome)}');navegar('palpite')">Palpite</button>`:''}
+      </div>
+      <div class="inicio-resumo" id="inicioResumo_${i}">
+        ${renderResumoInicioBolao_(b,total,disponiveis,minhas)}
+      </div>
+    </article>
+  `;
+}
+
+async function renderBoloes(tipo='ativos'){
+  loading('Carregando bolões');
+  try{
+    const lista=listaSegura_(await carregarBoloes());
+    const ativos=lista.filter(b=>!isHistorico(b));
+    const hist=lista.filter(b=>isHistorico(b));
+    const dados=tipo==='historico'?hist:ativos;
+    const adminPanel=isAdmin()?`
+      <div class="panel">
+        <label>Participante</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select id="consultaParticipante"><option>Selecione um participante...</option></select>
+          <button type="button" class="btn" onclick="toast('Selecione um participante para consultar.','info')">Consultar</button>
+        </div>
+      </div>
+    `:'';
+
+    setView(`
+      <div class="panel">
+        <h2>🎯 Menu de bolões</h2>
+        <p>Consulte bolões ativos e histórico em uma única área.</p>
+        <div class="actions">
+          <button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button>
+          <button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button>
+        </div>
+        ${renderCardsBoloes(dados,'boloes')}
+      </div>
+      ${adminPanel}
+    `);
+  }catch(err){
+    setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+  }
+}
+
+function renderCardsBoloes(lista,origem){
+  lista=listaSegura_(lista);
+  if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;
+
+  return `<div class="cards-row">${lista.map(b=>{
+    const nome=b.nome||b.loteria||'Bolão';
+    const participa=usuarioParticipaBolaoUI_(b);
+    const botao=labelBotaoPrincipalBolao_(b,origem);
+    return `
+      <div class="bolao-card">
+        <h3>🎯 ${escapeHtml(nome)}</h3>
+        ${origem==='boloes'?`<div class="status-pill ${participa?'':'locked'}">${participa?'Participante inscrito':'Não inscrito neste bolão'}</div><br>`:''}
+        ${b.cotasDisponiveis!==''?`<div class="outline-pill">Cotas disponíveis: ${escapeHtml(b.cotasDisponiveis)}</div>`:''}
+        <div class="meta-grid">
+          <div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div>
+          <div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div>
+          <div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div>
+          <div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div>
+        </div>
+        <button class="btn" onclick="selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')">${escapeHtml(botao)}</button>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+function selecionarBolao(nome,origem){
+  ESTADO.bolaoSelecionado=nome;
+  localStorage.setItem('PSS_BOLAO_SELECIONADO',nome);
+
+  const b=getBolaoByNome_(nome);
+  const participa=usuarioParticipaBolaoUI_(b);
+
+  if(origem==='palpite'){
+    if(participa)return renderPalpiteAberto(nome);
+    return abrirAdquirirCotasBolao(nome);
+  }
+
+  if(!participa && !isHistorico(b)){
+    return abrirAdquirirCotasBolao(nome);
+  }
+
+  abrirModal('Bolão selecionado',`
+    <div class="notice">Bolão selecionado: <strong>${escapeHtml(nome)}</strong></div>
+    <div class="actions">
+      ${participa?`<button class="btn" onclick="fecharModal(); navegar('palpite')">Palpites</button>`:''}
+      ${participa?`<button class="btn btn-light" onclick="fecharModal(); navegar('comprovante')">Comprovante</button>`:''}
+      <button class="btn btn-light" onclick="fecharModal(); abrirAdquirirCotasBolao('${escapeAttr(nome)}')">Adquirir mais cotas</button>
+    </div>
+  `);
+}
+
+async function renderPalpiteLista(tipo='ativos'){
+  loading('Carregando palpites');
+  try{
+    const lista=listaSegura_(await carregarBoloes());
+    const ativos=lista.filter(b=>!isHistorico(b));
+    const hist=lista.filter(b=>isHistorico(b));
+    const dados=tipo==='historico'?hist:ativos;
+    setView(`
+      <div class="panel">
+        <h2>🎯 Palpites</h2>
+        <p>Palpites ficam disponíveis somente para participantes inscritos no bolão.</p>
+        <div class="actions">
+          <button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderPalpiteLista('ativos')">Ativos</button>
+          <button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderPalpiteLista('historico')">Encerrados</button>
+        </div>
+        ${renderCardsBoloes(dados,'palpite')}
+      </div>
+    `);
+  }catch(err){
+    setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+  }
+}
+
+async function renderPalpiteAberto(nome){
+  const b=getBolaoByNome_(nome);
+  if(!usuarioParticipaBolaoUI_(b)){
+    setView(`
+      <div class="panel">
+        <h2>Palpite bloqueado</h2>
+        <div class="notice warn">Para registrar palpite neste bolão, primeiro é necessário adquirir cota e ter vínculo aprovado/ativo.</div>
+        <div class="actions"><button class="btn" onclick="abrirAdquirirCotasBolao('${escapeAttr(nome)}')">Adquirir cotas</button><button class="btn btn-light" onclick="navegar('boloes')">Voltar aos bolões</button></div>
+      </div>
+    `);
+    return;
+  }
+
+  loading('Carregando palpite');
+  try{
+    const info=await apiMulti([{action:'obterDadosPalpite',dados:{loteria:nome},args:[nome]},{action:'getDadosPalpite',dados:{loteria:nome},args:[nome]}]);
+    const status=await apiMulti([{action:'checarStatusPalpite',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]},{action:'getStatusPalpite',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]}]).catch(()=>({}));
+    if(status&&status.podeEditar===false&&status.msgErro){
+      setView(`<div class="panel"><h2>Palpite bloqueado</h2><div class="notice warn">${escapeHtml(status.msgErro)}</div><div class="actions"><button class="btn" onclick="abrirAdquirirCotasBolao('${escapeAttr(nome)}')">Adquirir cotas</button></div></div>`);
+      return;
+    }
+    ESTADO.palpiteInfo=info||{};ESTADO.palpiteStatus=status||{};ESTADO.qtdEscolha=Number(info.qtdEscolha||info.qtdPalpite||6);ESTADO.numerosSelecionados=[];
+    const numeros=Array.isArray(info.numerosDisponiveis)&&info.numerosDisponiveis.length?info.numerosDisponiveis:Array.from({length:Number(info.nMax||info.range||60)},(_,i)=>i+1);
+    setView(`<div class="panel"><div class="palpite-stage"><h3 class="center">🎯 ${escapeHtml(nome)}</h3><div class="meta-box" style="margin-top:16px;"><b>Resumo dos palpites</b><span>Cotas: ${escapeHtml(status.cotas||status.maxJogos||1)} · Palpites feitos: ${escapeHtml((status.palpites||[]).length)}/${escapeHtml(status.maxJogos||status.cotas||1)} · Prazo final: ${escapeHtml(getPrazoBolao(nome))}</span></div><div class="meta-box" style="margin-top:10px;"><b>🏆 10 dezenas mais escolhidas</b>${renderChips((status.top10||[]).length?status.top10:[])}</div><div class="meta-box" style="margin-top:10px;"><b>📌 Dezenas escolhidas por todos os participantes</b>${renderChips(status.todosNumeros||[])}</div><div class="table-wrap" style="margin-top:10px;"><table><thead><tr><th>#</th><th>Data</th><th>Dezenas</th><th>Ação</th></tr></thead><tbody>${renderHistoricoPalpite(status.palpites||[])}</tbody></table></div><div style="margin-top:12px;"><button class="btn" onclick="mostrarGradePalpite()">Novo / editar palpite</button></div><div id="gradePalpiteBox" class="hidden" style="margin-top:16px;"><div class="center"><strong>Selecione ${ESTADO.qtdEscolha} dezenas.</strong></div><div id="selecionadasPalpite" class="notice info" style="margin:10px 0;"><strong>Dezenas selecionadas:</strong> -</div><div class="numbers-grid">${numeros.map(n=>`<div class="ball" data-num="${Number(n)}" onclick="toggleNumero(${Number(n)},this)">${formatNum(n)}</div>`).join('')}</div><button class="btn" id="btnSalvarPalpite" onclick="salvarPalpite()" disabled>Salvar alteração (0/${ESTADO.qtdEscolha})</button></div></div></div>`);
+  }catch(err){
+    setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+  }
+}
+
+async function abrirPagamentoBolao(loteria){
+  const b=getBolaoByNome_(loteria);
+  abrirModal('Adquirir cotas',`<div class="notice info">Carregando meios de pagamento...</div>`);
+
+  try{
+    const dados=await apiMulti([
+      {action:'getDadosRecebimento',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]},
+      {action:'listarDadosRecebimento',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]}
+    ]);
+
+    const lista=Array.isArray(dados)?dados:(dados.dados||[]);
+    const nome=b.loteria||b.nome||loteria;
+    const valorCota=num(b.valorCota||0);
+    const parcelas=Math.max(1,num(b.qtdParcelas||b.parcelas||1)||1);
+    const qtdInicial=1;
+    b._valorPagamentoModalInicial=valorCota*qtdInicial;
+
+    document.getElementById('modalTitulo').textContent='Adquirir cotas';
+    document.getElementById('modalConteudo').innerHTML=`
+      <div class="notice">
+        <strong>${escapeHtml(nome)}</strong><br>
+        Valor da cota: <strong>${escapeHtml(moeda(valorCota))}</strong>
+      </div>
+
+      <div class="acq-box">
+        <h4>Quantidade e valor</h4>
+        <div class="acq-row">
+          <div class="field"><label>Quantidade de cotas</label><input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+          <div class="field"><label>Valor da cota</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+        </div>
+
+        ${parcelas>1?`
+          <div class="pag-recorrente-box">
+            <h4>Parcelamento/recorrência opcional</h4>
+            <label class="checkline"><input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')"><span>Quero dividir o valor da cota em parcelas mensais.</span></label>
+            <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
+              <div class="field"><label>Quantidade de parcelas</label><input id="pagRecMeses" value="${escapeAttr(parcelas)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+              <div class="field"><label>Valor mensal estimado</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda((valorCota*qtdInicial)/parcelas))}"></div>
+              <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric"></div>
+              <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+            </div>
+            <div class="acq-help">Exemplo: se a cota custa R$ 500,00 e o bolão possui 10 parcelas, o participante pode programar 10 pagamentos de R$ 50,00. Essa opção só aparece quando o bolão possui mais de uma parcela.</div>
+          </div>
+        `:''}
+
+        <div class="actions" style="margin-top:12px;">
+          <button type="button" class="btn" onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
+          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        </div>
+      </div>
+
+      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
+      ${lista.length?`
+        <div class="pay-method-grid">
+          ${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}
+        </div>
+      `:'<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>'}
+    `;
+    setTimeout(()=>atualizarValorPagamentoModal(nome),80);
+  }catch(err){
+    document.getElementById('modalConteudo').innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function getValorPagamentoAgora_(){
+  const total=num(document.getElementById('pagValorTotal')?document.getElementById('pagValorTotal').value:0);
+  const rec=document.getElementById('pagRecorrente');
+  if(rec&&rec.checked){
+    const parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+    return total/parcelas;
+  }
+  return total;
+}
+
+function atualizarValorPagamentoModal(loteria){
+  const b=getBolaoByNome_(loteria);
+  const qtd=Math.max(1,num(document.getElementById('pagQtdCotas')?document.getElementById('pagQtdCotas').value:1));
+  const valorTotal=num(b.valorCota||0)*qtd;
+  const totalEl=document.getElementById('pagValorTotal');
+  if(totalEl)totalEl.value=moeda(valorTotal);
+
+  const parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+  const valorAgora=getValorPagamentoAgora_();
+  const agoraEl=document.getElementById('pagValorAgora');
+  if(agoraEl)agoraEl.value=moeda(valorAgora);
+  const parcelaEl=document.getElementById('pagValorParcela');
+  if(parcelaEl)parcelaEl.value=moeda(parcelas?valorTotal/parcelas:valorTotal);
+
+  document.querySelectorAll('[data-pix-payload]').forEach(node=>{
+    const idx=node.dataset.pixPayload;
+    const raw=node.dataset.metodo?decodeURIComponent(node.dataset.metodo):'{}';
+    let metodo={};
+    try{metodo=JSON.parse(raw)}catch(e){}
+    const payload=gerarPixCopiaECola_(metodo,valorAgora,loteria);
+    node.textContent=payload;
+    const img=document.getElementById('qrPix_'+idx);
+    if(img)img.src=qrUrl_(payload);
+  });
+}
+
+function togglePagamentoRecorrenteModal(){
+  const chk=document.getElementById('pagRecorrente');
+  const box=document.getElementById('pagRecorrenteCampos');
+  if(box)box.classList.toggle('hidden',!(chk&&chk.checked));
+}
+
+async function registrarAquisicaoCotaModal(loteria){
+  const qtd=Math.max(1,num(document.getElementById('pagQtdCotas')?document.getElementById('pagQtdCotas').value:1));
+  const valorTotal=document.getElementById('pagValorTotal')?document.getElementById('pagValorTotal').value:'';
+  const valorAgora=document.getElementById('pagValorAgora')?document.getElementById('pagValorAgora').value:'';
+  const rec=document.getElementById('pagRecorrente');
+  const recorrente=!!(rec&&rec.checked);
+  const parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+  const dia=Math.max(1,Math.min(31,num(document.getElementById('pagRecDia')?document.getElementById('pagRecDia').value:10)));
+  const obs=document.getElementById('pagRecObs')?document.getElementById('pagRecObs').value:'';
+
+  try{
+    const r=await api('registrarAquisicaoCotaBolao',{},[{email:ESTADO.email,loteria,qtdCotas:qtd,valorTotal,valorPagamentoAgora:valorAgora,parcelado:recorrente,qtdParcelas:parcelas,diaPreferencial:dia,obs}]);
+    toast((r&&r.msg)||'Aquisição registrada. Envie o comprovante após realizar o pagamento.');
+    cacheDel_('boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'));
+  }catch(err){
+    toast(err.message,'error');
+  }
+}
+
+async function salvarPlanejamentoRecorrenteModal(loteria){
+  return registrarAquisicaoCotaModal(loteria);
+}
+
+function renderMetodoPagamento_(m,b,i){
+  const valor=num(b._valorPagamentoModalInicial||b.valorCota||0);
+  const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+  const payload=isPix?gerarPixCopiaECola_(m,valor,b.loteria||b.nome):'';
+  const encoded=encodeURIComponent(JSON.stringify(m||{}));
+
+  return `
+    <div class="pay-method">
+      <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
+      <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+      ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+      ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+      ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+      ${isPix?`
+        <img class="qr-img" id="qrPix_${i}" src="${escapeAttr(qrUrl_(payload))}" alt="QR Code Pix">
+        <div class="pay-copy-label">Pix copia e cola</div>
+        <div class="pay-copy" data-pix-payload="${i}" data-metodo="${escapeAttr(encoded)}">${escapeHtml(payload)}</div>
+        <div class="actions" style="margin-top:10px;">
+          <button class="btn" onclick="copiarTextoPagamento(this.closest('.pay-method').querySelector('.pay-copy').textContent)">Copiar Pix</button>
+        </div>
+      `:''}
+    </div>
+  `;
+}
+
+</script>
 </body>
 </html>
