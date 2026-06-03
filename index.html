@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V157_IFRAME_BRIDGE_MOBILE_API_V156 -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V158_BRIDGE_RECEBE_STRING_RETRY_API_V157 -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -48,7 +48,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V157_IFRAME_BRIDGE_MOBILE_API_V156',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V158_BRIDGE_RECEBE_STRING_RETRY_API_V157',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
     let PSS_API_FILA=Promise.resolve();
@@ -84,6 +84,7 @@
         iframe.style.width='1px';
         iframe.style.height='1px';
         iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
         iframe.setAttribute('aria-hidden','true');
         iframe.src=CONFIG.apiUrl+'?'+params.toString();
 
@@ -101,9 +102,28 @@
           reject(new Error('Tempo limite excedido ao conectar à API mobile.'));
         },60000);
 
+        function normalizarMensagemBridge_(data){
+          if(!data)return null;
+
+          if(typeof data==='string'){
+            try{
+              const parsed=JSON.parse(data);
+              if(parsed&&parsed.pssBoloesApi===true)return parsed;
+            }catch(e){}
+            return null;
+          }
+
+          if(typeof data==='object'&&data.pssBoloesApi===true){
+            return data;
+          }
+
+          return null;
+        }
+
         function receber(ev){
-          const msg=ev&&ev.data?ev.data:null;
-          if(!msg||msg.pssBoloesApi!==true||msg.token!==token)return;
+          const msg=normalizarMensagemBridge_(ev&&ev.data);
+
+          if(!msg||msg.token!==token)return;
 
           if(finalizado)return;
           finalizado=true;
