@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V154_COMPATIVEL_API_V155_ABAS_PARTICIPANTES -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V155_CALLBACK_FIXO_API_V155_ABAS_PARTICIPANTES -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -48,10 +48,80 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V154_COMPATIVEL_API_V155_ABAS_PARTICIPANTES',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V155_CALLBACK_FIXO_API_V155_ABAS_PARTICIPANTES',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.usuario=s;ESTADO.email=s.email;ESTADO.role=String(s.role||s.perfil||'').toLowerCase();aplicarLayoutLogado();navegar('inicio')}else renderLogin()});
-    function api(action,dados={},args=null){return new Promise((resolve,reject)=>{const cb='PSS_CB_'+Date.now()+'_'+Math.floor(Math.random()*1e6),payload=Object.assign({},dados||{});payload.action=action;payload.fnName=action;if(Array.isArray(args))payload.args=args;const p=new URLSearchParams();p.set('action',action);p.set('fn',action);p.set('fnName',action);p.set('callback',cb);p.set('payload',JSON.stringify(payload));p.set('email',ESTADO.email||dados.email||'');p.set('_',String(Date.now()));const s=document.createElement('script');let timer=null;window[cb]=r=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();if(!r||r.ok!==true){reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));return}resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r))};s.onerror=()=>{clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Falha ao conectar à API.'))};timer=setTimeout(()=>{try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();reject(new Error('Tempo limite excedido ao conectar à API.'))},30000);s.src=CONFIG.apiUrl+'?'+p.toString();document.body.appendChild(s)})}
+    let PSS_API_FILA=Promise.resolve();
+    function api(action,dados={},args=null){
+      const executar=()=>apiJsonpCallbackFixo_(action,dados,args);
+      PSS_API_FILA=PSS_API_FILA.then(executar,executar);
+      return PSS_API_FILA;
+    }
+    function apiJsonpCallbackFixo_(action,dados={},args=null){
+      return new Promise((resolve,reject)=>{
+        const cb='callback';
+        const payload=Object.assign({},dados||{});
+        payload.action=action;
+        payload.fnName=action;
+        if(Array.isArray(args))payload.args=args;
+
+        const p=new URLSearchParams();
+        p.set('action',action);
+        p.set('fn',action);
+        p.set('fnName',action);
+        p.set('callback',cb);
+        p.set('payload',JSON.stringify(payload));
+        p.set('email',ESTADO.email||dados.email||'');
+        p.set('_',String(Date.now()));
+
+        const s=document.createElement('script');
+        let finalizado=false;
+        const callbackAnterior=window[cb];
+
+        function limpar(){
+          try{
+            if(callbackAnterior===undefined)delete window[cb];
+            else window[cb]=callbackAnterior;
+          }catch(e){
+            window[cb]=callbackAnterior;
+          }
+          if(s&&s.parentNode)s.parentNode.removeChild(s);
+        }
+
+        const timer=setTimeout(()=>{
+          if(finalizado)return;
+          finalizado=true;
+          limpar();
+          reject(new Error('Tempo limite excedido ao conectar à API.'));
+        },45000);
+
+        window[cb]=r=>{
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+
+          if(!r||r.ok!==true){
+            reject(new Error((r&&(r.erro||r.msg))||'Erro retornado pela API.'));
+            return;
+          }
+
+          resolve(r.dados!==undefined?r.dados:(r.result!==undefined?r.result:r));
+        };
+
+        s.onerror=()=>{
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(new Error('Falha ao conectar à API. Atualize a página e confirme se a API publicada respondeu V155.'));
+        };
+
+        s.async=true;
+        s.src=CONFIG.apiUrl+'?'+p.toString();
+        document.body.appendChild(s);
+      });
+    }
     async function apiMulti(t){let e=null;for(const x of t){try{return await api(x.action,x.dados||{},x.args||null)}catch(err){e=err}}throw e||new Error('Nenhuma rota respondeu.')}
     function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse usando o e-mail e a senha cadastrados na planilha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button></div></div>`)}
     async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);ESTADO.usuario={nome:u.nome||u.usuario||'Usuário',email:u.email||email,role:String(u.role||u.perfil||'usuario').toLowerCase(),perfil:u.perfil||u.role||'usuario'};ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
@@ -158,7 +228,6 @@
     function renderCamposPartes(){const box=document.getElementById('partesBox');if(!box)return;const tipo=document.getElementById('tipoCota').value;if(tipo!=='dividida'){box.innerHTML='';return}box.innerHTML=`<div class="wide-control"><label>Em quantas partes a cota foi dividida?</label><select id="qtdPartes" onchange="renderNomesPartes()"><option value="2">2 partes</option><option value="3">3 partes</option><option value="4">4 partes</option><option value="5">5 partes</option></select></div><div id="nomesPartes"></div>`;renderNomesPartes()}function renderNomesPartes(){const box=document.getElementById('nomesPartes'),qtd=Number(document.getElementById('qtdPartes').value||2);let h='';for(let i=1;i<=qtd;i++)h+=`<input style="margin-bottom:12px;" placeholder="Nome do participante ${i}" />`;box.innerHTML=h}
     function renderHistoricoComprovantes(lista){lista=Array.isArray(lista)?lista:[];if(!lista.length)return '<div class="notice warn">Nenhum envio localizado.</div>';return `<div class="table-wrap"><table><thead><tr><th>Data/Hora</th><th>Status</th><th>Link</th></tr></thead><tbody>${lista.map(x=>`<tr><td>${escapeHtml(formatarDataHoraPtBR(x.data||x.DATA||x.dataHora||x.DATA_HORA||'-'))}</td><td>${escapeHtml(x.status||'Pendente')}</td><td>${x.url?`<a href="${escapeAttr(x.url)}" target="_blank" rel="noopener">Ver Arquivo</a>`:'-'}</td></tr>`).join('')}</tbody></table></div>`}
     async function enviarComprovante(ev){ev.preventDefault();const loteria=document.getElementById('uploadBolao').value,file=document.getElementById('arquivoComprovante').files[0],btn=document.getElementById('btnEnviarComprovante');if(!loteria)return toast('Selecione a loteria do depósito.','error');if(!file)return toast('Selecione o arquivo do comprovante.','error');ESTADO.bolaoSelecionado=loteria;localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);btn.disabled=true;btn.textContent='Enviando...';try{const base64=await lerArquivoBase64(file),r=await apiMulti([{action:'uploadComprovante',dados:{fileData:base64,fileName:file.name,email:ESTADO.email,loteria},args:[base64,file.name,ESTADO.email,loteria]},{action:'enviarComprovante',dados:{fileData:base64,fileName:file.name,email:ESTADO.email,loteria},args:[base64,file.name,ESTADO.email,loteria]}]);toast((r&&r.msg)||'Comprovante enviado com sucesso.');renderComprovante()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar agora'}}
-
     async function renderJogosRealizados(){
       loading('Carregando jogos realizados');
       try{
@@ -410,7 +479,6 @@
 
       return base;
     }
-
     function chaveBaseEspecial(nome){
       return normalizar(String(nome||'').replace(/\b20\d{2}\b/g,'').replace(/[()]/g,' ').replace(/\s+/g,' '));
     }
@@ -536,7 +604,6 @@
 
       btn.disabled = true;
       btn.textContent = 'Ativando...';
-
       try{
         const r = await api('salvarConfigBolaoAtivoAdmin',{},[dados]);
         toast((r&&r.msg)||'Bolão especial ativado.');
@@ -599,7 +666,6 @@
         }
       }
     }
-
     async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const lista=await carregarBoloes();setView(`<div class="panel"><h2>⚙️ Configurações individuais dos bolões ativos</h2><p>Cada bolão salva individualmente. BASE_LOTERIAS define range, mínimo, máximo e quantidade por palpite.</p>${lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(b.dataSorteio||'')}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(b.inicioPagamento||'')}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(b.fimPagamento||'')}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(b.inicioPalpite||'')}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(b.fimPalpite||'')}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join('')}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
 
     function calcularPremioPorCotaValor(premiacao,cotasAdquiridas){
@@ -809,7 +875,6 @@
         if(hh&&mi)return `${dd}/${mm}/${yyyy} ${hh}:${mi}${ss?':'+ss:''}`;
         return `${dd}/${mm}/${yyyy}`;
       }
-
       const slash=bruto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
       if(slash){
         let p1=Number(slash[1]),p2=Number(slash[2]);
