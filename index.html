@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V186_FIREBASE_BOOT_SEM_TELA_BRANCA_SEM_PLANILHA_INICIAL -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V187_FIREBASE_SDK_ASSINCRONO_SEM_BLOQUEIO_TELA_BRANCA -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -347,11 +347,8 @@
   <main class="app"><div class="content" id="view"></div></main>
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
-  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V186_FIREBASE_BOOT_SEM_TELA_BRANCA_SEM_PLANILHA_INICIAL',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V187_FIREBASE_SDK_ASSINCRONO_SEM_BLOQUEIO_TELA_BRANCA',versaoRegulamento:'2026.1'};
 
     const FIREBASE_CONFIG={
       apiKey:"AIzaSyCTHqO8bUwCJLJv45yuHLDKSUFPNJI4LIc",
@@ -365,14 +362,45 @@
     let FIREBASE_APP=null;
     let FIREBASE_AUTH=null;
     let FIREBASE_DB=null;
+    let FIREBASE_SDK_PROMISE=null;
 
-    try{
-      FIREBASE_APP=firebase.apps&&firebase.apps.length?firebase.app():firebase.initializeApp(FIREBASE_CONFIG);
-      FIREBASE_AUTH=firebase.auth();
-      FIREBASE_DB=firebase.firestore();
-      FIREBASE_AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
-    }catch(firebaseInitErr){
-      console.error('Erro ao iniciar Firebase:',firebaseInitErr);
+    function carregarScriptFirebase_(src,timeoutMs){
+      timeoutMs=Number(timeoutMs||8000);
+      return new Promise((resolve,reject)=>{
+        try{
+          const ja=[...document.scripts].some(s=>s.src===src);
+          if(ja)return resolve(true);
+          const sc=document.createElement('script');
+          let fim=false;
+          const timer=setTimeout(()=>{if(fim)return;fim=true;reject(new Error('Tempo limite ao carregar Firebase SDK: '+src));},timeoutMs);
+          sc.onload=()=>{if(fim)return;fim=true;clearTimeout(timer);resolve(true);};
+          sc.onerror=()=>{if(fim)return;fim=true;clearTimeout(timer);reject(new Error('Falha ao carregar Firebase SDK: '+src));};
+          sc.async=true;
+          sc.src=src;
+          document.head.appendChild(sc);
+        }catch(e){reject(e);}
+      });
+    }
+
+    async function inicializarFirebaseAsync_(){
+      if(FIREBASE_AUTH&&FIREBASE_DB)return true;
+      if(FIREBASE_SDK_PROMISE)return FIREBASE_SDK_PROMISE;
+      FIREBASE_SDK_PROMISE=(async()=>{
+        await carregarScriptFirebase_('https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js',9000);
+        await carregarScriptFirebase_('https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js',9000);
+        await carregarScriptFirebase_('https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js',9000);
+        if(typeof firebase==='undefined')throw new Error('Firebase SDK não disponível após carregamento.');
+        FIREBASE_APP=firebase.apps&&firebase.apps.length?firebase.app():firebase.initializeApp(FIREBASE_CONFIG);
+        FIREBASE_AUTH=firebase.auth();
+        FIREBASE_DB=firebase.firestore();
+        try{await FIREBASE_AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL);}catch(e){}
+        return true;
+      })().catch(err=>{
+        FIREBASE_SDK_PROMISE=null;
+        console.error('Erro ao iniciar Firebase:',err);
+        throw err;
+      });
+      return FIREBASE_SDK_PROMISE;
     }
 
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
@@ -441,8 +469,11 @@
         renderLogin();
         const msgInicial=document.getElementById('loginMsg');
 
-        if(!FIREBASE_AUTH||!FIREBASE_DB){
-          if(msgInicial)msgInicial.innerHTML='<div class="notice error">Firebase não inicializou. Confira o firebaseConfig no index.html.</div>';
+        if(msgInicial)msgInicial.innerHTML='<div class="notice info"><span class="loading-fast">Carregando autenticação Firebase...</span></div>';
+        try{
+          await inicializarFirebaseAsync_();
+        }catch(firebaseErr){
+          if(msgInicial)msgInicial.innerHTML='<div class="notice error">Firebase não carregou. Verifique internet, bloqueio do navegador ou firebaseConfig.</div>';
           return;
         }
 
@@ -948,7 +979,7 @@
     }
     async function fazerLogin(ev){
       ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase();const senha=document.getElementById('loginSenha').value.trim();const btn=document.getElementById('btnLogin');const msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info"><span class="loading-fast">Autenticando no Firebase...</span></div>';btn.disabled=true;btn.textContent='ENTRANDO...';
-      try{if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado. Confira configuração e SDK.');await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);msg.innerHTML='<div class="notice info"><span class="loading-fast">Verificando aprovação do cadastro...</span></div>';const u=await firebaseValidarUsuarioAprovado_(email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();renderInicioLeveFirebase_();}
+      try{await inicializarFirebaseAsync_();if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado. Confira configuração e SDK.');await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);msg.innerHTML='<div class="notice info"><span class="loading-fast">Verificando aprovação do cadastro...</span></div>';const u=await firebaseValidarUsuarioAprovado_(email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();renderInicioLeveFirebase_();}
       catch(err){try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}msg.innerHTML=`<div class="notice error">${escapeHtml(firebaseMensagemErro_(err))}</div>`;}
       finally{btn.disabled=false;btn.textContent='Entrar no sistema';}
     }
@@ -3020,13 +3051,13 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     async function enviarCadastro(ev){
       ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),senha=document.getElementById('cadSenha').value,senha2=document.getElementById('cadSenha2').value,cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');
       if(senha.length<6)return toast('A senha precisa ter pelo menos 6 caracteres.','warn');if(senha!==senha2)return toast('As senhas informadas não conferem.','warn');btn.disabled=true;btn.textContent='Enviando...';
-      try{if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado.');try{const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);try{await cred.user.updateProfile({displayName:nome});}catch(e){}await firebaseCriarCadastroPendente_({nome,email,cpf,cotas,loteria});}catch(authErr){if(String(authErr.code||'')==='auth/email-already-in-use'){toast('Este e-mail já existe no Firebase. A solicitação será enviada para análise; use “Esqueci a senha” se necessário.','warn');}else{throw authErr;}}
+      try{await inicializarFirebaseAsync_();if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado.');try{const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);try{await cred.user.updateProfile({displayName:nome});}catch(e){}await firebaseCriarCadastroPendente_({nome,email,cpf,cotas,loteria});}catch(authErr){if(String(authErr.code||'')==='auth/email-already-in-use'){toast('Este e-mail já existe no Firebase. A solicitação será enviada para análise; use “Esqueci a senha” se necessário.','warn');}else{throw authErr;}}
         const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');try{await FIREBASE_AUTH.signOut();}catch(e){}toast((r&&r.msg)||'Solicitação enviada. Aguarde aprovação da administração.');fecharModal();}
       catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}
     }
 
     function abrirResetSenha(){abrirModal('Recuperar senha',`<form onsubmit="resetarSenha(event)"><div class="field"><label>E-mail cadastrado no Firebase</label><input id="resetEmail" type="email" required /></div><button class="btn btn-block" id="btnReset" type="submit">Enviar redefinição de senha</button></form>`)}
-    async function resetarSenha(ev){ev.preventDefault();const email=document.getElementById('resetEmail').value.trim().toLowerCase(),btn=document.getElementById('btnReset');btn.disabled=true;btn.textContent='Enviando...';try{if(!FIREBASE_AUTH)throw new Error('Firebase Auth não inicializado.');await FIREBASE_AUTH.sendPasswordResetEmail(email);toast('E-mail de redefinição enviado pelo Firebase.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar redefinição de senha'}}
+    async function resetarSenha(ev){ev.preventDefault();const email=document.getElementById('resetEmail').value.trim().toLowerCase(),btn=document.getElementById('btnReset');btn.disabled=true;btn.textContent='Enviando...';try{await inicializarFirebaseAsync_();if(!FIREBASE_AUTH)throw new Error('Firebase Auth não inicializado.');await FIREBASE_AUTH.sendPasswordResetEmail(email);toast('E-mail de redefinição enviado pelo Firebase.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar redefinição de senha'}}
     function atualizarRelogio(){
       const completo=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(',',',');
       const curto=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','');
