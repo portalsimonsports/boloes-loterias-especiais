@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V216_CADASTRO_NOME_PUBLICO_TELEGRAM -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V217_NOVA_LOTERIA_BASE_PRE_CARREGADA -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V216</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V217</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -757,6 +757,94 @@
       color:#0b6f28;
     }
 
+  
+    /* V217 — Nova Loteria com modelos da BASE_LOTERIAS pré-carregados */
+    .nova-loteria-toolbar{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin:12px 0 14px;
+    }
+    .nova-loteria-toolbar .info{
+      color:#334155;
+      font-size:13px;
+      line-height:1.4;
+      max-width:880px;
+      margin:0;
+    }
+    .base-loterias-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+    .base-loteria-card{
+      border:1px solid #d7eadc;
+      border-top:4px solid #0b6f28;
+      background:#fff;
+      border-radius:14px;
+      padding:14px;
+      min-height:120px;
+      text-align:left;
+      box-shadow:0 6px 20px rgba(0,0,0,.06);
+      cursor:pointer;
+      transition:.16s ease;
+    }
+    .base-loteria-card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 10px 24px rgba(0,0,0,.10);
+      border-color:#0b6f28;
+    }
+    .base-loteria-card .top{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      margin-bottom:8px;
+    }
+    .base-loteria-card .ico{
+      font-size:22px;
+      line-height:1;
+    }
+    .base-loteria-card h3{
+      margin:0;
+      font-size:15px;
+      color:#003b12;
+      line-height:1.25;
+    }
+    .base-loteria-card .meta{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:6px;
+      margin-top:10px;
+      color:#334155;
+      font-size:12px;
+      font-weight:800;
+    }
+    .base-loteria-card .meta span{
+      background:#f8fffa;
+      border:1px solid #e0f0e4;
+      border-radius:9px;
+      padding:6px 7px;
+    }
+    .especial-form-ajuda{
+      margin:10px 0 14px;
+      border:1px solid #cfe8ff;
+      border-radius:12px;
+      background:#f6fbff;
+      color:#073b68;
+      padding:10px 12px;
+      font-size:13px;
+      font-weight:800;
+      line-height:1.45;
+    }
+    .campo-config-pendente{
+      border-left:4px solid #ffb300!important;
+      background:#fffdf5!important;
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -772,7 +860,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V216_CADASTRO_NOME_PUBLICO_TELEGRAM',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V217_NOVA_LOTERIA_BASE_PRE_CARREGADA',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5288,7 +5376,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V216_CADASTRO_NOME_PUBLICO_TELEGRAM'; }catch(e){}
+  try{ CONFIG.versao='V217_NOVA_LOTERIA_BASE_PRE_CARREGADA'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -8246,6 +8334,413 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         </div>
       </article>
     `;
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V217 — NOVA LOTERIA COM BASE_LOTERIAS PRÉ-CARREGADA
+ * - Ao clicar em Nova Loteria, exibe todos os modelos cadastrados na BASE_LOTERIAS.
+ * - Range, qtd mínima, qtd máxima e qtd por palpite vêm preenchidos.
+ * - Apenas Valor da cota, Total de cotas e Premiação ficam vazios para configurar.
+ * - Também permite atualizar/completear a BASE_LOTERIAS pelo próprio sistema.
+ * ===================================================================== */
+(function(){
+  function textoV217_(v){return String(v===undefined||v===null?'':v).trim();}
+  function numeroV217_(v,padrao){const n=num(v);return (isFinite(n)&&n!==0)?String(n):textoV217_(v||padrao||'');}
+
+  function normalizarLoteriaV217_(v){
+    return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  }
+
+  function iconeLoteriaV217_(nome){
+    const k=normalizarLoteriaV217_(nome);
+    if(k.includes('mega'))return '🍀';
+    if(k.includes('quina'))return '🔥';
+    if(k.includes('lotofacil')||k.includes('facil'))return 'BR';
+    if(k.includes('dupla')||k.includes('pascoa'))return '🐰';
+    if(k.includes('sorte'))return '🌞';
+    if(k.includes('super'))return '7️⃣';
+    if(k.includes('timemania'))return '⚽';
+    if(k.includes('lotomania'))return '🔢';
+    if(k.includes('milionaria'))return '💰';
+    if(k.includes('loteca'))return '🏟️';
+    return '🎯';
+  }
+
+  function corLoteriaEspecialV217_(nome){
+    const k=normalizarLoteriaV217_(nome);
+    if(k.includes('mega'))return '#209869';
+    if(k.includes('lotofacil')||k.includes('facil'))return '#930089';
+    if(k.includes('quina'))return '#260085';
+    if(k.includes('dupla')||k.includes('pascoa'))return '#a61324';
+    if(k.includes('sorte'))return '#cb852b';
+    if(k.includes('super'))return '#a8cf45';
+    if(k.includes('timemania'))return '#00a651';
+    if(k.includes('lotomania')||k.includes('loteca'))return '#f78100';
+    if(k.includes('milionaria'))return '#2e3078';
+    return '#0b6f28';
+  }
+
+  function dataISOAddV217_(dias){
+    const d=new Date();
+    d.setDate(d.getDate()+Number(dias||0));
+    const y=d.toLocaleString('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric'});
+    const m=d.toLocaleString('en-CA',{timeZone:'America/Sao_Paulo',month:'2-digit'});
+    const day=d.toLocaleString('en-CA',{timeZone:'America/Sao_Paulo',day:'2-digit'});
+    return `${y}-${m}-${day}`;
+  }
+
+  function anoAtualV217_(){
+    return new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric'});
+  }
+
+  function nomeFinalEspecialV217_(nomeBase,ano){
+    let nome=textoV217_(nomeBase).replace(/\s{2,}/g,' ');
+    const a=textoV217_(ano);
+    if(!nome)return '';
+    if(a && !new RegExp('\\b'+a+'\\b').test(nome)) nome+=' '+a;
+    return nome;
+  }
+
+  window.nomeFinalEspecial = function(nomeBase, ano, tipo){
+    return nomeFinalEspecialV217_(nomeBase, ano);
+  };
+
+  function especialPadraoV217_(tipo){
+    const ano=anoAtualV217_();
+    const mapa={
+      mega:{tipo:'mega',icone:'🍀',titulo:'Mega da Virada',nome:'Mega da Virada',ano,range:'60',qtdMin:'6',qtdMax:'15',qtdPalpite:'10'},
+      pascoa:{tipo:'pascoa',icone:'🐰',titulo:'Páscoa',nome:'Dupla-Sena-de-pascoa',ano,range:'50',qtdMin:'6',qtdMax:'15',qtdPalpite:'10'},
+      saojoao:{tipo:'saojoao',icone:'🔥',titulo:'São João',nome:'Quina-de-Sao-Joao',ano,range:'80',qtdMin:'5',qtdMax:'15',qtdPalpite:'10'},
+      independencia:{tipo:'independencia',icone:'BR',titulo:'Independência',nome:'Lotofacil-da-Independencia',ano,range:'25',qtdMin:'15',qtdMax:'20',qtdPalpite:'10'},
+      nova:{tipo:'nova',icone:'➕',titulo:'Nova Loteria',nome:'',ano,range:'',qtdMin:'',qtdMax:'',qtdPalpite:''}
+    };
+    return mapa[tipo]||mapa.nova;
+  }
+
+  window.especialPadrao = function(tipo){
+    return especialPadraoV217_(tipo);
+  };
+
+  async function carregarModelosBaseLoteriasV217_(forcar){
+    if(!forcar && Array.isArray(window.PSS_BASE_LOTERIAS_MODELOS_V217)){
+      return window.PSS_BASE_LOTERIAS_MODELOS_V217;
+    }
+
+    let r=null;
+    try{
+      r=await apiMulti([
+        {action:'getBaseLoteriasTemplates',args:[]},
+        {action:'listarBaseLoteriasTemplates',args:[]}
+      ]);
+    }catch(e){
+      r=await adminDados('BASE_LOTERIAS');
+    }
+
+    let modelos=[];
+    if(Array.isArray(r&&r.modelos)){
+      modelos=r.modelos;
+    }else{
+      const headers=(r&&r.headers)||[];
+      const rows=(r&&r.rows)||[];
+      modelos=rows.map(row=>{
+        const o=rowObj(headers,row);
+        return {
+          nome:cellObj(o,['NOME','LOTERIA']),
+          qtdMin:cellObj(o,['QTD_MIN','QTD MIN']),
+          qtdMax:cellObj(o,['QTD_MAX','QTD MAX']),
+          range:cellObj(o,['RANGE']),
+          qtdPalpite:cellObj(o,['QTD_PALPITE','QTD PALPITE','QTD_ESCOLHA']),
+          imagemId:cellObj(o,['IMAGEM_ID','IMAGEM'])
+        };
+      });
+    }
+
+    modelos=modelos
+      .filter(x=>x&&textoV217_(x.nome))
+      .map(x=>({
+        nome:textoV217_(x.nome),
+        titulo:textoV217_(x.titulo||x.nome),
+        range:numeroV217_(x.range,''),
+        qtdMin:numeroV217_(x.qtdMin,''),
+        qtdMax:numeroV217_(x.qtdMax,''),
+        qtdPalpite:numeroV217_(x.qtdPalpite,''),
+        imagemId:textoV217_(x.imagemId||x.imagem_id||'')
+      }))
+      .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+
+    window.PSS_BASE_LOTERIAS_MODELOS_V217=modelos;
+    return modelos;
+  }
+
+  window.renderEspeciais = renderEspeciais = function(tipoSelecionado=''){
+    setView(`
+      <div class="panel no-left center">
+        <h2>Configurar Bolão Especial</h2>
+        <div class="special-grid">
+          ${cardEspecialHtml('mega','🍀','Mega da Virada',tipoSelecionado)}
+          ${cardEspecialHtml('pascoa','🐰','Páscoa',tipoSelecionado)}
+          ${cardEspecialHtml('saojoao','🔥','São João',tipoSelecionado)}
+          ${cardEspecialHtml('independencia','BR','Independência',tipoSelecionado)}
+          ${cardEspecialHtml('nova','➕','Nova Loteria',tipoSelecionado)}
+        </div>
+      </div>
+      <div id="especialFormBox"></div>
+    `);
+
+    if(tipoSelecionado) abrirFormularioEspecial(tipoSelecionado);
+  };
+
+  window.abrirEspecialClick = abrirEspecialClick = function(tipo){
+    renderEspeciais(tipo);
+    setTimeout(()=>{
+      const box=document.getElementById('especialFormBox');
+      if(box)box.scrollIntoView({behavior:'smooth',block:'start'});
+    },120);
+  };
+
+  function cardModeloBaseV217_(m){
+    const cor=corLoteriaEspecialV217_(m.nome);
+    return `
+      <button type="button" class="base-loteria-card" style="border-top-color:${escapeAttr(cor)}" onclick="abrirFormularioEspecialModeloV217('${escapeAttr(encodeURIComponent(m.nome))}')">
+        <div class="top">
+          <h3>${escapeHtml(m.nome)}</h3>
+          <span class="ico">${iconeLoteriaV217_(m.nome)}</span>
+        </div>
+        <div class="meta">
+          <span>Range: ${escapeHtml(m.range||'-')}</span>
+          <span>Min: ${escapeHtml(m.qtdMin||'-')}</span>
+          <span>Máx: ${escapeHtml(m.qtdMax||'-')}</span>
+          <span>Palpites: ${escapeHtml(m.qtdPalpite||'-')}</span>
+        </div>
+      </button>
+    `;
+  }
+
+  async function renderEscolhaNovaLoteriaV217_(){
+    const box=document.getElementById('especialFormBox');
+    if(!box)return;
+    box.innerHTML=`
+      <div class="panel no-left">
+        <h3>➕ Nova Loteria</h3>
+        <div class="notice info">Carregando modelos da base de loterias...</div>
+      </div>
+    `;
+
+    try{
+      const modelos=await carregarModelosBaseLoteriasV217_(false);
+      box.innerHTML=`
+        <div class="panel no-left">
+          <h3>➕ Nova Loteria</h3>
+          <div class="nova-loteria-toolbar">
+            <p class="info">
+              Escolha uma loteria da base. O sistema já preenche universo/range, quantidade mínima, máxima e quantidade por palpite. 
+              Para finalizar, você só informa <b>Valor da cota</b>, <b>Total de cotas</b> e <b>Premiação</b>, além de ajustar as datas se necessário.
+            </p>
+            <button class="btn btn-light" onclick="atualizarBaseLoteriasPadraoV217()">Atualizar base de loterias</button>
+          </div>
+          <div class="base-loterias-grid">
+            ${modelos.map(cardModeloBaseV217_).join('')}
+          </div>
+          <div class="actions" style="margin-top:14px;">
+            <button class="btn btn-light" onclick="abrirFormularioEspecialModeloV217('')">Cadastrar manualmente</button>
+          </div>
+        </div>
+      `;
+    }catch(err){
+      box.innerHTML=`
+        <div class="panel no-left">
+          <div class="notice error">${escapeHtml(err.message||String(err))}</div>
+          <button class="btn" onclick="abrirFormularioEspecialModeloV217('')">Cadastrar manualmente</button>
+        </div>
+      `;
+    }
+  }
+
+  window.atualizarBaseLoteriasPadraoV217 = async function(){
+    try{
+      toast('Atualizando base de loterias...','info');
+      const r=await apiMulti([
+        {action:'atualizarBaseLoteriasPadraoV217',args:[]},
+        {action:'atualizarBaseLoteriasPadrao',args:[]}
+      ]);
+      window.PSS_BASE_LOTERIAS_MODELOS_V217=null;
+      toast((r&&r.msg)||'Base de loterias atualizada.');
+      renderEscolhaNovaLoteriaV217_();
+    }catch(err){
+      toast((err&&err.message)||String(err),'error');
+    }
+  };
+
+  window.abrirFormularioEspecial = abrirFormularioEspecial = async function(tipo){
+    if(tipo==='nova'){
+      await renderEscolhaNovaLoteriaV217_();
+      return;
+    }
+
+    const cfg=especialPadraoV217_(tipo);
+    let modelo={nome:cfg.nome,range:cfg.range,qtdMin:cfg.qtdMin,qtdMax:cfg.qtdMax,qtdPalpite:cfg.qtdPalpite};
+    try{
+      const modelos=await carregarModelosBaseLoteriasV217_(false);
+      const alvo=normalizarLoteriaV217_(cfg.nome);
+      const achado=modelos.find(m=>normalizarLoteriaV217_(m.nome)===alvo);
+      if(achado)modelo=Object.assign({},modelo,achado);
+    }catch(e){}
+    abrirFormularioEspecialComModeloV217_(Object.assign({},cfg,modelo,{tipo:tipo,titulo:cfg.titulo,icone:cfg.icone}));
+  };
+
+  window.abrirFormularioEspecialModeloV217 = function(nomeCodificado){
+    const nome=textoV217_(nomeCodificado)?decodeURIComponent(nomeCodificado):'';
+    const modelos=window.PSS_BASE_LOTERIAS_MODELOS_V217||[];
+    const m=modelos.find(x=>x.nome===nome)||{nome:'',range:'',qtdMin:'',qtdMax:'',qtdPalpite:''};
+    abrirFormularioEspecialComModeloV217_({
+      tipo:'nova',
+      icone:iconeLoteriaV217_(m.nome||'Nova Loteria'),
+      titulo:m.nome||'Nova Loteria',
+      nome:m.nome||'',
+      ano:anoAtualV217_(),
+      range:m.range||'',
+      qtdMin:m.qtdMin||'',
+      qtdMax:m.qtdMax||'',
+      qtdPalpite:m.qtdPalpite||''
+    });
+  };
+
+  function abrirFormularioEspecialComModeloV217_(cfg){
+    const box=document.getElementById('especialFormBox');
+    if(!box)return;
+
+    box.innerHTML=`
+      <div class="panel no-left">
+        <h3>${escapeHtml(cfg.icone||'🎯')} ${escapeHtml(cfg.titulo||'Nova Loteria')}</h3>
+        <div class="especial-form-ajuda">
+          Modelo carregado da base de loterias. Os campos que normalmente ficam pendentes são: <b>Total de cotas</b>, <b>Valor da cota</b> e <b>Premiação</b>.
+        </div>
+
+        <div class="config-grid" style="margin-top:14px;">
+          <div class="field">
+            <label>Nome da loteria</label>
+            <input id="esp_nome" value="${escapeAttr(cfg.nome||'')}" placeholder="Nome da loteria">
+          </div>
+          <div class="field">
+            <label>Ano do concurso</label>
+            <input id="esp_ano" value="${escapeAttr(cfg.ano||anoAtualV217_())}" placeholder="2026">
+          </div>
+          <div class="field">
+            <label>Universo/RANGE</label>
+            <input id="esp_range" value="${escapeAttr(cfg.range||'')}" placeholder="60">
+          </div>
+          <div class="field">
+            <label>Qtd mínima</label>
+            <input id="esp_qtdMin" value="${escapeAttr(cfg.qtdMin||'')}" placeholder="6">
+          </div>
+          <div class="field">
+            <label>Qtd máxima</label>
+            <input id="esp_qtdMax" value="${escapeAttr(cfg.qtdMax||'')}" placeholder="15">
+          </div>
+          <div class="field">
+            <label>Qtd por palpite</label>
+            <input id="esp_qtdPalpite" value="${escapeAttr(cfg.qtdPalpite||'')}" placeholder="10">
+          </div>
+
+          <div class="field campo-config-pendente">
+            <label>Valor da cota</label>
+            <input id="esp_valorCota" value="" placeholder="Ex.: R$ 50,00">
+          </div>
+          <div class="field campo-config-pendente">
+            <label>Total de cotas</label>
+            <input id="esp_totalCotas" value="" placeholder="Ex.: 50">
+          </div>
+          <div class="field campo-config-pendente">
+            <label>Premiação</label>
+            <input id="esp_premiacao" value="" placeholder="Ex.: R$ 0,00">
+          </div>
+          <div class="field">
+            <label>Qtd parcelas</label>
+            <input id="esp_qtdParcelas" value="1" placeholder="1">
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:12px;">
+          <label>Data do sorteio</label>
+          <input id="esp_dataSorteio" type="date" value="${escapeAttr(dataISOAddV217_(8))}">
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Início pagamento</label>
+            <input id="esp_iniBol" type="date" value="${escapeAttr(dataISOAddV217_(0))}">
+          </div>
+          <div class="field">
+            <label>Fim pagamento</label>
+            <input id="esp_fimBol" type="date" value="${escapeAttr(dataISOAddV217_(7))}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Início palpites</label>
+            <input id="esp_iniPal" type="date" value="${escapeAttr(dataISOAddV217_(0))}">
+          </div>
+          <div class="field">
+            <label>Fim palpites</label>
+            <input id="esp_fimPal" type="date" value="${escapeAttr(dataISOAddV217_(7))}">
+          </div>
+        </div>
+
+        <button class="btn btn-block" id="btnAtivarEspecial" onclick="ativarBolaoEspecialGit('${escapeAttr(cfg.tipo||'nova')}')">Ativar Bolão Especial</button>
+      </div>
+    `;
+  }
+
+  window.ativarBolaoEspecialGit = ativarBolaoEspecialGit = async function(tipo){
+    const btn=document.getElementById('btnAtivarEspecial');
+    const nomeBase=textoV217_(document.getElementById('esp_nome')&&document.getElementById('esp_nome').value);
+    const ano=textoV217_(document.getElementById('esp_ano')&&document.getElementById('esp_ano').value);
+    const nome=nomeFinalEspecialV217_(nomeBase,ano);
+
+    if(!nomeBase){
+      toast('Informe o nome da loteria.','error');
+      return;
+    }
+
+    const dados={
+      nome:nome,
+      loteria:nome,
+      status:'ATIVO',
+      valorCota:valorNumeroConfig(document.getElementById('esp_valorCota')?document.getElementById('esp_valorCota').value:'',''),
+      totalCotas:valorNumeroConfig(document.getElementById('esp_totalCotas')?document.getElementById('esp_totalCotas').value:'',''),
+      cotasTotaisAdquiridas:'0',
+      qtdParcelas:valorNumeroConfig(document.getElementById('esp_qtdParcelas')?document.getElementById('esp_qtdParcelas').value:'1','1'),
+      premiacao:valorNumeroConfig(document.getElementById('esp_premiacao')?document.getElementById('esp_premiacao').value:'',''),
+      premioPorCota:'',
+      dataSorteio:dataInputParaBR('esp_dataSorteio'),
+      iniBol:dataInputParaBR('esp_iniBol'),
+      fimBol:dataInputParaBR('esp_fimBol'),
+      iniPal:dataInputParaBR('esp_iniPal'),
+      fimPal:dataInputParaBR('esp_fimPal'),
+      range:valorNumeroConfig(document.getElementById('esp_range').value,''),
+      qtdMin:valorNumeroConfig(document.getElementById('esp_qtdMin').value,''),
+      qtdMax:valorNumeroConfig(document.getElementById('esp_qtdMax').value,''),
+      qtdPalpite:valorNumeroConfig(document.getElementById('esp_qtdPalpite').value,'')
+    };
+
+    btn.disabled=true;
+    btn.textContent='Ativando...';
+
+    try{
+      const r=await api('salvarConfigBolaoAtivoAdmin',{},[dados]);
+      toast((r&&r.msg)||'Bolão especial ativado.');
+      await carregarBoloes();
+      renderEspeciais(tipo==='nova'?'nova':tipo);
+    }catch(err){
+      toast(err.message,'error');
+    }finally{
+      btn.disabled=false;
+      btn.textContent='Ativar Bolão Especial';
+    }
   };
 })();
 
