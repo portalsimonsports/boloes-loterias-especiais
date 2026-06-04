@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V199_QR_CODE_PIX_AUTOMATICO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V200_INSCRITO_SOMENTE_COM_COTAS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V199</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V200</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -371,7 +371,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V199_QR_CODE_PIX_AUTOMATICO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V200_INSCRITO_SOMENTE_COM_COTAS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4816,7 +4816,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V199_QR_CODE_PIX_AUTOMATICO'; }catch(e){}
+  try{ CONFIG.versao='V200_INSCRITO_SOMENTE_COM_COTAS'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5424,6 +5424,79 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       var img=document.getElementById('qrPix_'+idx);
       if(img&&payload)img.src=qrUrl_(payload);
     });
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V200 — INSCRITO SOMENTE COM COTAS CONFIRMADAS
+ * Correção:
+ * - Administrador não é mais tratado automaticamente como participante.
+ * - "Participante inscrito" só aparece se houver cotas confirmadas (>0).
+ * - Se houver reserva pendente, aparece "Cotas reservadas".
+ * - Se não houver cotas confirmadas nem reserva, aparece "Não inscrito neste bolão".
+ * ===================================================================== */
+(function(){
+  window.usuarioParticipaBolaoUI_ = usuarioParticipaBolaoUI_ = function(b){
+    b=b||{};
+    const minhas=num(b.cotasUsuario||b.minhasCotas||b.minhasCotasConfirmadas||b.cotasConfirmadasUsuario||0);
+    const status=normalizar([b.statusParticipacao,b.statusPagamento,b.statusCota,b.statusAquisicao].join(' '));
+    const flagFalse=(b.participanteInscrito===false || String(b.participanteInscrito).toLowerCase()==='false');
+    const confirmado=status.indexOf('CONFIRM')>=0 || status.indexOf('PAGO')>=0 || status.indexOf('APROV')>=0;
+    return minhas>0 && !flagFalse && (confirmado || b.participanteInscrito===true || b.participanteInscrito===undefined || b.participanteInscrito===null || b.participanteInscrito==='');
+  };
+
+  window.usuarioTemReservaBolaoUI_ = function(b){
+    b=b||{};
+    const status=normalizar([b.statusAquisicao,b.statusReserva,b.statusPagamento,b.aquisicaoStatus,b.reservaStatus].join(' '));
+    return !!(
+      b.aquisicaoPendente || b.preAquisicaoPendente || b.cotasPendentes || b.reservaPendente ||
+      num(b.cotasReservadasUsuario||b.minhasCotasReservadas||b.cotasReservadasPendentes||0)>0 ||
+      status.indexOf('RESERV')>=0 || status.indexOf('AGUARDANDO COMPROVANTE')>=0 || status.indexOf('PENDENTE')>=0
+    );
+  };
+
+  window.labelBotaoPrincipalBolao_ = labelBotaoPrincipalBolao_ = function(b,origem){
+    if(isHistorico(b))return 'Abrir';
+    if(window.usuarioTemReservaBolaoUI_(b))return 'Cotas reservadas';
+    if(origem==='palpite')return usuarioParticipaBolaoUI_(b)?'Abrir palpite':'Adquirir cotas';
+    if(usuarioParticipaBolaoUI_(b))return 'Ver opções';
+    return 'Adquirir cotas';
+  };
+
+  window.renderCardsBoloes = renderCardsBoloes = function(lista,origem){
+    lista=listaSegura_(lista);
+    if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;
+
+    return `<div class="cards-row">${lista.map(function(b){
+      var nome=b.nome||b.loteria||'Bolão';
+      var participa=usuarioParticipaBolaoUI_(b);
+      var reservado=window.usuarioTemReservaBolaoUI_(b);
+      var disp=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||0);
+      var esgotado=disp<=0&&!participa&&!reservado&&!isHistorico(b);
+      var botao=labelBotaoPrincipalBolao_(b,origem);
+      var badge=participa?'Participante inscrito':(reservado?'Cotas reservadas':'Não inscrito neste bolão');
+      var badgeClass=participa?'':'locked';
+      var acao=reservado
+        ? `abrirAvisoCotasReservadas('${escapeAttr(b.loteria||b.nome||b.id)}')`
+        : `selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')`;
+
+      return `
+        <div class="bolao-card">
+          <h3>🎯 ${escapeHtml(nome)}</h3>
+          ${origem==='boloes'?`<div class="status-pill ${badgeClass}">${escapeHtml(badge)}</div><br>`:''}
+          ${disp<999999?`<div class="outline-pill ${esgotado?'danger':''}">Cotas disponíveis: ${escapeHtml(disp)}</div>`:''}
+          <div class="meta-grid">
+            <div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div>
+            <div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div>
+            <div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div>
+            <div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div>
+          </div>
+          <button class="btn ${reservado?'btn-reserved':''} ${esgotado?'disabled':''}" ${esgotado?'disabled':''} onclick="${acao}">${escapeHtml(botao)}</button>
+        </div>
+      `;
+    }).join('')}</div>`;
   };
 })();
 
