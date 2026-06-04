@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V200_INSCRITO_SOMENTE_COM_COTAS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V201_EMAIL_NOVO_BOLAO_BADGE_INSCRITOS_QR_VISUAL -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V200</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V201</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -356,6 +356,20 @@
     .qr-auto-box img{width:180px;max-width:100%;height:auto;border:1px solid #d7e8dc;border-radius:10px;background:#fff;padding:6px}
     .qr-auto-status{font-size:12px;color:#506070;max-width:280px;line-height:1.45}
 
+  
+    /* V201 — badge discreto de inscritos + QR visual */
+    .badge-inscritos-topo{border:1px solid rgba(255,179,0,.55)!important;background:rgba(255,179,0,.16)!important;color:#fff!important;border-radius:999px!important;padding:8px 12px!important;margin-left:auto!important;font-size:12px!important;font-weight:900!important;white-space:nowrap!important}
+    .badge-inscritos-topo:hover{background:rgba(255,179,0,.28)!important}
+    .badge-inscritos-topo + .sair{margin-left:8px!important}
+    .resumo-inscritos-lista{display:grid;gap:10px;margin-top:10px}
+    .resumo-inscritos-item{border:1px solid #d7eadc;border-radius:12px;padding:12px;background:#f8fffa;display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .resumo-inscritos-item strong{color:#003b12}
+    .resumo-inscritos-num{background:#0b7a2a;color:#fff;border-radius:999px;padding:6px 10px;font-weight:900;white-space:nowrap}
+    .qr-auto-box{margin-top:12px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .qr-auto-box img{width:190px;max-width:100%;height:auto;border:1px solid #d7e8dc;border-radius:10px;background:#fff;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,.10)}
+    .qr-auto-status{font-size:12px;color:#506070;max-width:300px;line-height:1.45}
+    .pix-fallback{font-size:12px;color:#5b2e00;background:#fff7df;border:1px solid #f5d78a;border-radius:8px;padding:8px;margin-top:8px}
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -366,12 +380,12 @@
 </head>
 <body>
   <header class="public-header" id="publicHeader"><div class="public-header-inner"><h1>Bolões de Loterias Especiais</h1><p>Portal SimonSports • transparência, organização e gestão de participantes</p></div></header>
-  <div id="appHeader" class="hidden"><div class="top-clock"><span id="clock">--/--/----, --:--:--</span><span class="user" id="userDisplay">Usuário</span></div><nav class="nav" id="navMenu"><button type="button" data-view="inicio" class="active">Início</button><button type="button" data-view="boloes">Bolões</button><button type="button" data-view="palpite">Palpite</button><button type="button" data-view="comprovante">Comprovante</button><button type="button" data-view="jogos">Jogos</button><button type="button" data-view="especiais" class="admin-only hidden">Especiais</button><button type="button" data-view="regulamento">Regulamento</button><button type="button" data-view="config" class="admin-only hidden">Config</button><button type="button" data-view="pagamentos" class="admin-only hidden">Pagamentos</button><button type="button" data-view="usuarios" class="admin-only hidden">Usuários</button><button type="button" data-view="solicitacoes" class="admin-only hidden">Solicitações Cadastro</button><button type="button" data-view="baseLoterias" class="admin-only hidden">Base Loterias</button><button type="button" data-view="consulta" class="admin-only hidden">Consulta</button><button type="button" data-view="participantes" class="admin-only hidden">Participantes Bolão</button><button type="button" class="sair" onclick="logout()">Sair</button></nav></div>
+  <div id="appHeader" class="hidden"><div class="top-clock"><span id="clock">--/--/----, --:--:--</span><span class="user" id="userDisplay">Usuário</span></div><nav class="nav" id="navMenu"><button type="button" data-view="inicio" class="active">Início</button><button type="button" data-view="boloes">Bolões</button><button type="button" data-view="palpite">Palpite</button><button type="button" data-view="comprovante">Comprovante</button><button type="button" data-view="jogos">Jogos</button><button type="button" data-view="especiais" class="admin-only hidden">Especiais</button><button type="button" data-view="regulamento">Regulamento</button><button type="button" data-view="config" class="admin-only hidden">Config</button><button type="button" data-view="pagamentos" class="admin-only hidden">Pagamentos</button><button type="button" data-view="usuarios" class="admin-only hidden">Usuários</button><button type="button" data-view="solicitacoes" class="admin-only hidden">Solicitações Cadastro</button><button type="button" data-view="baseLoterias" class="admin-only hidden">Base Loterias</button><button type="button" data-view="consulta" class="admin-only hidden">Consulta</button><button type="button" data-view="participantes" class="admin-only hidden">Participantes Bolão</button><button type="button" id="badgeInscritosTopo" class="badge-inscritos-topo hidden" onclick="abrirResumoInscritosTopo()">👥 Inscritos: 0</button><button type="button" class="sair" onclick="logout()">Sair</button></nav></div>
   <main class="app"><div class="content" id="view"></div></main>
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V200_INSCRITO_SOMENTE_COM_COTAS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V201_EMAIL_NOVO_BOLAO_BADGE_INSCRITOS_QR_VISUAL',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -461,6 +475,7 @@
         perfil:'USUARIO',
         ativo:false,
         origem:'SITE_CADASTRO',
+        receberAvisoNovoBolao:String(dados.receberAvisoNovoBolao||'SIM').toUpperCase()==='SIM',
         atualizadoEm:firebase.firestore.FieldValue.serverTimestamp(),
         criadoEm:firebase.firestore.FieldValue.serverTimestamp()
       },{merge:true});
@@ -2982,8 +2997,8 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       }
     }
 
-    async function abrirCadastro(){abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div><div class="form-row"><div class="field"><label>Senha de acesso</label><input id="cadSenha" type="password" minlength="6" autocomplete="new-password" required /></div><div class="field"><label>Confirmar senha</label><input id="cadSenha2" type="password" minlength="6" autocomplete="new-password" required /></div></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button></form>`);try{const lista=(await carregarBoloes()).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}}
-    async function enviarCadastro(ev){ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),senha=document.getElementById('cadSenha').value.trim(),senha2=document.getElementById('cadSenha2').value.trim(),cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');if(senha!==senha2){toast('As senhas não conferem.','error');return}btn.disabled=true;btn.textContent='Enviando...';try{await inicializarFirebase_();try{const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);try{await cred.user.updateProfile({displayName:nome});}catch(e){}await firebaseCriarUsuarioPendente_({nome,email,cpf,cotas,loteria});}catch(authErr){if(String(authErr.code||'')==='auth/email-already-in-use'){toast('Este e-mail já existe no Firebase. A solicitação será registrada; use “Esqueci a senha” se necessário.','warn');}else{throw authErr;}}const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');toast((r&&r.msg)||'Solicitação enviada com sucesso. Aguarde aprovação da administração.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}}
+    async function abrirCadastro(){abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div><div class="form-row"><div class="field"><label>Senha de acesso</label><input id="cadSenha" type="password" minlength="6" autocomplete="new-password" required /></div><div class="field"><label>Confirmar senha</label><input id="cadSenha2" type="password" minlength="6" autocomplete="new-password" required /></div></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button></form>`);try{const lista=(await carregarBoloes()).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}}
+    async function enviarCadastro(ev){ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),senha=document.getElementById('cadSenha').value.trim(),senha2=document.getElementById('cadSenha2').value.trim(),cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,receberAvisoNovoBolao=document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked?'SIM':'NÃO',aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');if(senha!==senha2){toast('As senhas não conferem.','error');return}btn.disabled=true;btn.textContent='Enviando...';try{await inicializarFirebase_();try{const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);try{await cred.user.updateProfile({displayName:nome});}catch(e){}await firebaseCriarUsuarioPendente_({nome,email,cpf,cotas,loteria,receberAvisoNovoBolao});}catch(authErr){if(String(authErr.code||'')==='auth/email-already-in-use'){toast('Este e-mail já existe no Firebase. A solicitação será registrada; use “Esqueci a senha” se necessário.','warn');}else{throw authErr;}}const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,receberAvisoNovoBolao,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,'',receberAvisoNovoBolao]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,receberAvisoNovoBolao,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,'',receberAvisoNovoBolao]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');toast((r&&r.msg)||'Solicitação enviada com sucesso. Aguarde aprovação da administração.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}}
     function abrirResetSenha(){abrirModal('Recuperar senha',`<form onsubmit="resetarSenha(event)"><div class="field"><label>E-mail cadastrado</label><input id="resetEmail" type="email" required /></div><button class="btn btn-block" id="btnReset" type="submit">Enviar redefinição de senha</button></form>`)}async function resetarSenha(ev){ev.preventDefault();const email=document.getElementById('resetEmail').value.trim().toLowerCase(),btn=document.getElementById('btnReset');btn.disabled=true;btn.textContent='Enviando...';try{await inicializarFirebase_();await FIREBASE_AUTH.sendPasswordResetEmail(email);toast('E-mail de redefinição enviado pelo Firebase.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar redefinição de senha'}}
     async function inativarBolaoGit(i){
       const b=ESTADO.boloes[i];if(!b)return;
@@ -4816,7 +4831,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V200_INSCRITO_SOMENTE_COM_COTAS'; }catch(e){}
+  try{ CONFIG.versao='V201_EMAIL_NOVO_BOLAO_BADGE_INSCRITOS_QR_VISUAL'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5497,6 +5512,170 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         </div>
       `;
     }).join('')}</div>`;
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V201 — E-MAIL NOVO BOLÃO + BADGE INSCRITOS + QR VISUAL
+ * ===================================================================== */
+(function(){
+  window.carregarBadgeInscritosTopo = async function(){
+    const el=document.getElementById('badgeInscritosTopo');
+    if(!el||!ESTADO.usuario)return;
+    try{
+      const cacheKey='PSS_RESUMO_INSCRITOS_TOPO';
+      let dados=null;
+      try{
+        const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(c&&Date.now()-Number(c.ts||0)<5*60*1000)dados=c.dados;
+      }catch(e){}
+      if(!dados){
+        dados=await apiMulti([
+          {action:'getResumoInscritosBoloes',args:[ESTADO.email]},
+          {action:'resumoInscritosBoloes',args:[ESTADO.email]}
+        ]);
+        try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),dados:dados}));}catch(e){}
+      }
+      const total=num(dados.totalInscritos||dados.total||0);
+      el.textContent='👥 Inscritos: '+total;
+      el.classList.remove('hidden');
+      window.PSS_RESUMO_INSCRITOS_TOPO=dados;
+    }catch(e){
+      // Se falhar, não bloqueia o sistema nem polui a tela.
+    }
+  };
+
+  window.abrirResumoInscritosTopo = async function(){
+    abrirModal('Resumo de inscritos', '<div class="notice info">Carregando resumo de inscritos...</div>');
+    try{
+      let dados=window.PSS_RESUMO_INSCRITOS_TOPO;
+      if(!dados){
+        dados=await apiMulti([
+          {action:'getResumoInscritosBoloes',args:[ESTADO.email]},
+          {action:'resumoInscritosBoloes',args:[ESTADO.email]}
+        ]);
+        window.PSS_RESUMO_INSCRITOS_TOPO=dados;
+      }
+      const por=Array.isArray(dados.porBolao)?dados.porBolao:[];
+      document.getElementById('modalConteudo').innerHTML=`
+        <div class="notice">
+          <strong>Total de inscritos no site:</strong> ${escapeHtml(dados.totalInscritos||dados.total||0)}
+        </div>
+        <div class="resumo-inscritos-lista">
+          ${por.length?por.map(x=>`
+            <div class="resumo-inscritos-item">
+              <strong>${escapeHtml(x.loteria||x.bolao||'-')}</strong>
+              <span class="resumo-inscritos-num">${escapeHtml(x.inscritos||x.total||0)} inscrito(s)</span>
+            </div>
+          `).join(''):'<div class="notice warn">Nenhum inscrito confirmado localizado.</div>'}
+        </div>
+        ${isAdmin()?'<div class="actions" style="margin-top:14px;"><button class="btn" onclick="fecharModal();navegar(\\'consulta\\')">Abrir consulta administrativa</button></div>':''}
+      `;
+    }catch(err){
+      document.getElementById('modalConteudo').innerHTML=`<div class="notice error">${escapeHtml(err.message||err)}</div>`;
+    }
+  };
+
+  const aplicarLayoutLogadoBaseV201=window.aplicarLayoutLogado||aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    aplicarLayoutLogadoBaseV201();
+    setTimeout(()=>carregarBadgeInscritosTopo(),350);
+  };
+
+  function tlvPixSeguroV201_(id,value){
+    value=String(value||'');
+    return id+String(value.length).padStart(2,'0')+value;
+  }
+
+  function crc16PixSeguroV201_(payload){
+    let crc=0xFFFF;
+    for(let i=0;i<payload.length;i++){
+      crc^=payload.charCodeAt(i)<<8;
+      for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);
+      crc&=0xFFFF;
+    }
+    return crc.toString(16).toUpperCase().padStart(4,'0');
+  }
+
+  function sanitizarPixSeguroV201_(s){
+    return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 ]/g,'').toUpperCase().trim();
+  }
+
+  window.gerarPixCopiaEColaSeguroV201_ = function(m,valor,loteria){
+    try{
+      const p=gerarPixCopiaECola_(m,valor,loteria);
+      if(p&&String(p).length>30)return p;
+    }catch(e){}
+    const chave=String((m&&m.chavePix)||'').trim();
+    if(!chave)return '';
+    const nome=sanitizarPixSeguroV201_((m&&m.nomeCompleto)||'PORTAL SIMONSPORTS').slice(0,25)||'PORTAL SIMONSPORTS';
+    const cidade='SAO PAULO';
+    const txid=sanitizarPixSeguroV201_((loteria||'BOLAO').replace(/\s+/g,'')).slice(0,25)||'BOLAO';
+    const gui=tlvPixSeguroV201_('00','br.gov.bcb.pix')+tlvPixSeguroV201_('01',chave);
+    let payload='000201'+tlvPixSeguroV201_('26',gui)+'52040000'+'5303986';
+    if(valor&&valor>0)payload+=tlvPixSeguroV201_('54',Number(valor).toFixed(2));
+    payload+='5802BR'+tlvPixSeguroV201_('59',nome)+tlvPixSeguroV201_('60',cidade)+tlvPixSeguroV201_('62',tlvPixSeguroV201_('05',txid))+'6304';
+    return payload+crc16PixSeguroV201_(payload);
+  };
+
+  window.qrUrl_ = function(text){
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data='+encodeURIComponent(text||'');
+  };
+
+  window.renderMetodoPagamento_ = function(m,b,i){
+    const valor=(typeof getValorPagamentoAgora_==='function')
+      ? getValorPagamentoAgora_()
+      : (num(b.valorCota||0)*Math.max(1,num(b.cotasUsuario||b.minhasCotas||1)||1));
+
+    const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+    const payload=isPix?gerarPixCopiaEColaSeguroV201_(m,valor,b.loteria||b.nome):'';
+    const safeId='v201_'+i+'_'+Math.floor(Math.random()*100000);
+    const qrSrc=payload?qrUrl_(payload):'';
+
+    return `
+      <div class="pay-method">
+        <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
+        <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+        ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+        ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+        ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+
+        ${isPix?`
+          ${payload?`<div class="pay-copy" data-pix-payload="${i}" data-metodo="${escapeAttr(encodeURIComponent(JSON.stringify(m||{})))}">${escapeHtml(payload)}</div>`:`<div class="pix-fallback">Não foi possível montar Pix Copia e Cola. Use a chave Pix exibida acima.</div>`}
+
+          <div class="qr-actions">
+            ${payload?`<button type="button" class="btn" onclick="copiarTextoPagamento(this.closest('.pay-method').querySelector('.pay-copy').textContent)">Copiar Pix</button>`:''}
+            ${payload?`<a class="btn btn-light" target="_blank" href="${escapeAttr(qrSrc)}">Abrir QR</a>`:''}
+          </div>
+
+          ${payload?`
+            <div class="qr-auto-box" id="qrAutoBox_${escapeAttr(safeId)}">
+              <img id="qrPix_${i}" src="${escapeAttr(qrSrc)}" alt="QR Code Pix" loading="eager"
+                onload="var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.textContent='QR Code gerado automaticamente.';"
+                onerror="this.style.display='none';var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.innerHTML='Não foi possível carregar o QR Code automático. Use o Pix Copia e Cola ou clique em Abrir QR.';">
+              <div class="qr-auto-status" id="qrStatus_${escapeAttr(safeId)}">Gerando QR Code automaticamente...</div>
+            </div>
+          `:''}
+        `:''}
+      </div>
+    `;
+  };
+
+  const atualizarValorPagamentoModalBaseV201=window.atualizarValorPagamentoModal;
+  window.atualizarValorPagamentoModal=function(loteria){
+    if(typeof atualizarValorPagamentoModalBaseV201==='function')atualizarValorPagamentoModalBaseV201(loteria);
+    document.querySelectorAll('[data-pix-payload]').forEach(function(node){
+      const raw=node.dataset.metodo?decodeURIComponent(node.dataset.metodo):'{}';
+      let metodo={};
+      try{metodo=JSON.parse(raw)}catch(e){return}
+      const valorAgora=(typeof getValorPagamentoAgora_==='function')?getValorPagamentoAgora_():0;
+      const payload=gerarPixCopiaEColaSeguroV201_(metodo,valorAgora,loteria);
+      if(payload)node.textContent=payload;
+      const img=document.getElementById('qrPix_'+node.dataset.pixPayload);
+      if(img&&payload)img.src=qrUrl_(payload);
+    });
   };
 })();
 
