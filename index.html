@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V190_TELEGRAM_CREDENCIAIS_SIMPLES_ENVIO_PRONTO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V191_INICIO_SEM_TIMEOUT_BOLOES_CACHE_SOB_DEMANDA -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -345,7 +345,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V190_TELEGRAM_CREDENCIAIS_SIMPLES_ENVIO_PRONTO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V191_INICIO_SEM_TIMEOUT_BOLOES_CACHE_SOB_DEMANDA',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{try{const pssParams=new URLSearchParams(location.search);if(pssParams.get('pss_bridge_return')==='1'){document.body.style.display='none';return}if(pssParams.get('limpar')==='1'){limparAcessoSalvo_({silent:true});}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.email=String(s.email||'').trim().toLowerCase();}renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderHomePublica();}});
     let PSS_API_FILA=Promise.resolve();
@@ -4579,6 +4579,213 @@ function renderMetodoPagamento_(m,b,i){
     }
   };
 })();
+
+
+/* =====================================================================
+ * PATCH V191 — INÍCIO SEM TIMEOUT DE BOLÕES
+ * Correção focada:
+ * - O menu INÍCIO não fica preso tentando carregar bolões.
+ * - A tela inicial interna abre imediatamente.
+ * - Bolões aparecem pelo cache quando existir.
+ * - Se não houver cache, mostra botão Atualizar bolões.
+ * - Pré-carregamento automático não chama mais bolões/jogos.
+ * - Menus específicos continuam podendo carregar seus dados sob demanda.
+ * ===================================================================== */
+(function(){
+  try{ CONFIG.versao='V191_INICIO_SEM_TIMEOUT_BOLOES_CACHE_SOB_DEMANDA'; }catch(e){}
+
+  const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
+  const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
+
+  function pssV191CacheNomeBoloes_(){
+    try{
+      return ESTADO && ESTADO.email
+        ? 'boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_')
+        : 'boloes_publicos';
+    }catch(e){
+      return 'boloes_publicos';
+    }
+  }
+
+  function pssV191LerCacheBoloes_(){
+    try{
+      const dados = cacheGet_(pssV191CacheNomeBoloes_(), true);
+      return Array.isArray(dados) ? dados.filter(x=>x&&typeof x==='object') : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function pssV191IsCargaAutomatica_(){
+    try{
+      const stack = String((new Error()).stack||'');
+      return stack.indexOf('pssV179PreAquecerDados_')>=0 ||
+             stack.indexOf('preCarregarDadosEstaticos')>=0 ||
+             stack.indexOf('preCarregarJogosAtivos_')>=0;
+    }catch(e){
+      return false;
+    }
+  }
+
+  if(PSSV191_carregarBoloesBase){
+    carregarBoloes = async function(usarCacheRapido){
+      const cache = pssV191LerCacheBoloes_();
+
+      // Chamadas automáticas de pré-aquecimento não podem travar a abertura.
+      if(pssV191IsCargaAutomatica_()){
+        if(cache.length){
+          try{ ESTADO.boloes=cache; }catch(e){}
+          return cache;
+        }
+        return [];
+      }
+
+      if(usarCacheRapido && cache.length){
+        try{ ESTADO.boloes=cache; }catch(e){}
+        return cache;
+      }
+
+      return await PSSV191_carregarBoloesBase.apply(this, arguments);
+    };
+  }
+
+  // Não pré-carrega bolões nem jogos. Mantém apenas dados leves.
+  preCarregarDadosEstaticos = function(){
+    setTimeout(async()=>{
+      try{ if(typeof carregarRegulamentoCache_==='function') await carregarRegulamentoCache_(true); }catch(e){}
+      try{ if(typeof carregarTelegramCache_==='function') await carregarTelegramCache_(true); }catch(e){}
+      try{ if(typeof preCarregarRecebimentosAtivosTurbo_==='function') await preCarregarRecebimentosAtivosTurbo_(); }catch(e){}
+    },500);
+  };
+
+  window.pssV191AtualizarInicioBoloes = async function(forcar){
+    const box=document.getElementById('inicioBoloesConteudoV191');
+    const stats=document.getElementById('inicioStatsV191');
+    if(!box)return;
+
+    function renderLista(lista, origem){
+      const ativos=listaSegura_(lista)
+        .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
+        .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
+
+      const minhasCotas=ativos.reduce((s,b)=>s+num(b.cotasUsuario||b.minhasCotas||0),0);
+      const totalCotas=ativos.reduce((s,b)=>s+num(b.totalCotas||b.cotasTotal||0),0);
+      const cotasDisponiveis=ativos.reduce((s,b)=>s+num(b.cotasDisponiveis||0),0);
+
+      if(stats){
+        stats.innerHTML=`
+          ${statCard('Bolões ativos',ativos.length)}
+          ${statCard('Minhas cotas',minhasCotas)}
+          ${statCard('Cotas disponíveis',cotasDisponiveis)}
+          ${statCard('Total de cotas',totalCotas)}
+        `;
+      }
+
+      box.innerHTML = `
+        <div class="actions" style="justify-content:space-between;align-items:center;">
+          <div class="cache-hint ${origem==='cache'?'ok':'info'}">${origem==='cache'?'Exibido pelo cache. Clique em Atualizar bolões para buscar dados novos.':'Dados atualizados agora.'}</div>
+          <button class="btn btn-light" onclick="pssV191AtualizarInicioBoloes(true)">Atualizar bolões</button>
+        </div>
+        ${ativos.length?`<div class="inicio-grid-boloes">${ativos.map((b,i)=>renderInicioBolaoCard_(b,i)).join('')}</div>`:'<div class="notice warn">Nenhum bolão ativo localizado.</div>'}
+      `;
+    }
+
+    const cache=pssV191LerCacheBoloes_();
+    if(cache.length && !forcar){
+      renderLista(cache,'cache');
+      return;
+    }
+
+    if(!forcar){
+      box.innerHTML = `
+        <div class="notice info">
+          O início foi aberto sem carregar a planilha para evitar demora. Clique em <strong>Atualizar bolões</strong> para buscar os dados agora.
+        </div>
+        <div class="actions"><button class="btn" onclick="pssV191AtualizarInicioBoloes(true)">Atualizar bolões</button></div>
+      `;
+      if(stats){
+        stats.innerHTML=`
+          ${statCard('Bolões ativos','--')}
+          ${statCard('Minhas cotas','--')}
+          ${statCard('Cotas disponíveis','--')}
+          ${statCard('Total de cotas','--')}
+        `;
+      }
+      return;
+    }
+
+    box.innerHTML='<div class="notice info"><span class="loading-fast">Atualizando bolões pela planilha...</span></div>';
+    try{
+      const lista=listaSegura_(await PSSV191_carregarBoloesBase(false));
+      renderLista(lista,'api');
+    }catch(err){
+      const cacheDepois=pssV191LerCacheBoloes_();
+      if(cacheDepois.length){
+        renderLista(cacheDepois,'cache');
+        toast('A planilha demorou para responder. Exibindo cache salvo.','warn');
+      }else{
+        box.innerHTML=`
+          <div class="notice error">${escapeHtml(err.message||'Não foi possível carregar os bolões agora.')}</div>
+          <div class="actions"><button class="btn" onclick="pssV191AtualizarInicioBoloes(true)">Tentar novamente</button></div>
+        `;
+      }
+    }
+  };
+
+  renderInicio = async function(){
+    try{
+      if(!ESTADO.usuario)ESTADO.usuario=normalizarUsuarioSessao_({email:ESTADO.email});
+      const nome=(ESTADO.usuario&&ESTADO.usuario.nome)||'Usuário';
+
+      setView(`
+        <div class="panel no-left">
+          <div class="grid">
+            <div class="col-8">
+              <div class="panel no-left" style="margin:0;padding:24px;">
+                <h2 style="font-size:32px;">Olá, ${escapeHtml(nome)}</h2>
+                <p>Painel de acompanhamento dos bolões, pagamentos, palpites, comprovantes, jogos realizados e atualizações oficiais.</p>
+                <div class="actions">
+                  <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
+                  <button class="btn btn-light" onclick="navegar('palpite')">Fazer palpite</button>
+                  <button class="btn btn-light" onclick="navegar('comprovante')">Comprovantes</button>
+                  <button class="btn btn-light" onclick="navegar('jogos')">Jogos</button>
+                </div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
+                <h2 style="color:#fff;font-size:32px;">Sistema ativo</h2>
+                <p style="color:#fff;">Abertura rápida sem travar no carregamento da planilha.</p>
+                <div style="margin-top:30px;font-weight:800;" data-live-clock>${escapeHtml(dataHoraAtualCurta())}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid" id="inicioStatsV191" style="margin-top:18px;">
+            ${statCard('Bolões ativos','--')}
+            ${statCard('Minhas cotas','--')}
+            ${statCard('Cotas disponíveis','--')}
+            ${statCard('Total de cotas','--')}
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Bolões ativos</h2>
+          <p>Os dados são exibidos por cache quando houver. Para buscar diretamente da planilha, clique em Atualizar bolões.</p>
+          <div id="inicioBoloesConteudoV191">
+            <div class="notice info">Preparando painel...</div>
+          </div>
+        </div>
+      `);
+
+      if(isAdmin()) inserirAtalhoConsultaInicio_();
+      setTimeout(()=>window.pssV191AtualizarInicioBoloes(false),80);
+    }catch(err){
+      setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||err)}</div></div>`);
+    }
+  };
+})();
+
 
 </script>
 </body>
