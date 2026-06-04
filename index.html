@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V202_FIX_TELA_BRANCA_BADGE_INSCRITOS_QR_VISUAL -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V203_QR_LADO_BADGE_APROVADOS_RESUMO_BOLOES_ATIVOS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V202</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V203</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -370,6 +370,24 @@
     .qr-auto-status{font-size:12px;color:#506070;max-width:300px;line-height:1.45}
     .pix-fallback{font-size:12px;color:#5b2e00;background:#fff7df;border:1px solid #f5d78a;border-radius:8px;padding:8px;margin-top:8px}
 
+  
+    /* V203 — QR ao lado, sem botão Abrir QR, e badge de aprovados */
+    .pay-method{max-width:100%!important}
+    .pay-method-layout{display:grid;grid-template-columns:minmax(260px,1fr) 210px;gap:14px;align-items:start}
+    .pay-method-info{min-width:0}
+    .qr-auto-box{margin-top:0!important;justify-content:center}
+    .qr-auto-box img{width:190px;max-width:190px}
+    .qr-auto-status{text-align:center;max-width:190px}
+    .pay-copy{font-size:11px;line-height:1.35}
+    .badge-inscritos-topo{background:rgba(255,179,0,.18)!important;border-color:rgba(255,179,0,.75)!important}
+    .resumo-total-site{border:1px solid #cfe9d6;background:#f8fffa;border-radius:14px;padding:14px;margin-bottom:12px}
+    .resumo-total-site strong{font-size:22px;color:#003b12}
+    .resumo-inscritos-sub{font-size:12px;color:#4b5b6b;margin-top:4px}
+    @media(max-width:720px){
+      .pay-method-layout{grid-template-columns:1fr}
+      .qr-auto-box{justify-content:flex-start}
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -385,7 +403,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V202_FIX_TELA_BRANCA_BADGE_INSCRITOS_QR_VISUAL',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V203_QR_LADO_BADGE_APROVADOS_RESUMO_BOLOES_ATIVOS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4831,7 +4849,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V202_FIX_TELA_BRANCA_BADGE_INSCRITOS_QR_VISUAL'; }catch(e){}
+  try{ CONFIG.versao='V203_QR_LADO_BADGE_APROVADOS_RESUMO_BOLOES_ATIVOS'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5676,6 +5694,115 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       const img=document.getElementById('qrPix_'+node.dataset.pixPayload);
       if(img&&payload)img.src=qrUrl_(payload);
     });
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V203 — QR AO LADO + BADGE TOTAL DE APROVADOS NO SITE
+ * ===================================================================== */
+(function(){
+  window.renderMetodoPagamento_ = function(m,b,i){
+    const valor=(typeof getValorPagamentoAgora_==='function')
+      ? getValorPagamentoAgora_()
+      : (num(b.valorCota||0)*Math.max(1,num(b.cotasUsuario||b.minhasCotas||1)||1));
+
+    const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+    const payload=isPix?gerarPixCopiaEColaSeguroV201_(m,valor,b.loteria||b.nome):'';
+    const safeId='v203_'+i+'_'+Math.floor(Math.random()*100000);
+    const qrSrc=payload?qrUrl_(payload):'';
+
+    return `
+      <div class="pay-method">
+        <div class="pay-method-layout">
+          <div class="pay-method-info">
+            <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
+            <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+            ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+            ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+            ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+
+            ${isPix?`
+              ${payload?`<div class="pay-copy" data-pix-payload="${i}" data-metodo="${escapeAttr(encodeURIComponent(JSON.stringify(m||{})))}">${escapeHtml(payload)}</div>`:`<div class="pix-fallback">Não foi possível montar Pix Copia e Cola. Use a chave Pix exibida acima.</div>`}
+              <div class="qr-actions">
+                ${payload?`<button type="button" class="btn" onclick="copiarTextoPagamento(this.closest('.pay-method').querySelector('.pay-copy').textContent)">Copiar Pix</button>`:''}
+              </div>
+            `:''}
+          </div>
+
+          ${isPix&&payload?`
+            <div class="qr-auto-box" id="qrAutoBox_${escapeAttr(safeId)}">
+              <img id="qrPix_${i}" src="${escapeAttr(qrSrc)}" alt="QR Code Pix" loading="eager"
+                onload="var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.textContent='QR Code Pix automático.';"
+                onerror="this.style.display='none';var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.innerHTML='Não foi possível carregar o QR Code visual. Use o Pix Copia e Cola.';">
+              <div class="qr-auto-status" id="qrStatus_${escapeAttr(safeId)}">Gerando QR Code automaticamente...</div>
+            </div>
+          `:''}
+        </div>
+      </div>
+    `;
+  };
+
+  window.carregarBadgeInscritosTopo = async function(){
+    const el=document.getElementById('badgeInscritosTopo');
+    if(!el||!ESTADO.usuario)return;
+    try{
+      const cacheKey='PSS_RESUMO_INSCRITOS_TOPO_V203';
+      let dados=null;
+      try{
+        const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(c&&Date.now()-Number(c.ts||0)<5*60*1000)dados=c.dados;
+      }catch(e){}
+      if(!dados){
+        dados=await apiMulti([
+          {action:'getResumoInscritosBoloes',args:[ESTADO.email]},
+          {action:'resumoInscritosBoloes',args:[ESTADO.email]}
+        ]);
+        try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),dados:dados}));}catch(e){}
+      }
+      const total=num(dados.totalAprovadosSite||dados.totalInscritosSite||dados.totalInscritos||dados.total||0);
+      el.textContent='👥 Inscritos: '+total;
+      el.title='Inscritos aprovados no site';
+      el.classList.remove('hidden');
+      window.PSS_RESUMO_INSCRITOS_TOPO=dados;
+    }catch(e){}
+  };
+
+  window.abrirResumoInscritosTopo = async function(){
+    abrirModal('Resumo de inscritos', '<div class="notice info">Carregando resumo de inscritos...</div>');
+    try{
+      let dados=window.PSS_RESUMO_INSCRITOS_TOPO;
+      if(!dados){
+        dados=await apiMulti([
+          {action:'getResumoInscritosBoloes',args:[ESTADO.email]},
+          {action:'resumoInscritosBoloes',args:[ESTADO.email]}
+        ]);
+        window.PSS_RESUMO_INSCRITOS_TOPO=dados;
+      }
+      const total=num(dados.totalAprovadosSite||dados.totalInscritosSite||dados.totalInscritos||dados.total||0);
+      const por=Array.isArray(dados.porBolaoAtivo)?dados.porBolaoAtivo:(Array.isArray(dados.porBolao)?dados.porBolao:[]);
+      document.getElementById('modalConteudo').innerHTML=`
+        <div class="resumo-total-site">
+          <div>Inscritos aprovados no site</div>
+          <strong>${escapeHtml(total)}</strong>
+          <div class="resumo-inscritos-sub">Total de cadastros aprovados/ativos no sistema.</div>
+        </div>
+
+        <h4 style="margin:10px 0;color:#003b12;">Inscritos nos bolões ativos por tipo</h4>
+        <div class="resumo-inscritos-lista">
+          ${por.length?por.map(x=>`
+            <div class="resumo-inscritos-item">
+              <strong>${escapeHtml(x.loteria||x.bolao||'-')}</strong>
+              <span class="resumo-inscritos-num">${escapeHtml(x.inscritos||x.total||0)} inscrito(s)</span>
+            </div>
+          `).join(''):'<div class="notice warn">Nenhum inscrito confirmado localizado nos bolões ativos.</div>'}
+        </div>
+        ${isAdmin()?'<div class="actions" style="margin-top:14px;"><button class="btn" onclick="fecharModal();navegar(\\'consulta\\')">Abrir consulta administrativa</button></div>':''}
+      `;
+    }catch(err){
+      document.getElementById('modalConteudo').innerHTML=`<div class="notice error">${escapeHtml(err.message||err)}</div>`;
+    }
   };
 })();
 
