@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V210_CADASTRO_TELEGRAM_CAMPOS_SOLICITACAO_CORRIGIDOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V211_FIREBASE_SINCRONIZA_STATUS_ADMIN_ACEITE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V210</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V211</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -439,7 +439,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V210_CADASTRO_TELEGRAM_CAMPOS_SOLICITACAO_CORRIGIDOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V211_FIREBASE_SINCRONIZA_STATUS_ADMIN_ACEITE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4955,7 +4955,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V210_CADASTRO_TELEGRAM_CAMPOS_SOLICITACAO_CORRIGIDOS'; }catch(e){}
+  try{ CONFIG.versao='V211_FIREBASE_SINCRONIZA_STATUS_ADMIN_ACEITE'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -6825,6 +6825,190 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         </div>
       </article>
     `;
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V211 — FIREBASE SINCRONIZA STATUS, ADMIN E ACEITE APÓS APROVAÇÃO
+ * ===================================================================== */
+(function(){
+  function boolFirebaseV211_(v, padrao){
+    if(v===true||v===false)return v;
+    const s=String(v===undefined||v===null?'':v).trim().toUpperCase();
+    if(!s)return !!padrao;
+    return !(s==='NÃO'||s==='NAO'||s==='FALSE'||s==='0'||s==='N');
+  }
+
+  function textoV211_(v){
+    return String(v===undefined||v===null?'':v).trim();
+  }
+
+  function usuarioFirebasePayloadV211_(dados, action){
+    dados=dados||{};
+    const acao=String(action||'').toLowerCase();
+    const email=firebaseEmailKey_(dados.email||dados.EMAIL);
+    if(!email)return null;
+
+    let status=String(dados.status||dados.STATUS||'APROVADO').trim().toUpperCase();
+    let perfil=String(dados.perfil||dados.PERFIL||'USUARIO').trim().toUpperCase();
+    let ativo=dados.ativo;
+
+    if(acao.includes('recusar')){
+      status='RECUSADO';
+      perfil=perfil||'USUARIO';
+      ativo=false;
+    }
+
+    if(acao.includes('administrador')||acao.includes('admin')){
+      status='APROVADO';
+      perfil='ADMIN';
+      ativo=true;
+    }
+
+    if(acao.includes('aprovar')){
+      status='APROVADO';
+      if(!perfil)perfil='USUARIO';
+      ativo=true;
+    }
+
+    if(ativo===undefined||ativo===null){
+      ativo=!(status==='RECUSADO'||status==='BLOQUEADO'||status==='INATIVO');
+    }
+
+    const nome=textoV211_(dados.nome||dados.NOME)||email;
+    const telegram=textoV211_(dados.telegram||dados.TELEGRAM||dados.telefone||dados.CELULAR||dados.celular);
+    const cpf=textoV211_(dados.cpf||dados.CPF);
+    const origem=textoV211_(dados.origem||dados.ORIGEM)||'PLANILHA_ADMIN';
+    const aceite=boolFirebaseV211_(dados.aceiteRegulamento||dados.ACEITE_REGULAMENTO||dados.aceitouRegulamento||dados.ACEITOU_REGULAMENTO, status==='APROVADO');
+    const dataAceite=textoV211_(dados.dataAceiteRegulamento||dados.DATA_ACEITE_REGULAMENTO||dados.dataAceite||dados.DATA_ACEITE);
+    const versaoRegulamento=textoV211_(dados.versaoRegulamento||dados.VERSAO_REGULAMENTO)||CONFIG.versaoRegulamento||'2026.1';
+    const receberAviso=boolFirebaseV211_(dados.receberAvisoNovoBolao||dados.RECEBER_AVISO_NOVO_BOLAO, true);
+
+    return {
+      email:email,
+      nome:nome,
+      telegram:telegram,
+      telefone:telegram,
+      cpf:cpf,
+      status:status,
+      perfil:perfil,
+      ativo:!!ativo,
+      origem:origem,
+      aceiteRegulamento:aceite,
+      dataAceiteRegulamento:dataAceite,
+      versaoRegulamento:versaoRegulamento,
+      receberAvisoNovoBolao:receberAviso,
+      loteria:textoV211_(dados.loteria||dados.LOTERIA||''),
+      cotas:Number(dados.cotas||dados.COTAS||0)||0
+    };
+  }
+
+  window.firebaseCriarUsuarioPendente_ = async function(dados){
+    dados=dados||{};
+    const email=firebaseEmailKey_(dados.email);
+    if(!email)throw new Error('E-mail inválido.');
+    await inicializarFirebase_();
+
+    const telegram=textoV211_(dados.telefone||dados.telegram);
+    const receberAviso=boolFirebaseV211_(dados.receberAvisoNovoBolao,true);
+    const aceite=boolFirebaseV211_(dados.aceiteRegulamento||dados.aceite,true);
+    const dataAceite=textoV211_(dados.dataAceiteRegulamento)||new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+    const versao=textoV211_(dados.versaoRegulamento)||CONFIG.versaoRegulamento||'2026.1';
+
+    await firebaseUsuarioRef_(email).set({
+      email:email,
+      nome:textoV211_(dados.nome),
+      cpf:textoV211_(dados.cpf),
+      telegram:telegram,
+      telefone:telegram,
+      loteria:'',
+      cotas:0,
+      status:'PENDENTE',
+      perfil:'USUARIO',
+      ativo:false,
+      origem:'SITE_PUBLICO_FIREBASE',
+      aceiteRegulamento:aceite,
+      dataAceiteRegulamento:dataAceite,
+      versaoRegulamento:versao,
+      receberAvisoNovoBolao:receberAviso,
+      atualizadoEm:firebase.firestore.FieldValue.serverTimestamp(),
+      criadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+  };
+
+  window.firebaseSincronizarUsuarioAdmin_ = async function(dados, action){
+    const payload=usuarioFirebasePayloadV211_(dados,action);
+    if(!payload||!payload.email)return;
+
+    await inicializarFirebase_();
+
+    const grava={
+      email:payload.email,
+      nome:payload.nome,
+      status:payload.status,
+      perfil:payload.perfil,
+      ativo:payload.ativo,
+      origem:payload.origem,
+      aceiteRegulamento:payload.aceiteRegulamento,
+      versaoRegulamento:payload.versaoRegulamento,
+      receberAvisoNovoBolao:payload.receberAvisoNovoBolao,
+      atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if(payload.telegram)grava.telegram=payload.telegram;
+    if(payload.telefone)grava.telefone=payload.telefone;
+    if(payload.cpf)grava.cpf=payload.cpf;
+    if(payload.dataAceiteRegulamento)grava.dataAceiteRegulamento=payload.dataAceiteRegulamento;
+    if(payload.loteria)grava.loteria=payload.loteria;
+    if(payload.cotas!==undefined)grava.cotas=payload.cotas;
+
+    await firebaseUsuarioRef_(payload.email).set(grava,{merge:true});
+  };
+
+  window.firebaseSincronizarResultadoAdmin_ = async function(action,resposta){
+    try{
+      const dados=(resposta&&(resposta.usuarioFirebase||resposta.firebase||resposta.usuario||resposta.dadosUsuario))||null;
+      if(dados&&dados.email){
+        await firebaseSincronizarUsuarioAdmin_(dados,action);
+        return true;
+      }
+      return false;
+    }catch(e){
+      console.warn('Planilha atualizada, mas a sincronização Firebase falhou:',e);
+      toast('Ação feita na planilha, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
+      return false;
+    }
+  };
+
+  window.executarAcaoSolicitacaoAdmin = async function(){
+    const cfg=window.PSS_SOLICITACAO_ACAO||{};
+    window.PSS_SOLICITACAO_ACAO=null;
+    fecharModal();
+
+    if(!cfg.action||!cfg.linha)return;
+
+    try{
+      toast('Processando solicitação...','info');
+      const resposta=await apiMulti([{action:cfg.action,dados:{linha:cfg.linha},args:[cfg.linha]}]);
+
+      if(['aprovarSolicitacaoCadastro','recusarSolicitacaoCadastro','tornarUsuarioAdministradorLinha'].includes(cfg.action)){
+        const okFirebase=await firebaseSincronizarResultadoAdmin_(cfg.action,resposta);
+        if(okFirebase){
+          toast('Ação realizada e Firebase sincronizado.');
+        }else{
+          toast('Ação realizada. Firebase não retornou dados para sincronizar.','warn');
+        }
+      }else{
+        toast('Ação realizada com sucesso.');
+      }
+
+      await renderSolicitacoesAdmin();
+      try{await carregarBadgeInscritosTopo();}catch(e){}
+    }catch(err){
+      toast((err&&err.message)||String(err),'error');
+    }
   };
 })();
 
