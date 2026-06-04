@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V201_EMAIL_NOVO_BOLAO_BADGE_INSCRITOS_QR_VISUAL -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V202_FIX_TELA_BRANCA_BADGE_INSCRITOS_QR_VISUAL -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V201</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V202</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -385,7 +385,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V201_EMAIL_NOVO_BOLAO_BADGE_INSCRITOS_QR_VISUAL',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V202_FIX_TELA_BRANCA_BADGE_INSCRITOS_QR_VISUAL',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4831,7 +4831,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V201_EMAIL_NOVO_BOLAO_BADGE_INSCRITOS_QR_VISUAL'; }catch(e){}
+  try{ CONFIG.versao='V202_FIX_TELA_BRANCA_BADGE_INSCRITOS_QR_VISUAL'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5518,7 +5518,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 
 /* =====================================================================
- * PATCH V201 — E-MAIL NOVO BOLÃO + BADGE INSCRITOS + QR VISUAL
+ * PATCH V202 — CORREÇÃO TELA BRANCA + E-MAIL NOVO BOLÃO + BADGE INSCRITOS + QR VISUAL
  * ===================================================================== */
 (function(){
   window.carregarBadgeInscritosTopo = async function(){
@@ -5571,7 +5571,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
             </div>
           `).join(''):'<div class="notice warn">Nenhum inscrito confirmado localizado.</div>'}
         </div>
-        ${isAdmin()?'<div class="actions" style="margin-top:14px;"><button class="btn" onclick="fecharModal();navegar(\\'consulta\\')">Abrir consulta administrativa</button></div>':''}
+        ${isAdmin()?'<div class="actions" style="margin-top:14px;"><button class="btn" onclick="fecharModal();navegar(&quot;consulta&quot;)">Abrir consulta administrativa</button></div>':''}
       `;
     }catch(err){
       document.getElementById('modalConteudo').innerHTML=`<div class="notice error">${escapeHtml(err.message||err)}</div>`;
