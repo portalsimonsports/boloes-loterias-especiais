@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V184_LOGIN_MOBILE_FAST_NO_QUEUE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V185_FIREBASE_AUTH_APROVACAO_PLANILHA_CACHE_JOGOS_MANUAL -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V184</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V185</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -347,57 +347,78 @@
   <main class="app"><div class="content" id="view"></div></main>
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
+  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V184_LOGIN_MOBILE_FAST_NO_QUEUE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V185_FIREBASE_AUTH_APROVACAO_PLANILHA_CACHE_JOGOS_MANUAL',versaoRegulamento:'2026.1'};
+
+    const FIREBASE_CONFIG={
+      apiKey:"AIzaSyCTHqO8bUwCJLJv45yuHLDKSUFPNJI4LIc",
+      authDomain:"boloes-loterias-especiais.firebaseapp.com",
+      projectId:"boloes-loterias-especiais",
+      storageBucket:"boloes-loterias-especiais.firebasestorage.app",
+      messagingSenderId:"355890972714",
+      appId:"1:355890972714:web:9f43b0690d043580b15b53"
+    };
+
+    let FIREBASE_APP=null;
+    let FIREBASE_AUTH=null;
+    let FIREBASE_DB=null;
+
+    try{
+      FIREBASE_APP=firebase.apps&&firebase.apps.length?firebase.app():firebase.initializeApp(FIREBASE_CONFIG);
+      FIREBASE_AUTH=firebase.auth();
+      FIREBASE_DB=firebase.firestore();
+      FIREBASE_AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+    }catch(firebaseInitErr){
+      console.error('Erro ao iniciar Firebase:',firebaseInitErr);
+    }
+
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{iniciarAplicacao_();});
 
+    function firebaseEmailKey_(email){return String(email||'').trim().toLowerCase();}
+    function firebaseUsuarioRef_(email){if(!FIREBASE_DB)throw new Error('Firebase Firestore não foi inicializado.');return FIREBASE_DB.collection('usuarios').doc(firebaseEmailKey_(email));}
+    function firebaseQuandoAuthPronto_(){return new Promise(resolve=>{if(!FIREBASE_AUTH)return resolve(null);const unsub=FIREBASE_AUTH.onAuthStateChanged(user=>{try{unsub();}catch(e){}resolve(user||null);});});}
+    function firebaseNormalizarPerfil_(snap,emailPadrao){
+      if(!snap||!snap.exists)throw new Error('Cadastro ainda não aprovado pela administração.');
+      const d=snap.data()||{};
+      const status=String(d.status||'').trim().toUpperCase();
+      const ativo=d.ativo===true || String(d.ativo||'').toUpperCase()==='TRUE' || String(d.ativo||'').toUpperCase()==='SIM';
+      if(status!=='APROVADO'||!ativo)throw new Error('Cadastro localizado, mas ainda não está aprovado/ativo pela administração.');
+      const perfil=String(d.perfil||'USUARIO').trim().toUpperCase();
+      return {nome:String(d.nome||d.name||emailPadrao||'Usuário').trim()||'Usuário',email:firebaseEmailKey_(d.email||emailPadrao),perfil:perfil,role:perfil.indexOf('ADMIN')>=0?'admin':'usuario',status:status,ativo:true};
+    }
+    async function firebaseValidarUsuarioAprovado_(email){const key=firebaseEmailKey_(email);if(!key)throw new Error('E-mail inválido para validação Firebase.');const snap=await firebaseUsuarioRef_(key).get({source:'default'});return firebaseNormalizarPerfil_(snap,key);}
+    async function firebaseCriarCadastroPendente_(dados){
+      dados=dados||{};const email=firebaseEmailKey_(dados.email);if(!email)throw new Error('E-mail inválido.');
+      await firebaseUsuarioRef_(email).set({email:email,nome:String(dados.nome||'').trim(),cpf:String(dados.cpf||'').trim(),telefone:String(dados.telefone||'').trim(),loteria:String(dados.loteria||'').trim(),cotas:Number(dados.cotas||1)||1,status:'PENDENTE',perfil:'USUARIO',ativo:false,origem:'SITE_CADASTRO',atualizadoEm:firebase.firestore.FieldValue.serverTimestamp(),criadoEm:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }
+    async function firebaseSincronizarUsuarioAdmin_(dados){
+      dados=dados||{};const email=firebaseEmailKey_(dados.email);if(!email||!FIREBASE_DB)return;const status=String(dados.status||'APROVADO').trim().toUpperCase();const perfil=String(dados.perfil||'USUARIO').trim().toUpperCase();const ativo=(dados.ativo===false||status==='RECUSADO'||status==='BLOQUEADO')?false:true;
+      await firebaseUsuarioRef_(email).set({email:email,nome:String(dados.nome||email).trim(),status:status,perfil:perfil,ativo:ativo,loteria:String(dados.loteria||'').trim(),cotas:Number(dados.cotas||1)||1,origem:'PLANILHA_ADMIN',atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }
+    async function firebaseSincronizarResultadoAdmin_(action,resposta){
+      try{const dados=(resposta&&(resposta.usuarioFirebase||resposta.firebase||resposta.usuario))||null;if(dados&&dados.email){if(String(action||'').toLowerCase().indexOf('recusar')>=0){dados.status='RECUSADO';dados.ativo=false;}await firebaseSincronizarUsuarioAdmin_(dados);}}
+      catch(e){console.warn('Ação na planilha concluída, mas a sincronização Firebase falhou:',e);toast('Ação feita na planilha, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');}
+    }
+
     async function iniciarAplicacao_(){
       try{
-        if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){
-          document.body.style.display='none';
-          return;
-        }
-
-        prepararFeedbackBotoes();
-        atualizarRelogio();
-        setInterval(atualizarRelogio,1000);
-        document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));
-
-        const s=carregarSessao();
-        if(s&&s.email){
+        if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return;}
+        prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));
+        if(!FIREBASE_AUTH||!FIREBASE_DB){renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice error">Firebase não inicializou. Confira o firebaseConfig no index.html.</div>';return;}
+        const fbUser=await firebaseQuandoAuthPronto_();
+        if(fbUser&&fbUser.email){
           renderVerificandoSessao_();
-          try{
-            const u=await validarSessaoSalva_(s);
-            ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},s,u||{},{email:(u&&u.email)||s.email}));
-            ESTADO.email=ESTADO.usuario.email;
-            ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();
-            aplicarLayoutLogado();
-            preCarregarDadosEstaticos();
-            navegar('inicio');
-            return;
-          }catch(sessErr){
-            console.warn('Sessão salva inválida ou expirada:',sessErr);
-            const emailAnterior=String((s&&s.email)||ESTADO.email||'').trim().toLowerCase();
-            limparAcessoSalvoNoAparelho_({silencioso:true,manterEmail:true});
-            ESTADO.email=emailAnterior;
-            if(emailAnterior)localStorage.setItem('PSS_BOLAO_EMAIL',emailAnterior);
-            renderLogin();
-            const msg=document.getElementById('loginMsg');
-            if(msg)msg.innerHTML='<div class="notice warn">Sessão anterior expirada ou cache antigo detectado neste navegador. Informe a senha novamente para validar o acesso na planilha.</div>';
-            return;
-          }
+          try{const u=await firebaseValidarUsuarioAprovado_(fbUser.email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio');return;}
+          catch(sessErr){console.warn('Firebase autenticou, mas cadastro não está liberado:',sessErr);try{await FIREBASE_AUTH.signOut();}catch(e){}renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">'+escapeHtml(sessErr.message||'Cadastro ainda não aprovado.')+'</div>';return;}
         }
-
         renderHomePublica();
-      }catch(err){
-        console.error(err);
-        limparEstadoCorrompido_();
-        renderLogin();
-        const msg=document.getElementById('loginMsg');
-        if(msg)msg.innerHTML='<div class="notice warn">Sessão/cache anterior foi reiniciado. Faça login novamente.</div>';
-      }
+      }catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Falha ao iniciar o acesso Firebase. Faça login novamente.</div>';}
     }
+
     let PSS_API_FILA=Promise.resolve();
 
     function api(action,dados={},args=null){
@@ -666,87 +687,23 @@
     function renderVerificandoSessao_(){
       try{document.getElementById('publicHeader').classList.add('hidden');}catch(e){}
       try{document.getElementById('appHeader').classList.add('hidden');}catch(e){}
-      setView(`
-        <div class="login-wrap">
-          <h1>Validando acesso</h1>
-          <p>Conferindo a sessão salva com a base da planilha...</p>
-          <div class="notice info"><span class="loading-fast">Verificando credenciais salvas neste aparelho</span></div>
-          <div class="actions" style="justify-content:center;margin-top:16px;">
-            <button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button>
-          </div>
-        </div>
-      `);
+      setView(`<div class="login-wrap"><h1>Validando acesso</h1><p>Conferindo autenticação Firebase e aprovação do cadastro...</p><div class="notice info"><span class="loading-fast">Verificando acesso aprovado</span></div><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button></div></div>`);
     }
-
-    async function validarSessaoSalva_(sessao){
-      const email=String((sessao&&sessao.email)||'').trim().toLowerCase();
-      if(!email)throw new Error('Sessão sem e-mail válido.');
-      const u=await promiseTimeout_(apiMultiCritico_([
-        {action:'validarSessao',dados:{email},args:[email]},
-        {action:'validarLoginSalvo',dados:{email},args:[email]},
-        {action:'validarUsuarioSessao',dados:{email},args:[email]}
-      ]),9500,'Tempo limite ao validar sessão salva.');
-      return normalizarUsuarioSessao_(Object.assign({},sessao,u||{},{email:(u&&u.email)||email}));
-    }
+    async function validarSessaoSalva_(sessao){const email=String((sessao&&sessao.email)||'').trim().toLowerCase();if(!email)throw new Error('Sessão sem e-mail válido.');return await firebaseValidarUsuarioAprovado_(email);}
 
     function limparCachesLocaisBoloes_(opts){
-      opts=opts||{};
-      const removerSessao=opts.removerSessao!==false;
-      const removerEmail=opts.removerEmail===true;
-      const removerSelecionado=opts.removerSelecionado!==false;
-      const prefixos=['PSS_BOLAO_CACHE_','PSS_BLE_VIEW_CACHE_V179_'];
-
-      try{if(removerSessao)localStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){}
-      try{if(removerEmail)localStorage.removeItem('PSS_BOLAO_EMAIL');}catch(e){}
-      try{if(removerSelecionado)localStorage.removeItem('PSS_BOLAO_SELECIONADO');}catch(e){}
-
-      try{
-        Object.keys(localStorage).forEach(k=>{
-          if(prefixos.some(p=>k.indexOf(p)===0))localStorage.removeItem(k);
-        });
-      }catch(e){}
-
-      try{
-        Object.keys(sessionStorage).forEach(k=>{
-          if(prefixos.some(p=>k.indexOf(p)===0))sessionStorage.removeItem(k);
-        });
-      }catch(e){}
+      opts=opts||{};const removerSessao=opts.removerSessao!==false;const removerEmail=opts.removerEmail===true;const removerSelecionado=opts.removerSelecionado===true;const removerCachesDados=opts.removerCachesDados===true;const prefixos=['PSS_BOLAO_CACHE_','PSS_BLE_VIEW_CACHE_V179_'];
+      try{if(removerSessao)localStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){} try{if(removerEmail)localStorage.removeItem('PSS_BOLAO_EMAIL');}catch(e){} try{if(removerSelecionado)localStorage.removeItem('PSS_BOLAO_SELECIONADO');}catch(e){}
+      if(removerCachesDados){try{Object.keys(localStorage).forEach(k=>{if(prefixos.some(p=>k.indexOf(p)===0))localStorage.removeItem(k);});}catch(e){} try{Object.keys(sessionStorage).forEach(k=>{if(prefixos.some(p=>k.indexOf(p)===0))sessionStorage.removeItem(k);});}catch(e){}}
     }
-
-    function limparAcessoSalvoNoAparelho_(opts){
-      opts=opts||{};
-      const emailAnterior=String(localStorage.getItem('PSS_BOLAO_EMAIL')||ESTADO.email||'').trim().toLowerCase();
-      limparCachesLocaisBoloes_({removerSessao:true,removerEmail:!opts.manterEmail,removerSelecionado:true});
-      ESTADO.usuario=null;
-      ESTADO.role='';
-      ESTADO.boloes=[];
-      ESTADO.bolaoSelecionado='';
-      if(opts.manterEmail&&emailAnterior){
-        ESTADO.email=emailAnterior;
-        try{localStorage.setItem('PSS_BOLAO_EMAIL',emailAnterior);}catch(e){}
-      }else{
-        ESTADO.email='';
-      }
-      if(!opts.silencioso){
-        renderLogin();
-        const msg=document.getElementById('loginMsg');
-        if(msg)msg.innerHTML='<div class="notice ok">Acesso salvo, sessão e cache deste aparelho foram limpos. Faça login novamente.</div>';
-      }
+    async function limparAcessoSalvoNoAparelho_(opts){
+      opts=opts||{};const emailAnterior=String(localStorage.getItem('PSS_BOLAO_EMAIL')||ESTADO.email||'').trim().toLowerCase();limparCachesLocaisBoloes_({removerSessao:true,removerEmail:!opts.manterEmail,removerSelecionado:true,removerCachesDados:false});try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}
+      ESTADO.usuario=null;ESTADO.role='';ESTADO.bolaoSelecionado='';if(opts.manterEmail&&emailAnterior){ESTADO.email=emailAnterior;try{localStorage.setItem('PSS_BOLAO_EMAIL',emailAnterior);}catch(e){}}else{ESTADO.email='';}
+      if(!opts.silencioso){renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice ok">Login e sessão Firebase deste aparelho foram limpos. Os demais caches do sistema foram mantidos.</div>';}
     }
-
-    function limparCacheDepoisDoLogin_(){
-      limparCachesLocaisBoloes_({removerSessao:false,removerEmail:false,removerSelecionado:false});
-    }
-
+    function limparCacheDepoisDoLogin_(){/* V185: não limpa cache geral no login. */}
     window.limparAcessoSalvoNoAparelho_=limparAcessoSalvoNoAparelho_;
-
-    function limparEstadoCorrompido_(){
-      limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true});
-      ESTADO.usuario=null;
-      ESTADO.role='';
-      ESTADO.boloes=[];
-      ESTADO.bolaoSelecionado='';
-    }
+    function limparEstadoCorrompido_(){limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true,removerCachesDados:false});ESTADO.usuario=null;ESTADO.role='';ESTADO.bolaoSelecionado='';}
 
     function listaSegura_(lista){
       if(!Array.isArray(lista))return [];
@@ -926,51 +883,18 @@
       }
     }
 
-    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button><button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button></div><div class="cache-hint warn">Se travar no navegador normal do celular, toque em “Limpar acesso salvo” e entre novamente. O login agora ignora a fila de carregamento e consulta a planilha direto.</div></div>`)}
-    async function fazerLogin(ev){
-      ev.preventDefault();
-      const email=document.getElementById('loginEmail').value.trim().toLowerCase();
-      const senha=document.getElementById('loginSenha').value.trim();
-      const btn=document.getElementById('btnLogin');
-      const msg=document.getElementById('loginMsg');
-
-      msg.innerHTML='<div class="notice info"><span class="loading-fast">Verificando acesso direto na planilha...</span></div>';
-      btn.disabled=true;
-      btn.textContent='ENTRANDO...';
-
-      const avisoTimer=setTimeout(()=>{
-        if(btn&&btn.disabled&&msg){
-          msg.innerHTML='<div class="notice warn">A conexão do navegador mobile está lenta. Continuo tentando por uma rota alternativa, sem usar cache salvo.</div>';
-        }
-      },6500);
-
-      try{
-        limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:false});
-        const u=await promiseTimeout_(apiMultiCritico_([
-          {action:'processarLogin',dados:{email,senha},args:[email,senha]},
-          {action:'login',dados:{email,senha},args:[email,senha]}
-        ]),23000,'Tempo limite ao verificar login. Toque em “Limpar acesso salvo” e tente novamente.');
-
-        clearTimeout(avisoTimer);
-        limparCacheDepoisDoLogin_();
-        ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},u||{},{email:(u&&u.email)||email}));
-        ESTADO.email=ESTADO.usuario.email;
-        ESTADO.role=ESTADO.usuario.role;
-        if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);
-        else localStorage.removeItem('PSS_BOLAO_EMAIL');
-        salvarSessao(ESTADO.usuario);
-        aplicarLayoutLogado();
-        preCarregarDadosEstaticos();
-        navegar('inicio');
-      }catch(err){
-        clearTimeout(avisoTimer);
-        msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
-      }finally{
-        btn.disabled=false;
-        btn.textContent='Entrar no sistema';
-      }
+    function renderLogin(){
+      document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');
+      setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Login via Firebase. A liberação depende da aprovação do cadastro pela administração.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button><button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button></div><div class="cache-hint warn">O botão “Limpar acesso salvo” limpa somente login/sessão deste aparelho. Os caches dos dados do sistema são mantidos.</div></div>`);
     }
-    function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true});ESTADO.usuario=null;ESTADO.role='';ESTADO.boloes=[];renderHomePublica()}
+    async function fazerLogin(ev){
+      ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase();const senha=document.getElementById('loginSenha').value.trim();const btn=document.getElementById('btnLogin');const msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info"><span class="loading-fast">Autenticando no Firebase...</span></div>';btn.disabled=true;btn.textContent='ENTRANDO...';
+      try{if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado. Confira configuração e SDK.');await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);msg.innerHTML='<div class="notice info"><span class="loading-fast">Verificando aprovação do cadastro...</span></div>';const u=await firebaseValidarUsuarioAprovado_(email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio');}
+      catch(err){try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}msg.innerHTML=`<div class="notice error">${escapeHtml(firebaseMensagemErro_(err))}</div>`;}
+      finally{btn.disabled=false;btn.textContent='Entrar no sistema';}
+    }
+    function firebaseMensagemErro_(err){const code=String((err&&err.code)||'');const msg=String((err&&err.message)||err||'Erro ao acessar.');if(code==='auth/user-not-found'||code==='auth/invalid-credential'||code==='auth/wrong-password')return 'E-mail ou senha inválidos no Firebase.';if(code==='auth/too-many-requests')return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';if(code==='auth/network-request-failed')return 'Falha de rede ao acessar o Firebase.';return msg;}
+    function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_ts:Date.now(),_versao:CONFIG.versao,_auth:'firebase'})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true,removerCachesDados:false});try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}ESTADO.usuario=null;ESTADO.role='';renderHomePublica()}
     function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
     function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
     function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
@@ -1206,7 +1130,8 @@
         try{await carregarBoloes(true);}catch(e){}
         try{await carregarRegulamentoCache_(true);}catch(e){}
         try{await carregarTelegramCache_(true);}catch(e){}
-        try{await preCarregarJogosAtivos_();}catch(e){}
+        // V185: jogos realizados não são mais pré-carregados automaticamente.
+        // O carregamento ocorre somente ao abrir o menu Jogos ou clicar para atualizar.
       },500);
     }
 
@@ -2410,12 +2335,11 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       const cfg=window.PSS_SOLICITACAO_ACAO||{};
       window.PSS_SOLICITACAO_ACAO=null;
       fecharModal();
-
       if(!cfg.action||!cfg.linha)return;
-
       try{
         toast('Processando solicitação...','info');
-        await apiMulti([{action:cfg.action,dados:{linha:cfg.linha},args:[cfg.linha]}]);
+        const r=await apiMulti([{action:cfg.action,dados:{linha:cfg.linha},args:[cfg.linha]}]);
+        await firebaseSincronizarResultadoAdmin_(cfg.action,r);
         toast('Ação realizada com sucesso.');
         await renderSolicitacoesAdmin();
       }catch(err){
@@ -2994,135 +2918,21 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       }
     }
 
-    async function abrirCadastro(){abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button></form>`);try{const lista=(await carregarBoloes()).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}}
-    async function enviarCadastro(ev){ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');btn.disabled=true;btn.textContent='Enviando...';try{const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');toast((r&&r.msg)||'Solicitação enviada com sucesso.');fecharModal()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}}
-    function abrirResetSenha(){abrirModal('Recuperar senha',`<form onsubmit="resetarSenha(event)"><div class="field"><label>E-mail cadastrado</label><input id="resetEmail" type="email" required /></div><button class="btn btn-block" id="btnReset" type="submit">Enviar nova senha</button></form>`)}async function resetarSenha(ev){ev.preventDefault();const email=document.getElementById('resetEmail').value.trim().toLowerCase(),btn=document.getElementById('btnReset');btn.disabled=true;btn.textContent='Enviando...';try{const r=await apiMulti([{action:'resetarSenha',dados:{email},args:[email]},{action:'recuperarSenha',dados:{email},args:[email]}]);toast((r&&r.msg)||'Solicitação processada.');fecharModal()}catch(err){toast(err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar nova senha'}}
-    async function inativarBolaoGit(i){
-      const b=ESTADO.boloes[i];if(!b)return;
-      await chamarAcaoAdmin('inativarBolaoAdmin',[b.loteria||b.nome||b.id],'Bolão inativado.');
-      renderConfigBoloesAdmin();
+    async function abrirCadastro(){
+      abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" autocomplete="username" required /></div><div class="form-row"><div class="field"><label>Senha de acesso</label><input id="cadSenha" type="password" autocomplete="new-password" minlength="6" required /></div><div class="field"><label>Confirmar senha</label><input id="cadSenha2" type="password" autocomplete="new-password" minlength="6" required /></div></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button><div class="cache-hint warn">O cadastro cria o login no Firebase, mas o acesso só libera após aprovação do administrador.</div></form>`);
+      try{const lista=(await carregarBoloes()).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}
+      try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}
     }
-    async function excluirBolaoGit(i){
-      const b=ESTADO.boloes[i];if(!b)return;
-      confirmarExcluirAdmin('excluirBolaoAdmin',b.loteria||b.nome||b.id,'Excluir este bolão da aba EVENTOS_ESPECIAIS?');
-    }
-    function confirmarExcluirAdmin(action,arg,msg){
-      window.PSS_CONFIRMACAO_ADMIN={action:action,arg:arg};
-      abrirModal('Confirmar exclusão',`
-        <div class="notice warn">
-          ${escapeHtml(msg||'Confirmar exclusão?')}
-        </div>
-        <p style="margin:8px 0 16px;color:#546173;">
-          Esta ação será aplicada ao cadastro do sistema. Confirme apenas se realmente deseja continuar.
-        </p>
-        <div class="actions" style="justify-content:flex-end;">
-          <button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button>
-          <button type="button" class="btn btn-danger" onclick="executarConfirmacaoAdmin()">Confirmar exclusão</button>
-        </div>
-      `);
+    async function enviarCadastro(ev){
+      ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),senha=document.getElementById('cadSenha').value,senha2=document.getElementById('cadSenha2').value,cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');
+      if(senha.length<6)return toast('A senha precisa ter pelo menos 6 caracteres.','warn');if(senha!==senha2)return toast('As senhas informadas não conferem.','warn');btn.disabled=true;btn.textContent='Enviando...';
+      try{if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado.');try{const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);try{await cred.user.updateProfile({displayName:nome});}catch(e){}await firebaseCriarCadastroPendente_({nome,email,cpf,cotas,loteria});}catch(authErr){if(String(authErr.code||'')==='auth/email-already-in-use'){toast('Este e-mail já existe no Firebase. A solicitação será enviada para análise; use “Esqueci a senha” se necessário.','warn');}else{throw authErr;}}
+        const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');try{await FIREBASE_AUTH.signOut();}catch(e){}toast((r&&r.msg)||'Solicitação enviada. Aguarde aprovação da administração.');fecharModal();}
+      catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}
     }
 
-    async function executarConfirmacaoAdmin(){
-      const cfg=window.PSS_CONFIRMACAO_ADMIN||{};
-      window.PSS_CONFIRMACAO_ADMIN=null;
-      fecharModal();
-      if(!cfg.action)return;
-      await chamarAcaoAdmin(cfg.action,[cfg.arg],'Registro excluído.');
-    }
-
-    function abrirModal(t,h){document.getElementById('modalTitulo').textContent=t;document.getElementById('modalConteudo').innerHTML=h;document.getElementById('modalBackdrop').classList.add('open')}function fecharModal(){document.getElementById('modalBackdrop').classList.remove('open')}document.getElementById('modalBackdrop').addEventListener('click',ev=>{if(ev.target.id==='modalBackdrop')fecharModal()});function toast(msg,tipo='success'){const box=document.getElementById('toastContainer'),el=document.createElement('div');el.className=`toast ${tipo}`;el.textContent=msg;box.appendChild(el);setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),220)},3500)}
-
-    function prepararFeedbackBotoes(){
-      document.addEventListener('click',function(ev){
-        const btn=ev.target&&ev.target.closest?ev.target.closest('button,.btn'):null;
-        if(!btn||btn.disabled)return;
-        btn.classList.add('btn-tap');
-        setTimeout(()=>btn.classList.remove('btn-tap'),180);
-      },true);
-    }
-
-    function lerArquivoBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(new Error('Erro ao ler arquivo.'));r.readAsDataURL(file)})}function isHistorico(b){if(!b||typeof b!=='object')return false;const st=normalizar(b.status);return st.includes('HISTORICO')||st.includes('ENCERRADO')||st.includes('FINALIZADO')}function valorNumeroConfig(v,fallback=''){if(v===undefined||v===null||v==='')return fallback;const original=String(v).trim();if(!original)return fallback;const m=original.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4,6})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);if(m){const d=Number(m[1]),mo=Number(m[2])-1,y=Number(m[3]);if(y>=1899){const base=Date.UTC(1899,11,30);const atual=Date.UTC(y,mo,d);const serial=Math.round((atual-base)/86400000);if(isFinite(serial)&&!isNaN(serial))return String(serial)}}return original}function moeda(v){const n=num(v);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function num(v){if(typeof v==='number')return isNaN(v)?0:v;const s=String(v||'0').replace(/R\$/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');const n=Number(s);return isNaN(n)?0:n}function normalizar(s){return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function escapeHtml(v){return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;')}function formatNum(n){const x=Number(n);return isNaN(x)?escapeHtml(n):(x<10?'0'+x:String(x))}function formatarNumeros(nums){if(!nums)return '';const arr=Array.isArray(nums)?nums:String(nums).split(/[-,;\s]+/).filter(Boolean);return arr.map(formatNum).join(' - ')}function formatarCelula(c){const s=String(c===undefined||c===null?'':c);if(s.startsWith('http'))return `<a href="${escapeAttr(s)}" target="_blank" rel="noopener">Abrir</a>`;if(pareceDataHora_(s))return escapeHtml(formatarDataHoraPtBR(s));return escapeHtml(s)}
-
-    function formatarDataHoraPtBR(valor){
-      if(valor===undefined||valor===null||valor==='')return '-';
-      if(valor instanceof Date && !isNaN(valor.getTime()))return montarDataHoraPtBR_(valor,true);
-      const bruto=String(valor).trim();
-      if(!bruto)return '-';
-
-      if(/^\d{2}\/\d{2}\/\d{4}/.test(bruto)){
-        return bruto.replace(',', '');
-      }
-
-      const iso=bruto.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
-      if(iso){
-        const yyyy=iso[1],mm=iso[2],dd=iso[3],hh=iso[4]||'',mi=iso[5]||'',ss=iso[6]||'';
-        if(hh&&mi)return `${dd}/${mm}/${yyyy} ${hh}:${mi}${ss?':'+ss:''}`;
-        return `${dd}/${mm}/${yyyy}`;
-      }
-
-      const slash=bruto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
-      if(slash){
-        let p1=Number(slash[1]),p2=Number(slash[2]);
-        const ano=slash[3];
-        const hora=slash[4]?String(slash[4]).padStart(2,'0'):'';
-        const minuto=slash[5]||'';
-        const segundo=slash[6]||'';
-
-        let dia,mes;
-
-        if(p2>12 && p1<=12){
-          mes=p1;
-          dia=p2;
-        }else{
-          dia=p1;
-          mes=p2;
-        }
-
-        const dd=String(dia).padStart(2,'0');
-        const mm=String(mes).padStart(2,'0');
-
-        if(hora&&minuto)return `${dd}/${mm}/${ano} ${hora}:${minuto}${segundo?':'+segundo:''}`;
-        return `${dd}/${mm}/${ano}`;
-      }
-
-      if(/^\d{4,6}$/.test(bruto)){
-        const serial=Number(bruto);
-        if(serial>20000&&serial<80000){
-          const base=Date.UTC(1899,11,30);
-          const dt=new Date(base+serial*86400000);
-          return montarDataHoraPtBR_(dt,false);
-        }
-      }
-
-      const dt=new Date(bruto);
-      if(!isNaN(dt.getTime()) && /\d{4}/.test(bruto)){
-        return montarDataHoraPtBR_(dt, bruto.includes(':'));
-      }
-
-      return bruto;
-    }
-
-    function normalizarDataPtBRParaSalvar(valor){
-      const f=formatarDataHoraPtBR(valor);
-      return f==='-'?'':f.split(' ')[0];
-    }
-
-    function montarDataHoraPtBR_(dt,comHora){
-      const dd=String(dt.getDate()).padStart(2,'0');
-      const mm=String(dt.getMonth()+1).padStart(2,'0');
-      const yyyy=dt.getFullYear();
-      if(!comHora)return `${dd}/${mm}/${yyyy}`;
-      const hh=String(dt.getHours()).padStart(2,'0');
-      const mi=String(dt.getMinutes()).padStart(2,'0');
-      const ss=String(dt.getSeconds()).padStart(2,'0');
-      return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
-    }
-
-    function pareceDataHora_(valor){
-      const s=String(valor||'').trim();
-      if(!s)return false;
-      return /^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)||/^\d{4}-\d{2}-\d{2}/.test(s);
-    }
+    function abrirResetSenha(){abrirModal('Recuperar senha',`<form onsubmit="resetarSenha(event)"><div class="field"><label>E-mail cadastrado no Firebase</label><input id="resetEmail" type="email" required /></div><button class="btn btn-block" id="btnReset" type="submit">Enviar redefinição de senha</button></form>`)}
+    async function resetarSenha(ev){ev.preventDefault();const email=document.getElementById('resetEmail').value.trim().toLowerCase(),btn=document.getElementById('btnReset');btn.disabled=true;btn.textContent='Enviando...';try{if(!FIREBASE_AUTH)throw new Error('Firebase Auth não inicializado.');await FIREBASE_AUTH.sendPasswordResetEmail(email);toast('E-mail de redefinição enviado pelo Firebase.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar redefinição de senha'}}
     function atualizarRelogio(){
       const completo=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(',',',');
       const curto=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','');
