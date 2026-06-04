@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V204_FIX_TELA_BRANCA_QR_LADO_BADGE_APROVADOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V205_CADASTRO_SIMPLES_COMPRA_APOS_LOGIN -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V204</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V205</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -403,7 +403,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V204_FIX_TELA_BRANCA_QR_LADO_BADGE_APROVADOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V205_CADASTRO_SIMPLES_COMPRA_APOS_LOGIN',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -3015,8 +3015,77 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       }
     }
 
-    async function abrirCadastro(){abrirModal('Solicitar cadastro',`<form onsubmit="enviarCadastro(event)"><div class="field"><label>Nome completo</label><input id="cadNome" required /></div><div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div><div class="form-row"><div class="field"><label>Senha de acesso</label><input id="cadSenha" type="password" minlength="6" autocomplete="new-password" required /></div><div class="field"><label>Confirmar senha</label><input id="cadSenha2" type="password" minlength="6" autocomplete="new-password" required /></div></div><div class="form-row"><div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div><div class="field"><label>Cotas desejadas</label><select id="cadCotas"><option value="1">1 Cota</option><option value="2">2 Cotas</option><option value="3">3 Cotas</option><option value="4">4 Cotas</option><option value="5">5 Cotas</option><option value="10">10 Cotas</option></select></div></div><div class="field"><label>Bolão desejado</label><select id="cadBolao" required><option value="">Carregando...</option></select></div><div class="field"><label>Regulamento do bolão</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div><label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label><label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento do bolão, incluindo regras de cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label><button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação</button></form>`);try{const lista=(await carregarBoloes()).filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));document.getElementById('cadBolao').innerHTML='<option value="">Selecione...</option>'+lista.map(b=>`<option value="${escapeAttr(b.loteria)}">${escapeHtml(b.loteria)}</option>`).join('')}catch(err){document.getElementById('cadBolao').innerHTML='<option value="">Erro ao carregar bolões</option>'}try{const reg=await apiMulti([{action:'getRegulamento',args:[]}]);document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'')}catch(err){document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.'}}
-    async function enviarCadastro(ev){ev.preventDefault();const nome=document.getElementById('cadNome').value.trim(),email=document.getElementById('cadEmail').value.trim().toLowerCase(),senha=document.getElementById('cadSenha').value.trim(),senha2=document.getElementById('cadSenha2').value.trim(),cotas=document.getElementById('cadCotas').value,loteria=document.getElementById('cadBolao').value,cpf=document.getElementById('cadCpf').value,receberAvisoNovoBolao=document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked?'SIM':'NÃO',aceite=document.getElementById('cadAceite').checked,btn=document.getElementById('btnEnviarCadastro');if(senha!==senha2){toast('As senhas não conferem.','error');return}btn.disabled=true;btn.textContent='Enviando...';try{await inicializarFirebase_();try{const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);try{await cred.user.updateProfile({displayName:nome});}catch(e){}await firebaseCriarUsuarioPendente_({nome,email,cpf,cotas,loteria,receberAvisoNovoBolao});}catch(authErr){if(String(authErr.code||'')==='auth/email-already-in-use'){toast('Este e-mail já existe no Firebase. A solicitação será registrada; use “Esqueci a senha” se necessário.','warn');}else{throw authErr;}}const r=await apiMulti([{action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,receberAvisoNovoBolao,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,'',receberAvisoNovoBolao]},{action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,receberAvisoNovoBolao,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,'',receberAvisoNovoBolao]}]);if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');toast((r&&r.msg)||'Solicitação enviada com sucesso. Aguarde aprovação da administração.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar solicitação'}}
+    async function abrirCadastro(){
+      abrirModal('Solicitar cadastro',`
+        <form onsubmit="enviarCadastro(event)">
+          <div class="notice info">
+            O cadastro cria apenas o acesso ao sistema. Após aprovação da administração, o participante entra na área logada e escolhe o bolão para adquirir/reservar cotas.
+          </div>
+          <div class="field"><label>Nome completo</label><input id="cadNome" required /></div>
+          <div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div>
+          <div class="form-row">
+            <div class="field"><label>Senha de acesso</label><input id="cadSenha" type="password" minlength="6" autocomplete="new-password" required /></div>
+            <div class="field"><label>Confirmar senha</label><input id="cadSenha2" type="password" minlength="6" autocomplete="new-password" required /></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div>
+            <div class="field"><label>Telefone/WhatsApp</label><input id="cadTelefone" placeholder="Opcional" /></div>
+          </div>
+          <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div>
+          <label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label>
+          <label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento, incluindo regras de cadastro, acesso, cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label>
+          <button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação de acesso</button>
+        </form>
+      `);
+      try{
+        const reg=await apiMulti([{action:'getRegulamento',args:[]}]);
+        document.getElementById('cadRegulamento').textContent=typeof reg==='string'?reg:(reg.texto||'');
+      }catch(err){
+        document.getElementById('cadRegulamento').textContent='Regulamento definido pela administração.';
+      }
+    }
+
+    async function enviarCadastro(ev){
+      ev.preventDefault();
+      const nome=document.getElementById('cadNome').value.trim(),
+        email=document.getElementById('cadEmail').value.trim().toLowerCase(),
+        senha=document.getElementById('cadSenha').value.trim(),
+        senha2=document.getElementById('cadSenha2').value.trim(),
+        cpf=document.getElementById('cadCpf').value,
+        telefone=document.getElementById('cadTelefone')?document.getElementById('cadTelefone').value:'',
+        receberAvisoNovoBolao=document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked?'SIM':'NÃO',
+        aceite=document.getElementById('cadAceite').checked,
+        btn=document.getElementById('btnEnviarCadastro'),
+        cotas=0,
+        loteria='';
+
+      if(senha!==senha2){toast('As senhas não conferem.','error');return}
+      btn.disabled=true;btn.textContent='Enviando...';
+      try{
+        await inicializarFirebase_();
+        try{
+          const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);
+          try{await cred.user.updateProfile({displayName:nome});}catch(e){}
+          await firebaseCriarUsuarioPendente_({nome,email,cpf,telefone,cotas,loteria,receberAvisoNovoBolao});
+        }catch(authErr){
+          if(String(authErr.code||'')==='auth/email-already-in-use'){
+            toast('Este e-mail já existe no Firebase. A solicitação será registrada; use “Esqueci a senha” se necessário.','warn');
+          }else{throw authErr;}
+        }
+
+        const r=await apiMulti([
+          {action:'registrarSolicitacao',dados:{nome,email,cotas,loteria,cpf,telefone,receberAvisoNovoBolao,aceitouRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,telefone,receberAvisoNovoBolao]},
+          {action:'solicitarParticipacao',dados:{nome,email,cotas,loteria,cpf,telefone,receberAvisoNovoBolao,aceitouRegulamento:aceite},args:[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,telefone,receberAvisoNovoBolao]}
+        ]);
+        if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');
+        toast((r&&r.msg)||'Solicitação de acesso enviada com sucesso. Aguarde aprovação da administração.');
+        fecharModal();
+      }catch(err){
+        toast(firebaseMensagemErro_(err),'error')
+      }finally{
+        btn.disabled=false;btn.textContent='Enviar solicitação de acesso'
+      }
+    }
     function abrirResetSenha(){abrirModal('Recuperar senha',`<form onsubmit="resetarSenha(event)"><div class="field"><label>E-mail cadastrado</label><input id="resetEmail" type="email" required /></div><button class="btn btn-block" id="btnReset" type="submit">Enviar redefinição de senha</button></form>`)}async function resetarSenha(ev){ev.preventDefault();const email=document.getElementById('resetEmail').value.trim().toLowerCase(),btn=document.getElementById('btnReset');btn.disabled=true;btn.textContent='Enviando...';try{await inicializarFirebase_();await FIREBASE_AUTH.sendPasswordResetEmail(email);toast('E-mail de redefinição enviado pelo Firebase.');fecharModal()}catch(err){toast(firebaseMensagemErro_(err),'error')}finally{btn.disabled=false;btn.textContent='Enviar redefinição de senha'}}
     async function inativarBolaoGit(i){
       const b=ESTADO.boloes[i];if(!b)return;
@@ -4849,7 +4918,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V204_FIX_TELA_BRANCA_QR_LADO_BADGE_APROVADOS'; }catch(e){}
+  try{ CONFIG.versao='V205_CADASTRO_SIMPLES_COMPRA_APOS_LOGIN'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
