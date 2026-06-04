@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V207_QR_AUTO_COTA_INTEGRAL_FRACIONADA_RECORRENTE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V208_ALINHAMENTO_PARCELAS_DO_BOLAO_QR_AUTO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V207</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V208</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -407,6 +407,23 @@
       .qr-auto-box{align-items:flex-start}
     }
 
+  
+    /* V208 — alinhamento dos valores e parcelamento conforme bolão */
+    .acq-box .acq-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;align-items:end!important}
+    .acq-box .field{min-width:0!important}
+    .acq-box .field label{display:flex!important;align-items:flex-end!important;min-height:30px!important;line-height:1.2!important;margin-bottom:5px!important}
+    .acq-box .field input,.acq-box .field select{min-height:42px!important}
+    .pag-recorrente-box{border:1px solid #d7eadc;background:#f8fffa;border-radius:14px;padding:12px;margin-top:12px}
+    .pag-recorrente-inline{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;align-items:end!important}
+    .pag-recorrente-fixo{font-size:12px;color:#0b3d20;background:#eaf7ee;border:1px solid #cce8d4;border-radius:8px;padding:8px;margin:8px 0}
+    .pay-method-layout{display:grid!important;grid-template-columns:minmax(290px,1fr) 210px!important;gap:16px!important;align-items:start!important}
+    .pay-copy{max-height:120px!important;overflow:auto!important;word-break:break-all!important}
+    .qr-auto-box img{width:190px!important;height:190px!important;object-fit:contain!important}
+    @media(max-width:760px){
+      .acq-box .acq-row,.pag-recorrente-inline,.pay-method-layout{grid-template-columns:1fr!important}
+      .acq-box .field label{min-height:auto!important}
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -422,7 +439,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V207_QR_AUTO_COTA_INTEGRAL_FRACIONADA_RECORRENTE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V208_ALINHAMENTO_PARCELAS_DO_BOLAO_QR_AUTO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4938,7 +4955,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V207_QR_AUTO_COTA_INTEGRAL_FRACIONADA_RECORRENTE'; }catch(e){}
+  try{ CONFIG.versao='V208_ALINHAMENTO_PARCELAS_DO_BOLAO_QR_AUTO'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -6245,6 +6262,355 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         valorPagamentoAgora:moeda(calc.valorAgora),
         parcelado:recorrente,
         qtdParcelas:calc.parcelas,
+        diaPreferencial:dia,
+        obs:obs
+      }]);
+
+      if(typeof pssV198_marcarReservaLocal==='function')pssV198_marcarReservaLocal(loteria,calc.cotasEquivalentes);
+      if(typeof subtrairBolaoLocalDisponibilidade_==='function'){
+        subtrairBolaoLocalDisponibilidade_(loteria,calc.cotasEquivalentes,r&&r.disponibilidadeRestante);
+      }
+      cacheDel_('boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'));
+
+      var msg=document.getElementById('pagReservaMsg');
+      if(msg){
+        msg.innerHTML='<div class="notice warn" style="margin-top:10px;"><strong>Cotas reservadas.</strong><br>Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.</div>';
+      }
+
+      toast((r&&r.msg)||'Cota(s) reservada(s). Envie o comprovante após realizar o pagamento.');
+      if(btn){btn.disabled=false;btn.textContent='Cotas reservadas';btn.classList.add('btn-reserved');btn.onclick=function(){abrirAvisoCotasReservadas(loteria)};}
+      atualizarValorPagamentoModal(loteria);
+    }catch(err){
+      toast(err.message||err,'error');
+      if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
+    }
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V208 — ALINHAMENTO + PARCELAS FIXADAS PELA CONFIG DO BOLÃO
+ * - Parcelamento recorrente usa o campo Qtd parcelas do bolão.
+ * - Se Qtd parcelas = 1, não oferece recorrência.
+ * - QR Code recalcula automaticamente pelo valor para pagamento agora.
+ * ===================================================================== */
+(function(){
+  function v208Bolao_(loteria){
+    return getBolaoByNome_(loteria)||{};
+  }
+
+  function v208QtdParcelasBolao_(b){
+    b=b||{};
+    var n=num(b.qtdParcelas||b.parcelas||b.QTD_PARCELAS||b.qtd_parcelas||1)||1;
+    n=Math.floor(n);
+    if(n<1)n=1;
+    if(n>60)n=60;
+    return n;
+  }
+
+  function v208TipoCota_(){
+    var el=document.getElementById('pagTipoCota');
+    return String((el&&el.value)||'INTEGRAL').toUpperCase();
+  }
+
+  function v208FracaoCota_(){
+    if(v208TipoCota_()!=='FRACIONADA')return 1;
+    var el=document.getElementById('pagFracaoCota');
+    var f=Math.floor(num(el?el.value:2)||2);
+    if(f<2)f=2;
+    if(f>5)f=5;
+    return f;
+  }
+
+  function v208QtdBase_(){
+    var el=document.getElementById('pagQtdCotas');
+    var q=Math.floor(num(el?el.value:1)||1);
+    return Math.max(1,q);
+  }
+
+  function v208RecorrenteAtivo_(){
+    var chk=document.getElementById('pagRecorrente');
+    return !!(chk&&chk.checked);
+  }
+
+  function v208CalcularPagamento_(loteria){
+    var b=v208Bolao_(loteria);
+    var valorCota=num(b.valorCota||0);
+    var qtd=v208QtdBase_();
+    var fracao=v208FracaoCota_();
+    var tipo=v208TipoCota_();
+    var cotasEquivalentes=qtd/fracao;
+    var valorTotal=valorCota*cotasEquivalentes;
+    var qtdParcelasBolao=v208QtdParcelasBolao_(b);
+    var parcelas=(v208RecorrenteAtivo_()&&qtdParcelasBolao>1)?qtdParcelasBolao:1;
+    var valorAgora=parcelas>1?(valorTotal/parcelas):valorTotal;
+
+    return {
+      b:b,
+      tipoCota:tipo,
+      fracaoCota:fracao,
+      qtdBase:qtd,
+      cotasEquivalentes:cotasEquivalentes,
+      valorCota:valorCota,
+      valorTotal:valorTotal,
+      qtdParcelasBolao:qtdParcelasBolao,
+      parcelas:parcelas,
+      valorAgora:valorAgora
+    };
+  }
+
+  window.toggleTipoCotaModalV207 = function(loteria){
+    var tipo=v208TipoCota_();
+    var box=document.getElementById('pagFracaoBox');
+    if(box)box.classList.toggle('hidden',tipo!=='FRACIONADA');
+    atualizarValorPagamentoModal(loteria);
+  };
+
+  window.togglePagamentoRecorrenteModal = function(){
+    var box=document.getElementById('pagRecorrenteCampos');
+    var ativo=v208RecorrenteAtivo_();
+    if(box)box.classList.toggle('hidden',!ativo);
+    var lot=document.getElementById('pagLoteriaAtual')?document.getElementById('pagLoteriaAtual').value:(box?box.getAttribute('data-loteria'):'');
+    if(lot)atualizarValorPagamentoModal(lot);
+  };
+
+  window.getValorPagamentoAgora_ = function(){
+    var lot=document.getElementById('pagLoteriaAtual')?document.getElementById('pagLoteriaAtual').value:'';
+    var calc=v208CalcularPagamento_(lot);
+    return calc.valorAgora||0;
+  };
+
+  function v208ResumoRecorrencia_(calc){
+    var dia=Math.max(1,Math.min(31,num(document.getElementById('pagRecDia')?document.getElementById('pagRecDia').value:10)||10));
+    if(calc.qtdParcelasBolao<=1){
+      return 'Este bolão está configurado para pagamento em parcela única.';
+    }
+    if(calc.parcelas<=1){
+      return 'Este bolão permite parcelamento em '+calc.qtdParcelasBolao+' parcela(s), conforme a configuração do bolão. Marque a opção acima para usar pagamento recorrente.';
+    }
+    return 'Pagamento recorrente: '+calc.qtdParcelasBolao+' parcela(s) de '+moeda(calc.valorAgora)+'. As parcelas futuras serão agendadas para o dia '+dia+' dos próximos meses.';
+  }
+
+  window.atualizarValorPagamentoModal = function(loteria){
+    var calc=v208CalcularPagamento_(loteria);
+
+    var totalEl=document.getElementById('pagValorTotal');
+    if(totalEl)totalEl.value=moeda(calc.valorTotal);
+
+    var agoraEl=document.getElementById('pagValorAgora');
+    if(agoraEl)agoraEl.value=moeda(calc.valorAgora);
+
+    var parcelaEl=document.getElementById('pagValorParcela');
+    if(parcelaEl)parcelaEl.value=moeda(calc.valorAgora);
+
+    var qtdParcEl=document.getElementById('pagQtdParcelasBolao');
+    if(qtdParcEl)qtdParcEl.value=calc.qtdParcelasBolao+' parcela(s)';
+
+    var hiddenParc=document.getElementById('pagRecMeses');
+    if(hiddenParc)hiddenParc.value=calc.qtdParcelasBolao;
+
+    var eqEl=document.getElementById('pagCotasEquivalentes');
+    if(eqEl)eqEl.value=(Math.round(calc.cotasEquivalentes*1000)/1000).toString().replace('.',',');
+
+    var desc=document.getElementById('pagTipoCotaDescricao');
+    if(desc){
+      desc.textContent=calc.tipoCota==='FRACIONADA'
+        ? ('Cota fracionada: '+calc.qtdBase+' parte(s) de 1/'+calc.fracaoCota+' cota. Equivalente a '+(Math.round(calc.cotasEquivalentes*1000)/1000).toString().replace('.',',')+' cota(s).')
+        : ('Cota integral: '+calc.qtdBase+' cota(s) completa(s).');
+    }
+
+    var recResumo=document.getElementById('pagRecorrenciaResumo');
+    if(recResumo)recResumo.textContent=v208ResumoRecorrencia_(calc);
+
+    document.querySelectorAll('[data-pix-payload]').forEach(function(node){
+      var idx=node.dataset.pixPayload;
+      var raw=node.dataset.metodo?decodeURIComponent(node.dataset.metodo):'{}';
+      var metodo={};
+      try{metodo=JSON.parse(raw)}catch(e){return;}
+      var payload=(typeof gerarPixCopiaEColaSeguroV201_==='function')
+        ? gerarPixCopiaEColaSeguroV201_(metodo,calc.valorAgora,loteria)
+        : gerarPixCopiaECola_(metodo,calc.valorAgora,loteria);
+      if(payload)node.textContent=payload;
+      var img=document.getElementById('qrPix_'+idx);
+      if(img&&payload)img.src=qrUrl_(payload);
+    });
+  };
+
+  function v208RenderMetodosPagamento(lista,b,nome,carregando){
+    lista=Array.isArray(lista)?lista:[];
+    if(lista.length){
+      return `<div class="pay-method-grid">${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}</div>`;
+    }
+    if(carregando){
+      return `
+        <div class="notice info">
+          Carregando meios de pagamento em segundo plano. A reserva de cotas e o envio de comprovante continuam disponíveis.
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-light" onclick="carregarMetodosPagamentoModalAsync_('${escapeAttr(nome)}',getBolaoByNome_('${escapeAttr(nome)}'),'PSS_BOLAO_METODOS_PAGAMENTO_${escapeAttr(String(normalizar(nome)).replace(/[^A-Z0-9]+/g,'_'))}')">Tentar carregar agora</button>
+        </div>
+      `;
+    }
+    return '<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>';
+  }
+
+  window.renderCorpoAdquirirCotas_ = function(b,nome,lista,carregando){
+    lista=Array.isArray(lista)?lista:[];
+    const valorCota=num(b.valorCota||0);
+    const disponiveis=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||0);
+    const qtdInicial=disponiveis<=0?0:1;
+    const qtdParcelasBolao=v208QtdParcelasBolao_(b);
+
+    return `
+      <input type="hidden" id="pagLoteriaAtual" value="${escapeAttr(nome)}">
+      <div class="notice">
+        <strong>${escapeHtml(nome)}</strong><br>
+        Valor da cota integral: <strong>${escapeHtml(moeda(valorCota))}</strong><br>
+        ${disponiveis<999999?`Cotas disponíveis agora: <strong id="pagCotasDisponiveisInfo">${escapeHtml(disponiveis)}</strong><br>`:''}
+        Parcelamento configurado do bolão: <strong>${escapeHtml(qtdParcelasBolao)} parcela(s)</strong>
+      </div>
+
+      <div class="tipo-cota-box">
+        <h4>Tipo de participação</h4>
+        <div class="tipo-cota-grid">
+          <div class="field">
+            <label>Tipo de cota</label>
+            <select id="pagTipoCota" onchange="toggleTipoCotaModalV207('${escapeAttr(nome)}')">
+              <option value="INTEGRAL">Cota integral</option>
+              <option value="FRACIONADA">Cota fracionada</option>
+            </select>
+          </div>
+          <div class="field hidden" id="pagFracaoBox">
+            <label>Dividir em</label>
+            <select id="pagFracaoCota" onchange="atualizarValorPagamentoModal('${escapeAttr(nome)}')">
+              <option value="2">1/2 cota</option>
+              <option value="3">1/3 cota</option>
+              <option value="4">1/4 cota</option>
+              <option value="5">1/5 cota</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Quantidade</label>
+            <input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')">
+          </div>
+          <div class="field">
+            <label>Cotas equivalentes</label>
+            <input id="pagCotasEquivalentes" value="${escapeAttr(qtdInicial)}" readonly class="acq-value">
+          </div>
+        </div>
+        <div class="tipo-cota-ajuda" id="pagTipoCotaDescricao">Cota integral: ${escapeHtml(qtdInicial)} cota(s) completa(s).</div>
+      </div>
+
+      <div class="acq-box">
+        <h4>Quantidade e valor</h4>
+        <div class="acq-row">
+          <div class="field"><label>Valor da cota integral</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+        </div>
+
+        <div class="pag-recorrente-box">
+          <h4>Pagamento recorrente/parcelado</h4>
+          ${qtdParcelasBolao>1?`
+            <div class="pag-recorrente-fixo">Este bolão está configurado para <strong>${escapeHtml(qtdParcelasBolao)} parcela(s)</strong>. O participante não escolhe outra quantidade; o sistema usa a configuração do bolão.</div>
+            <label class="checkline">
+              <input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')">
+              <span>Quero usar o pagamento recorrente conforme as parcelas deste bolão.</span>
+            </label>
+            <input type="hidden" id="pagRecMeses" value="${escapeAttr(qtdParcelasBolao)}">
+            <div id="pagRecorrenteCampos" data-loteria="${escapeAttr(nome)}" class="pag-recorrente-inline hidden">
+              <div class="field"><label>Quantidade de parcelas do bolão</label><input id="pagQtdParcelasBolao" readonly class="acq-value" value="${escapeAttr(qtdParcelasBolao+' parcela(s)')}"></div>
+              <div class="field"><label>Valor por parcela</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda(valorCota*qtdInicial/qtdParcelasBolao))}"></div>
+              <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+              <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+            </div>
+          `:`
+            <div class="pag-recorrente-fixo">Este bolão está configurado para pagamento em parcela única. Para liberar recorrência, altere o campo <strong>Qtd parcelas</strong> na configuração do bolão.</div>
+            <input type="hidden" id="pagRecMeses" value="1">
+          `}
+          <div id="pagRecorrenciaResumo" class="recorrencia-resumo">${qtdParcelasBolao>1?'Este bolão permite parcelamento em '+qtdParcelasBolao+' parcela(s), conforme a configuração do bolão.':'Este bolão está configurado para pagamento em parcela única.'}</div>
+        </div>
+
+        <div class="actions" style="margin-top:12px;">
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
+          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        </div>
+        <div id="pagReservaMsg"></div>
+      </div>
+
+      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
+      <div id="metodosPagamentoBox">
+        ${v208RenderMetodosPagamento(lista,b,nome,carregando)}
+      </div>
+    `;
+  };
+
+  window.renderMetodoPagamento_ = function(m,b,i){
+    const loteria=(document.getElementById('pagLoteriaAtual')?document.getElementById('pagLoteriaAtual').value:(b.loteria||b.nome||''));
+    const calc=v208CalcularPagamento_(loteria);
+    const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+    const payload=isPix?((typeof gerarPixCopiaEColaSeguroV201_==='function')?gerarPixCopiaEColaSeguroV201_(m,calc.valorAgora,loteria):gerarPixCopiaECola_(m,calc.valorAgora,loteria)):'';
+    const safeId='v208_'+i+'_'+Math.floor(Math.random()*100000);
+    const qrSrc=payload?qrUrl_(payload):'';
+
+    return `
+      <div class="pay-method">
+        <div class="pay-method-layout">
+          <div class="pay-method-info">
+            <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
+            <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+            ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+            ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+            ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+            ${isPix?`
+              ${payload?`<div class="pay-copy" data-pix-payload="${i}" data-metodo="${escapeAttr(encodeURIComponent(JSON.stringify(m||{})))}">${escapeHtml(payload)}</div>`:`<div class="pix-fallback">Não foi possível montar Pix Copia e Cola. Use a chave Pix exibida acima.</div>`}
+              <div class="qr-actions">
+                ${payload?`<button type="button" class="btn" onclick="copiarTextoPagamento(this.closest('.pay-method').querySelector('.pay-copy').textContent)">Copiar Pix</button>`:''}
+              </div>
+            `:''}
+          </div>
+          ${isPix&&payload?`
+            <div class="qr-auto-box" id="qrAutoBox_${escapeAttr(safeId)}">
+              <img id="qrPix_${i}" src="${escapeAttr(qrSrc)}" alt="QR Code Pix" loading="eager"
+                onload="var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.textContent='QR Code Pix automático.';"
+                onerror="this.style.display='none';var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.innerHTML='Não foi possível carregar o QR Code visual. Use o Pix Copia e Cola.';">
+              <div class="qr-auto-status" id="qrStatus_${escapeAttr(safeId)}">Gerando QR Code automaticamente...</div>
+            </div>
+          `:''}
+        </div>
+      </div>
+    `;
+  };
+
+  window.registrarAquisicaoCotaModal = async function(loteria){
+    var b=v208Bolao_(loteria);
+    var max=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||999999);
+    var calc=v208CalcularPagamento_(loteria);
+
+    if(max<=0){toast('Não há cotas disponíveis para este bolão no momento.','warn');return;}
+    if(max<999999 && calc.cotasEquivalentes>max){toast('A quantidade solicitada ultrapassa as cotas disponíveis.','error');return;}
+
+    var btn=document.getElementById('btnRegistrarAquisicaoCota');
+    if(btn){btn.disabled=true;btn.textContent='Reservando cotas...';}
+
+    var recorrente=v208RecorrenteAtivo_()&&calc.qtdParcelasBolao>1;
+    var dia=Math.max(1,Math.min(31,num(document.getElementById('pagRecDia')?document.getElementById('pagRecDia').value:10)||10));
+    var obs=document.getElementById('pagRecObs')?document.getElementById('pagRecObs').value:'';
+
+    try{
+      var r=await api('registrarAquisicaoCotaBolao',{},[{
+        email:ESTADO.email,
+        loteria:loteria,
+        qtdCotas:calc.qtdBase,
+        tipoCota:calc.tipoCota,
+        fracaoCota:calc.fracaoCota,
+        cotasEquivalentes:calc.cotasEquivalentes,
+        valorTotal:moeda(calc.valorTotal),
+        valorPagamentoAgora:moeda(calc.valorAgora),
+        parcelado:recorrente,
+        qtdParcelas:calc.parcelas,
+        qtdParcelasBolao:calc.qtdParcelasBolao,
         diaPreferencial:dia,
         obs:obs
       }]);
