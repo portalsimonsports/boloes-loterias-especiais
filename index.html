@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V211_FIREBASE_SINCRONIZA_STATUS_ADMIN_ACEITE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V212_LINK_TELEGRAM_VISIVEL_LOGADOS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V211</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V212</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -424,6 +424,78 @@
       .acq-box .field label{min-height:auto!important}
     }
 
+  
+    /* V212 — link do canal Telegram visível para usuários logados */
+    .telegram-canal-topo{
+      border:1px solid rgba(45,160,255,.75)!important;
+      background:rgba(45,160,255,.14)!important;
+      color:#dff2ff!important;
+      border-radius:999px!important;
+      padding:8px 12px!important;
+      margin-left:8px!important;
+      border-bottom:1px solid rgba(45,160,255,.75)!important;
+      text-transform:none!important;
+      min-height:32px!important;
+      font-size:12px!important;
+      font-weight:900!important;
+    }
+    .telegram-canal-topo:hover{background:rgba(45,160,255,.24)!important;color:#fff!important}
+    .telegram-canal-panel{
+      border-left-color:#1d9bf0!important;
+      background:linear-gradient(135deg,#f6fbff,#ffffff)!important;
+    }
+    .telegram-canal-card{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:space-between;
+      border:1px solid #cfe8ff;
+      background:#f8fcff;
+      border-radius:16px;
+      padding:16px;
+    }
+    .telegram-canal-card h3{margin:0 0 6px;color:#003b12}
+    .telegram-canal-card p{margin:0;color:#334155;line-height:1.45}
+    .telegram-canal-icone{
+      width:48px;
+      height:48px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#e8f5ff;
+      color:#1479c9;
+      font-size:24px;
+      flex:0 0 auto;
+      border:1px solid #cfe8ff;
+    }
+    .telegram-canal-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+    .telegram-canal-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:38px;
+      padding:10px 14px;
+      border-radius:9px;
+      background:#0b6f28;
+      color:#fff!important;
+      text-decoration:none;
+      font-weight:900;
+      box-shadow:0 6px 16px rgba(0,0,0,.12);
+      white-space:nowrap;
+    }
+    .telegram-canal-link:hover{filter:brightness(.96)}
+    .telegram-canal-mini{
+      font-size:12px;
+      color:#546173;
+      margin-top:6px;
+    }
+    @media(max-width:760px){
+      .telegram-canal-card{align-items:flex-start;flex-direction:column}
+      .telegram-canal-actions{justify-content:flex-start}
+      .telegram-canal-topo{font-size:11px!important;padding:8px 10px!important}
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -439,7 +511,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V211_FIREBASE_SINCRONIZA_STATUS_ADMIN_ACEITE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V212_LINK_TELEGRAM_VISIVEL_LOGADOS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4955,7 +5027,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V211_FIREBASE_SINCRONIZA_STATUS_ADMIN_ACEITE'; }catch(e){}
+  try{ CONFIG.versao='V212_LINK_TELEGRAM_VISIVEL_LOGADOS'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -7009,6 +7081,152 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }catch(err){
       toast((err&&err.message)||String(err),'error');
     }
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V212 — LINK DO CANAL TELEGRAM VISÍVEL PARA LOGADOS
+ * - Aparece para usuários comuns e administradores.
+ * - Não exibe nenhuma referência técnica interna.
+ * ===================================================================== */
+(function(){
+  function normalizarLinkTelegramV212_(link){
+    link=String(link||'').trim();
+    if(!link)return '';
+    if(link.startsWith('@'))return 'https://t.me/'+link.replace(/^@+/,'');
+    if(/^t\.me\//i.test(link))return 'https://'+link;
+    if(/^telegram\.me\//i.test(link))return 'https://'+link;
+    if(!/^https?:\/\//i.test(link) && /t\.me|telegram\.me/i.test(link))return 'https://'+link;
+    return link;
+  }
+
+  async function obterTelegramCanalV212_(forcar){
+    const cacheKey='PSS_TELEGRAM_CANAL_V212';
+    if(!forcar){
+      try{
+        const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(c&&Date.now()-Number(c.ts||0)<10*60*1000&&c.dados)return c.dados;
+      }catch(e){}
+    }
+
+    const dados=await apiMulti([
+      {action:'getConfigPublica',args:[]},
+      {action:'getInfoPublica',args:[]},
+      {action:'getTelegramCanalLink',args:[]}
+    ]);
+
+    const link=normalizarLinkTelegramV212_(
+      dados.telegramCanalLink||
+      dados.linkCanalTelegram||
+      dados.linkCanal||
+      dados.LINK_CANAL||
+      ''
+    );
+
+    const out={
+      ativo:dados.telegramAtivo!==false && String(dados.ativo||dados.ATIVO||'SIM').toUpperCase()!=='NÃO',
+      link:link,
+      nome:String(dados.telegramCanalNome||dados.nomeCanalTelegram||dados.nomeCanal||dados.NOME_CANAL||'Canal oficial').trim(),
+      chamada:String(dados.telegramChamada||dados.chamadaTelegram||'Receba avisos dos bolões, prazos, novas oportunidades de participação e comunicados importantes em tempo real.').trim()
+    };
+
+    try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),dados:out}));}catch(e){}
+    return out;
+  }
+
+  function abrirTelegramCanalV212_(link){
+    link=normalizarLinkTelegramV212_(link);
+    if(!link){toast('Link do canal Telegram ainda não configurado.','warn');return;}
+    window.open(link,'_blank','noopener,noreferrer');
+  }
+
+  function renderBotaoTelegramTopoV212_(cfg){
+    const nav=document.getElementById('navMenu');
+    if(!nav||!cfg||!cfg.ativo||!cfg.link)return;
+
+    let btn=document.getElementById('btnTelegramCanalTopo');
+    if(!btn){
+      btn=document.createElement('button');
+      btn.type='button';
+      btn.id='btnTelegramCanalTopo';
+      btn.className='telegram-canal-topo';
+      const badge=document.getElementById('badgeInscritosTopo');
+      if(badge&&badge.parentNode===nav)nav.insertBefore(btn,badge);
+      else nav.appendChild(btn);
+    }
+
+    btn.textContent='📣 Canal Telegram';
+    btn.title='Entrar no canal oficial de avisos';
+    btn.onclick=function(){abrirTelegramCanalV212_(cfg.link);};
+    btn.classList.remove('hidden');
+  }
+
+  function renderTelegramInicioV212_(cfg){
+    if(!cfg||!cfg.ativo||!cfg.link||ESTADO.view!=='inicio')return;
+    const view=document.getElementById('view');
+    if(!view)return;
+
+    let box=document.getElementById('telegramCanalInicioV212');
+    if(!box){
+      box=document.createElement('div');
+      box.id='telegramCanalInicioV212';
+      box.className='panel telegram-canal-panel';
+
+      const primeira=view.querySelector('.panel');
+      if(primeira&&primeira.parentNode===view){
+        primeira.insertAdjacentElement('afterend',box);
+      }else{
+        view.insertAdjacentElement('afterbegin',box);
+      }
+    }
+
+    box.innerHTML=`
+      <div class="telegram-canal-card">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div class="telegram-canal-icone">📣</div>
+          <div>
+            <h3>Entre no canal oficial dos bolões</h3>
+            <p>${escapeHtml(cfg.chamada)}</p>
+            <div class="telegram-canal-mini">Acompanhe comunicados importantes direto pelo Telegram.</div>
+          </div>
+        </div>
+        <div class="telegram-canal-actions">
+          <a class="telegram-canal-link" href="${escapeAttr(cfg.link)}" target="_blank" rel="noopener noreferrer">Entrar no canal</a>
+        </div>
+      </div>
+    `;
+  }
+
+  window.carregarTelegramCanalLogadoV212 = async function(forcar){
+    if(!ESTADO.usuario)return;
+    try{
+      const cfg=await obterTelegramCanalV212_(forcar);
+      renderBotaoTelegramTopoV212_(cfg);
+      renderTelegramInicioV212_(cfg);
+      window.PSS_TELEGRAM_CANAL_CONFIG=cfg;
+    }catch(e){
+      // Não bloqueia carregamento do sistema se o link não estiver disponível.
+    }
+  };
+
+  const aplicarLayoutLogadoBaseV212=window.aplicarLayoutLogado||aplicarLayoutLogado;
+  window.aplicarLayoutLogado=aplicarLayoutLogado=function(){
+    aplicarLayoutLogadoBaseV212();
+    setTimeout(()=>carregarTelegramCanalLogadoV212(false),400);
+  };
+
+  const navegarBaseV212=window.navegar||navegar;
+  window.navegar=navegar=function(v){
+    navegarBaseV212(v);
+    setTimeout(()=>carregarTelegramCanalLogadoV212(false),500);
+  };
+
+  const renderInicioBaseV212=window.renderInicio||renderInicio;
+  window.renderInicio=renderInicio=function(){
+    renderInicioBaseV212();
+    setTimeout(()=>carregarTelegramCanalLogadoV212(false),500);
   };
 })();
 
