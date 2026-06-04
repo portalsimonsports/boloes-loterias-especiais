@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V212_LINK_TELEGRAM_VISIVEL_LOGADOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V213_LETREIRO_ULTIMOS_RESULTADOS_PUBLICOS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V212</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V213</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -496,6 +496,123 @@
       .telegram-canal-topo{font-size:11px!important;padding:8px 10px!important}
     }
 
+  
+    /* V213 — letreiro público de últimos resultados */
+    .resultados-publicos-panel{
+      border-left-color:#ffb300!important;
+      background:linear-gradient(135deg,#fffdf5,#ffffff)!important;
+      margin-top:16px!important;
+      margin-bottom:16px!important;
+      padding:16px 20px!important;
+    }
+    .resultados-publicos-head{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .resultados-publicos-head h2{
+      margin:0!important;
+      font-size:18px!important;
+      color:#003b12!important;
+    }
+    .resultados-publicos-head small{
+      color:#546173;
+      font-size:12px;
+      font-weight:700;
+    }
+    .resultados-ticker{
+      position:relative;
+      overflow:hidden;
+      border-radius:14px;
+      border:1px solid rgba(255,179,0,.55);
+      background:linear-gradient(90deg,#001a08,#064f1e,#001a08);
+      color:#fff;
+      min-height:46px;
+      display:flex;
+      align-items:center;
+      box-shadow:0 8px 24px rgba(0,0,0,.10);
+    }
+    .resultados-ticker::before,
+    .resultados-ticker::after{
+      content:"";
+      position:absolute;
+      top:0;
+      width:54px;
+      height:100%;
+      z-index:2;
+      pointer-events:none;
+    }
+    .resultados-ticker::before{left:0;background:linear-gradient(90deg,#001a08,rgba(0,26,8,0));}
+    .resultados-ticker::after{right:0;background:linear-gradient(270deg,#001a08,rgba(0,26,8,0));}
+    .resultados-ticker-track{
+      display:inline-flex;
+      align-items:center;
+      gap:40px;
+      white-space:nowrap;
+      will-change:transform;
+      animation:pssResultadosTicker 70s linear infinite;
+      padding:12px 0;
+      font-weight:900;
+      font-size:14px;
+    }
+    .resultados-ticker:hover .resultados-ticker-track{animation-play-state:paused}
+    .resultados-ticker-text{padding-left:100%}
+    .resultado-item-destaque{color:#ffdd75}
+    .resultados-publicos-actions{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .resultados-publicos-actions .hint{
+      font-size:12px;
+      color:#546173;
+      font-weight:700;
+    }
+    .resultados-modal-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:12px;
+    }
+    .resultado-modal-card{
+      border:1px solid #d7eadc;
+      background:#f8fffa;
+      border-radius:14px;
+      padding:14px;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+    }
+    .resultado-modal-card h4{
+      margin:0 0 6px;
+      color:#003b12;
+      font-size:15px;
+    }
+    .resultado-modal-card .nums{
+      font-weight:900;
+      color:#064f1e;
+      line-height:1.65;
+      margin:8px 0;
+      word-break:break-word;
+    }
+    .resultado-modal-card .meta{
+      font-size:12px;
+      color:#546173;
+      line-height:1.55;
+    }
+    @keyframes pssResultadosTicker{
+      0%{transform:translateX(0)}
+      100%{transform:translateX(-50%)}
+    }
+    @media(max-width:760px){
+      .resultados-publicos-panel{margin:12px 8px!important;padding:14px!important}
+      .resultados-publicos-head{align-items:flex-start;flex-direction:column}
+      .resultados-ticker-track{font-size:13px;animation-duration:95s}
+      .resultados-publicos-actions{align-items:flex-start;flex-direction:column}
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -511,7 +628,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V212_LINK_TELEGRAM_VISIVEL_LOGADOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V213_LETREIRO_ULTIMOS_RESULTADOS_PUBLICOS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5027,7 +5144,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V212_LINK_TELEGRAM_VISIVEL_LOGADOS'; }catch(e){}
+  try{ CONFIG.versao='V213_LETREIRO_ULTIMOS_RESULTADOS_PUBLICOS'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -7227,6 +7344,187 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   window.renderInicio=renderInicio=function(){
     renderInicioBaseV212();
     setTimeout(()=>carregarTelegramCanalLogadoV212(false),500);
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V213 — LETREIRO PÚBLICO DE ÚLTIMOS RESULTADOS
+ * Fonte exibida ao usuário: "Últimos resultados" (sem referência técnica interna).
+ * ===================================================================== */
+(function(){
+  function formatarDezenasResultadoV213_(dezenas){
+    let s=String(dezenas||'').trim();
+    if(!s)return '-';
+    s=s.replace(/\s*-\s*/g,' • ');
+    s=s.replace(/\s*,\s*/g,' • ');
+    s=s.replace(/\s{2,}/g,' ');
+    return s;
+  }
+
+  function resultadoNomeV213_(r){
+    return String(r.nome||r.tipoJogo||r.slug||'Loteria').replace(/_/g,' ').trim().toUpperCase();
+  }
+
+  function montarTextoLetreiroV213_(dados){
+    if(dados&&dados.letreiroTexto)return String(dados.letreiroTexto);
+    const lista=Array.isArray(dados&&dados.resultados)?dados.resultados:[];
+    if(!lista.length)return '';
+    return '📢 Últimos resultados: '+lista.map(r=>{
+      const nome=resultadoNomeV213_(r);
+      const concurso=r.concurso?(' '+r.concurso):'';
+      const data=r.dataApuracao?(' - '+formatarDataHoraPtBR(r.dataApuracao)):'';
+      const dezenas=formatarDezenasResultadoV213_(r.dezenas);
+      return `${nome}${concurso}${data}: ${dezenas}`;
+    }).join(' | ');
+  }
+
+  function inserirEstruturaLetreiroV213_(){
+    if(document.getElementById('homeResultadosPublicosV213'))return;
+
+    const hero=document.querySelector('.home-hero');
+    const html=`
+      <section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">
+        <div class="resultados-publicos-head">
+          <div>
+            <h2>Últimos resultados das loterias</h2>
+            <small id="resultadosPublicosAtualizadoV213">Carregando informações...</small>
+          </div>
+          <button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button>
+        </div>
+        <div id="resultadosPublicosTickerV213">
+          <div class="notice info">Carregando últimos resultados...</div>
+        </div>
+        <div class="resultados-publicos-actions">
+          <span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span>
+          <button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213()">Ver todos os resultados</button>
+        </div>
+      </section>
+    `;
+
+    if(hero)hero.insertAdjacentHTML('afterend',html);
+    else{
+      const view=document.getElementById('view');
+      if(view)view.insertAdjacentHTML('afterbegin',html);
+    }
+  }
+
+  window.renderLetreiroResultadosPublicosV213 = function(dados){
+    inserirEstruturaLetreiroV213_();
+
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(!box)return;
+
+    const texto=montarTextoLetreiroV213_(dados);
+    const lista=Array.isArray(dados&&dados.resultados)?dados.resultados:[];
+
+    window.PSS_RESULTADOS_PUBLICOS_V213=dados||{resultados:[]};
+
+    if(atualizado){
+      atualizado.textContent=(dados&&dados.atualizadoEm)
+        ? ('Atualizado em '+String(dados.atualizadoEm))
+        : ('Atualizado em '+dataHoraAtualCurta());
+    }
+
+    if(!texto){
+      box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis.</div>';
+      return;
+    }
+
+    const conteudo=escapeHtml(texto);
+    box.innerHTML=`
+      <div class="resultados-ticker" title="Passe o mouse para pausar">
+        <div class="resultados-ticker-track">
+          <span class="resultados-ticker-text">${conteudo}</span>
+          <span>${conteudo}</span>
+        </div>
+      </div>
+    `;
+  };
+
+  window.carregarLetreiroResultadosPublicosV213 = async function(forcar){
+    inserirEstruturaLetreiroV213_();
+
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    if(!box)return;
+
+    const cacheKey='PSS_RESULTADOS_PUBLICOS_V213';
+    if(!forcar){
+      try{
+        const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(c&&Date.now()-Number(c.ts||0)<10*60*1000&&c.dados){
+          renderLetreiroResultadosPublicosV213(c.dados);
+          return;
+        }
+      }catch(e){}
+    }
+
+    try{
+      box.innerHTML='<div class="notice info">Atualizando últimos resultados...</div>';
+      const dados=await promiseTimeout_(
+        apiMulti([
+          {action:'getResultadosLoteriasPublicos',args:[]},
+          {action:'ultimosResultadosPublicos',args:[]},
+          {action:'getConfigPublica',args:[]}
+        ]),
+        14000,
+        'Tempo limite ao carregar resultados.'
+      );
+
+      const finalDados=(dados&&dados.resultados)?dados:(dados&&dados.resultadosPublicos?dados.resultadosPublicos:dados);
+      try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),dados:finalDados}));}catch(e){}
+      renderLetreiroResultadosPublicosV213(finalDados);
+    }catch(err){
+      const cached=(()=>{
+        try{
+          const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+          return c&&c.dados?c.dados:null;
+        }catch(e){return null;}
+      })();
+
+      if(cached){
+        renderLetreiroResultadosPublicosV213(cached);
+      }else{
+        box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis. Tente atualizar novamente em instantes.</div>';
+      }
+    }
+  };
+
+  window.abrirModalResultadosPublicosV213 = function(){
+    const dados=window.PSS_RESULTADOS_PUBLICOS_V213||{};
+    const lista=Array.isArray(dados.resultados)?dados.resultados:[];
+    if(!lista.length){
+      abrirModal('Últimos resultados','<div class="notice info">Carregando últimos resultados...</div>');
+      carregarLetreiroResultadosPublicosV213(true).then(()=>abrirModalResultadosPublicosV213());
+      return;
+    }
+
+    abrirModal('Últimos resultados das loterias',`
+      <div class="resultados-modal-grid">
+        ${lista.map(r=>`
+          <article class="resultado-modal-card">
+            <h4>${escapeHtml(resultadoNomeV213_(r))} ${r.concurso?`<span>concurso ${escapeHtml(r.concurso)}</span>`:''}</h4>
+            <div class="meta"><strong>Data:</strong> ${escapeHtml(formatarDataHoraPtBR(r.dataApuracao||'-'))}</div>
+            <div class="nums">${escapeHtml(formatarDezenasResultadoV213_(r.dezenas))}</div>
+            <div class="meta">
+              ${r.acumulado!==undefined&&r.acumulado!==''?`<div><strong>Acumulou:</strong> ${escapeHtml(String(r.acumulado).toUpperCase()==='TRUE'?'Sim':String(r.acumulado))}</div>`:''}
+              ${r.valorEstimadoProxConcurso?`<div><strong>Próximo prêmio:</strong> ${escapeHtml(moeda(r.valorEstimadoProxConcurso))}</div>`:''}
+              ${r.dataProximoConcurso?`<div><strong>Próximo sorteio:</strong> ${escapeHtml(formatarDataHoraPtBR(r.dataProximoConcurso))}</div>`:''}
+            </div>
+          </article>
+        `).join('')}
+      </div>
+      <div class="cache-hint ok" style="margin-top:12px;">Informações exibidas em formato resumido para consulta rápida.</div>
+    `);
+  };
+
+  const renderHomePublicaBaseV213=window.renderHomePublica||renderHomePublica;
+  window.renderHomePublica=renderHomePublica=function(){
+    renderHomePublicaBaseV213();
+    inserirEstruturaLetreiroV213_();
+    setTimeout(()=>carregarLetreiroResultadosPublicosV213(false),450);
   };
 })();
 
