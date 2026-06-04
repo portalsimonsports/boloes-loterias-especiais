@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V185_FIREBASE_AUTH_APROVACAO_PLANILHA_CACHE_JOGOS_MANUAL -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V186_FIREBASE_BOOT_SEM_TELA_BRANCA_SEM_PLANILHA_INICIAL -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V185</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V186</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -351,7 +351,7 @@
   <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V185_FIREBASE_AUTH_APROVACAO_PLANILHA_CACHE_JOGOS_MANUAL',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V186_FIREBASE_BOOT_SEM_TELA_BRANCA_SEM_PLANILHA_INICIAL',versaoRegulamento:'2026.1'};
 
     const FIREBASE_CONFIG={
       apiKey:"AIzaSyCTHqO8bUwCJLJv45yuHLDKSUFPNJI4LIc",
@@ -380,7 +380,23 @@
 
     function firebaseEmailKey_(email){return String(email||'').trim().toLowerCase();}
     function firebaseUsuarioRef_(email){if(!FIREBASE_DB)throw new Error('Firebase Firestore não foi inicializado.');return FIREBASE_DB.collection('usuarios').doc(firebaseEmailKey_(email));}
-    function firebaseQuandoAuthPronto_(){return new Promise(resolve=>{if(!FIREBASE_AUTH)return resolve(null);const unsub=FIREBASE_AUTH.onAuthStateChanged(user=>{try{unsub();}catch(e){}resolve(user||null);});});}
+    function firebaseQuandoAuthPronto_(timeoutMs){
+      timeoutMs=Number(timeoutMs||2500);
+      return new Promise(resolve=>{
+        if(!FIREBASE_AUTH)return resolve(null);
+        let resolvido=false;
+        let unsub=function(){};
+        const finalizar=user=>{
+          if(resolvido)return;
+          resolvido=true;
+          try{unsub();}catch(e){}
+          resolve(user||null);
+        };
+        try{unsub=FIREBASE_AUTH.onAuthStateChanged(user=>finalizar(user||null),()=>finalizar(null));}
+        catch(e){finalizar(null);return;}
+        setTimeout(()=>finalizar(null),timeoutMs);
+      });
+    }
     function firebaseNormalizarPerfil_(snap,emailPadrao){
       if(!snap||!snap.exists)throw new Error('Cadastro ainda não aprovado pela administração.');
       const d=snap.data()||{};
@@ -406,17 +422,60 @@
 
     async function iniciarAplicacao_(){
       try{
-        if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){document.body.style.display='none';return;}
-        prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));
-        if(!FIREBASE_AUTH||!FIREBASE_DB){renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice error">Firebase não inicializou. Confira o firebaseConfig no index.html.</div>';return;}
-        const fbUser=await firebaseQuandoAuthPronto_();
+        if(new URLSearchParams(location.search).get('pss_bridge_return')==='1'){
+          document.body.style.display='none';
+          return;
+        }
+
+        prepararFeedbackBotoes();
+        atualizarRelogio();
+        setInterval(atualizarRelogio,1000);
+        document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));
+
+        /*
+         * V186 — correção da tela branca:
+         * O site não fica mais aguardando Firebase/Auth/Firestore para renderizar algo.
+         * Primeiro exibe login localmente; depois, em segundo plano, verifica se já existe usuário autenticado.
+         * Assim o navegador mobile nunca fica preso numa tela vazia.
+         */
+        renderLogin();
+        const msgInicial=document.getElementById('loginMsg');
+
+        if(!FIREBASE_AUTH||!FIREBASE_DB){
+          if(msgInicial)msgInicial.innerHTML='<div class="notice error">Firebase não inicializou. Confira o firebaseConfig no index.html.</div>';
+          return;
+        }
+
+        const fbUser=await firebaseQuandoAuthPronto_(2500);
         if(fbUser&&fbUser.email){
           renderVerificandoSessao_();
-          try{const u=await firebaseValidarUsuarioAprovado_(fbUser.email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio');return;}
-          catch(sessErr){console.warn('Firebase autenticou, mas cadastro não está liberado:',sessErr);try{await FIREBASE_AUTH.signOut();}catch(e){}renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">'+escapeHtml(sessErr.message||'Cadastro ainda não aprovado.')+'</div>';return;}
+          try{
+            const u=await firebaseValidarUsuarioAprovado_(fbUser.email);
+            ESTADO.usuario=normalizarUsuarioSessao_(u);
+            ESTADO.email=ESTADO.usuario.email;
+            ESTADO.role=String(ESTADO.usuario.role||ESTADO.usuario.perfil||'usuario').toLowerCase();
+            salvarSessao(ESTADO.usuario);
+            aplicarLayoutLogado();
+            renderInicioLeveFirebase_();
+            return;
+          }catch(sessErr){
+            console.warn('Firebase autenticou, mas cadastro não está liberado:',sessErr);
+            try{await FIREBASE_AUTH.signOut();}catch(e){}
+            renderLogin();
+            const msg=document.getElementById('loginMsg');
+            if(msg)msg.innerHTML='<div class="notice warn">'+escapeHtml(sessErr.message||'Cadastro ainda não aprovado.')+'</div>';
+            return;
+          }
         }
-        renderHomePublica();
-      }catch(err){console.error(err);limparEstadoCorrompido_();renderLogin();const msg=document.getElementById('loginMsg');if(msg)msg.innerHTML='<div class="notice warn">Falha ao iniciar o acesso Firebase. Faça login novamente.</div>';}
+
+        if(msgInicial)msgInicial.innerHTML='<div class="notice info">Login via Firebase pronto. Informe e-mail e senha.</div>';
+      }catch(err){
+        console.error(err);
+        limparEstadoCorrompido_();
+        renderLogin();
+        const msg=document.getElementById('loginMsg');
+        if(msg)msg.innerHTML='<div class="notice warn">Falha ao iniciar o acesso Firebase. Faça login novamente.</div>';
+      }
     }
 
     let PSS_API_FILA=Promise.resolve();
@@ -889,14 +948,14 @@
     }
     async function fazerLogin(ev){
       ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase();const senha=document.getElementById('loginSenha').value.trim();const btn=document.getElementById('btnLogin');const msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info"><span class="loading-fast">Autenticando no Firebase...</span></div>';btn.disabled=true;btn.textContent='ENTRANDO...';
-      try{if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado. Confira configuração e SDK.');await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);msg.innerHTML='<div class="notice info"><span class="loading-fast">Verificando aprovação do cadastro...</span></div>';const u=await firebaseValidarUsuarioAprovado_(email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio');}
+      try{if(!FIREBASE_AUTH||!FIREBASE_DB)throw new Error('Firebase não inicializado. Confira configuração e SDK.');await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);msg.innerHTML='<div class="notice info"><span class="loading-fast">Verificando aprovação do cadastro...</span></div>';const u=await firebaseValidarUsuarioAprovado_(email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();renderInicioLeveFirebase_();}
       catch(err){try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}msg.innerHTML=`<div class="notice error">${escapeHtml(firebaseMensagemErro_(err))}</div>`;}
       finally{btn.disabled=false;btn.textContent='Entrar no sistema';}
     }
     function firebaseMensagemErro_(err){const code=String((err&&err.code)||'');const msg=String((err&&err.message)||err||'Erro ao acessar.');if(code==='auth/user-not-found'||code==='auth/invalid-credential'||code==='auth/wrong-password')return 'E-mail ou senha inválidos no Firebase.';if(code==='auth/too-many-requests')return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';if(code==='auth/network-request-failed')return 'Falha de rede ao acessar o Firebase.';return msg;}
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_ts:Date.now(),_versao:CONFIG.versao,_auth:'firebase'})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true,removerCachesDados:false});try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}ESTADO.usuario=null;ESTADO.role='';renderHomePublica()}
     function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
-    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicioLeveFirebase_();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
     function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
 
 
@@ -1236,7 +1295,7 @@
       cacheSet_(cacheNome,novos,CACHE_TTL.curto);
       return novos;
     }
-    async function renderInicio(){
+    async function renderInicioDados_(){
   loading('Carregando início');
 
   try{
@@ -1312,6 +1371,41 @@
   }
 }
     function statCard(t,v){return `<div class="col-3"><div class="stat-card"><span>${escapeHtml(t)}</span><strong>${escapeHtml(v)}</strong></div></div>`}
+
+    function renderInicioLeveFirebase_(){
+      const nome=(ESTADO.usuario&&ESTADO.usuario.nome)||'Usuário';
+      const perfil=isAdmin()?'Administrador':'Participante';
+      setView(`
+        <div class="panel no-left">
+          <div class="notice info">
+            <strong>Acesso liberado via Firebase.</strong><br>
+            Nenhuma consulta pesada à planilha foi feita nesta abertura. Os dados serão carregados somente ao acessar os menus.
+          </div>
+          <div class="grid">
+            <div class="col-8">
+              <div class="panel no-left" style="margin:0;padding:24px;">
+                <h2 style="font-size:32px;">Olá, ${escapeHtml(nome)}</h2>
+                <p>Perfil: <strong>${escapeHtml(perfil)}</strong>. Use os menus acima para carregar apenas o que precisar.</p>
+                <div class="actions">
+                  <button class="btn" onclick="navegar('boloes')">Carregar Bolões</button>
+                  <button class="btn btn-light" onclick="navegar('palpite')">Palpite</button>
+                  <button class="btn btn-light" onclick="navegar('comprovante')">Comprovantes</button>
+                  <button class="btn btn-light" onclick="navegar('jogos')">Jogos</button>
+                  <button class="btn btn-light" onclick="renderInicioDados_()">Atualizar resumo completo</button>
+                </div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
+                <h2 style="color:#fff;font-size:30px;">Firebase OK</h2>
+                <p style="color:#fff;">Login autenticado sem validação inicial na planilha.</p>
+                <div style="margin-top:38px;font-weight:800;" data-live-clock>${escapeHtml(dataHoraAtualCurta())}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+    }
 
     function renderInicioBolaoCard_(b,i){
       const minhas=num(b.cotasUsuario||b.minhasCotas||0);
