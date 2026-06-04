@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V198_RESERVA_COTAS_QR_PAGAMENTO_RAPIDO_TOPO_STICKY -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V199_QR_CODE_PIX_AUTOMATICO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V198</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V199</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -350,6 +350,12 @@
     .qr-holder img{width:180px;max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;padding:6px}
     .pay-copy{word-break:break-all;white-space:normal}
 
+  
+    /* V199 — QR Code automático do Pix */
+    .qr-auto-box{margin-top:10px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .qr-auto-box img{width:180px;max-width:100%;height:auto;border:1px solid #d7e8dc;border-radius:10px;background:#fff;padding:6px}
+    .qr-auto-status{font-size:12px;color:#506070;max-width:280px;line-height:1.45}
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -365,7 +371,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V198_RESERVA_COTAS_QR_PAGAMENTO_RAPIDO_TOPO_STICKY',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V199_QR_CODE_PIX_AUTOMATICO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4810,7 +4816,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V198_RESERVA_COTAS_QR_PAGAMENTO_RAPIDO_TOPO_STICKY'; }catch(e){}
+  try{ CONFIG.versao='V199_QR_CODE_PIX_AUTOMATICO'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5345,6 +5351,79 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       toast(err.message||err,'error');
       if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
     }
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V199 — QR CODE PIX AUTOMÁTICO
+ * - Remove necessidade de clicar em "Gerar QR Code".
+ * - O QR aparece automaticamente junto com o Pix Copia e Cola.
+ * - Se o serviço externo do QR falhar, mantém Pix Copia e Cola e botão para abrir QR em nova aba.
+ * ===================================================================== */
+(function(){
+  window.renderMetodoPagamento_ = function(m,b,i){
+    const valor=(typeof getValorPagamentoAgora_==='function')
+      ? getValorPagamentoAgora_()
+      : (num(b.valorCota||0)*Math.max(1,num(b.cotasUsuario||b.minhasCotas||1)||1));
+
+    const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+    const payload=isPix?gerarPixCopiaECola_(m,valor,b.loteria||b.nome):'';
+    const safeId='v199_'+i+'_'+Math.floor(Math.random()*100000);
+    const qrSrc=payload?qrUrl_(payload):'';
+
+    return `
+      <div class="pay-method">
+        <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
+        <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+        ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+        ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+        ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+
+        ${isPix?`
+          <div class="pay-copy" data-pix-payload="${i}">${escapeHtml(payload)}</div>
+
+          <div class="qr-actions">
+            <button type="button" class="btn" onclick="copiarTextoPagamento(this.closest('.pay-method').querySelector('.pay-copy').textContent)">Copiar Pix</button>
+            <a class="btn btn-light" target="_blank" href="${escapeAttr(qrSrc)}">Abrir QR</a>
+          </div>
+
+          <div class="qr-auto-box" id="qrAutoBox_${escapeAttr(safeId)}">
+            ${payload?`
+              <img id="qrPix_${i}" src="${escapeAttr(qrSrc)}" alt="QR Code Pix" loading="eager"
+                onload="var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.textContent='QR Code gerado automaticamente.';"
+                onerror="this.style.display='none';var s=document.getElementById('qrStatus_${escapeAttr(safeId)}');if(s)s.innerHTML='Não foi possível carregar o QR Code automático. Use o Pix Copia e Cola ou clique em Abrir QR.';">
+              <div class="qr-auto-status" id="qrStatus_${escapeAttr(safeId)}">Gerando QR Code automaticamente...</div>
+            `:`<div class="notice warn">Não foi possível gerar Pix Copia e Cola para este meio de pagamento.</div>`}
+          </div>
+        `:''}
+      </div>
+    `;
+  };
+
+  const atualizarValorPagamentoModalBaseV199 = window.atualizarValorPagamentoModal;
+  window.atualizarValorPagamentoModal = function(loteria){
+    if(typeof atualizarValorPagamentoModalBaseV199==='function'){
+      atualizarValorPagamentoModalBaseV199(loteria);
+    }
+
+    document.querySelectorAll('[data-pix-payload]').forEach(function(node){
+      var idx=node.dataset.pixPayload;
+      var raw=node.dataset.metodo?decodeURIComponent(node.dataset.metodo):'{}';
+      var metodo={};
+
+      // Alguns blocos novos não usam data-metodo. Nesse caso, mantém o QR já gerado.
+      if(!raw || raw==='{}')return;
+
+      try{metodo=JSON.parse(raw)}catch(e){return}
+      var valorAgora=(typeof getValorPagamentoAgora_==='function')?getValorPagamentoAgora_():0;
+      var payload=gerarPixCopiaECola_(metodo,valorAgora,loteria);
+      if(payload)node.textContent=payload;
+
+      var img=document.getElementById('qrPix_'+idx);
+      if(img&&payload)img.src=qrUrl_(payload);
+    });
   };
 })();
 
