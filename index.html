@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V197_PAGAMENTO_RAPIDO_MEIOS_EM_BACKGROUND -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V198_RESERVA_COTAS_QR_PAGAMENTO_RAPIDO_TOPO_STICKY -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V197</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V198</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -336,7 +336,21 @@
       color:#7a4b00;
     }
 
-</style>
+
+    /* V198 — topo público fixo opcional e modal de pagamento mais rápido */
+    body:not(.app-logado) .home-hero{
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 30 !important;
+    }
+    .reserved-pill{display:inline-flex;background:#fff7df;color:#7a4b00;border:2px solid #ffb300;border-radius:999px;font-size:12px;font-weight:900;padding:6px 11px;margin:0 6px 10px 0}
+    .btn-reserved{background:#ffb300!important;border-color:#ffb300!important;color:#111!important}
+    .qr-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .qr-holder{margin-top:10px;min-height:0}
+    .qr-holder img{width:180px;max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;padding:6px}
+    .pay-copy{word-break:break-all;white-space:normal}
+
+  </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
   <script defer src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
@@ -351,7 +365,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V197_PAGAMENTO_RAPIDO_MEIOS_EM_BACKGROUND',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V198_RESERVA_COTAS_QR_PAGAMENTO_RAPIDO_TOPO_STICKY',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -761,6 +775,7 @@
     }
 
     function renderHomePublica(){
+      document.body.classList.remove('app-logado');
       document.getElementById('publicHeader').classList.add('hidden');
       document.getElementById('appHeader').classList.add('hidden');
 
@@ -936,7 +951,7 @@
     function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Login via Firebase. A liberação depende da aprovação do cadastro pela administração.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button><button class="btn btn-light btn-pill" onclick="limparAcessoSalvo_()">Limpar acesso salvo</button></div></div>`)}
     async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Autenticando no Firebase...</div>';btn.disabled=true;btn.textContent='Entrando...';try{await inicializarFirebase_();await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);msg.innerHTML='<div class="notice info">Verificando aprovação do cadastro...</div>';const u=await firebaseValidarUsuarioAprovado_(email);ESTADO.usuario=normalizarUsuarioSessao_(u);ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();navegar('inicio')}catch(err){try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}msg.innerHTML=`<div class="notice error">${escapeHtml(firebaseMensagemErro_(err))}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_auth:'firebase',_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
-    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
     function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
     function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
 
@@ -4795,7 +4810,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V197_PAGAMENTO_RAPIDO_MEIOS_EM_BACKGROUND'; }catch(e){}
+  try{ CONFIG.versao='V198_RESERVA_COTAS_QR_PAGAMENTO_RAPIDO_TOPO_STICKY'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -4985,6 +5000,350 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       setTimeout(()=>window.pssV191AtualizarInicioBoloes(false),80);
     }catch(err){
       setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||err)}</div></div>`);
+    }
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V198 — RESERVA DE COTAS + QR/PAGAMENTO SEM TRAVAR
+ * - Se houver reserva pendente, o card mostra botão "Cotas reservadas".
+ * - Aviso orienta enviar comprovante para dar baixa na reserva.
+ * - Modal de pagamento nunca fica preso aguardando QR/meios.
+ * - Pix copia e cola aparece antes do QR.
+ * ===================================================================== */
+(function(){
+  function pssV198_key(nome){
+    return String(normalizar(nome||'BOLAO')).replace(/[^A-Z0-9]+/g,'_');
+  }
+
+  function pssV198_temReserva(b){
+    b=b||{};
+    var s=normalizar([b.statusAquisicao,b.statusReserva,b.statusPagamento,b.status,b.aquisicaoStatus,b.reservaStatus].join(' '));
+    return !!(
+      b.aquisicaoPendente || b.preAquisicaoPendente || b.cotasPendentes || b.reservaPendente ||
+      num(b.cotasReservadasUsuario||b.minhasCotasReservadas||b.cotasReservadasPendentes||0)>0 ||
+      s.indexOf('RESERV')>=0 || s.indexOf('AGUARDANDO COMPROVANTE')>=0 || s.indexOf('PENDENTE')>=0
+    );
+  }
+
+  function pssV198_marcarReservaLocal(loteria,qtd){
+    var alvo=normalizar(loteria||'');
+    ESTADO.boloes=listaSegura_(ESTADO.boloes).map(function(b){
+      if(normalizar(b.loteria||b.nome||b.id)===alvo){
+        b.aquisicaoPendente=true;
+        b.reservaPendente=true;
+        b.cotasPendentes=num(b.cotasPendentes||0)+num(qtd||1);
+        b.cotasReservadasUsuario=num(b.cotasReservadasUsuario||0)+num(qtd||1);
+        b.statusReserva='Reservado - aguardando comprovante';
+      }
+      return b;
+    });
+    try{cacheSet_('boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'),ESTADO.boloes,CACHE_TTL.curto||300000);}catch(e){}
+  }
+
+  window.abrirAvisoCotasReservadas = function(loteria){
+    abrirModal('Cotas reservadas',`
+      <div class="notice warn">
+        <strong>Você possui cotas reservadas neste bolão.</strong><br><br>
+        Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        <button type="button" class="btn btn-light" onclick="fecharModal();abrirPagamentoBolao('${escapeAttr(loteria)}')">Ver dados de pagamento</button>
+      </div>
+    `);
+  };
+
+  window.renderCardsBoloes = renderCardsBoloes = function(lista,origem){
+    lista=listaSegura_(lista);
+    if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;
+
+    return `<div class="cards-row">${lista.map(function(b){
+      var nome=b.nome||b.loteria||'Bolão';
+      var participa=usuarioParticipaBolaoUI_(b);
+      var reservado=pssV198_temReserva(b);
+      var disp=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||0);
+      var esgotado=disp<=0&&!participa&&!reservado&&!isHistorico(b);
+      var botao=reservado?'Cotas reservadas':(esgotado?'Sem cotas':labelBotaoPrincipalBolao_(b,origem));
+      var acao=reservado
+        ? `abrirAvisoCotasReservadas('${escapeAttr(b.loteria||b.nome||b.id)}')`
+        : `selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')`;
+
+      return `
+        <div class="bolao-card">
+          <h3>🎯 ${escapeHtml(nome)}</h3>
+          ${origem==='boloes'?`<div class="status-pill ${participa?'':'locked'}">${participa?'Participante inscrito':'Não inscrito neste bolão'}</div><br>`:''}
+          ${reservado?`<div class="reserved-pill">Cotas reservadas</div>`:''}
+          ${disp<999999?`<div class="outline-pill ${esgotado?'danger':''}">Cotas disponíveis: ${escapeHtml(disp)}</div>`:''}
+          <div class="meta-grid">
+            <div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div>
+            <div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div>
+            <div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div>
+            <div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div>
+          </div>
+          <button class="btn ${reservado?'btn-reserved':''} ${esgotado?'disabled':''}" ${esgotado?'disabled':''} onclick="${acao}">${escapeHtml(botao)}</button>
+        </div>
+      `;
+    }).join('')}</div>`;
+  };
+
+  window.qrUrl_ = function(text){
+    return 'https://quickchart.io/qr?size=220&text='+encodeURIComponent(text||'');
+  };
+
+  window.carregarQrPagamentoV198 = function(btn,id,payload){
+    var holder=document.getElementById('qrHolder_'+id);
+    if(!holder)return;
+    holder.innerHTML='<div class="notice info">Gerando QR Code...</div>';
+    var img=new Image();
+    var done=false;
+    var timer=setTimeout(function(){
+      if(done)return;
+      done=true;
+      holder.innerHTML=`
+        <div class="notice warn">
+          O QR Code demorou para carregar. Use o Pix Copia e Cola abaixo ou tente novamente.
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-light" onclick="carregarQrPagamentoV198(this,'${escapeAttr(id)}','${escapeAttr(payload)}')">Tentar QR novamente</button>
+          <a class="btn btn-light" target="_blank" href="${escapeAttr(qrUrl_(payload))}">Abrir QR em nova aba</a>
+        </div>
+      `;
+    },6500);
+    img.onload=function(){
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      holder.innerHTML='';
+      holder.appendChild(img);
+    };
+    img.onerror=function(){
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      holder.innerHTML=`
+        <div class="notice warn">Não foi possível carregar o QR Code automático. Use o Pix Copia e Cola.</div>
+        <div class="actions"><a class="btn btn-light" target="_blank" href="${escapeAttr(qrUrl_(payload))}">Abrir QR em nova aba</a></div>
+      `;
+    };
+    img.alt='QR Code Pix';
+    img.src=qrUrl_(payload);
+  };
+
+  window.renderMetodoPagamento_ = function(m,b,i){
+    const valor=getValorPagamentoAgora_?getValorPagamentoAgora_():(num(b.valorCota||0)*Math.max(1,num(b.cotasUsuario||b.minhasCotas||1)||1));
+    const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+    const payload=isPix?gerarPixCopiaECola_(m,valor,b.loteria||b.nome):'';
+    const safeId='v198_'+i+'_'+Math.floor(Math.random()*100000);
+
+    return `
+      <div class="pay-method">
+        <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
+        <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+        ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+        ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+        ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+
+        ${isPix?`
+          <div class="pay-copy" data-pix-payload="${i}">${escapeHtml(payload)}</div>
+          <div class="qr-actions">
+            <button type="button" class="btn" onclick="copiarTextoPagamento(this.closest('.pay-method').querySelector('.pay-copy').textContent)">Copiar Pix</button>
+            <button type="button" class="btn btn-light" onclick="carregarQrPagamentoV198(this,'${escapeAttr(safeId)}','${escapeAttr(payload)}')">Gerar QR Code</button>
+          </div>
+          <div class="qr-holder" id="qrHolder_${escapeAttr(safeId)}"></div>
+        `:''}
+      </div>
+    `;
+  };
+
+  function pssV198_renderMetodosPagamento(lista,b,nome,carregando){
+    lista=Array.isArray(lista)?lista:[];
+    if(lista.length){
+      return `<div class="pay-method-grid">${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}</div>`;
+    }
+    if(carregando){
+      return `
+        <div class="notice info">
+          Carregando meios de pagamento em segundo plano. Você já pode registrar a aquisição ou enviar o comprovante.
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-light" onclick="carregarMetodosPagamentoModalAsync_('${escapeAttr(nome)}',getBolaoByNome_('${escapeAttr(nome)}'),'PSS_BOLAO_METODOS_PAGAMENTO_${escapeAttr(pssV198_key(nome))}')">Tentar carregar agora</button>
+        </div>
+      `;
+    }
+    return '<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>';
+  }
+
+  window.renderCorpoAdquirirCotas_ = function(b,nome,lista,carregando){
+    lista=Array.isArray(lista)?lista:[];
+    const valorCota=num(b.valorCota||0);
+    const parcelas=Math.max(1,num(b.qtdParcelas||b.parcelas||1)||1);
+    const disponiveis=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||0);
+    const qtdInicial=disponiveis<=0?0:1;
+
+    return `
+      <div class="notice">
+        <strong>${escapeHtml(nome)}</strong><br>
+        Valor da cota: <strong>${escapeHtml(moeda(valorCota))}</strong><br>
+        ${disponiveis<999999?`Cotas disponíveis agora: <strong id="pagCotasDisponiveisInfo">${escapeHtml(disponiveis)}</strong>`:''}
+      </div>
+
+      ${pssV198_temReserva(b)?`
+        <div class="notice warn">
+          Você possui cotas reservadas neste bolão. Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.
+        </div>
+      `:''}
+
+      <div class="acq-box">
+        <h4>Quantidade e valor</h4>
+        <div class="acq-row">
+          <div class="field"><label>Quantidade de cotas</label><input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+          <div class="field"><label>Valor da cota</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+        </div>
+
+        ${parcelas>1?`
+          <div class="pag-recorrente-box">
+            <h4>Parcelamento/recorrência opcional</h4>
+            <label class="checkline"><input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')"><span>Quero dividir o valor da cota em parcelas mensais.</span></label>
+            <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
+              <div class="field"><label>Quantidade de parcelas</label><input id="pagRecMeses" value="${escapeAttr(parcelas)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+              <div class="field"><label>Valor mensal estimado</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda((valorCota*qtdInicial)/parcelas))}"></div>
+              <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric"></div>
+              <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+            </div>
+          </div>
+        `:''}
+
+        <div class="actions" style="margin-top:12px;">
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
+          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        </div>
+        <div id="pagReservaMsg"></div>
+      </div>
+
+      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
+      <div id="metodosPagamentoBox">
+        ${pssV198_renderMetodosPagamento(lista,b,nome,carregando)}
+      </div>
+    `;
+  };
+
+  window.abrirPagamentoBolao = function(loteria){
+    const b=getBolaoByNome_(loteria);
+    const nome=b.loteria||b.nome||loteria;
+    const cacheKey='PSS_BOLAO_METODOS_PAGAMENTO_'+pssV198_key(nome);
+    let listaCache=[];
+    try{
+      const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+      if(cached&&Array.isArray(cached.lista)&&Date.now()-Number(cached.ts||0)<10*60*1000)listaCache=cached.lista;
+    }catch(e){}
+
+    abrirModal('Adquirir cotas',renderCorpoAdquirirCotas_(b,nome,listaCache,listaCache.length===0));
+    setTimeout(()=>atualizarValorPagamentoModal(nome),80);
+
+    carregarMetodosPagamentoModalAsync_(nome,b,cacheKey);
+  };
+
+  window.carregarMetodosPagamentoModalAsync_ = async function(nome,b,cacheKey){
+    const box=document.getElementById('metodosPagamentoBox');
+    let finalizado=false;
+    const avisoTimer=setTimeout(function(){
+      if(finalizado||!box)return;
+      box.innerHTML=`
+        <div class="notice warn">
+          Os meios de pagamento ainda estão demorando para carregar. Você já pode reservar as cotas e enviar o comprovante pelo botão acima.
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-light" onclick="carregarMetodosPagamentoModalAsync_('${escapeAttr(nome)}',getBolaoByNome_('${escapeAttr(nome)}'),'${escapeAttr(cacheKey)}')">Tentar carregar novamente</button>
+        </div>
+      `;
+    },7000);
+
+    try{
+      const dados=await promiseTimeout_(
+        apiMulti([
+          {action:'getDadosRecebimento',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]},
+          {action:'listarDadosRecebimento',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]}
+        ]),
+        10000,
+        'Tempo limite ao carregar meios de pagamento.'
+      );
+      finalizado=true;
+      clearTimeout(avisoTimer);
+      const lista=Array.isArray(dados)?dados:(dados.dados||[]);
+      try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),lista:lista}));}catch(e){}
+      if(box){
+        box.innerHTML=pssV198_renderMetodosPagamento(lista,b,nome,false);
+        setTimeout(()=>atualizarValorPagamentoModal(nome),50);
+      }
+    }catch(err){
+      finalizado=true;
+      clearTimeout(avisoTimer);
+      if(box){
+        box.innerHTML=`
+          <div class="notice warn">
+            Não foi possível carregar os meios de pagamento agora. Você pode reservar as cotas e enviar o comprovante normalmente.
+            <br>Detalhe: ${escapeHtml(err.message||err)}
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-light" onclick="carregarMetodosPagamentoModalAsync_('${escapeAttr(nome)}',getBolaoByNome_('${escapeAttr(nome)}'),'${escapeAttr(cacheKey)}')">Tentar novamente</button>
+          </div>
+        `;
+      }
+    }
+  };
+
+  window.registrarAquisicaoCotaModal = async function(loteria){
+    var b=getBolaoByNome_(loteria);
+    var max=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||999999);
+    var qtd=(typeof clampQtdCotasModal_==='function')?clampQtdCotasModal_(loteria,true):Math.max(1,num(document.getElementById('pagQtdCotas')?document.getElementById('pagQtdCotas').value:1));
+
+    if(max<=0){toast('Não há cotas disponíveis para este bolão no momento.','warn');return;}
+    if(max<999999 && qtd>max){toast('A quantidade solicitada ultrapassa as cotas disponíveis.','error');return;}
+
+    var btn=document.getElementById('btnRegistrarAquisicaoCota');
+    if(btn){btn.disabled=true;btn.textContent='Reservando cotas...';}
+
+    var valorTotal=document.getElementById('pagValorTotal')?document.getElementById('pagValorTotal').value:'';
+    var valorAgora=document.getElementById('pagValorAgora')?document.getElementById('pagValorAgora').value:'';
+    var rec=document.getElementById('pagRecorrente');
+    var recorrente=!!(rec&&rec.checked);
+    var parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+    var dia=Math.max(1,Math.min(31,num(document.getElementById('pagRecDia')?document.getElementById('pagRecDia').value:10)));
+    var obs=document.getElementById('pagRecObs')?document.getElementById('pagRecObs').value:'';
+
+    try{
+      var r=await api('registrarAquisicaoCotaBolao',{},[{email:ESTADO.email,loteria,qtdCotas:qtd,valorTotal,valorPagamentoAgora:valorAgora,parcelado:recorrente,qtdParcelas:parcelas,diaPreferencial:dia,obs}]);
+      pssV198_marcarReservaLocal(loteria,qtd);
+
+      if(typeof subtrairBolaoLocalDisponibilidade_==='function'){
+        subtrairBolaoLocalDisponibilidade_(loteria,qtd,r&&r.disponibilidadeRestante);
+      }else{
+        var alvo=normalizar(loteria||'');
+        ESTADO.boloes=listaSegura_(ESTADO.boloes).map(function(x){
+          if(normalizar(x.loteria||x.nome||x.id)===alvo)x.cotasDisponiveis=Math.max(0,num(x.cotasDisponiveis||0)-qtd);
+          return x;
+        });
+      }
+
+      cacheDel_('boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'));
+
+      var msg=document.getElementById('pagReservaMsg');
+      if(msg){
+        msg.innerHTML='<div class="notice warn" style="margin-top:10px;"><strong>Cotas reservadas.</strong><br>Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.</div>';
+      }
+
+      toast((r&&r.msg)||'Cota(s) reservada(s). Envie o comprovante após realizar o pagamento.');
+
+      if(btn){btn.disabled=false;btn.textContent='Cotas reservadas';btn.classList.add('btn-reserved');btn.onclick=function(){abrirAvisoCotasReservadas(loteria)};}
+      atualizarValorPagamentoModal(loteria);
+    }catch(err){
+      toast(err.message||err,'error');
+      if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
     }
   };
 })();
