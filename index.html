@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V214_FIX_LETREIRO_RESULTADOS_VISIVEL_IMEDIATO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V216_CADASTRO_NOME_PUBLICO_TELEGRAM -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V214</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V216</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -643,6 +643,120 @@
       100%{transform:translateX(-50%)}
     }
 
+  
+    /* V215 — letreiro com cores oficiais por loteria e visual mais limpo */
+    .resultados-publicos-panel{padding:14px 18px!important;}
+    .resultados-publicos-head{margin-bottom:8px!important;}
+    .resultados-publicos-head h2{font-size:17px!important;}
+    .resultados-ticker{
+      min-height:54px!important;
+      background:linear-gradient(90deg,#001707,#053f18,#001707)!important;
+      border:1px solid rgba(255,179,0,.45)!important;
+    }
+    .resultados-ticker-track{
+      gap:34px!important;
+      padding:9px 22px!important;
+      animation:pssResultadosTickerV215 95s linear infinite!important;
+      align-items:center!important;
+    }
+    .resultados-ticker-grupo{
+      display:inline-flex!important;
+      align-items:center!important;
+      gap:16px!important;
+      white-space:nowrap!important;
+    }
+    .resultados-ticker-prefixo{
+      display:inline-flex!important;
+      align-items:center!important;
+      gap:6px!important;
+      font-weight:1000!important;
+      color:#fff!important;
+      opacity:.98!important;
+      margin-right:4px!important;
+    }
+    .resultado-letreiro-item{
+      display:inline-flex!important;
+      align-items:center!important;
+      gap:8px!important;
+      color:#fff!important;
+      font-size:13px!important;
+      font-weight:800!important;
+      line-height:1!important;
+      padding:3px 0!important;
+    }
+    .resultado-letreiro-badge{
+      display:inline-flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      min-width:72px!important;
+      padding:7px 10px!important;
+      border-radius:999px!important;
+      color:#fff!important;
+      font-size:11px!important;
+      font-weight:1000!important;
+      letter-spacing:.2px!important;
+      text-transform:uppercase!important;
+      box-shadow:0 3px 10px rgba(0,0,0,.22)!important;
+      border:1px solid rgba(255,255,255,.24)!important;
+      white-space:nowrap!important;
+    }
+    .resultado-letreiro-info{
+      display:inline-flex!important;
+      align-items:center!important;
+      gap:6px!important;
+      color:#fff!important;
+      white-space:nowrap!important;
+    }
+    .resultado-letreiro-concurso{color:#ffdd75!important;font-weight:1000!important;}
+    .resultado-letreiro-data{color:#d7ffe4!important;font-weight:900!important;opacity:.95!important;}
+    .resultado-letreiro-dezenas{color:#fff!important;font-weight:900!important;letter-spacing:.25px!important;}
+    .resultado-letreiro-sep{color:rgba(255,255,255,.45)!important;font-weight:700!important;}
+    .resultados-publicos-actions{margin-top:8px!important;}
+    .resultados-publicos-actions .hint{font-size:11px!important;}
+    .resultado-modal-card .loteria-badge-modal{
+      display:inline-flex;
+      padding:6px 10px;
+      border-radius:999px;
+      color:#fff;
+      font-size:11px;
+      font-weight:1000;
+      margin-bottom:8px;
+      border:1px solid rgba(255,255,255,.22);
+    }
+    @keyframes pssResultadosTickerV215{
+      0%{transform:translateX(0)}
+      100%{transform:translateX(-50%)}
+    }
+    @media(max-width:760px){
+      .resultado-letreiro-item{font-size:12px!important}
+      .resultado-letreiro-badge{min-width:auto!important;font-size:10px!important;padding:6px 8px!important}
+      .resultados-ticker-track{animation-duration:125s!important;gap:28px!important}
+      .resultados-ticker-grupo{gap:12px!important}
+    }
+
+  
+    /* V216 — campo de nome público para divulgação no Telegram */
+    .nome-publico-help{
+      margin-top:6px;
+      font-size:12px;
+      line-height:1.35;
+      color:#546173;
+      font-weight:700;
+    }
+    .nome-publico-preview{
+      margin-top:7px;
+      padding:8px 10px;
+      border:1px solid #d7eadc;
+      border-radius:10px;
+      background:#f8fffa;
+      color:#003b12;
+      font-size:12px;
+      font-weight:900;
+    }
+    .nome-publico-preview strong{
+      color:#0b6f28;
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -658,7 +772,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V214_FIX_LETREIRO_RESULTADOS_VISIVEL_IMEDIATO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V216_CADASTRO_NOME_PUBLICO_TELEGRAM',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5174,7 +5288,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V214_FIX_LETREIRO_RESULTADOS_VISIVEL_IMEDIATO'; }catch(e){}
+  try{ CONFIG.versao='V216_CADASTRO_NOME_PUBLICO_TELEGRAM'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -7651,6 +7765,487 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         box.innerHTML='<div class="resultados-ticker"><div class="resultados-ticker-fallback">'+conteudo+'</div></div>';
       }
     },800);
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V215 — LETREIRO COM CORES OFICIAIS POR LOTERIA
+ * ===================================================================== */
+(function(){
+  function normalizarLoteriaV215_(v){
+    return String(v||'')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g,'');
+  }
+
+  function corLoteriaV215_(r){
+    const nome=normalizarLoteriaV215_((r&&r.nome)||'');
+    const slug=normalizarLoteriaV215_((r&&r.slug)||'');
+    const tipo=normalizarLoteriaV215_((r&&r.tipoJogo)||'');
+    const k=nome||slug||tipo;
+
+    const mapa={
+      megasena:'#209869',
+      lotofacil:'#930089',
+      quina:'#260085',
+      duplasena:'#a61324',
+      loteriafederal:'#103099',
+      federal:'#103099',
+      diadesorte:'#cb852b',
+      supersete:'#a8cf45',
+      loteca:'#f78100',
+      lotomania:'#f78100',
+      timemania:'#00a651',
+      maismilionaria:'#2e3078',
+      milionaria:'#2e3078'
+    };
+
+    if(mapa[k])return mapa[k];
+    if(k.includes('mega'))return mapa.megasena;
+    if(k.includes('facil'))return mapa.lotofacil;
+    if(k.includes('quina'))return mapa.quina;
+    if(k.includes('dupla'))return mapa.duplasena;
+    if(k.includes('federal'))return mapa.federal;
+    if(k.includes('sorte'))return mapa.diadesorte;
+    if(k.includes('super'))return mapa.supersete;
+    if(k.includes('loteca'))return mapa.loteca;
+    if(k.includes('lotomania'))return mapa.lotomania;
+    if(k.includes('timemania'))return mapa.timemania;
+    if(k.includes('milionaria'))return mapa.maismilionaria;
+    return '#0b6f28';
+  }
+
+  function nomeLoteriaV215_(r){
+    const nome=String((r&&r.nome)||(r&&r.tipoJogo)||(r&&r.slug)||'Loteria').replace(/_/g,' ').trim().toUpperCase();
+    return nome || 'LOTERIA';
+  }
+
+  function dezenasV215_(dezenas){
+    return String(dezenas||'')
+      .trim()
+      .replace(/\s*-\s*/g,' • ')
+      .replace(/\s*,\s*/g,' • ')
+      .replace(/\s{2,}/g,' ');
+  }
+
+  function dataV215_(v){
+    return v ? formatarDataHoraPtBR(v) : '';
+  }
+
+  function itemLetreiroV215_(r){
+    const nome=nomeLoteriaV215_(r);
+    const cor=corLoteriaV215_(r);
+    const concurso=String((r&&r.concurso)||'').trim();
+    const data=dataV215_((r&&r.dataApuracao)||'');
+    const dezenas=dezenasV215_((r&&r.dezenas)||'');
+
+    return `
+      <span class="resultado-letreiro-item">
+        <span class="resultado-letreiro-badge" style="background:${escapeAttr(cor)}">${escapeHtml(nome)}</span>
+        <span class="resultado-letreiro-info">
+          ${concurso?`<span class="resultado-letreiro-concurso">${escapeHtml(concurso)}</span>`:''}
+          ${data?`<span class="resultado-letreiro-data">${escapeHtml(data)}</span>`:''}
+          <span class="resultado-letreiro-sep">:</span>
+          <span class="resultado-letreiro-dezenas">${escapeHtml(dezenas)}</span>
+        </span>
+      </span>
+    `;
+  }
+
+  function montarGrupoLetreiroV215_(lista){
+    const itens=(Array.isArray(lista)?lista:[])
+      .filter(r=>r&&r.dezenas)
+      .slice(0,6);
+
+    if(!itens.length)return '';
+
+    return `
+      <span class="resultados-ticker-grupo">
+        <span class="resultados-ticker-prefixo">📢 Últimos resultados</span>
+        ${itens.map(itemLetreiroV215_).join('<span class="resultado-letreiro-sep">|</span>')}
+      </span>
+    `;
+  }
+
+  window.renderLetreiroResultadosPublicosV213 = function(dados){
+    if(typeof inserirEstruturaLetreiroV213_ === 'function'){
+      inserirEstruturaLetreiroV213_();
+    }else{
+      const hero=document.querySelector('.home-hero');
+      if(!document.getElementById('homeResultadosPublicosV213')){
+        const html=`
+          <section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">
+            <div class="resultados-publicos-head">
+              <div>
+                <h2>Últimos resultados das loterias</h2>
+                <small id="resultadosPublicosAtualizadoV213">Carregando informações...</small>
+              </div>
+              <button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button>
+            </div>
+            <div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div>
+            <div class="resultados-publicos-actions">
+              <span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span>
+              <button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213()">Ver todos os resultados</button>
+            </div>
+          </section>
+        `;
+        if(hero)hero.insertAdjacentHTML('afterend',html);
+      }
+    }
+
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(!box)return;
+
+    const lista=Array.isArray(dados&&dados.resultados)?dados.resultados:[];
+    window.PSS_RESULTADOS_PUBLICOS_V213=dados||{resultados:[]};
+
+    if(atualizado){
+      atualizado.textContent=(dados&&dados.atualizadoEm)
+        ? ('Atualizado em '+String(dados.atualizadoEm))
+        : ('Atualizado em '+dataHoraAtualCurta());
+    }
+
+    const grupo=montarGrupoLetreiroV215_(lista);
+    if(!grupo){
+      box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis.</div>';
+      return;
+    }
+
+    box.innerHTML=`
+      <div class="resultados-ticker resultados-ticker-v215" title="Passe o mouse para pausar">
+        <div class="resultados-ticker-track">
+          ${grupo}
+          ${grupo}
+        </div>
+      </div>
+    `;
+  };
+
+  window.abrirModalResultadosPublicosV213 = function(){
+    const dados=window.PSS_RESULTADOS_PUBLICOS_V213||{};
+    const lista=Array.isArray(dados.resultados)?dados.resultados:[];
+    if(!lista.length){
+      abrirModal('Últimos resultados','<div class="notice info">Carregando últimos resultados...</div>');
+      carregarLetreiroResultadosPublicosV213(true).then(()=>abrirModalResultadosPublicosV213());
+      return;
+    }
+
+    abrirModal('Últimos resultados das loterias',`
+      <div class="resultados-modal-grid">
+        ${lista.map(r=>{
+          const cor=corLoteriaV215_(r);
+          const nome=nomeLoteriaV215_(r);
+          return `
+            <article class="resultado-modal-card">
+              <span class="loteria-badge-modal" style="background:${escapeAttr(cor)}">${escapeHtml(nome)}</span>
+              <h4>${r.concurso?`Concurso ${escapeHtml(r.concurso)}`:'Resultado'}</h4>
+              <div class="meta"><strong>Data:</strong> ${escapeHtml(dataV215_(r.dataApuracao||'-'))}</div>
+              <div class="nums">${escapeHtml(dezenasV215_(r.dezenas))}</div>
+              <div class="meta">
+                ${r.acumulado!==undefined&&r.acumulado!==''?`<div><strong>Acumulou:</strong> ${escapeHtml(String(r.acumulado).toUpperCase()==='TRUE'?'Sim':String(r.acumulado))}</div>`:''}
+                ${r.valorEstimadoProxConcurso?`<div><strong>Próximo prêmio:</strong> ${escapeHtml(moeda(r.valorEstimadoProxConcurso))}</div>`:''}
+                ${r.dataProximoConcurso?`<div><strong>Próximo sorteio:</strong> ${escapeHtml(dataV215_(r.dataProximoConcurso))}</div>`:''}
+              </div>
+            </article>
+          `;
+        }).join('')}
+      </div>
+      <div class="cache-hint ok" style="margin-top:12px;">Informações exibidas em formato resumido para consulta rápida.</div>
+    `);
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V216 — CADASTRO COM NOME PÚBLICO PARA TELEGRAM
+ * - Participante informa como deseja aparecer nas listas públicas do bolão.
+ * - Nome completo continua sendo administrativo.
+ * - Nome público é sincronizado com planilha, Firestore e payload de aprovação.
+ * ===================================================================== */
+(function(){
+  function textoLimpoV216_(v){
+    return String(v===undefined||v===null?'':v).trim().replace(/\s{2,}/g,' ');
+  }
+
+  function nomePublicoSeguroV216_(nomePublico,nome){
+    nomePublico=textoLimpoV216_(nomePublico);
+    nome=textoLimpoV216_(nome);
+    return nomePublico || nome;
+  }
+
+  window.atualizarPreviewNomePublicoV216 = function(){
+    const nome=textoLimpoV216_(document.getElementById('cadNome')?document.getElementById('cadNome').value:'');
+    const pub=nomePublicoSeguroV216_(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:'',nome);
+    const el=document.getElementById('previewNomePublicoV216');
+    if(el)el.innerHTML='Nas listas do bolão, será exibido como: <strong>'+escapeHtml(pub||'Nome informado pelo participante')+'</strong>';
+  };
+
+  window.abrirCadastro = abrirCadastro = async function(){
+    abrirModal('Solicitar cadastro',`
+      <form onsubmit="enviarCadastro(event)">
+        <div class="notice info">
+          O cadastro cria apenas o acesso ao sistema. Após aprovação da administração, o participante entra na área logada e escolhe o bolão para adquirir/reservar cotas.
+        </div>
+
+        <div class="field">
+          <label>Nome completo</label>
+          <input id="cadNome" required oninput="atualizarPreviewNomePublicoV216()" />
+        </div>
+
+        <div class="field">
+          <label>Nome para divulgação no Telegram</label>
+          <input id="cadNomePublico" maxlength="60" required placeholder="Ex.: Luiz, Luiz A., Portal SimonSports..." oninput="atualizarPreviewNomePublicoV216()" />
+          <div class="nome-publico-help">
+            Informe como seu nome deverá aparecer nas listas de participantes dos bolões e comunicados do Telegram. Não precisa ser o nome completo.
+          </div>
+          <div class="nome-publico-preview" id="previewNomePublicoV216">Nas listas do bolão, será exibido como: <strong>Nome informado pelo participante</strong></div>
+        </div>
+
+        <div class="field"><label>E-mail</label><input id="cadEmail" type="email" required /></div>
+
+        <div class="form-row">
+          <div class="field"><label>Senha de acesso</label><input id="cadSenha" type="password" minlength="6" autocomplete="new-password" required /></div>
+          <div class="field"><label>Confirmar senha</label><input id="cadSenha2" type="password" minlength="6" autocomplete="new-password" required /></div>
+        </div>
+
+        <div class="form-row">
+          <div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div>
+          <div class="field"><label>Telegram</label><input id="cadTelefone" placeholder="@usuario ou telefone vinculado ao Telegram" /></div>
+        </div>
+
+        <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div>
+
+        <label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label>
+        <label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento, incluindo regras de cadastro, acesso, cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label>
+
+        <button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação de acesso</button>
+      </form>
+    `);
+
+    try{
+      const reg=await apiMulti([{action:'getRegulamento',args:[]}]);
+      const box=document.getElementById('cadRegulamento');
+      if(box)box.textContent=typeof reg==='string'?reg:(reg.texto||'');
+    }catch(err){
+      const box=document.getElementById('cadRegulamento');
+      if(box)box.textContent='Regulamento definido pela administração.';
+    }
+  };
+
+  window.enviarCadastro = enviarCadastro = async function(ev){
+    ev.preventDefault();
+
+    const nome=textoLimpoV216_(document.getElementById('cadNome').value),
+      nomePublico=nomePublicoSeguroV216_(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:'',nome),
+      email=textoLimpoV216_(document.getElementById('cadEmail').value).toLowerCase(),
+      senha=textoLimpoV216_(document.getElementById('cadSenha').value),
+      senha2=textoLimpoV216_(document.getElementById('cadSenha2').value),
+      cpf=document.getElementById('cadCpf').value,
+      telefone=document.getElementById('cadTelefone')?document.getElementById('cadTelefone').value:'',
+      receberAvisoNovoBolao=document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked?'SIM':'NÃO',
+      aceite=document.getElementById('cadAceite').checked,
+      btn=document.getElementById('btnEnviarCadastro'),
+      cotas=0,
+      loteria='';
+
+    if(!nomePublico){toast('Informe o nome para divulgação no Telegram.','error');return;}
+    if(nomePublico.length>60){toast('O nome para divulgação deve ter no máximo 60 caracteres.','error');return;}
+    if(senha!==senha2){toast('As senhas não conferem.','error');return;}
+
+    btn.disabled=true;
+    btn.textContent='Enviando...';
+
+    try{
+      await inicializarFirebase_();
+
+      try{
+        const cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);
+        try{await cred.user.updateProfile({displayName:nome});}catch(e){}
+        await firebaseCriarUsuarioPendente_({nome,nomePublico,email,cpf,telefone,cotas,loteria,receberAvisoNovoBolao,aceiteRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento});
+      }catch(authErr){
+        if(String(authErr.code||'')==='auth/email-already-in-use'){
+          toast('Este e-mail já existe no Firebase. A solicitação será registrada; use “Esqueci a senha” se necessário.','warn');
+          try{await firebaseCriarUsuarioPendente_({nome,nomePublico,email,cpf,telefone,cotas,loteria,receberAvisoNovoBolao,aceiteRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento});}catch(eSync){}
+        }else{
+          throw authErr;
+        }
+      }
+
+      const dadosCadastro={nome,nomePublico,email,cotas,loteria,cpf,telefone,receberAvisoNovoBolao,aceitouRegulamento:aceite,aceiteRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento};
+      const argsCadastro=[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,telefone,receberAvisoNovoBolao,nomePublico];
+
+      const r=await apiMulti([
+        {action:'registrarSolicitacao',dados:dadosCadastro,args:argsCadastro},
+        {action:'solicitarParticipacao',dados:dadosCadastro,args:argsCadastro}
+      ]);
+
+      if(r&&r.sucesso===false)throw new Error(r.msg||'Não foi possível enviar.');
+      toast((r&&r.msg)||'Solicitação de acesso enviada com sucesso. Aguarde aprovação da administração.');
+      fecharModal();
+    }catch(err){
+      toast(firebaseMensagemErro_(err),'error');
+    }finally{
+      btn.disabled=false;
+      btn.textContent='Enviar solicitação de acesso';
+    }
+  };
+
+  window.firebaseCriarUsuarioPendente_ = async function(dados){
+    dados=dados||{};
+    const email=firebaseEmailKey_(dados.email);
+    if(!email)throw new Error('E-mail inválido.');
+    await inicializarFirebase_();
+
+    const telegram=textoLimpoV216_(dados.telefone||dados.telegram);
+    const nome=textoLimpoV216_(dados.nome);
+    const nomePublico=nomePublicoSeguroV216_(dados.nomePublico||dados.nomeDivulgacao||dados.nomeExibicao,nome);
+    const receberAviso=String(dados.receberAvisoNovoBolao||'SIM').toUpperCase()!=='NÃO'&&String(dados.receberAvisoNovoBolao||'SIM').toUpperCase()!=='NAO';
+    const aceite=dados.aceiteRegulamento===false?false:true;
+    const dataAceite=textoLimpoV216_(dados.dataAceiteRegulamento)||new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+    const versao=textoLimpoV216_(dados.versaoRegulamento)||CONFIG.versaoRegulamento||'2026.1';
+
+    await firebaseUsuarioRef_(email).set({
+      email:email,
+      nome:nome,
+      nomePublico:nomePublico,
+      nomeDivulgacao:nomePublico,
+      nomeExibicao:nomePublico,
+      cpf:textoLimpoV216_(dados.cpf),
+      telegram:telegram,
+      telefone:telegram,
+      loteria:'',
+      cotas:0,
+      status:'PENDENTE',
+      perfil:'USUARIO',
+      ativo:false,
+      origem:'SITE_PUBLICO_FIREBASE',
+      aceiteRegulamento:aceite,
+      dataAceiteRegulamento:dataAceite,
+      versaoRegulamento:versao,
+      receberAvisoNovoBolao:receberAviso,
+      atualizadoEm:firebase.firestore.FieldValue.serverTimestamp(),
+      criadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+  };
+
+  window.firebaseSincronizarUsuarioAdmin_ = async function(dados,action){
+    dados=dados||{};
+    const email=firebaseEmailKey_(dados.email||dados.EMAIL);
+    if(!email)return;
+    await inicializarFirebase_();
+
+    const status=String(dados.status||dados.STATUS||'APROVADO').trim().toUpperCase();
+    const perfil=String(dados.perfil||dados.PERFIL||'USUARIO').trim().toUpperCase();
+    const ativo=(dados.ativo===false||status==='RECUSADO'||status==='BLOQUEADO'||status==='INATIVO')?false:true;
+    const nome=textoLimpoV216_(dados.nome||dados.NOME||email);
+    const nomePublico=nomePublicoSeguroV216_(dados.nomePublico||dados.nomeDivulgacao||dados.nomeExibicao||dados.NOME_PUBLICO||dados.NOME_DIVULGACAO||dados.NOME_EXIBICAO,nome);
+    const telegram=textoLimpoV216_(dados.telegram||dados.TELEGRAM||dados.telefone||dados.CELULAR||dados.celular);
+    const receber=String(dados.receberAvisoNovoBolao||dados.RECEBER_AVISO_NOVO_BOLAO||'SIM').toUpperCase();
+    const aceite=dados.aceiteRegulamento===false?false:true;
+
+    const grava={
+      email:email,
+      nome:nome,
+      nomePublico:nomePublico,
+      nomeDivulgacao:nomePublico,
+      nomeExibicao:nomePublico,
+      status:status,
+      perfil:perfil,
+      ativo:ativo,
+      origem:textoLimpoV216_(dados.origem||dados.ORIGEM)||'PLANILHA_ADMIN',
+      aceiteRegulamento:aceite,
+      dataAceiteRegulamento:textoLimpoV216_(dados.dataAceiteRegulamento||dados.DATA_ACEITE_REGULAMENTO||dados.dataAceite),
+      versaoRegulamento:textoLimpoV216_(dados.versaoRegulamento||dados.VERSAO_REGULAMENTO)||CONFIG.versaoRegulamento||'2026.1',
+      receberAvisoNovoBolao:!(receber==='NÃO'||receber==='NAO'||receber==='FALSE'||receber==='0'),
+      telegram:telegram,
+      telefone:telegram,
+      cpf:textoLimpoV216_(dados.cpf||dados.CPF),
+      loteria:textoLimpoV216_(dados.loteria||dados.LOTERIA),
+      cotas:Number(dados.cotas||dados.COTAS||0)||0,
+      atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await firebaseUsuarioRef_(email).set(grava,{merge:true});
+  };
+
+  window.firebaseSincronizarResultadoAdmin_ = async function(action,resposta){
+    try{
+      const dados=(resposta&&(resposta.usuarioFirebase||resposta.firebase||resposta.usuario||resposta.dadosUsuario))||null;
+      if(dados&&dados.email){
+        await firebaseSincronizarUsuarioAdmin_(dados,action);
+        return true;
+      }
+      return false;
+    }catch(e){
+      console.warn('Planilha atualizada, mas a sincronização Firebase falhou:',e);
+      toast('Ação feita na planilha, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
+      return false;
+    }
+  };
+
+  window.renderSolicitacaoCard_ = renderSolicitacaoCard_ = function(headers,row,linha){
+    const nome=getCelulaPorAlias_(headers,row,['NOME','NOME_COMPLETO','PARTICIPANTE'])||'Participante';
+    const nomePublico=getCelulaPorAlias_(headers,row,['NOME_PUBLICO','NOME PÚBLICO','NOME_PUBLICO_TELEGRAM','NOME_TELEGRAM','NOME_DIVULGACAO','NOME DIVULGACAO','NOME_EXIBICAO','NOME EXIBICAO'])||nome;
+    const email=getCelulaPorAlias_(headers,row,['EMAIL','E-MAIL'])||'-';
+    const telegram=getCelulaPorAlias_(headers,row,['TELEGRAM','USUARIO_TELEGRAM','USUÁRIO_TELEGRAM','CELULAR','TELEFONE'])||'-';
+    const status=getCelulaPorAlias_(headers,row,['STATUS','SITUACAO','SITUAÇÃO'])||'Pendente';
+    const cotasRaw=getCelulaPorAlias_(headers,row,['COTAS','QTD_COTAS','QUANTIDADE_COTAS']);
+    const loteriaRaw=getCelulaPorAlias_(headers,row,['LOTERIA','BOLAO','BOLÃO','EVENTO','NOME_BOLAO','LOTERIA_BOLAO']);
+    const cpf=getCelulaPorAlias_(headers,row,['CPF'])||'-';
+    const tipo=getCelulaPorAlias_(headers,row,['TIPO_SOLICITACAO','TIPO SOLICITACAO','TIPO','TIPO_CADASTRO'])||'-';
+    let aceite=getCelulaPorAlias_(headers,row,['ACEITOU_REGULAMENTO','ACEITE_REGULAMENTO','ACEITE REGULAMENTO','REGULAMENTO_ACEITO'])||'';
+    const dataAceite=getCelulaPorAlias_(headers,row,['DATA_ACEITE_REGULAMENTO','DATA ACEITE REGULAMENTO','CRIADO_EM','DATA'])||'-';
+    const versao=getCelulaPorAlias_(headers,row,['VERSAO_REGULAMENTO','VERSÃO_REGULAMENTO','VERSAO REGULAMENTO'])||'-';
+    const avisoNovoBolao=getCelulaPorAlias_(headers,row,['RECEBER_AVISO_NOVO_BOLAO','RECEBER AVISO NOVO BOLAO','AVISO_NOVO_BOLAO'])||'-';
+
+    const tipoNorm=normalizar(tipo);
+    const cadastroAcesso=tipoNorm.includes('ACESSO')||tipoNorm.includes('CADASTRO')||(!String(loteriaRaw||'').trim()&&!String(cotasRaw||'').trim());
+    const loteria=cadastroAcesso?'Compra após login':(loteriaRaw||'-');
+    const cotas=cadastroAcesso?'Não se aplica':(cotasRaw||'-');
+    if(!aceite&&cadastroAcesso)aceite='SIM';
+
+    const stNorm=normalizar(status);
+    const aprovado=stNorm.includes('APROV');
+    const recusado=stNorm.includes('RECUS')||stNorm.includes('REPROV');
+    const pendente=!aprovado&&!recusado;
+
+    return `
+      <article class="sol-card" id="sol-card-${linha}">
+        <div class="sol-card-head">
+          <div>
+            <h3>${escapeHtml(nome)}</h3>
+            <small>${escapeHtml(email)}</small>
+          </div>
+          <span class="status-pill ${recusado?'danger':(pendente?'warn':'')}">${escapeHtml(status)}</span>
+        </div>
+
+        <div class="sol-info">
+          <div><b>Linha</b>${escapeHtml(linha)}</div>
+          <div><b>Tipo de cadastro</b>${escapeHtml(tipo)}</div>
+          <div><b>Nome para Telegram</b>${escapeHtml(nomePublico)}</div>
+          <div><b>Telegram</b>${escapeHtml(telegram)}</div>
+          <div><b>CPF</b>${escapeHtml(cpf)}</div>
+          <div><b>Bolão</b>${escapeHtml(loteria)}</div>
+          <div><b>Cotas</b>${escapeHtml(cotas)}</div>
+          <div><b>Aceite regulamento</b>${escapeHtml(aceite||'-')}</div>
+          <div><b>Data aceite</b>${escapeHtml(formatarDataHoraPtBR(dataAceite))}</div>
+          <div><b>Versão regulamento</b>${escapeHtml(versao)}</div>
+          <div><b>Aviso novo bolão</b>${escapeHtml(avisoNovoBolao)}</div>
+        </div>
+
+        <div class="sol-actions">
+          ${!aprovado?`<button class="btn" onclick="confirmarAcaoSolicitacaoAdmin('aprovarSolicitacaoCadastro',${linha},'Aprovar esta solicitação e criar/ativar o usuário?')">Aprovar</button>`:''}
+          ${!recusado?`<button class="btn btn-light" onclick="confirmarAcaoSolicitacaoAdmin('recusarSolicitacaoCadastro',${linha},'Recusar esta solicitação?')">Recusar</button>`:''}
+          ${aprovado?`<button class="btn btn-light" onclick="confirmarAcaoSolicitacaoAdmin('tornarUsuarioAdministradorLinha',${linha},'Tornar este usuário administrador?')">Tornar administrador</button>`:`<button class="btn btn-muted" disabled title="Disponível após aprovar a solicitação">Tornar administrador após aprovar</button>`}
+          <button class="btn btn-outline-danger" onclick="confirmarAcaoSolicitacaoAdmin('excluirSolicitacaoCadastro',${linha},'Excluir definitivamente esta solicitação?')">Excluir</button>
+        </div>
+      </article>
+    `;
   };
 })();
 
