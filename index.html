@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V208_ALINHAMENTO_PARCELAS_DO_BOLAO_QR_AUTO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V210_CADASTRO_TELEGRAM_CAMPOS_SOLICITACAO_CORRIGIDOS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V208</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V210</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -439,7 +439,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V208_ALINHAMENTO_PARCELAS_DO_BOLAO_QR_AUTO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V210_CADASTRO_TELEGRAM_CAMPOS_SOLICITACAO_CORRIGIDOS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -2337,7 +2337,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
                 <button class="btn btn-light" onclick="filtrarSolicitacoesAdmin('RECUSADO')">Recusadas</button>
               </div>
               <div class="field">
-                <input id="buscaSolicitacaoAdmin" placeholder="Buscar por nome, e-mail, loteria..." oninput="filtrarSolicitacoesAdmin()">
+                <input id="buscaSolicitacaoAdmin" placeholder="Buscar por nome, e-mail, Telegram, status..." oninput="filtrarSolicitacoesAdmin()">
               </div>
             </div>
 
@@ -2898,7 +2898,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       }
     }
 
-    async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const todosBoloes=listaSegura_(await carregarBoloes());const lista=todosBoloes.filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));setView(`<div class="panel"><h2>⚙️ Configurações dos bolões ativos</h2><p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>${lista.length?lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.dataSorteio||''))}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPagamento||''))}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPagamento||''))}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPalpite||''))}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPalpite||''))}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join(''):'<div class="notice warn">Nenhum bolão ativo localizado para configuração.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const todosBoloes=listaSegura_(await carregarBoloes());const lista=todosBoloes.filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));window.PSS_CONFIG_BOLOES_LISTA=lista;setView(`<div class="panel"><h2>⚙️ Configurações dos bolões ativos</h2><p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>${lista.length?lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.dataSorteio||''))}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPagamento||''))}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPagamento||''))}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPalpite||''))}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPalpite||''))}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join(''):'<div class="notice warn">Nenhum bolão ativo localizado para configuração.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
 
     function calcularPremioPorCotaValor(premiacao,cotasAdquiridas){
       const premio=num(premiacao);
@@ -4955,7 +4955,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V208_ALINHAMENTO_PARCELAS_DO_BOLAO_QR_AUTO'; }catch(e){}
+  try{ CONFIG.versao='V210_CADASTRO_TELEGRAM_CAMPOS_SOLICITACAO_CORRIGIDOS'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -6633,6 +6633,198 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       toast(err.message||err,'error');
       if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
     }
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V209 — EXCLUIR BOLÃO NO MENU CONFIG CORRIGIDO
+ * Motivo:
+ * - O botão Excluir da tela CONFIG podia usar índice da lista bruta em vez
+ *   da lista filtrada exibida.
+ * - Backend anterior buscava só EVENTOS_ESPECIAIS; agora aceita também
+ *   BOLOES_EVENTOS e outras abas possíveis.
+ * ===================================================================== */
+(function(){
+  function pssV209BolaoConfigPorIndice_(i){
+    const lista=window.PSS_CONFIG_BOLOES_LISTA||[];
+    return lista[i] || (ESTADO.boloes||[])[i] || null;
+  }
+
+  window.excluirBolaoGit = async function(i){
+    const b=pssV209BolaoConfigPorIndice_(i);
+    if(!b){
+      toast('Bolão não localizado na lista exibida. Atualize a tela e tente novamente.','error');
+      return;
+    }
+
+    const nome=b.loteria||b.nome||b.id||'';
+    if(!nome){
+      toast('Nome do bolão não localizado para exclusão.','error');
+      return;
+    }
+
+    window.PSS_CONFIRMACAO_ADMIN={
+      action:'excluirBolaoAdmin',
+      arg:nome,
+      nomeBolao:nome,
+      reloadView:'config'
+    };
+
+    abrirModal('Confirmar exclusão',`
+      <div class="notice warn">
+        <strong>Excluir bolão?</strong><br>
+        ${escapeHtml(nome)}
+      </div>
+      <p style="margin:8px 0 16px;color:#546173;">
+        Esta ação remove o bolão da configuração ativa. Use apenas para registros criados por engano ou testes.
+      </p>
+      <div class="actions" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmarExcluirBolaoV209" onclick="executarConfirmacaoAdmin()">Confirmar exclusão</button>
+      </div>
+    `);
+  };
+
+  window.executarConfirmacaoAdmin = async function(){
+    const cfg=window.PSS_CONFIRMACAO_ADMIN||{};
+    window.PSS_CONFIRMACAO_ADMIN=null;
+
+    const btn=document.getElementById('btnConfirmarExcluirBolaoV209');
+    if(btn){
+      btn.disabled=true;
+      btn.textContent='Excluindo...';
+    }
+
+    if(!cfg.action){
+      fecharModal();
+      return;
+    }
+
+    try{
+      const r=await api(cfg.action,{},[cfg.arg]);
+
+      // Limpeza de caches locais para não reaparecer logo após excluir.
+      try{
+        Object.keys(localStorage).forEach(function(k){
+          if(/^PSS_|^boloes_|^public_boloes|^home_|^dashboard_/i.test(k)) localStorage.removeItem(k);
+        });
+      }catch(e){}
+
+      toast((r&&r.msg)||'Bolão excluído.');
+      fecharModal();
+
+      await carregarBoloes(true);
+      if(ESTADO.view==='config') renderConfigBoloesAdmin();
+      else if(ESTADO.view==='boloes') renderBoloes('ativos');
+      else navegar('config');
+    }catch(err){
+      toast((err&&err.message)||String(err),'error');
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='Confirmar exclusão';
+      }
+    }
+  };
+
+  // Salvar/Inativar também passam a usar a lista filtrada exibida quando existir.
+  const salvarConfigBolaoGitBaseV209=window.salvarConfigBolaoGit;
+  window.salvarConfigBolaoGit = async function(i){
+    if(window.PSS_CONFIG_BOLOES_LISTA && window.PSS_CONFIG_BOLOES_LISTA[i]){
+      const bruto=ESTADO.boloes;
+      try{
+        ESTADO.boloes=window.PSS_CONFIG_BOLOES_LISTA;
+        return await salvarConfigBolaoGitBaseV209(i);
+      }finally{
+        ESTADO.boloes=bruto;
+      }
+    }
+    return await salvarConfigBolaoGitBaseV209(i);
+  };
+
+  const inativarBolaoGitBaseV209=window.inativarBolaoGit;
+  window.inativarBolaoGit = async function(i){
+    if(window.PSS_CONFIG_BOLOES_LISTA && window.PSS_CONFIG_BOLOES_LISTA[i]){
+      const bruto=ESTADO.boloes;
+      try{
+        ESTADO.boloes=window.PSS_CONFIG_BOLOES_LISTA;
+        return await inativarBolaoGitBaseV209(i);
+      }finally{
+        ESTADO.boloes=bruto;
+      }
+    }
+    return await inativarBolaoGitBaseV209(i);
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V210 — SOLICITAÇÕES CADASTRO: TELEGRAM + CAMPOS NÃO APLICÁVEIS
+ * ===================================================================== */
+(function(){
+  window.renderSolicitacaoCard_ = renderSolicitacaoCard_ = function(headers,row,linha){
+    const nome=getCelulaPorAlias_(headers,row,['NOME','NOME_COMPLETO','PARTICIPANTE'])||'Participante';
+    const email=getCelulaPorAlias_(headers,row,['EMAIL','E-MAIL'])||'-';
+
+    const telegram=getCelulaPorAlias_(headers,row,['TELEGRAM','USUARIO_TELEGRAM','USUÁRIO_TELEGRAM','USUARIO TELEGRAM','CELULAR','TELEFONE'])||'-';
+    const status=getCelulaPorAlias_(headers,row,['STATUS','SITUACAO','SITUAÇÃO'])||'Pendente';
+
+    const cotasRaw=getCelulaPorAlias_(headers,row,['COTAS','QTD_COTAS','QUANTIDADE_COTAS']);
+    const loteriaRaw=getCelulaPorAlias_(headers,row,['LOTERIA','BOLAO','BOLÃO','EVENTO','NOME_BOLAO','LOTERIA_BOLAO']);
+    const tipo=getCelulaPorAlias_(headers,row,['TIPO_SOLICITACAO','TIPO SOLICITACAO','TIPO','TIPO_CADASTRO'])||'-';
+
+    const cpf=getCelulaPorAlias_(headers,row,['CPF'])||'-';
+    let aceite=getCelulaPorAlias_(headers,row,['ACEITOU_REGULAMENTO','ACEITE_REGULAMENTO','ACEITE REGULAMENTO','REGULAMENTO_ACEITO'])||'';
+    const dataAceite=getCelulaPorAlias_(headers,row,['DATA_ACEITE_REGULAMENTO','DATA ACEITE REGULAMENTO','CRIADO_EM','DATA'])||'-';
+    const versao=getCelulaPorAlias_(headers,row,['VERSAO_REGULAMENTO','VERSÃO_REGULAMENTO','VERSAO REGULAMENTO'])||'-';
+    const avisoNovoBolao=getCelulaPorAlias_(headers,row,['RECEBER_AVISO_NOVO_BOLAO','RECEBER AVISO NOVO BOLAO','AVISO_NOVO_BOLAO'])||'-';
+
+    const tipoNorm=normalizar(tipo);
+    const cadastroAcesso=tipoNorm.includes('ACESSO')||tipoNorm.includes('CADASTRO')||(!String(loteriaRaw||'').trim()&&!String(cotasRaw||'').trim());
+
+    const loteria=cadastroAcesso?'Compra após login':(loteriaRaw||'-');
+    const cotas=cadastroAcesso?'Não se aplica':(cotasRaw||'-');
+
+    if(!aceite && cadastroAcesso) aceite='SIM';
+
+    const stNorm=normalizar(status);
+    const aprovado=stNorm.includes('APROV');
+    const recusado=stNorm.includes('RECUS')||stNorm.includes('REPROV');
+    const pendente=!aprovado&&!recusado;
+
+    return `
+      <article class="sol-card" id="sol-card-${linha}">
+        <div class="sol-card-head">
+          <div>
+            <h3>${escapeHtml(nome)}</h3>
+            <small>${escapeHtml(email)}</small>
+          </div>
+          <span class="status-pill ${recusado?'danger':(pendente?'warn':'')}">${escapeHtml(status)}</span>
+        </div>
+
+        <div class="sol-info">
+          <div><b>Linha</b>${escapeHtml(linha)}</div>
+          <div><b>Tipo de cadastro</b>${escapeHtml(tipo)}</div>
+          <div><b>Telegram</b>${escapeHtml(telegram)}</div>
+          <div><b>CPF</b>${escapeHtml(cpf)}</div>
+          <div><b>Bolão</b>${escapeHtml(loteria)}</div>
+          <div><b>Cotas</b>${escapeHtml(cotas)}</div>
+          <div><b>Aceite regulamento</b>${escapeHtml(aceite||'-')}</div>
+          <div><b>Data aceite</b>${escapeHtml(formatarDataHoraPtBR(dataAceite))}</div>
+          <div><b>Versão regulamento</b>${escapeHtml(versao)}</div>
+          <div><b>Aviso novo bolão</b>${escapeHtml(avisoNovoBolao)}</div>
+        </div>
+
+        <div class="sol-actions">
+          ${!aprovado?`<button class="btn" onclick="confirmarAcaoSolicitacaoAdmin('aprovarSolicitacaoCadastro',${linha},'Aprovar esta solicitação e criar/ativar o usuário?')">Aprovar</button>`:''}
+          ${!recusado?`<button class="btn btn-light" onclick="confirmarAcaoSolicitacaoAdmin('recusarSolicitacaoCadastro',${linha},'Recusar esta solicitação?')">Recusar</button>`:''}
+          ${aprovado?`<button class="btn btn-light" onclick="confirmarAcaoSolicitacaoAdmin('tornarUsuarioAdministradorLinha',${linha},'Tornar este usuário administrador?')">Tornar administrador</button>`:`<button class="btn btn-muted" disabled title="Disponível após aprovar a solicitação">Tornar administrador após aprovar</button>`}
+          <button class="btn btn-outline-danger" onclick="confirmarAcaoSolicitacaoAdmin('excluirSolicitacaoCadastro',${linha},'Excluir definitivamente esta solicitação?')">Excluir</button>
+        </div>
+      </article>
+    `;
   };
 })();
 
