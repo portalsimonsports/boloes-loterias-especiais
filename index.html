@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V213_LETREIRO_ULTIMOS_RESULTADOS_PUBLICOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V214_FIX_LETREIRO_RESULTADOS_VISIVEL_IMEDIATO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V213</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V214</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -613,6 +613,36 @@
       .resultados-publicos-actions{align-items:flex-start;flex-direction:column}
     }
 
+  
+    /* V214 — corrigir letreiro vazio: texto visível imediatamente */
+    .resultados-ticker{
+      min-height:50px!important;
+      padding:0!important;
+    }
+    .resultados-ticker-track{
+      gap:60px!important;
+      padding:13px 24px!important;
+      animation:pssResultadosTickerV214 85s linear infinite!important;
+    }
+    .resultados-ticker-text{
+      padding-left:0!important;
+    }
+    .resultados-ticker-track span{
+      display:inline-block!important;
+      white-space:nowrap!important;
+    }
+    .resultados-ticker-fallback{
+      padding:13px 18px;
+      font-weight:900;
+      color:#fff;
+      white-space:normal;
+      line-height:1.45;
+    }
+    @keyframes pssResultadosTickerV214{
+      0%{transform:translateX(0)}
+      100%{transform:translateX(-50%)}
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -628,7 +658,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V213_LETREIRO_ULTIMOS_RESULTADOS_PUBLICOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V214_FIX_LETREIRO_RESULTADOS_VISIVEL_IMEDIATO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5144,7 +5174,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V213_LETREIRO_ULTIMOS_RESULTADOS_PUBLICOS'; }catch(e){}
+  try{ CONFIG.versao='V214_FIX_LETREIRO_RESULTADOS_VISIVEL_IMEDIATO'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -7525,6 +7555,102 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     renderHomePublicaBaseV213();
     inserirEstruturaLetreiroV213_();
     setTimeout(()=>carregarLetreiroResultadosPublicosV213(false),450);
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V214 — LETREIRO RESULTADOS VISÍVEL IMEDIATAMENTE
+ * Correção:
+ * - Remove o atraso visual causado por padding-left:100%.
+ * - Mantém rolagem contínua, mas já mostra o texto assim que carrega.
+ * - Se houver qualquer falha de renderização, exibe fallback estático.
+ * ===================================================================== */
+(function(){
+  function textoResultadoSeguroV214_(dados){
+    if(dados&&dados.letreiroTexto&&String(dados.letreiroTexto).trim()){
+      return String(dados.letreiroTexto).trim();
+    }
+
+    const lista=Array.isArray(dados&&dados.resultados)?dados.resultados:[];
+    if(!lista.length)return '';
+
+    return '📢 Últimos resultados: '+lista.map(function(r){
+      const nome=String(r.nome||r.tipoJogo||r.slug||'Loteria').replace(/_/g,' ').trim().toUpperCase();
+      const concurso=r.concurso?(' '+r.concurso):'';
+      const data=r.dataApuracao?(' - '+formatarDataHoraPtBR(r.dataApuracao)):'';
+      let dezenas=String(r.dezenas||'').trim()
+        .replace(/\s*-\s*/g,' • ')
+        .replace(/\s*,\s*/g,' • ')
+        .replace(/\s{2,}/g,' ');
+      return `${nome}${concurso}${data}: ${dezenas}`;
+    }).join(' | ');
+  }
+
+  window.renderLetreiroResultadosPublicosV213 = function(dados){
+    if(typeof inserirEstruturaLetreiroV213_ === 'function'){
+      inserirEstruturaLetreiroV213_();
+    }else{
+      const hero=document.querySelector('.home-hero');
+      if(!document.getElementById('homeResultadosPublicosV213')){
+        const html=`
+          <section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">
+            <div class="resultados-publicos-head">
+              <div>
+                <h2>Últimos resultados das loterias</h2>
+                <small id="resultadosPublicosAtualizadoV213">Carregando informações...</small>
+              </div>
+              <button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button>
+            </div>
+            <div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div>
+            <div class="resultados-publicos-actions">
+              <span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span>
+              <button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213()">Ver todos os resultados</button>
+            </div>
+          </section>
+        `;
+        if(hero)hero.insertAdjacentHTML('afterend',html);
+      }
+    }
+
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(!box)return;
+
+    window.PSS_RESULTADOS_PUBLICOS_V213=dados||{resultados:[]};
+
+    if(atualizado){
+      atualizado.textContent=(dados&&dados.atualizadoEm)
+        ? ('Atualizado em '+String(dados.atualizadoEm))
+        : ('Atualizado em '+dataHoraAtualCurta());
+    }
+
+    const texto=textoResultadoSeguroV214_(dados);
+    if(!texto){
+      box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis.</div>';
+      return;
+    }
+
+    const conteudo=escapeHtml(texto);
+
+    // Texto aparece imediatamente. A duplicação mantém a rolagem contínua.
+    box.innerHTML=`
+      <div class="resultados-ticker" title="Passe o mouse para pausar">
+        <div class="resultados-ticker-track">
+          <span class="resultados-ticker-text">${conteudo}</span>
+          <span aria-hidden="true">${conteudo}</span>
+        </div>
+      </div>
+    `;
+
+    // Fallback se por alguma razão o conteúdo ficar invisível no navegador.
+    setTimeout(function(){
+      const track=box.querySelector('.resultados-ticker-track');
+      if(!track || !track.textContent.trim()){
+        box.innerHTML='<div class="resultados-ticker"><div class="resultados-ticker-fallback">'+conteudo+'</div></div>';
+      }
+    },800);
   };
 })();
 
