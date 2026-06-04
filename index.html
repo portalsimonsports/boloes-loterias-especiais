@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V183_FIX_LOGIN_MOBILE_REVALIDACAO_CACHE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V184_LOGIN_MOBILE_FAST_NO_QUEUE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V183</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V184</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -348,7 +348,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V183_FIX_LOGIN_MOBILE_REVALIDACAO_CACHE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V184_LOGIN_MOBILE_FAST_NO_QUEUE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
     document.addEventListener('DOMContentLoaded',()=>{iniciarAplicacao_();});
 
@@ -407,9 +407,33 @@
     }
 
     function apiHibridaComFallback_(action,dados={},args=null){
-      return apiJsonpDireto_(action,dados,args,18000)
-        .catch(()=>apiPostMessageBridge_(action,dados,args,22000))
-        .catch(()=>apiWindowNameBridge_(action,dados,args,30000));
+      return apiJsonpDireto_(action,dados,args,12000)
+        .catch(()=>apiPostMessageBridge_(action,dados,args,12000))
+        .catch(()=>apiWindowNameBridge_(action,dados,args,18000));
+    }
+
+    /*
+     * V184 — API CRÍTICA SEM FILA PARA LOGIN MOBILE
+     * O login não pode ficar preso atrás de carregamentos públicos/cacheados.
+     * Esta rota ignora PSS_API_FILA e usa timeouts menores, sem alterar as
+     * chamadas normais dos menus e sem duplicar gravações/upload.
+     */
+    function apiCritica_(action,dados={},args=null){
+      return apiJsonpDireto_(action,dados,args,5500)
+        .catch(()=>apiPostMessageBridge_(action,dados,args,6500))
+        .catch(()=>apiWindowNameBridge_(action,dados,args,9000));
+    }
+
+    async function apiMultiCritico_(tentativas){
+      let ultimoErro=null;
+      for(const x of tentativas){
+        try{
+          return await apiCritica_(x.action,x.dados||{},x.args||null);
+        }catch(err){
+          ultimoErro=err;
+        }
+      }
+      throw ultimoErro||new Error('Nenhuma rota crítica respondeu.');
     }
 
     function montarPayloadApi_(action,dados,args){
@@ -444,7 +468,7 @@
         const script=document.createElement('script');
         let finalizado=false;
 
-        const aliases=[cb,'callback','teste'];
+        const aliases=[cb];
         const anteriores={};
         aliases.forEach(n=>anteriores[n]=window[n]);
 
@@ -657,11 +681,11 @@
     async function validarSessaoSalva_(sessao){
       const email=String((sessao&&sessao.email)||'').trim().toLowerCase();
       if(!email)throw new Error('Sessão sem e-mail válido.');
-      const u=await promiseTimeout_(apiMulti([
+      const u=await promiseTimeout_(apiMultiCritico_([
         {action:'validarSessao',dados:{email},args:[email]},
         {action:'validarLoginSalvo',dados:{email},args:[email]},
         {action:'validarUsuarioSessao',dados:{email},args:[email]}
-      ]),14000,'Tempo limite ao validar sessão salva.');
+      ]),9500,'Tempo limite ao validar sessão salva.');
       return normalizarUsuarioSessao_(Object.assign({},sessao,u||{},{email:(u&&u.email)||email}));
     }
 
@@ -902,8 +926,50 @@
       }
     }
 
-    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button><button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button></div><div class="cache-hint warn">Se abrir em aba anônima, mas falhar no navegador normal do celular, use “Limpar acesso salvo” para remover sessão e cache antigos deste aparelho.</div></div>`)}
-    async function fazerLogin(ev){ev.preventDefault();const email=document.getElementById('loginEmail').value.trim().toLowerCase(),senha=document.getElementById('loginSenha').value.trim(),btn=document.getElementById('btnLogin'),msg=document.getElementById('loginMsg');msg.innerHTML='<div class="notice info">Verificando acesso...</div>';btn.disabled=true;btn.textContent='Entrando...';try{const u=await apiMulti([{action:'processarLogin',dados:{email,senha},args:[email,senha]},{action:'login',dados:{email,senha},args:[email,senha]}]);limparCacheDepoisDoLogin_();ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},u||{},{email:(u&&u.email)||email}));ESTADO.email=ESTADO.usuario.email;ESTADO.role=ESTADO.usuario.role;if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');salvarSessao(ESTADO.usuario);aplicarLayoutLogado();preCarregarDadosEstaticos();navegar('inicio')}catch(err){msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
+    function renderLogin(){document.getElementById('publicHeader').classList.remove('hidden');document.getElementById('appHeader').classList.add('hidden');setView(`<div class="login-wrap"><h1>Acesso ao sistema</h1><p>Acesse com seu e-mail e senha.</p><div id="loginMsg"></div><form onsubmit="fazerLogin(event)"><div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="${escapeAttr(ESTADO.email)}" required /></div><div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div><label class="checkline"><input type="checkbox" id="lembrarEmail" ${ESTADO.email?'checked':''}><span>Lembrar meu e-mail neste aparelho</span></label><button type="submit" id="btnLogin" class="btn btn-block">Entrar no sistema</button></form><div class="actions" style="justify-content:center;margin-top:16px;"><button class="btn btn-light btn-pill" onclick="renderHomePublica()">Voltar ao início</button><button class="btn btn-light btn-pill" onclick="abrirCadastro()">Cadastrar</button><button class="btn btn-light btn-pill" onclick="abrirResetSenha()">Esqueci a senha</button><button class="btn btn-light btn-pill" onclick="limparAcessoSalvoNoAparelho_()">Limpar acesso salvo</button></div><div class="cache-hint warn">Se travar no navegador normal do celular, toque em “Limpar acesso salvo” e entre novamente. O login agora ignora a fila de carregamento e consulta a planilha direto.</div></div>`)}
+    async function fazerLogin(ev){
+      ev.preventDefault();
+      const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+      const senha=document.getElementById('loginSenha').value.trim();
+      const btn=document.getElementById('btnLogin');
+      const msg=document.getElementById('loginMsg');
+
+      msg.innerHTML='<div class="notice info"><span class="loading-fast">Verificando acesso direto na planilha...</span></div>';
+      btn.disabled=true;
+      btn.textContent='ENTRANDO...';
+
+      const avisoTimer=setTimeout(()=>{
+        if(btn&&btn.disabled&&msg){
+          msg.innerHTML='<div class="notice warn">A conexão do navegador mobile está lenta. Continuo tentando por uma rota alternativa, sem usar cache salvo.</div>';
+        }
+      },6500);
+
+      try{
+        limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:false});
+        const u=await promiseTimeout_(apiMultiCritico_([
+          {action:'processarLogin',dados:{email,senha},args:[email,senha]},
+          {action:'login',dados:{email,senha},args:[email,senha]}
+        ]),23000,'Tempo limite ao verificar login. Toque em “Limpar acesso salvo” e tente novamente.');
+
+        clearTimeout(avisoTimer);
+        limparCacheDepoisDoLogin_();
+        ESTADO.usuario=normalizarUsuarioSessao_(Object.assign({},u||{},{email:(u&&u.email)||email}));
+        ESTADO.email=ESTADO.usuario.email;
+        ESTADO.role=ESTADO.usuario.role;
+        if(document.getElementById('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);
+        else localStorage.removeItem('PSS_BOLAO_EMAIL');
+        salvarSessao(ESTADO.usuario);
+        aplicarLayoutLogado();
+        preCarregarDadosEstaticos();
+        navegar('inicio');
+      }catch(err){
+        clearTimeout(avisoTimer);
+        msg.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
+      }finally{
+        btn.disabled=false;
+        btn.textContent='Entrar no sistema';
+      }
+    }
     function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}function logout(){limparCachesLocaisBoloes_({removerSessao:true,removerEmail:false,removerSelecionado:true});ESTADO.usuario=null;ESTADO.role='';ESTADO.boloes=[];renderHomePublica()}
     function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
     function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
@@ -4529,7 +4595,7 @@ function renderMetodoPagamento_(m,b,i){
 
 
 /* =====================================================================
- * PATCH V183 — LOGIN MOBILE / REVALIDAÇÃO DE SESSÃO / LIMPEZA DE CACHE
+ * PATCH V184 — LOGIN MOBILE / REVALIDAÇÃO DE SESSÃO / LIMPEZA DE CACHE
  * Base preservada: V182_UPLOAD_FORM_DIRETO_DRIVE_ROBUSTO
  *
  * Correção:
