@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V220_FIX_ULTIMOS_RESULTADOS_AUTOMATICO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V222_REGULAMENTO_SEM_TIMEOUT_MOBILE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V220</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V222</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -846,61 +846,28 @@
     }
 
   
-    /* V220 — correção do carregamento automático dos últimos resultados */
-    .resultados-ticker-v220{
-      min-height:54px!important;
-      background:linear-gradient(90deg,#001707,#053f18,#001707)!important;
-      border:1px solid rgba(255,179,0,.45)!important;
-      overflow:hidden!important;
-      display:flex!important;
-      align-items:center!important;
+    /* V222 — Regulamento não bloqueia mais a tela no mobile */
+    .reg-status-v222{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #d7eadc;
+      background:#f8fffa;
+      color:#003b12;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.4;
     }
-    .resultados-ticker-v220 .resultados-ticker-track{
-      display:inline-flex!important;
-      align-items:center!important;
-      gap:34px!important;
-      padding:9px 22px!important;
-      animation:pssResultadosTickerV220 95s linear infinite!important;
-      white-space:nowrap!important;
+    .reg-status-v222.warn{
+      border-color:#ffd27a;
+      background:#fff9e8;
+      color:#7a4d00;
     }
-    .resultados-ticker-v220:hover .resultados-ticker-track{
-      animation-play-state:paused!important;
-    }
-    .resultado-letreiro-item-v220{
-      display:inline-flex!important;
-      align-items:center!important;
-      gap:8px!important;
-      color:#fff!important;
-      font-size:13px!important;
-      font-weight:850!important;
-      white-space:nowrap!important;
-    }
-    .resultado-letreiro-badge-v220{
-      display:inline-flex!important;
-      align-items:center!important;
-      justify-content:center!important;
-      padding:7px 10px!important;
-      border-radius:999px!important;
-      color:#fff!important;
-      font-size:11px!important;
-      font-weight:1000!important;
-      letter-spacing:.2px!important;
-      text-transform:uppercase!important;
-      box-shadow:0 3px 10px rgba(0,0,0,.22)!important;
-      border:1px solid rgba(255,255,255,.24)!important;
-    }
-    .resultado-letreiro-concurso-v220{color:#ffdd75!important;font-weight:1000!important;}
-    .resultado-letreiro-data-v220{color:#d7ffe4!important;font-weight:900!important;}
-    .resultado-letreiro-dezenas-v220{color:#fff!important;font-weight:900!important;letter-spacing:.25px!important;}
-    .resultado-letreiro-sep-v220{color:rgba(255,255,255,.45)!important;font-weight:700!important;}
-    @keyframes pssResultadosTickerV220{
-      0%{transform:translateX(0)}
-      100%{transform:translateX(-50%)}
-    }
-    @media(max-width:760px){
-      .resultados-ticker-v220 .resultados-ticker-track{animation-duration:125s!important;gap:26px!important}
-      .resultado-letreiro-item-v220{font-size:12px!important}
-      .resultado-letreiro-badge-v220{font-size:10px!important;padding:6px 8px!important}
+    .reg-actions-v222{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
     }
 
   </style>
@@ -918,7 +885,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V220_FIX_ULTIMOS_RESULTADOS_AUTOMATICO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V222_REGULAMENTO_SEM_TIMEOUT_MOBILE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5434,7 +5401,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V220_FIX_ULTIMOS_RESULTADOS_AUTOMATICO'; }catch(e){}
+  try{ CONFIG.versao='V222_REGULAMENTO_SEM_TIMEOUT_MOBILE'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -8805,263 +8772,188 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 
 /* =====================================================================
- * PATCH V220 — ÚLTIMOS RESULTADOS CARREGANDO AUTOMATICAMENTE
- * Correções:
- * - Não usa cache local vazio/defeituoso.
- * - Normaliza qualquer formato de retorno da API.
- * - Busca primeiro getResultadosLoteriasPublicos e só depois usa getConfigPublica.
- * - Mantém letreiro com badges coloridas por loteria.
+ * PATCH V221 — RESTAURA LETREIRO ESTÁVEL DOS RESULTADOS
+ * - Mantém o modelo que estava funcionando.
+ * - Remove somente o cache local criado pela V220.
+ * - Não altera Telegram, pagamentos, bolões, cadastro ou Firebase.
  * ===================================================================== */
 (function(){
-  const CACHE_KEY_V220='PSS_RESULTADOS_PUBLICOS_V220';
-  try{localStorage.removeItem('PSS_RESULTADOS_PUBLICOS_V213');}catch(e){}
-
-  function normalizarTextoV220_(v){
-    return String(v===undefined||v===null?'':v).trim();
-  }
-
-  function normalizarLoteriaV220_(v){
-    return String(v||'')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g,'');
-  }
-
-  function corLoteriaV220_(r){
-    const k=normalizarLoteriaV220_((r&&r.nome)||(r&&r.slug)||(r&&r.tipoJogo)||'');
-    if(k.includes('mega'))return '#209869';
-    if(k.includes('facil'))return '#930089';
-    if(k.includes('quina'))return '#260085';
-    if(k.includes('dupla'))return '#a61324';
-    if(k.includes('federal'))return '#103099';
-    if(k.includes('diadesorte')||k.includes('sorte'))return '#cb852b';
-    if(k.includes('supersete')||k.includes('super'))return '#a8cf45';
-    if(k.includes('loteca')||k.includes('lotomania'))return '#f78100';
-    if(k.includes('timemania'))return '#00a651';
-    if(k.includes('milionaria'))return '#2e3078';
-    return '#0b6f28';
-  }
-
-  function nomeLoteriaV220_(r){
-    return normalizarTextoV220_((r&&r.nome)||(r&&r.tipoJogo)||(r&&r.slug)||'LOTERIA').replace(/_/g,' ').toUpperCase();
-  }
-
-  function dezenasV220_(v){
-    return normalizarTextoV220_(v)
-      .replace(/\s*-\s*/g,' • ')
-      .replace(/\s*,\s*/g,' • ')
-      .replace(/\s{2,}/g,' ');
-  }
-
-  function dataV220_(v){
-    const s=normalizarTextoV220_(v);
-    if(!s || s==='-')return '';
-    return formatarDataHoraPtBR(s);
-  }
-
-  function temResultadoValidoV220_(dados){
-    if(!dados||typeof dados!=='object')return false;
-    if(normalizarTextoV220_(dados.letreiroTexto))return true;
-    return Array.isArray(dados.resultados)&&dados.resultados.some(r=>r&&normalizarTextoV220_(r.dezenas));
-  }
-
-  function normalizarRetornoResultadosV220_(raw){
-    let d=raw||{};
-    if(d.dados!==undefined)d=d.dados;
-    if(d.result!==undefined)d=d.result;
-
-    if(d.resultadosPublicos)d=d.resultadosPublicos;
-
-    let lista=[];
-    if(Array.isArray(d.resultados))lista=d.resultados;
-    else if(Array.isArray(d.ultimosResultados))lista=d.ultimosResultados;
-    else if(Array.isArray(d.result))lista=d.result;
-
-    lista=lista
-      .filter(r=>r&&typeof r==='object')
-      .map(r=>({
-        slug:normalizarTextoV220_(r.slug),
-        tipoJogo:normalizarTextoV220_(r.tipoJogo||r.tipo_jogo||r.tipo),
-        nome:normalizarTextoV220_(r.nome||r.loteria||r.tipoJogo||r.slug),
-        concurso:normalizarTextoV220_(r.concurso),
-        dataApuracao:normalizarTextoV220_(r.dataApuracao||r.data_apuracao||r.data||r.DATA),
-        dezenas:dezenasV220_(r.dezenas||r.numeros||r.números||r.resultado),
-        acumulado:r.acumulado,
-        valorEstimadoProxConcurso:r.valorEstimadoProxConcurso||r.valor_estimado_prox_concurso||'',
-        dataProximoConcurso:r.dataProximoConcurso||r.data_proximo_concurso||'',
-        atualizadoEm:r.atualizadoEm||r.atualizado_em||''
-      }))
-      .filter(r=>r.dezenas);
-
-    return {
-      sucesso:d.sucesso!==false,
-      atualizadoEm:normalizarTextoV220_(d.atualizadoEm||d.resultadosAtualizadoEm||d.atualizado_em)||dataHoraAtualCurta(),
-      titulo:d.titulo||'Últimos resultados',
-      letreiroTexto:normalizarTextoV220_(d.letreiroTexto||d.letreiroResultadosTexto),
-      resultados:lista
-    };
-  }
-
-  function itemLetreiroV220_(r){
-    const nome=nomeLoteriaV220_(r);
-    const cor=corLoteriaV220_(r);
-    const concurso=normalizarTextoV220_(r.concurso);
-    const data=dataV220_(r.dataApuracao);
-    const dezenas=dezenasV220_(r.dezenas);
-
-    return `
-      <span class="resultado-letreiro-item-v220">
-        <span class="resultado-letreiro-badge-v220" style="background:${escapeAttr(cor)}">${escapeHtml(nome)}</span>
-        ${concurso?`<span class="resultado-letreiro-concurso-v220">${escapeHtml(concurso)}</span>`:''}
-        ${data?`<span class="resultado-letreiro-data-v220">${escapeHtml(data)}</span>`:''}
-        <span class="resultado-letreiro-sep-v220">:</span>
-        <span class="resultado-letreiro-dezenas-v220">${escapeHtml(dezenas)}</span>
-      </span>
-    `;
-  }
-
-  function montarLetreiroHtmlV220_(dados){
-    const lista=Array.isArray(dados&&dados.resultados)?dados.resultados.filter(r=>r&&r.dezenas).slice(0,7):[];
-    if(!lista.length && normalizarTextoV220_(dados&&dados.letreiroTexto)){
-      const texto=escapeHtml(dados.letreiroTexto);
-      return `
-        <div class="resultados-ticker resultados-ticker-v220" title="Passe o mouse para pausar">
-          <div class="resultados-ticker-track">
-            <span class="resultados-ticker-prefixo">📢</span><span>${texto}</span>
-            <span class="resultados-ticker-prefixo">📢</span><span>${texto}</span>
-          </div>
-        </div>
-      `;
-    }
-    if(!lista.length)return '';
-    const grupo=`
-      <span class="resultados-ticker-grupo">
-        <span class="resultados-ticker-prefixo">📢 Últimos resultados</span>
-        ${lista.map(itemLetreiroV220_).join('<span class="resultado-letreiro-sep-v220">|</span>')}
-      </span>
-    `;
-    return `
-      <div class="resultados-ticker resultados-ticker-v220" title="Passe o mouse para pausar">
-        <div class="resultados-ticker-track">
-          ${grupo}
-          ${grupo}
-        </div>
-      </div>
-    `;
-  }
-
-  window.renderLetreiroResultadosPublicosV213 = function(dados){
-    if(typeof inserirEstruturaLetreiroV213_==='function')inserirEstruturaLetreiroV213_();
-
-    const box=document.getElementById('resultadosPublicosTickerV213');
-    const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
-    if(!box)return;
-
-    dados=normalizarRetornoResultadosV220_(dados);
-    window.PSS_RESULTADOS_PUBLICOS_V213=dados;
-
-    if(atualizado){
-      atualizado.textContent='Atualizado em '+(dados.atualizadoEm||dataHoraAtualCurta());
-    }
-
-    const html=montarLetreiroHtmlV220_(dados);
-    if(!html){
-      box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis. Clique em Atualizar resultados.</div>';
-      return;
-    }
-    box.innerHTML=html;
-  };
-
-  async function buscarResultadosPublicosV220_(){
-    try{
-      const d=await api('getResultadosLoteriasPublicos',{},{});
-      const n=normalizarRetornoResultadosV220_(d);
-      if(temResultadoValidoV220_(n))return n;
-    }catch(e1){}
-
-    try{
-      const d=await api('getUltimosResultadosPublicos',{},{});
-      const n=normalizarRetornoResultadosV220_(d);
-      if(temResultadoValidoV220_(n))return n;
-    }catch(e2){}
-
-    const cfg=await api('getConfigPublica',{},{});
-    const n=normalizarRetornoResultadosV220_(cfg);
-    if(temResultadoValidoV220_(n))return n;
-
-    throw new Error((cfg&&cfg.erro)||'A API não retornou resultados válidos.');
-  }
-
-  window.carregarLetreiroResultadosPublicosV213 = async function(forcar){
-    if(typeof inserirEstruturaLetreiroV213_==='function')inserirEstruturaLetreiroV213_();
-
-    const box=document.getElementById('resultadosPublicosTickerV213');
-    if(!box)return;
-
-    if(!forcar){
+  try{localStorage.removeItem('PSS_RESULTADOS_PUBLICOS_V220');}catch(e){}
+  try{localStorage.removeItem('PSS_RESULTADOS_PUBLICOS_V220_ERRO');}catch(e){}
+  const renderHomePublicaBaseV221 = window.renderHomePublica || renderHomePublica;
+  window.renderHomePublica = renderHomePublica = function(){
+    renderHomePublicaBaseV221();
+    setTimeout(function(){
       try{
-        const c=JSON.parse(localStorage.getItem(CACHE_KEY_V220)||'null');
-        if(c&&Date.now()-Number(c.ts||0)<10*60*1000&&temResultadoValidoV220_(c.dados)){
-          renderLetreiroResultadosPublicosV213(c.dados);
-          // Atualiza em segundo plano sem deixar tela vazia.
-          buscarResultadosPublicosV220_().then(d=>{
-            try{localStorage.setItem(CACHE_KEY_V220,JSON.stringify({ts:Date.now(),dados:d}));}catch(e){}
-            renderLetreiroResultadosPublicosV213(d);
-          }).catch(()=>{});
-          return;
+        if(typeof carregarLetreiroResultadosPublicosV213 === 'function'){
+          carregarLetreiroResultadosPublicosV213(true);
         }
       }catch(e){}
-    }
+    },450);
+  };
+})();
 
-    box.innerHTML='<div class="notice info">Atualizando últimos resultados...</div>';
+
+
+/* =====================================================================
+ * PATCH V222 — REGULAMENTO SEM TIMEOUT VISÍVEL NO MOBILE
+ * Motivo:
+ * - No celular, a fila da API pode atrasar e o menu Regulamento mostrava erro.
+ * Correção:
+ * - Exibe cache/fallback imediatamente.
+ * - Atualiza o regulamento em segundo plano.
+ * - Nunca deixa a tela travada com "Tempo limite ao carregar regulamento".
+ * ===================================================================== */
+(function(){
+  const REG_FALLBACK_V222 = [
+    'Regulamento do Sistema de Bolões de Loterias Especiais',
+    '',
+    '1. O sistema tem finalidade de controle, organização e transparência dos bolões cadastrados pela administração.',
+    '2. A participação em cada bolão depende de cadastro aprovado, aquisição ou reserva de cotas e confirmação do pagamento pela administração.',
+    '3. Os prazos de pagamento, envio de comprovante e realização dos palpites são definidos em cada bolão ativo.',
+    '4. A reserva de cotas somente será efetivada após confirmação do pagamento e baixa administrativa do comprovante.',
+    '5. Os participantes devem conferir seus dados, cotas, comprovantes e palpites diretamente na área logada do sistema.',
+    '6. A eventual premiação será apurada e dividida conforme as cotas confirmadas e as regras internas aplicáveis ao bolão.',
+    '7. Alterações operacionais poderão ser feitas pela administração para corrigir falhas, atualizar prazos, melhorar o sistema ou adequar o funcionamento dos bolões.',
+    '',
+    'Observação: este texto é exibido automaticamente quando a conexão demora. O regulamento oficial salvo no sistema é carregado em segundo plano quando a API responde.'
+  ].join('\n');
+
+  function normalizarRegTextoV222_(r){
+    if(typeof r === 'string') return r.trim();
+    if(r && typeof r === 'object'){
+      return String(r.texto || r.regulamento || r.REGULAMENTO || r.html || r.conteudo || '').trim();
+    }
+    return '';
+  }
+
+  function getRegCacheV222_(){
+    try{
+      const c = cacheGet_('regulamento', true);
+      const txt = normalizarRegTextoV222_(c);
+      return txt || '';
+    }catch(e){
+      return '';
+    }
+  }
+
+  function setRegCacheV222_(texto){
+    texto = normalizarRegTextoV222_(texto);
+    if(!texto) return;
+    try{ cacheSet_('regulamento', texto, CACHE_TTL.longo); }catch(e){}
+  }
+
+  async function buscarRegulamentoApiV222_(){
+    const r = await promiseTimeout_(
+      apiMulti([
+        {action:'getRegulamentoRapidoV222',args:[]},
+        {action:'getRegulamento',args:[]},
+        {action:'obterRegulamento',args:[]}
+      ]),
+      28000,
+      'Tempo limite ao carregar regulamento.'
+    );
+    const txt = normalizarRegTextoV222_(r);
+    if(!txt) throw new Error('Regulamento retornou vazio.');
+    setRegCacheV222_(txt);
+    return txt;
+  }
+
+  function htmlRegulamentoV222_(texto, status, classe){
+    return `
+      <div class="panel">
+        <h2>Regulamento</h2>
+        <div class="reg-box">${escapeHtml(texto || REG_FALLBACK_V222)}</div>
+        ${status ? `<div class="reg-status-v222 ${classe||''}">${escapeHtml(status)}</div>` : ''}
+        <div class="reg-actions-v222">
+          <button class="btn" onclick="atualizarRegulamentoManualV222()">Atualizar regulamento</button>
+          <button class="btn btn-light" onclick="renderHome()">Voltar ao início</button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.carregarRegulamentoCache_ = carregarRegulamentoCache_ = async function(segundoPlano=false){
+    const cached = getRegCacheV222_();
+    if(cached){
+      if(segundoPlano){
+        buscarRegulamentoApiV222_().catch(()=>{});
+      }
+      return cached;
+    }
 
     try{
-      const dados=await promiseTimeout_(
-        buscarResultadosPublicosV220_(),
-        18000,
-        'Tempo limite ao carregar últimos resultados.'
-      );
-      try{localStorage.setItem(CACHE_KEY_V220,JSON.stringify({ts:Date.now(),dados:dados}));}catch(e){}
-      renderLetreiroResultadosPublicosV213(dados);
+      return await buscarRegulamentoApiV222_();
     }catch(err){
-      box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis. Detalhe: '+escapeHtml(err.message||String(err))+'</div>';
+      return REG_FALLBACK_V222;
     }
   };
 
-  window.abrirModalResultadosPublicosV213 = function(){
-    const dados=normalizarRetornoResultadosV220_(window.PSS_RESULTADOS_PUBLICOS_V213||{});
-    const lista=Array.isArray(dados.resultados)?dados.resultados:[];
-    if(!lista.length){
-      abrirModal('Últimos resultados','<div class="notice info">Carregando últimos resultados...</div>');
-      carregarLetreiroResultadosPublicosV213(true).then(()=>abrirModalResultadosPublicosV213());
-      return;
-    }
+  window.renderRegulamento = renderRegulamento = async function(){
+    const cached = getRegCacheV222_();
+    const inicial = cached || REG_FALLBACK_V222;
 
-    abrirModal('Últimos resultados das loterias',`
-      <div class="resultados-modal-grid">
-        ${lista.map(r=>`
-          <article class="resultado-modal-card">
-            <span class="loteria-badge-modal" style="background:${escapeAttr(corLoteriaV220_(r))}">${escapeHtml(nomeLoteriaV220_(r))}</span>
-            <h4>${r.concurso?`Concurso ${escapeHtml(r.concurso)}`:'Resultado'}</h4>
-            <div class="meta"><strong>Data:</strong> ${escapeHtml(dataV220_(r.dataApuracao)||'-')}</div>
-            <div class="nums">${escapeHtml(dezenasV220_(r.dezenas))}</div>
-            <div class="meta">
-              ${r.acumulado!==undefined&&r.acumulado!==''?`<div><strong>Acumulou:</strong> ${escapeHtml(String(r.acumulado).toUpperCase()==='TRUE'?'Sim':String(r.acumulado))}</div>`:''}
-              ${r.valorEstimadoProxConcurso?`<div><strong>Próximo prêmio:</strong> ${escapeHtml(moeda(r.valorEstimadoProxConcurso))}</div>`:''}
-              ${r.dataProximoConcurso?`<div><strong>Próximo sorteio:</strong> ${escapeHtml(dataV220_(r.dataProximoConcurso))}</div>`:''}
-            </div>
-          </article>
-        `).join('')}
-      </div>
-      <div class="cache-hint ok" style="margin-top:12px;">Informações exibidas em formato resumido para consulta rápida.</div>
-    `);
+    setView(htmlRegulamentoV222_(
+      inicial,
+      cached
+        ? 'Regulamento carregado do cache deste aparelho. Atualizando em segundo plano...'
+        : 'Exibindo versão de segurança enquanto a API atualiza o regulamento em segundo plano.',
+      cached ? '' : 'warn'
+    ));
+
+    buscarRegulamentoApiV222_()
+      .then(txt=>{
+        if(ESTADO && ESTADO.view === 'regulamento'){
+          setView(htmlRegulamentoV222_(txt, 'Regulamento atualizado com sucesso.', ''));
+        }
+      })
+      .catch(err=>{
+        if(ESTADO && ESTADO.view === 'regulamento'){
+          const atual = getRegCacheV222_() || REG_FALLBACK_V222;
+          setView(htmlRegulamentoV222_(
+            atual,
+            'Não foi possível atualizar agora, mas a tela não ficará bloqueada. Detalhe: '+(err.message||String(err)),
+            'warn'
+          ));
+        }
+      });
   };
 
-  const renderHomePublicaBaseV220=window.renderHomePublica||renderHomePublica;
-  window.renderHomePublica=renderHomePublica=function(){
-    renderHomePublicaBaseV220();
-    if(typeof inserirEstruturaLetreiroV213_==='function')inserirEstruturaLetreiroV213_();
-    setTimeout(()=>carregarLetreiroResultadosPublicosV213(false),250);
+  window.atualizarRegulamentoManualV222 = async function(){
+    const box = document.getElementById('view');
+    if(box){
+      box.insertAdjacentHTML('afterbegin','<div class="notice info">Atualizando regulamento...</div>');
+    }
+    try{
+      const txt = await buscarRegulamentoApiV222_();
+      setView(htmlRegulamentoV222_(txt, 'Regulamento atualizado com sucesso.', ''));
+      toast('Regulamento atualizado.');
+    }catch(err){
+      toast('Não foi possível atualizar agora. Mantive a versão exibida na tela.', 'warn');
+      const atual = getRegCacheV222_() || REG_FALLBACK_V222;
+      setView(htmlRegulamentoV222_(atual, 'Falha ao atualizar agora. Detalhe: '+(err.message||String(err)), 'warn'));
+    }
+  };
+
+  window.abrirRegulamentoPublico = abrirRegulamentoPublico = async function(){
+    abrirModal('Regulamento', '<div class="reg-box">'+escapeHtml(getRegCacheV222_() || REG_FALLBACK_V222)+'</div><div class="reg-status-v222 warn">Atualizando em segundo plano...</div>');
+    buscarRegulamentoApiV222_()
+      .then(txt=>{
+        abrirModal('Regulamento', '<div class="reg-box">'+escapeHtml(txt)+'</div><div class="reg-status-v222">Regulamento atualizado.</div>');
+      })
+      .catch(()=>{});
+  };
+
+  /*
+   * Evita pré-carregar regulamento na fila junto com outros menus no mobile.
+   * Bolões e Telegram continuam pré-carregando; regulamento só atualiza quando abrir.
+   */
+  const preCarregarBaseV222 = window.preCarregarDadosEstaticos || preCarregarDadosEstaticos;
+  window.preCarregarDadosEstaticos = preCarregarDadosEstaticos = function(){
+    setTimeout(async()=>{
+      try{await carregarBoloes(true);}catch(e){}
+      try{await carregarTelegramCache_(true);}catch(e){}
+    },500);
   };
 })();
 
