@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V195_FIREBASE_AUTH_HOME_PUBLICA_TELEGRAM_LIMPEZA -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V197_PAGAMENTO_RAPIDO_MEIOS_EM_BACKGROUND -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V195</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V197</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -351,7 +351,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V195_FIREBASE_AUTH_HOME_PUBLICA_TELEGRAM_LIMPEZA',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V197_PAGAMENTO_RAPIDO_MEIOS_EM_BACKGROUND',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -3383,67 +3383,101 @@ async function renderPalpiteAberto(nome){
 
 async function abrirPagamentoBolao(loteria){
   const b=getBolaoByNome_(loteria);
-  abrirModal('Adquirir cotas',`<div class="notice info">Carregando meios de pagamento...</div>`);
+  const nome=b.loteria||b.nome||loteria;
+  const cacheKey='PSS_BOLAO_METODOS_PAGAMENTO_'+normalizar(nome).replace(/[^A-Z0-9]+/g,'_');
+  let listaCache=[];
+  try{
+    const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+    if(cached&&Array.isArray(cached.lista)&&Date.now()-Number(cached.ts||0)<10*60*1000){
+      listaCache=cached.lista;
+    }
+  }catch(e){listaCache=[];}
 
+  abrirModal('Adquirir cotas',renderCorpoAdquirirCotas_(b,nome,listaCache,listaCache.length===0));
+  setTimeout(()=>atualizarValorPagamentoModal(nome),80);
+
+  // V197: meios de pagamento carregam em segundo plano para o modal abrir instantaneamente.
+  carregarMetodosPagamentoModalAsync_(nome,b,cacheKey);
+}
+
+function renderCorpoAdquirirCotas_(b,nome,lista,carregando){
+  lista=Array.isArray(lista)?lista:[];
+  const valorCota=num(b.valorCota||0);
+  const parcelas=Math.max(1,num(b.qtdParcelas||b.parcelas||1)||1);
+  const disponiveis=num(b.cotasDisponiveis||b.cotasRestantes||b.disponiveis||0);
+  const qtdInicial=1;
+
+  return `
+    <div class="notice">
+      <strong>${escapeHtml(nome)}</strong><br>
+      Valor da cota: <strong>${escapeHtml(moeda(valorCota))}</strong><br>
+      ${disponiveis?`Cotas disponíveis agora: <strong>${escapeHtml(disponiveis)}</strong>`:''}
+    </div>
+
+    <div class="acq-box">
+      <h4>Quantidade e valor</h4>
+      <div class="acq-row">
+        <div class="field"><label>Quantidade de cotas</label><input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+        <div class="field"><label>Valor da cota</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
+        <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+        <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+      </div>
+
+      ${parcelas>1?`
+        <div class="pag-recorrente-box">
+          <h4>Parcelamento/recorrência opcional</h4>
+          <label class="checkline"><input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')"><span>Quero dividir o valor da cota em parcelas mensais.</span></label>
+          <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
+            <div class="field"><label>Quantidade de parcelas</label><input id="pagRecMeses" value="${escapeAttr(parcelas)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+            <div class="field"><label>Valor mensal estimado</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda((valorCota*qtdInicial)/parcelas))}"></div>
+            <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric"></div>
+            <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+          </div>
+          <div class="acq-help">Exemplo: se a cota custa R$ 500,00 e o bolão possui 10 parcelas, o participante pode programar 10 pagamentos de R$ 50,00. Essa opção só aparece quando o bolão possui mais de uma parcela.</div>
+        </div>
+      `:''}
+
+      <div class="actions" style="margin-top:12px;">
+        <button type="button" class="btn" onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
+        <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+      </div>
+    </div>
+
+    <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
+    <div id="metodosPagamentoBox">
+      ${renderMetodosPagamentoBox_(lista,b,nome,carregando)}
+    </div>
+  `;
+}
+
+function renderMetodosPagamentoBox_(lista,b,nome,carregando){
+  lista=Array.isArray(lista)?lista:[];
+  if(lista.length){
+    return `<div class="pay-method-grid">${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}</div>`;
+  }
+  if(carregando){
+    return '<div class="notice info">Carregando meios de pagamento em segundo plano. Você já pode registrar a aquisição ou enviar o comprovante.</div>';
+  }
+  return '<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>';
+}
+
+async function carregarMetodosPagamentoModalAsync_(nome,b,cacheKey){
+  const box=document.getElementById('metodosPagamentoBox');
   try{
     const dados=await apiMulti([
-      {action:'getDadosRecebimento',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]},
-      {action:'listarDadosRecebimento',dados:{email:ESTADO.email,loteria},args:[ESTADO.email,loteria]}
+      {action:'getDadosRecebimento',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]},
+      {action:'listarDadosRecebimento',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]}
     ]);
-
     const lista=Array.isArray(dados)?dados:(dados.dados||[]);
-    const nome=b.loteria||b.nome||loteria;
-    const valorCota=num(b.valorCota||0);
-    const parcelas=Math.max(1,num(b.qtdParcelas||b.parcelas||1)||1);
-    const qtdInicial=1;
-    b._valorPagamentoModalInicial=valorCota*qtdInicial;
-
-    document.getElementById('modalTitulo').textContent='Adquirir cotas';
-    document.getElementById('modalConteudo').innerHTML=`
-      <div class="notice">
-        <strong>${escapeHtml(nome)}</strong><br>
-        Valor da cota: <strong>${escapeHtml(moeda(valorCota))}</strong>
-      </div>
-
-      <div class="acq-box">
-        <h4>Quantidade e valor</h4>
-        <div class="acq-row">
-          <div class="field"><label>Quantidade de cotas</label><input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
-          <div class="field"><label>Valor da cota</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
-          <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
-          <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
-        </div>
-
-        ${parcelas>1?`
-          <div class="pag-recorrente-box">
-            <h4>Parcelamento/recorrência opcional</h4>
-            <label class="checkline"><input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')"><span>Quero dividir o valor da cota em parcelas mensais.</span></label>
-            <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
-              <div class="field"><label>Quantidade de parcelas</label><input id="pagRecMeses" value="${escapeAttr(parcelas)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
-              <div class="field"><label>Valor mensal estimado</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda((valorCota*qtdInicial)/parcelas))}"></div>
-              <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric"></div>
-              <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
-            </div>
-            <div class="acq-help">Exemplo: se a cota custa R$ 500,00 e o bolão possui 10 parcelas, o participante pode programar 10 pagamentos de R$ 50,00. Essa opção só aparece quando o bolão possui mais de uma parcela.</div>
-          </div>
-        `:''}
-
-        <div class="actions" style="margin-top:12px;">
-          <button type="button" class="btn" onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
-          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
-        </div>
-      </div>
-
-      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
-      ${lista.length?`
-        <div class="pay-method-grid">
-          ${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}
-        </div>
-      `:'<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>'}
-    `;
-    setTimeout(()=>atualizarValorPagamentoModal(nome),80);
+    try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),lista:lista}));}catch(e){}
+    if(box){
+      box.innerHTML=renderMetodosPagamentoBox_(lista,b,nome,false);
+      setTimeout(()=>atualizarValorPagamentoModal(nome),50);
+    }
   }catch(err){
-    document.getElementById('modalConteudo').innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
+    if(box){
+      box.innerHTML=`<div class="notice warn">Não foi possível carregar os meios de pagamento agora. Você pode registrar a aquisição e enviar o comprovante normalmente. Detalhe: ${escapeHtml(err.message||err)}</div>`;
+    }
   }
 }
 
@@ -4087,7 +4121,7 @@ function renderMetodoPagamento_(m,b,i){
   const PSSV178_renderInicioBase = renderInicio;
   renderInicio = async function(){
     await PSSV178_renderInicioBase();
-    if(isAdmin()) inserirAtalhoConsultaInicio_();
+    if(isAdmin() && typeof window.inserirAtalhoConsultaInicio_==='function') window.inserirAtalhoConsultaInicio_();
   };
 
   function garantirMenuConsultaAdmin_(){
@@ -4726,6 +4760,30 @@ function renderMetodoPagamento_(m,b,i){
 })();
 
 
+
+
+/* =====================================================================
+ * PATCH V196 — ATALHO CONSULTA ADMIN GLOBAL
+ * Corrige erro: inserirAtalhoConsultaInicio_ is not defined.
+ * ===================================================================== */
+window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || function(){
+  try{
+    const view=document.getElementById('view');
+    if(!view || document.getElementById('atalhoConsultaAdminInicio'))return;
+    const bloco=document.createElement('div');
+    bloco.id='atalhoConsultaAdminInicio';
+    bloco.className='admin-shortcut';
+    bloco.innerHTML=`
+      <h3>Consulta administrativa de participante</h3>
+      <p>Área restrita para consultar vínculos, cotas, comprovantes, pagamentos, palpites e histórico de cada participante.</p>
+      <div class="actions">
+        <button type="button" class="btn" onclick="navegar('consulta')">Abrir consulta</button>
+      </div>
+    `;
+    view.appendChild(bloco);
+  }catch(e){console.warn('Falha ao inserir atalho de consulta:',e);}
+};
+
 /* =====================================================================
  * PATCH V191 — INÍCIO SEM TIMEOUT DE BOLÕES
  * Correção focada:
@@ -4737,7 +4795,7 @@ function renderMetodoPagamento_(m,b,i){
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V195_FIREBASE_AUTH_HOME_PUBLICA_TELEGRAM_LIMPEZA'; }catch(e){}
+  try{ CONFIG.versao='V197_PAGAMENTO_RAPIDO_MEIOS_EM_BACKGROUND'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -4923,7 +4981,7 @@ function renderMetodoPagamento_(m,b,i){
         </div>
       `);
 
-      if(isAdmin()) inserirAtalhoConsultaInicio_();
+      if(isAdmin() && typeof window.inserirAtalhoConsultaInicio_==='function') window.inserirAtalhoConsultaInicio_();
       setTimeout(()=>window.pssV191AtualizarInicioBoloes(false),80);
     }catch(err){
       setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||err)}</div></div>`);
