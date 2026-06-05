@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V234_TELEGRAM_ENVIO_DIRETO_FORCADO_CORRIGIDO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V235_HOME_ULTRA_CACHE_PUBLICO_ATIVO_LETREIRO_FIX -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V234 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V235 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V234_TELEGRAM_ENVIO_DIRETO_FORCADO_CORRIGIDO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V235_HOME_ULTRA_CACHE_PUBLICO_ATIVO_LETREIRO_FIX',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5503,7 +5503,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V234_TELEGRAM_ENVIO_DIRETO_FORCADO_CORRIGIDO'; }catch(e){}
+  try{ CONFIG.versao='V235_HOME_ULTRA_CACHE_PUBLICO_ATIVO_LETREIRO_FIX'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -11540,6 +11540,419 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 /* FIM PATCH V234 */
 
 </script>
+
+
+  <style>
+    /* V235 — correção pública: ativo real + cache visível */
+    .v235-cache-chip{
+      display:inline-flex;
+      align-items:center;
+      margin-left:8px;
+      border-radius:999px;
+      padding:3px 8px;
+      background:#e3f7e9;
+      color:#064f1e;
+      font-size:10px;
+      font-weight:1000;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    .home-bolao-card.v235-ativo-publico .status-pill{
+      background:#d9f5df;
+      color:#003b12;
+    }
+    .v235-loading-line{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#123c74;
+      font-weight:900;
+    }
+    .v235-loading-line:before{
+      content:"";
+      width:12px;
+      height:12px;
+      border:2px solid currentColor;
+      border-top-color:transparent;
+      border-radius:50%;
+      animation:spinFast .7s linear infinite;
+    }
+  </style>
+
+
+  <script>
+/* =====================================================================
+ * PATCH V235 — HOME PÚBLICA ULTRA + FILTRO ATIVO REAL + LETREIRO COM CACHE
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  const HOME_KEY_V235='PSS_HOME_PUBLICA_SNAPSHOT_V235';
+  const HOME_KEY_V224='PSS_HOME_PUBLICA_SNAPSHOT_V224';
+  const RESULT_KEY_V235='PSS_RESULTADOS_PUBLICOS_V235';
+  const RESULT_KEY_V213='PSS_RESULTADOS_PUBLICOS_V213';
+  const BOLOES_KEY_V235='PSS_BOLOES_PUBLICOS_V235';
+  const BOLOES_KEY_V224='PSS_BOLOES_PUBLICOS_V224';
+  const TTL_HOME_V235=6*60*60*1000;
+
+  function v235Mob_(){
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+  }
+
+  function v235Txt_(v){
+    return String(v===undefined||v===null?'':v).trim();
+  }
+
+  function v235StatusAtivo_(status){
+    const st=normalizar(v235Txt_(status||'ATIVO'));
+    if(!st) return true;
+    if(st.includes('HIST')) return false;
+    if(st.includes('INAT')) return false;
+    if(st.includes('ENCERR')) return false;
+    if(st.includes('FINAL')) return false;
+    if(st.includes('CANCEL')) return false;
+    if(st.includes('EXCLU')) return false;
+    if(st==='NAO'||st==='NÃO'||st==='FALSE'||st==='0') return false;
+    return st==='ATIVO'||st==='SIM'||st==='TRUE'||st.includes('ABERTO')||st.includes('DISPON');
+  }
+
+  function v235FiltrarAtivos_(lista){
+    const usados={};
+    return listaSegura_(lista).filter(b=>{
+      const nome=v235Txt_(b.loteria||b.nome||b.NOME||b.LOTERIA);
+      if(!nome) return false;
+      return v235StatusAtivo_(b.status||b.STATUS||'ATIVO');
+    }).filter(b=>{
+      const key=normalizar((b.loteria||b.nome||'')+'|'+(b.dataSorteio||'')+'|'+(b.fimPagamento||'')).replace(/[^A-Z0-9]+/g,'_');
+      if(usados[key]) return false;
+      usados[key]=true;
+      return true;
+    }).sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
+  }
+
+  function v235ResultadosDados_(raw){
+    let d=raw||{};
+    if(d.dados!==undefined)d=d.dados;
+    if(d.result!==undefined)d=d.result;
+    if(d.resultadosPublicos)d=d.resultadosPublicos;
+    if(d.resultados_publicos)d=d.resultados_publicos;
+    return {
+      sucesso:d.sucesso!==false,
+      atualizadoEm:v235Txt_(d.atualizadoEm||d.dataHora||dataHoraAtualCurta()),
+      letreiroTexto:v235Txt_(d.letreiroTexto||d.letreiroResultadosTexto||''),
+      resultados:Array.isArray(d.resultados)?d.resultados:(Array.isArray(d.ultimosResultados)?d.ultimosResultados:[])
+    };
+  }
+
+  function v235Snapshot_(raw){
+    let s=raw||{};
+    if(s.dados!==undefined)s=s.dados;
+    if(s.result!==undefined)s=s.result;
+    const resultados=v235ResultadosDados_(s.resultadosPublicos||s.resultados_publicos||s.resultados||{});
+    const boloes=Array.isArray(s.boloesPublicosAtivos)?s.boloesPublicosAtivos:(Array.isArray(s.boloes)?s.boloes:[]);
+    const ativos=v235FiltrarAtivos_(boloes);
+    const nomes=Array.isArray(s.nomesLoterias)&&s.nomesLoterias.length
+      ? s.nomesLoterias.filter(n=>ativos.some(b=>v235Txt_(b.loteria||b.nome)===v235Txt_(n)))
+      : [...new Set(ativos.map(b=>b.loteria||b.nome).filter(Boolean))];
+    return {
+      sucesso:s.sucesso!==false,
+      versao:s.versao||'V235',
+      atualizadoEm:v235Txt_(s.atualizadoEm||s.dataHora||dataHoraAtualCurta()),
+      boloes:ativos,
+      boloesPublicosAtivos:ativos,
+      nomesLoterias:nomes,
+      resultadosPublicos:resultados,
+      cacheLocal:!!s.cacheLocal,
+      cacheServidor:!!s.cacheServidor
+    };
+  }
+
+  function v235TemBoloes_(s){
+    s=v235Snapshot_(s);
+    return Array.isArray(s.boloes)&&s.boloes.length>0;
+  }
+
+  function v235TemResultados_(s){
+    const r=v235Snapshot_(s).resultadosPublicos;
+    return !!((Array.isArray(r.resultados)&&r.resultados.length)||r.letreiroTexto);
+  }
+
+  function v235SetRaw_(key,dados){
+    try{localStorage.setItem(key,JSON.stringify({ts:Date.now(),dados:dados}));}catch(e){}
+  }
+
+  function v235GetRaw_(key,ttl,aceitarExpirado){
+    try{
+      const obj=JSON.parse(localStorage.getItem(key)||'null');
+      if(!obj||obj.dados===undefined)return null;
+      const expirado=Date.now()-Number(obj.ts||0)>(ttl||TTL_HOME_V235);
+      if(expirado&&!aceitarExpirado)return null;
+      return obj.dados;
+    }catch(e){return null;}
+  }
+
+  function v235SalvarSnapshot_(snap){
+    snap=v235Snapshot_(snap);
+    if(v235TemBoloes_(snap)||v235TemResultados_(snap)){
+      v235SetRaw_(HOME_KEY_V235,snap);
+      if(v235TemBoloes_(snap))v235SetRaw_(BOLOES_KEY_V235,{boloes:snap.boloes,nomesLoterias:snap.nomesLoterias,atualizadoEm:snap.atualizadoEm});
+      if(v235TemResultados_(snap)){
+        v235SetRaw_(RESULT_KEY_V235,snap.resultadosPublicos);
+        v235SetRaw_(RESULT_KEY_V213,snap.resultadosPublicos);
+      }
+    }
+  }
+
+  function v235LerSnapshotLocal_(aceitarExpirado){
+    const bases=[
+      v235GetRaw_(HOME_KEY_V235,TTL_HOME_V235,aceitarExpirado),
+      v235GetRaw_(HOME_KEY_V224,TTL_HOME_V235,aceitarExpirado),
+      null
+    ];
+    const result=v235GetRaw_(RESULT_KEY_V235,TTL_HOME_V235,aceitarExpirado)||v235GetRaw_(RESULT_KEY_V213,TTL_HOME_V235,aceitarExpirado);
+    const bol=v235GetRaw_(BOLOES_KEY_V235,TTL_HOME_V235,aceitarExpirado)||v235GetRaw_(BOLOES_KEY_V224,TTL_HOME_V235,aceitarExpirado);
+
+    bases[2]={resultadosPublicos:result||{},boloes:(bol&&bol.boloes)||[],nomesLoterias:(bol&&bol.nomesLoterias)||[],atualizadoEm:(bol&&bol.atualizadoEm)||dataHoraAtualCurta()};
+
+    for(const b of bases){
+      if(!b)continue;
+      const s=v235Snapshot_(b);
+      if(v235TemBoloes_(s)||v235TemResultados_(s)){
+        s.cacheLocal=true;
+        return s;
+      }
+    }
+    return null;
+  }
+
+  function v235ApiRapida_(action,dados,args,timeoutMs){
+    const t=timeoutMs||(v235Mob_()?7000:10000);
+    if(typeof apiRapidaV234_==='function'){
+      return apiRapidaV234_(action,dados||{},args||[],t);
+    }
+    if(typeof apiJsonpDireto_==='function'){
+      return apiJsonpDireto_(action,dados||{},args||[],t);
+    }
+    return promiseTimeout_(api(action,dados||{},args||[]),t,'Tempo limite na leitura rápida.');
+  }
+
+  async function v235BuscarSnapshotServidor_(forcar){
+    const t=v235Mob_()?8000:12000;
+    const raw=await Promise.any([
+      v235ApiRapida_('getHomePublicaUltraV235',{forcar:!!forcar},[!!forcar],t),
+      v235ApiRapida_('getHomePublicaRapidaV235',{forcar:!!forcar},[!!forcar],t),
+      v235ApiRapida_('getHomePublicaRapidaV224',{forcar:!!forcar},[!!forcar],t)
+    ]).catch(()=>{throw new Error('Snapshot público indisponível.');});
+    const s=v235Snapshot_(raw);
+    v235SalvarSnapshot_(s);
+    return s;
+  }
+
+  function v235InserirLetreiro_(){
+    if(document.getElementById('homeResultadosPublicosV213'))return;
+    const hero=document.querySelector('.home-hero');
+    const html=`
+      <section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">
+        <div class="resultados-publicos-head">
+          <div>
+            <h2>Últimos resultados das loterias</h2>
+            <small id="resultadosPublicosAtualizadoV213">Carregando informações...</small>
+          </div>
+          <button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button>
+        </div>
+        <div id="resultadosPublicosTickerV213">
+          <div class="notice info"><span class="v235-loading-line">Carregando últimos resultados...</span></div>
+        </div>
+        <div class="resultados-publicos-actions">
+          <span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span>
+          <button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213()">Ver todos os resultados</button>
+        </div>
+      </section>`;
+    if(hero)hero.insertAdjacentHTML('afterend',html);
+    else{
+      const view=document.getElementById('view');
+      if(view)view.insertAdjacentHTML('afterbegin',html);
+    }
+  }
+
+  const v235RenderLetreiroBase_=window.renderLetreiroResultadosPublicosV213;
+  function v235RenderResultados_(snapshot,fonte){
+    v235InserirLetreiro_();
+    const s=v235Snapshot_(snapshot);
+    const dados=s.resultadosPublicos;
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
+
+    if(v235TemResultados_(s)){
+      if(typeof v235RenderLetreiroBase_==='function'){
+        try{v235RenderLetreiroBase_(dados);}catch(e){}
+      }
+      if(box && (!box.innerHTML || box.innerHTML.includes('indisponíveis') || box.innerHTML.includes('Carregando'))){
+        if(typeof renderLetreiroResultadosPublicosV213==='function' && renderLetreiroResultadosPublicosV213!==v235RenderLetreiroBase_){
+          try{renderLetreiroResultadosPublicosV213(dados);}catch(e2){}
+        }
+      }
+      if(atualizado){
+        atualizado.innerHTML='Atualizado em '+escapeHtml(dados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta())+
+          '<span class="v235-cache-chip">'+escapeHtml(fonte||'cache')+'</span>';
+      }
+      window.PSS_RESULTADOS_PUBLICOS_V213=dados;
+      return;
+    }
+
+    if(box)box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis. Clique em Atualizar resultados novamente em instantes.</div>';
+  }
+
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    v235InserirLetreiro_();
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const local=v235LerSnapshotLocal_(true);
+
+    if(local&&!forcar&&v235TemResultados_(local)){
+      v235RenderResultados_(local,'cache');
+      v235BuscarSnapshotServidor_(false).then(s=>v235RenderResultados_(s,'atualizado')).catch(()=>{});
+      return;
+    }
+
+    if(box)box.innerHTML='<div class="notice info"><span class="v235-loading-line">Carregando últimos resultados...</span></div>';
+
+    try{
+      const s=await v235BuscarSnapshotServidor_(!!forcar);
+      if(v235TemResultados_(s)){v235RenderResultados_(s,'atualizado');return;}
+      const r=await Promise.any([
+        v235ApiRapida_('getResultadosLoteriasPublicos',{},[],v235Mob_()?7500:10000),
+        v235ApiRapida_('ultimosResultadosPublicos',{},[],v235Mob_()?7500:10000)
+      ]);
+      const snap={resultadosPublicos:v235ResultadosDados_(r),boloes:[],nomesLoterias:[],atualizadoEm:dataHoraAtualCurta()};
+      v235SalvarSnapshot_(snap);
+      v235RenderResultados_(snap,'direto');
+    }catch(err){
+      const fallback=v235LerSnapshotLocal_(true);
+      if(fallback&&v235TemResultados_(fallback)){v235RenderResultados_(fallback,'cache');return;}
+      if(box)box.innerHTML='<div class="home-note">Últimos resultados temporariamente indisponíveis. Clique em Atualizar resultados novamente em instantes.</div>';
+    }
+  };
+
+  function v235RenderCardBolao_(b){
+    const total=normalizarValorCard_(b.totalCotas||b.cotasTotal);
+    const adquiridas=normalizarValorCard_(b.cotasAdquiridas);
+    let disponiveis=b.cotasDisponiveis;
+    if((disponiveis===''||disponiveis===undefined||disponiveis===null) && total!=='-'){
+      disponiveis=Math.max(0,num(total)-num(adquiridas));
+    }
+
+    return `
+      <article class="home-bolao-card v235-ativo-publico">
+        <h3>${escapeHtml(b.loteria||b.nome||'Bolão')}</h3>
+        <span class="status-pill">ATIVO</span>
+        <div class="mini">
+          <div><b>Sorteio</b>${escapeHtml(formatarDataHoraPtBR(b.dataSorteio||'-'))}</div>
+          <div><b>Valor da cota</b>${escapeHtml(b.valorCota?moeda(b.valorCota):'-')}</div>
+          <div><b>Total de cotas</b>${escapeHtml(total)}</div>
+          <div><b>Cotas disponíveis</b>${escapeHtml(normalizarValorCard_(disponiveis))}</div>
+          <div><b>Pagamento</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPagamento||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPagamento||'-'))}</div>
+          <div><b>Palpites</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPalpite||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPalpite||'-'))}</div>
+          ${b.premiacao?`<div><b>Premiação</b>${escapeHtml(moeda(b.premiacao))}</div>`:''}
+          ${b.premioPorCota?`<div><b>Prêmio por cota</b>${escapeHtml(moeda(b.premioPorCota))}</div>`:''}
+        </div>
+      </article>`;
+  }
+
+  window.renderCardHomeBolao_=renderCardHomeBolao_=v235RenderCardBolao_;
+
+  function v235RenderBoloes_(snapshot,fonte){
+    const box=document.getElementById('homeBoloesPublicosConteudo');
+    const lotBox=document.getElementById('homeTodasLoteriasConteudo');
+    if(!box)return;
+
+    const s=v235Snapshot_(snapshot);
+    const ativos=v235FiltrarAtivos_(s.boloes).slice(0,8);
+    const nomes=s.nomesLoterias&&s.nomesLoterias.length?s.nomesLoterias:[...new Set(ativos.map(b=>b.loteria||b.nome).filter(Boolean))];
+
+    if(ativos.length){
+      box.innerHTML=`
+        <div class="home-public-top">
+          <span>Atualizado em ${escapeHtml(s.atualizadoEm||dataHoraAtualCurta())}<span class="v235-cache-chip">${escapeHtml(fonte||'cache')}</span></span>
+          <button type="button" class="btn btn-light btn-pill" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button>
+        </div>
+        <div class="home-public-grid">
+          ${ativos.map(v235RenderCardBolao_).join('')}
+        </div>
+        <div class="actions" style="margin-top:18px;">
+          <button class="btn" onclick="renderLogin()">Entrar para participar</button>
+          <button class="btn btn-light" onclick="abrirCadastro()">Solicitar cadastro</button>
+        </div>`;
+      if(lotBox&&nomes.length){
+        lotBox.innerHTML=`<div class="home-loterias-list">${nomes.slice(0,20).map(n=>`<span>${escapeHtml(n)}</span>`).join('')}</div>`;
+      }
+      return;
+    }
+
+    box.innerHTML=`
+      <div class="home-note">
+        Nenhum bolão ativo foi localizado no momento. Bolões inativos/históricos ficam ocultos da página pública.
+      </div>
+      <div class="actions" style="margin-top:14px;">
+        <button class="btn" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button>
+        <button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button>
+      </div>`;
+    if(lotBox)lotBox.innerHTML='<div class="home-loterias-list"><span>Consulte novamente em breve</span></div>';
+  }
+
+  window.carregarHomePublicaBoloes=carregarHomePublicaBoloes=async function(forcar){
+    const box=document.getElementById('homeBoloesPublicosConteudo');
+    const local=v235LerSnapshotLocal_(true);
+
+    if(local&&!forcar&&v235TemBoloes_(local)){
+      v235RenderBoloes_(local,'cache');
+      v235BuscarSnapshotServidor_(false).then(s=>v235RenderBoloes_(s,'atualizado')).catch(()=>{});
+      return;
+    }
+
+    if(box)box.innerHTML='<div class="notice info"><span class="v235-loading-line">Atualizando bolões ativos...</span></div>';
+
+    try{
+      const s=await v235BuscarSnapshotServidor_(!!forcar);
+      if(v235TemBoloes_(s)){v235RenderBoloes_(s,'atualizado');return;}
+
+      const lista=await Promise.any([
+        v235ApiRapida_('getBoloesAtivos',{},[],v235Mob_()?8000:11000),
+        v235ApiRapida_('listarBoloes',{},[''],v235Mob_()?8000:11000)
+      ]);
+      const ativos=v235FiltrarAtivos_(lista);
+      const snap={boloes:ativos,nomesLoterias:[...new Set(ativos.map(b=>b.loteria||b.nome).filter(Boolean))],atualizadoEm:dataHoraAtualCurta()};
+      v235SalvarSnapshot_(snap);
+      v235RenderBoloes_(snap,'direto');
+    }catch(err){
+      const fallback=v235LerSnapshotLocal_(true);
+      if(fallback&&v235TemBoloes_(fallback)){v235RenderBoloes_(fallback,'cache');return;}
+      if(box)box.innerHTML=`
+        <div class="home-note">Não foi possível carregar os bolões ativos automaticamente neste momento. Clique em Atualizar dados ou acesse a área restrita.</div>
+        <div class="actions" style="margin-top:14px;">
+          <button class="btn" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button>
+          <button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button>
+        </div>`;
+    }
+  };
+
+  const renderHomePublicaBaseV235=window.renderHomePublica||renderHomePublica;
+  window.renderHomePublica=renderHomePublica=function(){
+    renderHomePublicaBaseV235();
+
+    const local=v235LerSnapshotLocal_(true);
+    if(local){
+      if(v235TemResultados_(local))v235RenderResultados_(local,'cache');
+      if(v235TemBoloes_(local))v235RenderBoloes_(local,'cache');
+    }
+
+    setTimeout(()=>{
+      carregarLetreiroResultadosPublicosV213(false);
+      carregarHomePublicaBoloes(false);
+    }, v235Mob_()?120:80);
+  };
+
+})();
+  </script>
 
 </body>
 </html>
