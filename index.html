@@ -925,6 +925,8 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
+    /* V224-MOBILE: detecção mobile global */
+    function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
     const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V224_PERFORMANCE_SEM_CACHE_VAZIO_MOBILE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
@@ -1078,9 +1080,14 @@
     }
 
     function apiHibridaComFallback_(action,dados={},args=null){
-      return apiJsonpDireto_(action,dados,args,18000)
-        .catch(()=>apiPostMessageBridge_(action,dados,args,22000))
-        .catch(()=>apiWindowNameBridge_(action,dados,args,30000));
+      /* V224-MOBILE: no mobile usa timeout menor e pula direto para postMessage se JSONP falhar */
+      const mobile=(typeof isMobileV224_==='function'&&isMobileV224_())||(typeof navigator!=='undefined'&&/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||''));
+      const tJsonp=mobile?10000:18000;
+      const tBridge=mobile?16000:22000;
+      const tWindow=mobile?20000:30000;
+      return apiJsonpDireto_(action,dados,args,tJsonp)
+        .catch(()=>apiPostMessageBridge_(action,dados,args,tBridge))
+        .catch(()=>apiWindowNameBridge_(action,dados,args,tWindow));
     }
 
     function montarPayloadApi_(action,dados,args){
@@ -1419,7 +1426,7 @@
         </div>
       `;
 
-      const timeoutHome=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout_home_publica')),16000));
+      const timeoutHome=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout_home_publica')),(typeof isMobileV224_==='function'&&isMobileV224_())?10000:16000));
 
       try{
         const lista=listaSegura_(await Promise.race([carregarBoloes(),timeoutHome]));
@@ -1677,8 +1684,8 @@
     /**************** CACHE E PRÉ-CARREGAMENTO — V165 ****************/
 
     const CACHE_TTL = {
-      curto: 5 * 60 * 1000,
-      medio: 20 * 60 * 1000,
+      curto: 2 * 60 * 1000,
+      medio: 10 * 60 * 1000,
       longo: 6 * 60 * 60 * 1000
     };
 
@@ -1804,7 +1811,12 @@
       }
 
       const loader=async()=>{
-        const lista=await promiseTimeout_(apiMulti([{action:'getLoteriasPagamentoAtivas',args:[]},{action:'listarBoloes',args:[ESTADO.email]}]),16000,'Tempo limite ao carregar bolões.');
+        /* V224-MOBILE: tentativas paralelas no mobile; timeout menor */
+        const tOut=(typeof isMobileV224_==='function'&&isMobileV224_())?12000:16000;
+        const lista=await Promise.any([
+          promiseTimeout_(api('getLoteriasPagamentoAtivas',{email:ESTADO.email},[]),tOut,'t1'),
+          promiseTimeout_(api('listarBoloes',{email:ESTADO.email},[ESTADO.email]),tOut,'t2')
+        ]).catch(()=>{throw new Error('Tempo limite ao carregar bolões.');});
         const arr=Array.isArray(lista)?lista:(lista.boloes||lista.ativas||[]),map={};
         arr.forEach(b=>{
           const nome=b.loteria||b.nome||b.NOME||b.id||'';
@@ -5121,8 +5133,8 @@ function renderMetodoPagamento_(m,b,i){
   }
 
   document.addEventListener('DOMContentLoaded',function(){
-    setTimeout(pssV179PreAquecerDados_,800);
-    // V224: removida duplicata de pré-aquecimento (era 5000ms)
+    setTimeout(pssV179PreAquecerDados_,1200);
+    setTimeout(pssV179PreAquecerDados_,5000);
   });
 })();
 
@@ -7634,8 +7646,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   const navegarBaseV212=window.navegar||navegar;
   window.navegar=navegar=function(v){
     navegarBaseV212(v);
-    // V224: carregarTelegramCanalLogadoV212 removido do hook navegar (chamada a cada aba = desperdício).
-    // O canal Telegram já é carregado em aplicarLayoutLogado e renderInicio.
+    setTimeout(()=>carregarTelegramCanalLogadoV212(false),500);
   };
 
   const renderInicioBaseV212=window.renderInicio||renderInicio;
@@ -9085,9 +9096,46 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     return null;
   }
 
+  /* V224-MOBILE: detecta mobile e usa timeout menor + fetch como 2ª tentativa */
+  function isMobileV224_(){
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+  }
+
+  function apiFetchV224_(action,dados,args,timeoutMs){
+    return new Promise(function(resolve,reject){
+      const payload=typeof montarPayloadApi_==='function'?montarPayloadApi_(action,dados||{},args||null):(dados||{});
+      const params=new URLSearchParams();
+      params.set('action',action);
+      params.set('fn',action);
+      params.set('callback','PSS_FETCH_CB');
+      params.set('payload',JSON.stringify(Object.assign({},payload,{action:action})));
+      params.set('_',String(Date.now()));
+      const url=CONFIG.apiUrl+'?'+params.toString();
+      const ctrl=new AbortController();
+      const timer=setTimeout(()=>{ctrl.abort();reject(new Error('Timeout fetch V224'));},timeoutMs||14000);
+      fetch(url,{method:'GET',mode:'cors',signal:ctrl.signal})
+        .then(r=>r.text())
+        .then(txt=>{
+          clearTimeout(timer);
+          // GAS retorna callback(json) — extrai o JSON
+          const m=txt.match(/^[A-Za-z_$][A-Za-z0-9_$.]*\s*\((.+)\);?\s*$/s);
+          const json=JSON.parse(m?m[1]:txt);
+          if(typeof tratarRespostaApi_==='function')resolve(tratarRespostaApi_(json));
+          else resolve((json.dados!==undefined?json.dados:(json.result!==undefined?json.result:json)));
+        })
+        .catch(err=>{clearTimeout(timer);reject(err);});
+    });
+  }
+
   function apiRapidaV224_(action,dados,args,timeoutMs){
-    if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados||{},args||null,timeoutMs||18000);
-    return promiseTimeout_(api(action,dados||{},args||null),timeoutMs||18000,'Tempo limite na leitura pública.');
+    const mobile=isMobileV224_();
+    const tJsonp=mobile?10000:(timeoutMs||18000);
+    if(typeof apiJsonpDireto_==='function'){
+      return apiJsonpDireto_(action,dados||{},args||null,tJsonp)
+        .catch(()=>apiFetchV224_(action,dados,args,mobile?12000:14000));
+    }
+    return apiFetchV224_(action,dados,args,timeoutMs||14000)
+      .catch(()=>promiseTimeout_(api(action,dados||{},args||null),timeoutMs||18000,'Tempo limite na leitura pública.'));
   }
 
   function renderResultadosV224_(snapshot,fonte){
@@ -9141,16 +9189,21 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   }
 
   async function buscarSnapshotServidorV224_(forcar){
-    const raw=await apiRapidaV224_('getHomePublicaRapidaV224',{forcar:!!forcar},[!!forcar],22000);
+    const tOut=isMobileV224_()?14000:22000;
+    const raw=await apiRapidaV224_('getHomePublicaRapidaV224',{forcar:!!forcar},[!!forcar],tOut);
     const snap=dadosSnapshotV224_(raw);
     if(snapshotTemAlgumDadoV224_(snap))salvarSnapshotV224_(snap);
     return snap;
   }
 
   async function buscarResultadosDiretoV224_(){
-    const dados=await apiRapidaV224_('getResultadosLoteriasPublicos',{},[],18000)
-      .catch(()=>apiRapidaV224_('ultimosResultadosPublicos',{},[],18000))
-      .catch(()=>apiRapidaV224_('getConfigPublica',{},[],18000));
+    /* V224-MOBILE: tentativas paralelas em vez de sequenciais (era 3×18s em cadeia) */
+    const tOut=isMobileV224_()?12000:16000;
+    const dados=await Promise.any([
+      apiRapidaV224_('getResultadosLoteriasPublicos',{},[],tOut),
+      apiRapidaV224_('ultimosResultadosPublicos',{},[],tOut),
+      apiRapidaV224_('getConfigPublica',{},[],tOut)
+    ]).catch(()=>{ throw new Error('Resultados indisponíveis.'); });
     const final=dadosResultadoV224_(dados);
     if(final&&((Array.isArray(final.resultados)&&final.resultados.length)||final.letreiroTexto)){
       setLocalV224_(RESULTADOS_KEY_V224,final);
@@ -9161,7 +9214,12 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   }
 
   async function buscarBoloesDiretoV224_(){
-    const lista=listaSegura_(await apiRapidaV224_('getBoloesAtivos',{},[],22000).catch(()=>apiRapidaV224_('listarBoloes',{},[''],22000)));
+    /* V224-MOBILE: tentativas paralelas */
+    const tOut=isMobileV224_()?13000:20000;
+    const lista=listaSegura_(await Promise.any([
+      apiRapidaV224_('getBoloesAtivos',{},[],tOut),
+      apiRapidaV224_('listarBoloes',{},[''],tOut)
+    ]).catch(()=>{ throw new Error('Bolões indisponíveis.'); }));
     const nomes=[...new Set(lista.map(b=>b.loteria||b.nome).filter(Boolean))];
     const snap={boloes:lista,nomesLoterias:nomes,atualizadoEm:dataHoraAtualCurta()};
     setLocalV224_(BOLOES_KEY_V224,snap);
@@ -9215,10 +9273,12 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   const renderHomePublicaBaseV224=window.renderHomePublica||renderHomePublica;
   window.renderHomePublica=renderHomePublica=function(){
     renderHomePublicaBaseV224();
+    /* V224-MOBILE: delay maior no mobile para DOM estabilizar */
+    const delay=isMobileV224_()?250:120;
     setTimeout(()=>{
       carregarLetreiroResultadosPublicosV213(false);
       carregarHomePublicaBoloes(false);
-    },120);
+    },delay);
   };
 
   window.preCarregarDadosEstaticos = preCarregarDadosEstaticos = function(){
