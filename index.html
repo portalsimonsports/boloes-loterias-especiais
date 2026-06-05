@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V231_TELEGRAM_RESUMO_RECONSTRUIDO_NOTIFICACOES -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V233_TELEGRAM_ATIVO_COTAS_CONFIG_SEM_TIMEOUT -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V231 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V233 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -956,7 +956,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V231_TELEGRAM_RESUMO_RECONSTRUIDO_NOTIFICACOES',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V233_TELEGRAM_ATIVO_COTAS_CONFIG_SEM_TIMEOUT',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5482,7 +5482,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V231_TELEGRAM_RESUMO_RECONSTRUIDO_NOTIFICACOES'; }catch(e){}
+  try{ CONFIG.versao='V233_TELEGRAM_ATIVO_COTAS_CONFIG_SEM_TIMEOUT'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -10944,6 +10944,486 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       try{carregarBoloes(true).catch(function(){});}catch(e){}
       /* Regulamento, usuários, pagamentos, base, participantes e comprovantes ficam sob demanda. */
     },450);
+  };
+})();
+  </script>
+
+
+  <style>
+    /* V232 — Jogos realizados em modo link + super envio */
+    .v232-jogos-lista{display:grid;gap:10px;margin-top:14px}
+    .v232-jogos-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid #d7eadc;border-radius:12px;padding:12px 14px;box-shadow:0 5px 14px rgba(0,0,0,.05)}
+    .v232-jogos-row b{display:block;color:#003b12;font-size:15px}
+    .v232-jogos-row small{display:block;color:#5b6777;font-size:12px;margin-top:3px}
+    .v232-link-ver{border:1px solid #0b6f28;background:#fff;color:#0b6f28;border-radius:999px;padding:8px 14px;font-weight:1000;text-decoration:none;cursor:pointer;white-space:nowrap}
+    .v232-link-ver:hover{background:#0b6f28;color:#fff}
+    .v232-jogos-table{width:100%;border-collapse:separate;border-spacing:0 9px;margin-top:12px}
+    .v232-jogos-table th{text-align:left;font-size:11px;text-transform:uppercase;color:#536173;padding:0 10px}
+    .v232-jogos-table td{background:#fff;border-top:1px solid #d7eadc;border-bottom:1px solid #d7eadc;padding:12px 10px;font-size:13px;color:#152033;vertical-align:middle}
+    .v232-jogos-table td:first-child{border-left:1px solid #d7eadc;border-radius:12px 0 0 12px}
+    .v232-jogos-table td:last-child{border-right:1px solid #d7eadc;border-radius:0 12px 12px 0;text-align:right}
+    .v232-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+    .v232-upload-box{border:1px solid #cbded0;border-radius:14px;padding:16px;background:#fbfffc;margin:14px 0}
+    .v232-upload-box h3{margin:0 0 10px;color:#003b12}
+    .v232-upload-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .v232-super-note{border:1px solid #cfe8ff;background:#f3faff;color:#083b67;border-radius:10px;padding:10px 12px;font-weight:800;font-size:12px;margin:10px 0}
+    @media(max-width:760px){
+      .v232-jogos-row{grid-template-columns:1fr}
+      .v232-jogos-row .v232-link-ver{width:100%;text-align:center}
+      .v232-upload-meta{grid-template-columns:1fr}
+      .v232-jogos-table,.v232-jogos-table tbody,.v232-jogos-table tr,.v232-jogos-table td{display:block;width:100%}
+      .v232-jogos-table thead{display:none}
+      .v232-jogos-table tr{margin-bottom:10px;border:1px solid #d7eadc;border-radius:12px;background:#fff;overflow:hidden}
+      .v232-jogos-table td{border:0!important;border-radius:0!important;text-align:left!important}
+      .v232-jogos-table td:before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;color:#536173;font-weight:900;margin-bottom:4px}
+    }
+  </style>
+
+
+  <script>
+/* =====================================================================
+ * V232 — JOGOS REALIZADOS: LINK "VER" + PÁGINA DE DETALHES + SUPER ENVIO
+ * Base: V231/V230 otimizada
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  function jogosLoteriasCacheV232_(){
+    try{
+      if(Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) return ESTADO.boloes;
+      const chave = ESTADO.email ? 'boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_') : 'boloes_publicos';
+      const c = cacheGet_(chave,true);
+      if(Array.isArray(c) && c.length) return c;
+    }catch(e){}
+    return [];
+  }
+
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    setView(`
+      <div class="panel">
+        <h2>🎟️ Jogos realizados do bolão</h2>
+        <p>Escolha a loteria e clique em <strong>Ver</strong>. A lista de arquivos só será carregada depois do clique, para não travar o celular.</p>
+        <div id="jogosListaV232">
+          <div class="notice info">Carregando lista de bolões...</div>
+        </div>
+      </div>
+    `);
+
+    try{
+      let lista = jogosLoteriasCacheV232_();
+      if(!lista.length) lista = await carregarBoloes(true);
+      if(!lista.length) lista = await carregarBoloes();
+
+      const ativos = (lista || []).filter(b => b && b.loteria && !isHistorico(b));
+      const box = document.getElementById('jogosListaV232');
+      if(!box) return;
+
+      if(!ativos.length){
+        box.innerHTML = `
+          <div class="notice warn">Nenhum bolão ativo localizado para exibir jogos.</div>
+          <div class="v232-actions">
+            <button class="btn" onclick="renderJogosRealizados()">Atualizar</button>
+          </div>
+        `;
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="v232-jogos-lista">
+          ${ativos.map(b=>`
+            <div class="v232-jogos-row">
+              <div>
+                <b>${escapeHtml(b.loteria)}</b>
+                <small>${escapeHtml((b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+escapeHtml(b.dataSorteio):''}</small>
+              </div>
+              <button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${escapeAttr(encodeURIComponent(b.loteria))}')">Ver</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }catch(err){
+      const box = document.getElementById('jogosListaV232');
+      if(box){
+        box.innerHTML = `
+          <div class="notice error">${escapeHtml(err.message || err)}</div>
+          <div class="v232-actions"><button class="btn" onclick="renderJogosRealizados()">Tentar novamente</button></div>
+        `;
+      }
+    }
+  };
+
+  window.abrirPaginaJogosRealizadosV232 = async function(loteriaCod){
+    const loteria = decodeURIComponent(loteriaCod || '');
+    ESTADO.bolaoSelecionado = loteria;
+    localStorage.setItem('PSS_BOLAO_SELECIONADO', loteria);
+
+    setView(`
+      <div class="panel">
+        <div class="v232-actions">
+          <button class="btn btn-light" onclick="renderJogosRealizados()">← Voltar</button>
+          <button class="btn" onclick="carregarJogosRealizadosBolaoV232('${escapeAttr(encodeURIComponent(loteria))}',true)">Atualizar jogos</button>
+        </div>
+        <h2>🎟️ Jogos realizados — ${escapeHtml(loteria)}</h2>
+        <p>Todos os arquivos enviados para este bolão aparecem abaixo em formato de link.</p>
+
+        ${isAdmin()?renderUploadJogosV232_(loteria):''}
+
+        <div id="jogosDetalheV232">
+          <div class="notice info">Carregando jogos enviados...</div>
+        </div>
+      </div>
+    `);
+
+    carregarJogosRealizadosBolaoV232(encodeURIComponent(loteria),false);
+  };
+
+  function renderUploadJogosV232_(loteria){
+    return `
+      <div class="v232-upload-box">
+        <h3>⚡ Super envio dos jogos</h3>
+        <div class="v232-super-note">
+          Envio otimizado: vários arquivos são enviados em um único processamento, reduzindo chamadas ao Apps Script.
+        </div>
+        <form onsubmit="enviarJogoRealizadoBolaoV232(event)">
+          <input type="hidden" id="jogosBolaoV232" value="${escapeAttr(loteria)}">
+          <div class="v232-upload-meta">
+            <div class="field">
+              <label>Concurso / Identificação</label>
+              <input id="jogoConcurso" placeholder="Ex.: Concurso 1234 ou Jogo 01">
+            </div>
+            <div class="field">
+              <label>Data do jogo/aposta</label>
+              <input id="jogoData" type="date">
+            </div>
+          </div>
+          <div class="field">
+            <label>Observação</label>
+            <input id="jogoObs" placeholder="Opcional: descrição do jogo, volante, observação interna">
+          </div>
+          <div class="field">
+            <label>Arquivos dos jogos</label>
+            <input id="arquivoJogoRealizado" type="file" accept="image/*,.pdf,application/pdf" multiple required>
+          </div>
+          <button class="btn" id="btnEnviarJogoRealizado" type="submit">Enviar jogos realizados</button>
+          <div class="upload-progress-box" id="jogoUploadProgressBox">
+            <div class="upload-progress-top">
+              <span id="jogoUploadTitulo">Preparando envio...</span>
+              <span id="jogoUploadPercentual">0%</span>
+            </div>
+            <div class="upload-progress-bar">
+              <div class="upload-progress-fill" id="jogoUploadFill"></div>
+            </div>
+            <div class="upload-progress-detail" id="jogoUploadDetalhe">Aguardando arquivos...</div>
+          </div>
+        </form>
+      </div>
+    `;
+  }
+
+  window.carregarJogosRealizadosBolaoV232 = async function(loteriaCod,forcar){
+    const loteria = decodeURIComponent(loteriaCod || '');
+    const box = document.getElementById('jogosDetalheV232') || document.getElementById('jogosRealizadosConteudo');
+    if(!box) return;
+
+    const cacheNome = cacheKeyLoteria_('jogos',loteria);
+    const cached = !forcar ? cacheGet_(cacheNome,true) : null;
+
+    if(cached){
+      box.innerHTML = renderListaJogosRealizadosV232(extrairListaGenericaJogos_(cached),loteria) + `<div class="cache-hint ok">Lista exibida por cache. Atualizando em segundo plano...</div>`;
+    }else{
+      box.innerHTML = '<div class="notice info"><span class="loading-fast">Carregando jogos enviados...</span></div>';
+    }
+
+    try{
+      const r = await carregarJogosCache_(loteria,true,(novo)=>{
+        const b = document.getElementById('jogosDetalheV232') || document.getElementById('jogosRealizadosConteudo');
+        if(b) b.innerHTML = renderListaJogosRealizadosV232(extrairListaGenericaJogos_(novo),loteria);
+      });
+      box.innerHTML = renderListaJogosRealizadosV232(extrairListaGenericaJogos_(r),loteria);
+    }catch(err){
+      if(!cached){
+        box.innerHTML = `
+          <div class="notice warn">Não foi possível carregar os jogos enviados agora.</div>
+          <div class="v232-actions"><button class="btn btn-light" onclick="carregarJogosRealizadosBolaoV232('${escapeAttr(encodeURIComponent(loteria))}',true)">Tentar novamente</button></div>
+        `;
+      }
+    }
+  };
+
+  window.renderListaJogosRealizados = renderListaJogosRealizadosV232;
+
+  function renderListaJogosRealizadosV232(lista,loteria){
+    if(!Array.isArray(lista)||!lista.length){
+      return `<div class="notice warn">Nenhum jogo realizado localizado para ${escapeHtml(loteria||'este bolão')}.</div>`;
+    }
+
+    return `
+      <h3>Arquivos enviados — ${escapeHtml(loteria||'Bolão')}</h3>
+      <table class="v232-jogos-table">
+        <thead>
+          <tr>
+            <th>Loteria</th>
+            <th>Identificação</th>
+            <th>Data</th>
+            <th>Arquivo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lista.map((j,i)=>{
+            const url=j.url||j.URL||j.link||j.LINK||j.arquivo||j.ARQUIVO||j.imageUrl||j.IMAGE_URL||'';
+            const nome=j.nome||j.NOME||j.titulo||j.TITULO||j.concurso||j.CONCURSO||j.fileName||j.filename||j.nomeArquivo||`Jogo ${i+1}`;
+            const data=formatarDataHoraPtBR(j.data||j.DATA||j.dataJogo||j.DATA_JOGO||j.dataEnvio||j.DATA_ENVIO||'');
+            return `
+              <tr>
+                <td data-label="Loteria">${escapeHtml(j.loteria||j.LOTERIA||loteria||'-')}</td>
+                <td data-label="Identificação">${escapeHtml(nome||'-')}</td>
+                <td data-label="Data">${escapeHtml(data&&data!=='-'?data:'-')}</td>
+                <td data-label="Arquivo">${url?`<a class="v232-link-ver" href="${escapeAttr(url)}" target="_blank" rel="noopener">Ver</a>`:'-'}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  async function apiUploadJogosLoteV232_(arquivos,loteria,concurso,dataJogo,obs){
+    const dados = {email:ESTADO.email,loteria,arquivos,concurso,dataJogo,obs};
+    const args = [arquivos,ESTADO.email,loteria,concurso,dataJogo,obs];
+    return await apiPostFormWindowName_('uploadJogosRealizadosLoteBolao',dados,args,240000);
+  }
+
+  window.enviarJogoRealizadoBolaoV232 = async function(ev){
+    ev.preventDefault();
+
+    const loteria = document.getElementById('jogosBolaoV232')?.value || document.getElementById('jogosBolao')?.value || ESTADO.bolaoSelecionado || '';
+    const input = document.getElementById('arquivoJogoRealizado');
+    const btn = document.getElementById('btnEnviarJogoRealizado');
+    const files = input && input.files ? Array.from(input.files) : [];
+    const concurso = document.getElementById('jogoConcurso')?.value.trim() || '';
+    const dataJogoInput = document.getElementById('jogoData')?.value || '';
+    const dataJogo = dataJogoInput ? dataInputValorParaBR_(dataJogoInput) : '';
+    const obs = document.getElementById('jogoObs')?.value.trim() || '';
+
+    if(!loteria) return toast('Selecione a loteria/bolão.','error');
+    if(!files.length) return toast('Selecione ao menos um arquivo dos jogos.','error');
+
+    btn.disabled=true;
+    btn.textContent='Enviando...';
+    atualizarProgressoUploadJogos_(0.05,1,'Preparando super envio',`${files.length} arquivo(s) selecionado(s).`,'run');
+
+    try{
+      const arquivos = [];
+      for(let i=0;i<files.length;i++){
+        const file = files[i];
+        atualizarProgressoUploadJogos_((i/files.length)*0.45,1,`Lendo ${i+1}/${files.length}`,file.name,'run');
+        await aguardarFrame_();
+        const fileData = await lerArquivoBase64(file);
+        arquivos.push({fileData,fileName:file.name,mimeType:file.type,size:file.size});
+      }
+
+      atualizarProgressoUploadJogos_(0.55,1,'Enviando lote',`Enviando ${files.length} arquivo(s) em processamento único.`,'run');
+      await aguardarFrame_();
+
+      let r;
+      try{
+        r = await apiUploadJogosLoteV232_(arquivos,loteria,concurso,dataJogo,obs);
+      }catch(errLote){
+        atualizarProgressoUploadJogos_(0.62,1,'Lote falhou, usando envio seguro',errLote.message,'run');
+        for(let i=0;i<files.length;i++){
+          await apiUploadJogoRealizado_(arquivos[i].fileData,files[i],loteria,concurso,dataJogo,obs);
+        }
+        r = {sucesso:true,total:files.length,msg:'Arquivos enviados pelo modo seguro.'};
+      }
+
+      atualizarProgressoUploadJogos_(1,1,'Envio concluído',`${r.total||files.length} arquivo(s) enviado(s).`,'ok');
+      toast((r&&r.msg)||'Jogos realizados enviados com sucesso.');
+      cacheDel_(cacheKeyLoteria_('jogos',loteria));
+      input.value='';
+      setTimeout(()=>carregarJogosRealizadosBolaoV232(encodeURIComponent(loteria),true),650);
+    }catch(err){
+      atualizarProgressoUploadJogos_(0,1,'Falha no envio',err.message,'error');
+      toast(err.message,'error');
+    }finally{
+      btn.disabled=false;
+      btn.textContent='Enviar jogos realizados';
+    }
+  };
+
+  window.enviarJogoRealizadoBolao = window.enviarJogoRealizadoBolaoV232;
+})();
+  </script>
+
+
+  <style>
+    /* V233 — Config sem tela de erro por timeout */
+    .v233-config-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin:10px 0 16px;
+    }
+    .v233-config-source{
+      border:1px solid #d7eadc;
+      background:#f8fffa;
+      color:#003b12;
+      border-radius:10px;
+      padding:9px 12px;
+      font-size:12px;
+      font-weight:900;
+    }
+  </style>
+
+
+  <script>
+/* =====================================================================
+ * V233 — CONFIG SEM TIMEOUT + TELEGRAM: HISTÓRICO NÃO PUBLICA / ATIVO COM COTAS PUBLICA
+ * Base: V232
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  function cacheConfigBoloesV233_(){
+    return 'PSS_CONFIG_BOLOES_RAPIDO_V233_' + (ESTADO.email || 'admin').toLowerCase();
+  }
+
+  function normalizarListaConfigV233_(dados){
+    let lista = Array.isArray(dados) ? dados : (dados && (dados.boloes || dados.lista || dados.ativas || dados.dados)) || [];
+    lista = listaSegura_(lista).filter(b => b && (b.loteria || b.nome));
+    return lista.map(b => ({
+      id: b.id || b.ID || b.idBolao || b.ID_BOLAO || b.loteria || b.nome,
+      nome: b.nome || b.NOME || b.loteria || b.LOTERIA || '',
+      loteria: b.loteria || b.LOTERIA || b.nome || b.NOME || '',
+      status: b.status || b.STATUS || 'ATIVO',
+      dataSorteio: b.dataSorteio || b.DATA_SORTEIO || b.sorteio || '',
+      inicioPagamento: b.inicioPagamento || b.INICIO_PAGAMENTO || b.iniBol || b.INI_BOL || '',
+      fimPagamento: b.fimPagamento || b.FIM_PAGAMENTO || b.fimBol || b.FIM_BOL || b.PRAZO_PAGAMENTO || '',
+      inicioPalpite: b.inicioPalpite || b.INICIO_PALPITE || b.INICIO_PALPITES || b.iniPal || b.INI_PAL || '',
+      fimPalpite: b.fimPalpite || b.FIM_PALPITE || b.FIM_PALPITES || b.fimPal || b.FIM_PAL || b.PRAZO_PALPITES || '',
+      valorCota: b.valorCota || b.VALOR_COTA || '',
+      totalCotas: b.totalCotas || b.cotasTotal || b.TOTAL_COTAS || b.COTAS_TOTAL || '',
+      cotasTotal: b.cotasTotal || b.totalCotas || b.TOTAL_COTAS || b.COTAS_TOTAL || '',
+      cotasAdquiridas: b.cotasAdquiridas || b.cotasTotaisAdquiridas || b.COTAS_TOTAIS_ADQUIRIDAS || b.COTAS_ADQUIRIDAS || 0,
+      qtdParcelas: b.qtdParcelas || b.QTD_PARCELAS || '1',
+      premiacao: b.premiacao || b.PREMIACAO || b.PREMIAÇÃO || b.premio || '',
+      premioPorCota: b.premioPorCota || b.PREMIO_POR_COTA || b.PREMIACAO_POR_COTA || '',
+      range: b.range || b.RANGE || '',
+      qtdMin: b.qtdMin || b.QTD_MIN || '',
+      qtdMax: b.qtdMax || b.QTD_MAX || '',
+      qtdPalpite: b.qtdPalpite || b.QTD_PALPITE || ''
+    }));
+  }
+
+  async function carregarConfigBoloesRapidoV233_(forcar){
+    const key = cacheConfigBoloesV233_();
+
+    if(!forcar){
+      try{
+        const cache = JSON.parse(localStorage.getItem(key) || 'null');
+        if(cache && Date.now() - Number(cache.ts || 0) < 2 * 60 * 1000){
+          return {origem:'cache local', lista:normalizarListaConfigV233_(cache.lista)};
+        }
+      }catch(e){}
+
+      try{
+        const listaMemoria = normalizarListaConfigV233_(ESTADO.boloes || []);
+        if(listaMemoria.length) return {origem:'memória da tela', lista:listaMemoria};
+      }catch(e){}
+    }
+
+    const dados = await promiseTimeout_(apiMulti([
+      {action:'getConfigBoloesRapidoV233',dados:{email:ESTADO.email},args:[ESTADO.email]},
+      {action:'listarConfigBoloesRapidoV233',dados:{email:ESTADO.email},args:[ESTADO.email]}
+    ]), 30000, 'Tempo limite ao carregar configurações dos bolões.');
+
+    const lista = normalizarListaConfigV233_(dados);
+    try{
+      localStorage.setItem(key, JSON.stringify({ts:Date.now(), lista}));
+      ESTADO.boloes = lista;
+      cacheSet_('boloes_'+normalizar(ESTADO.email||'').replace(/[^A-Z0-9]+/g,'_'), lista, CACHE_TTL.curto || 60000);
+    }catch(e){}
+
+    return {origem:'planilha direta', lista};
+  }
+
+  function renderConfigCardV233_(b,i){
+    const ano = String(b.ano || b.ANO || new Date().getFullYear());
+    return `
+      <div class="config-card">
+        <h3>${escapeHtml(b.nome||b.loteria)} (${escapeHtml(ano)})</h3>
+        <div class="config-grid">
+          <div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div>
+          <div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div>
+          <div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div>
+          <div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div>
+          <div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div>
+          <div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div>
+          <div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div>
+          <div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.dataSorteio||''))}"></div>
+          <div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPagamento||''))}"></div>
+          <div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPagamento||''))}"></div>
+          <div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPalpite||''))}"></div>
+          <div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPalpite||''))}"></div>
+          <div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div>
+          <div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div>
+          <div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div>
+          <div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div>
+        </div>
+        <div class="actions" style="margin-top:14px;">
+          <button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button>
+          <button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button>
+          <button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.renderConfigBoloesAdmin = renderConfigBoloesAdmin = async function(forcar){
+    if(!isAdmin()){
+      setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');
+      return;
+    }
+
+    setView(`
+      <div class="panel">
+        <h2>⚙️ Configurações dos bolões ativos</h2>
+        <div class="notice info">Carregando configurações...</div>
+      </div>
+    `);
+
+    try{
+      const r = await carregarConfigBoloesRapidoV233_(!!forcar);
+      const lista = normalizarListaConfigV233_(r.lista)
+        .filter(b => !isHistorico(b) && normalizar(b.status).includes('ATIVO'));
+
+      window.PSS_CONFIG_BOLOES_LISTA = lista;
+
+      setView(`
+        <div class="panel">
+          <h2>⚙️ Configurações dos bolões ativos</h2>
+          <p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>
+          <div class="v233-config-top">
+            <div class="v233-config-source">Origem dos dados: ${escapeHtml(r.origem || 'planilha')}</div>
+            <button class="btn btn-light" onclick="renderConfigBoloesAdmin(true)">Atualizar configurações</button>
+          </div>
+          ${lista.length ? lista.map((b,i)=>renderConfigCardV233_(b,i)).join('') : '<div class="notice warn">Nenhum bolão ativo com configuração localizado.</div>'}
+        </div>
+      `);
+    }catch(err){
+      setView(`
+        <div class="panel">
+          <h2>⚙️ Configurações dos bolões ativos</h2>
+          <div class="notice warn">Não foi possível carregar os bolões agora sem demora. Isso não bloqueia os demais menus.</div>
+          <div class="notice error">${escapeHtml(err.message || err)}</div>
+          <div class="actions">
+            <button class="btn" onclick="renderConfigBoloesAdmin(true)">Tentar novamente</button>
+            <button class="btn btn-light" onclick="navegar('inicio')">Voltar ao início</button>
+          </div>
+        </div>
+      `);
+    }
   };
 })();
   </script>
