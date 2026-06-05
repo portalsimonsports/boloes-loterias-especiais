@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V223_PERFORMANCE_HOME_PUBLICA_CACHE_SNAPSHOT -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V224_PERFORMANCE_SEM_CACHE_VAZIO_MOBILE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V223</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V224</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -871,44 +871,43 @@
     }
 
   
-    /* V223 — Performance: home pública por snapshot/cache */
-    .home-note.soft-v223{
-      background:#f8fffa!important;
-      border-color:#d7eadc!important;
-      color:#003b12!important;
-    }
-    .home-note.warn-v223{
-      background:#fff9e8!important;
-      border-color:#ffd27a!important;
-      color:#7a4d00!important;
-    }
-    .snapshot-chip-v223{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
+    /* V224 — desempenho sem mensagem de cache vazio */
+    .home-note.v224-soft{
       border:1px solid #d7eadc;
       background:#f8fffa;
       color:#003b12;
+    }
+    .home-note.v224-warn{
+      border:1px solid #ffd27a;
+      background:#fff9e8;
+      color:#7a4d00;
+    }
+    .v224-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin-left:8px;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid rgba(11,111,40,.20);
+      background:#f8fffa;
+      color:#0b6f28;
       font-size:11px;
       font-weight:900;
-      margin-left:8px;
       white-space:nowrap;
     }
-    .home-public-top .snapshot-chip-v223{margin-left:0;}
-    .loading-dot-v223::after{
+    .v224-loading::after{
       content:'...';
       display:inline-block;
-      animation:pssDotsV223 1.4s infinite;
       width:18px;
       text-align:left;
+      animation:v224LoadingDots 1.1s steps(4,end) infinite;
     }
-    @keyframes pssDotsV223{
-      0%{content:''} 33%{content:'.'} 66%{content:'..'} 100%{content:'...'}
-    }
-    @media(max-width:760px){
-      .snapshot-chip-v223{font-size:10px;padding:5px 8px;margin-left:0;margin-top:6px;}
+    @keyframes v224LoadingDots{
+      0%{content:''}
+      25%{content:'.'}
+      50%{content:'..'}
+      75%,100%{content:'...'}
     }
 
   </style>
@@ -926,7 +925,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V223_PERFORMANCE_HOME_PUBLICA_CACHE_SNAPSHOT',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V224_PERFORMANCE_SEM_CACHE_VAZIO_MOBILE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -1678,8 +1677,8 @@
     /**************** CACHE E PRÉ-CARREGAMENTO — V165 ****************/
 
     const CACHE_TTL = {
-      curto: 2 * 60 * 1000,
-      medio: 10 * 60 * 1000,
+      curto: 5 * 60 * 1000,
+      medio: 20 * 60 * 1000,
       longo: 6 * 60 * 60 * 1000
     };
 
@@ -5122,8 +5121,8 @@ function renderMetodoPagamento_(m,b,i){
   }
 
   document.addEventListener('DOMContentLoaded',function(){
-    setTimeout(pssV179PreAquecerDados_,1200);
-    setTimeout(pssV179PreAquecerDados_,5000);
+    setTimeout(pssV179PreAquecerDados_,800);
+    // V224: removida duplicata de pré-aquecimento (era 5000ms)
   });
 })();
 
@@ -5442,7 +5441,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V223_PERFORMANCE_HOME_PUBLICA_CACHE_SNAPSHOT'; }catch(e){}
+  try{ CONFIG.versao='V224_PERFORMANCE_SEM_CACHE_VAZIO_MOBILE'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -7635,7 +7634,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   const navegarBaseV212=window.navegar||navegar;
   window.navegar=navegar=function(v){
     navegarBaseV212(v);
-    setTimeout(()=>carregarTelegramCanalLogadoV212(false),500);
+    // V224: carregarTelegramCanalLogadoV212 removido do hook navegar (chamada a cada aba = desperdício).
+    // O canal Telegram já é carregado em aplicarLayoutLogado e renderInicio.
   };
 
   const renderInicioBaseV212=window.renderInicio||renderInicio;
@@ -9001,230 +9001,230 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 
 /* =====================================================================
- * PATCH V223 — PERFORMANCE HOME PÚBLICA COM SNAPSHOT/CACHE
- * Objetivo:
- * - Abrir a página pública instantaneamente no mobile.
- * - Trocar 2/3 chamadas pesadas por uma chamada curta: getHomePublicaRapidaV223.
- * - Usar snapshot salvo no servidor + cache local do aparelho.
- * - Nunca deixar a tela pública travada por timeout de resultados/bolões.
+ * PATCH V224 — HOME PÚBLICA RÁPIDA SEM CACHE VAZIO
+ * - Volta a usar a base estável V222.
+ * - Usa snapshot rápido quando existir.
+ * - Se não existir snapshot, busca dados reais diretamente e salva cache.
+ * - Nunca exibe "ainda não há cache rápido" para o usuário.
  * ===================================================================== */
 (function(){
-  const SNAP_KEY_V223='PSS_HOME_PUBLICA_SNAPSHOT_V223';
-  const SNAP_TTL_LOCAL_V223=30*60*1000;
-  let snapshotPromiseV223=null;
+  const HOME_SNAPSHOT_KEY_V224='PSS_HOME_PUBLICA_SNAPSHOT_V224';
+  const RESULTADOS_KEY_V224='PSS_RESULTADOS_PUBLICOS_V213';
+  const BOLOES_KEY_V224='PSS_BOLOES_PUBLICOS_V224';
+  const TTL_HOME_V224=20*60*1000;
 
-  function normalizarSnapshotV223_(raw){
+  function txtV224_(v){return String(v===undefined||v===null?'':v).trim();}
+  function dadosResultadoV224_(raw){
+    let d=raw||{};
+    if(d.dados!==undefined)d=d.dados;
+    if(d.result!==undefined)d=d.result;
+    if(d.resultadosPublicos)d=d.resultadosPublicos;
+    if(d.resultados_publicos)d=d.resultados_publicos;
+    return d||{};
+  }
+  function dadosSnapshotV224_(raw){
     let s=raw||{};
     if(s.dados!==undefined)s=s.dados;
     if(s.result!==undefined)s=s.result;
-    const resultados=s.resultadosPublicos||s.resultados_publicos||s.resultados||{};
+    const resultados=dadosResultadoV224_(s.resultadosPublicos||s.resultados_publicos||s.resultados||{});
     return {
       sucesso:s.sucesso!==false,
-      atualizadoEm:String(s.atualizadoEm||s.dataHora||dataHoraAtualCurta()),
-      cacheServidor:!!s.cacheServidor,
-      cacheLocal:!!s.cacheLocal,
-      origem:s.origem||'',
-      resultadosPublicos: resultados.resultados?resultados:{
+      atualizadoEm:txtV224_(s.atualizadoEm||s.dataHora||dataHoraAtualCurta()),
+      resultadosPublicos:{
         sucesso:resultados.sucesso!==false,
-        atualizadoEm:resultados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta(),
-        letreiroTexto:resultados.letreiroTexto||s.letreiroTexto||'',
-        resultados:Array.isArray(resultados)?resultados:(resultados.resultados||[])
+        atualizadoEm:txtV224_(resultados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta()),
+        letreiroTexto:txtV224_(resultados.letreiroTexto||s.letreiroTexto||''),
+        resultados:Array.isArray(resultados)?resultados:(Array.isArray(resultados.resultados)?resultados.resultados:[])
       },
       boloes:Array.isArray(s.boloes)?s.boloes:[],
       nomesLoterias:Array.isArray(s.nomesLoterias)?s.nomesLoterias:[],
-      erros:s.erros||{}
+      origem:txtV224_(s.origem||''),
+      cacheServidor:!!s.cacheServidor,
+      cacheLocal:!!s.cacheLocal
     };
   }
-
-  function snapshotTemDadosV223_(s){
-    s=normalizarSnapshotV223_(s);
-    const temResultados=Array.isArray(s.resultadosPublicos.resultados)&&s.resultadosPublicos.resultados.length>0;
-    const temLetreiro=String(s.resultadosPublicos.letreiroTexto||'').trim();
-    const temBoloes=Array.isArray(s.boloes)&&s.boloes.length>0;
-    return !!(temResultados||temLetreiro||temBoloes);
+  function snapshotTemResultadosV224_(s){
+    s=dadosSnapshotV224_(s);
+    return !!((s.resultadosPublicos.resultados&&s.resultadosPublicos.resultados.length)||s.resultadosPublicos.letreiroTexto);
   }
-
-  function salvarSnapshotLocalV223_(s){
-    s=normalizarSnapshotV223_(s);
-    if(!snapshotTemDadosV223_(s))return;
-    try{localStorage.setItem(SNAP_KEY_V223,JSON.stringify({ts:Date.now(),dados:s}));}catch(e){}
-    try{localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V213',JSON.stringify({ts:Date.now(),dados:s.resultadosPublicos}));}catch(e){}
+  function snapshotTemBoloesV224_(s){
+    s=dadosSnapshotV224_(s);
+    return Array.isArray(s.boloes)&&s.boloes.length>0;
   }
+  function snapshotTemAlgumDadoV224_(s){return snapshotTemResultadosV224_(s)||snapshotTemBoloesV224_(s);}
 
-  function lerSnapshotLocalV223_(aceitarExpirado=true){
+  function setLocalV224_(key,dados){
+    try{localStorage.setItem(key,JSON.stringify({ts:Date.now(),dados:dados}));}catch(e){}
+  }
+  function getLocalV224_(key,ttl,aceitarExpirado){
     try{
-      const raw=localStorage.getItem(SNAP_KEY_V223);
-      if(raw){
-        const obj=JSON.parse(raw);
-        if(obj&&obj.dados){
-          const expirado=Date.now()-Number(obj.ts||0)>SNAP_TTL_LOCAL_V223;
-          if(!expirado||aceitarExpirado){
-            const s=normalizarSnapshotV223_(obj.dados);
-            if(snapshotTemDadosV223_(s)){s.cacheLocal=true;return s;}
-          }
-        }
-      }
-    }catch(e){}
-
-    try{
-      const r=JSON.parse(localStorage.getItem('PSS_RESULTADOS_PUBLICOS_V213')||'null');
-      if(r&&r.dados){
-        return normalizarSnapshotV223_({resultadosPublicos:r.dados,boloes:[],atualizadoEm:dataHoraAtualCurta(),cacheLocal:true});
-      }
-    }catch(e){}
+      const obj=JSON.parse(localStorage.getItem(key)||'null');
+      if(!obj||!obj.dados)return null;
+      const expirado=Date.now()-Number(obj.ts||0)>ttl;
+      if(expirado&&!aceitarExpirado)return null;
+      return obj.dados;
+    }catch(e){return null;}
+  }
+  function salvarSnapshotV224_(snap){
+    snap=dadosSnapshotV224_(snap);
+    if(!snapshotTemAlgumDadoV224_(snap))return;
+    setLocalV224_(HOME_SNAPSHOT_KEY_V224,snap);
+    if(snapshotTemResultadosV224_(snap))setLocalV224_(RESULTADOS_KEY_V224,snap.resultadosPublicos);
+    if(snapshotTemBoloesV224_(snap))setLocalV224_(BOLOES_KEY_V224,{boloes:snap.boloes,nomesLoterias:snap.nomesLoterias,atualizadoEm:snap.atualizadoEm});
+  }
+  function lerSnapshotLocalV224_(aceitarExpirado=true){
+    const s=getLocalV224_(HOME_SNAPSHOT_KEY_V224,TTL_HOME_V224,aceitarExpirado);
+    if(s&&snapshotTemAlgumDadoV224_(s)){const n=dadosSnapshotV224_(s);n.cacheLocal=true;return n;}
+    const r=getLocalV224_(RESULTADOS_KEY_V224,TTL_HOME_V224,aceitarExpirado);
+    const b=getLocalV224_(BOLOES_KEY_V224,TTL_HOME_V224,aceitarExpirado);
+    if(r||b){
+      const n=dadosSnapshotV224_({resultadosPublicos:r||{},boloes:(b&&b.boloes)||[],nomesLoterias:(b&&b.nomesLoterias)||[],atualizadoEm:(b&&b.atualizadoEm)||dataHoraAtualCurta()});
+      n.cacheLocal=true;
+      return n;
+    }
     return null;
   }
 
-  function apiPublicaRapidaV223_(action,dados,args,timeoutMs){
-    if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados||{},args||null,timeoutMs||8500);
-    return promiseTimeout_(api(action,dados||{},args||null),timeoutMs||8500,'Tempo limite na leitura rápida.');
+  function apiRapidaV224_(action,dados,args,timeoutMs){
+    if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados||{},args||null,timeoutMs||18000);
+    return promiseTimeout_(api(action,dados||{},args||null),timeoutMs||18000,'Tempo limite na leitura pública.');
   }
 
-  function renderResultadosSnapshotV223_(snapshot, origem){
+  function renderResultadosV224_(snapshot,fonte){
     if(typeof inserirEstruturaLetreiroV213_==='function')inserirEstruturaLetreiroV213_();
     const box=document.getElementById('resultadosPublicosTickerV213');
     const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
     if(!box)return;
-
-    const s=normalizarSnapshotV223_(snapshot);
-    const dados=s.resultadosPublicos||{};
-    const tem=(Array.isArray(dados.resultados)&&dados.resultados.length)||String(dados.letreiroTexto||'').trim();
-
-    if(tem){
-      try{renderLetreiroResultadosPublicosV213(dados);}catch(e){box.innerHTML='<div class="home-note warn-v223">Resultados carregados, mas houve falha visual. Clique em Atualizar resultados.</div>';}
+    const s=dadosSnapshotV224_(snapshot);
+    const dados=s.resultadosPublicos;
+    if(snapshotTemResultadosV224_(s)){
+      try{renderLetreiroResultadosPublicosV213(dados);}catch(e){box.innerHTML='<div class="home-note v224-warn">Resultados carregados. Atualize a página se o letreiro não aparecer.</div>';}
       if(atualizado){
         atualizado.innerHTML='Atualizado em '+escapeHtml(dados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta())+
-          (s.cacheLocal?'<span class="snapshot-chip-v223">Cache rápido</span>':'<span class="snapshot-chip-v223">Leitura rápida</span>');
+          '<span class="v224-chip">'+escapeHtml(fonte||'leitura rápida')+'</span>';
       }
       return;
     }
-
     if(atualizado)atualizado.textContent='Carregando informações...';
-    box.innerHTML='<div class="home-note soft-v223"><span class="loading-dot-v223">Atualizando últimos resultados em segundo plano</span></div>';
+    box.innerHTML='<div class="notice info"><span class="v224-loading">Carregando últimos resultados</span></div>';
   }
 
-  function renderBoloesSnapshotV223_(snapshot, opts){
-    opts=opts||{};
+  function renderBoloesV224_(snapshot,fonte){
     const box=document.getElementById('homeBoloesPublicosConteudo');
     const lotBox=document.getElementById('homeTodasLoteriasConteudo');
     if(!box)return;
-
-    const s=normalizarSnapshotV223_(snapshot);
+    const s=dadosSnapshotV224_(snapshot);
     const lista=Array.isArray(s.boloes)?s.boloes:[];
-    const ativos=lista
-      .filter(b=>!isHistorico(b)&&normalizar(b.status||'ATIVO').includes('ATIVO'))
-      .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')))
-      .slice(0,8);
-
+    const ativos=lista.filter(b=>!isHistorico(b)&&normalizar(b.status||'ATIVO').includes('ATIVO'))
+      .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||''))).slice(0,8);
     if(ativos.length){
       const nomes=s.nomesLoterias&&s.nomesLoterias.length?s.nomesLoterias:[...new Set(lista.map(b=>b.loteria||b.nome).filter(Boolean))];
       box.innerHTML=`
         <div class="home-public-top">
-          <span>Atualizado em ${escapeHtml(s.atualizadoEm||dataHoraAtualCurta())}</span>
-          <span class="snapshot-chip-v223">${s.cacheLocal?'Cache rápido':'Leitura rápida'}</span>
+          <span>Atualizado em ${escapeHtml(s.atualizadoEm||dataHoraAtualCurta())}<span class="v224-chip">${escapeHtml(fonte||'leitura rápida')}</span></span>
           <button type="button" class="btn btn-light btn-pill" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button>
         </div>
-        <div class="home-public-grid">
-          ${ativos.map(b=>renderCardHomeBolao_(b)).join('')}
-        </div>
+        <div class="home-public-grid">${ativos.map(b=>renderCardHomeBolao_(b)).join('')}</div>
         <div class="actions" style="margin-top:18px;">
           <button class="btn" onclick="renderLogin()">Entrar para participar</button>
           <button class="btn btn-light" onclick="abrirCadastro()">Solicitar cadastro</button>
-        </div>
-      `;
-      if(lotBox && nomes.length){
-        lotBox.innerHTML=`<div class="home-loterias-list">${nomes.slice(0,20).map(n=>`<span>${escapeHtml(n)}</span>`).join('')}</div>`;
-      }
+        </div>`;
+      if(lotBox&&nomes.length)lotBox.innerHTML=`<div class="home-loterias-list">${nomes.slice(0,20).map(n=>`<span>${escapeHtml(n)}</span>`).join('')}</div>`;
       return;
     }
-
     box.innerHTML=`
-      <div class="home-note soft-v223">
-        <span class="loading-dot-v223">Atualizando bolões ativos em segundo plano</span>
-      </div>
+      <div class="notice info"><span class="v224-loading">Atualizando bolões ativos</span></div>
       <div class="actions" style="margin-top:14px;">
         <button class="btn" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button>
         <button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button>
-      </div>
-    `;
+      </div>`;
   }
 
-  async function carregarSnapshotPublicoV223_(forcar){
-    const cache=lerSnapshotLocalV223_(true);
-    if(cache&&!forcar){
-      renderResultadosSnapshotV223_(cache,'cache');
-      renderBoloesSnapshotV223_(cache,{cache:true});
+  async function buscarSnapshotServidorV224_(forcar){
+    const raw=await apiRapidaV224_('getHomePublicaRapidaV224',{forcar:!!forcar},[!!forcar],22000);
+    const snap=dadosSnapshotV224_(raw);
+    if(snapshotTemAlgumDadoV224_(snap))salvarSnapshotV224_(snap);
+    return snap;
+  }
+
+  async function buscarResultadosDiretoV224_(){
+    const dados=await apiRapidaV224_('getResultadosLoteriasPublicos',{},[],18000)
+      .catch(()=>apiRapidaV224_('ultimosResultadosPublicos',{},[],18000))
+      .catch(()=>apiRapidaV224_('getConfigPublica',{},[],18000));
+    const final=dadosResultadoV224_(dados);
+    if(final&&((Array.isArray(final.resultados)&&final.resultados.length)||final.letreiroTexto)){
+      setLocalV224_(RESULTADOS_KEY_V224,final);
+      renderResultadosV224_({resultadosPublicos:final,atualizadoEm:final.atualizadoEm||dataHoraAtualCurta()},'direto');
+      return final;
     }
+    throw new Error('Resultados vazios.');
+  }
 
-    if(snapshotPromiseV223&&!forcar)return snapshotPromiseV223;
-
-    snapshotPromiseV223=apiPublicaRapidaV223_('getHomePublicaRapidaV223',{forcar:!!forcar},[!!forcar],9000)
-      .then(raw=>{
-        const snap=normalizarSnapshotV223_(raw);
-        if(snapshotTemDadosV223_(snap)){
-          salvarSnapshotLocalV223_(snap);
-          renderResultadosSnapshotV223_(snap,'api');
-          renderBoloesSnapshotV223_(snap,{api:true});
-        }else if(!cache){
-          renderResultadosSnapshotV223_(snap,'vazio');
-          renderBoloesSnapshotV223_(snap,{vazio:true});
-        }
-        return snap;
-      })
-      .catch(err=>{
-        const fallback=lerSnapshotLocalV223_(true);
-        if(fallback){
-          renderResultadosSnapshotV223_(fallback,'fallback');
-          renderBoloesSnapshotV223_(fallback,{fallback:true});
-          return fallback;
-        }
-        const box=document.getElementById('resultadosPublicosTickerV213');
-        if(box)box.innerHTML='<div class="home-note warn-v223">Ainda não há cache rápido neste aparelho. Clique em Atualizar resultados ou aguarde a atualização automática.</div>';
-        const hb=document.getElementById('homeBoloesPublicosConteudo');
-        if(hb)hb.innerHTML='<div class="home-note warn-v223">Ainda não há cache rápido dos bolões. Clique em Atualizar dados ou entre no sistema.</div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button><button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button></div>';
-        return null;
-      })
-      .finally(()=>{snapshotPromiseV223=null;});
-
-    return snapshotPromiseV223;
+  async function buscarBoloesDiretoV224_(){
+    const lista=listaSegura_(await apiRapidaV224_('getBoloesAtivos',{},[],22000).catch(()=>apiRapidaV224_('listarBoloes',{},[''],22000)));
+    const nomes=[...new Set(lista.map(b=>b.loteria||b.nome).filter(Boolean))];
+    const snap={boloes:lista,nomesLoterias:nomes,atualizadoEm:dataHoraAtualCurta()};
+    setLocalV224_(BOLOES_KEY_V224,snap);
+    renderBoloesV224_(snap,'direto');
+    return snap;
   }
 
   window.carregarLetreiroResultadosPublicosV213 = async function(forcar){
     if(typeof inserirEstruturaLetreiroV213_==='function')inserirEstruturaLetreiroV213_();
-    const cache=lerSnapshotLocalV223_(true);
-    if(cache&&!forcar){
-      renderResultadosSnapshotV223_(cache,'cache');
-      carregarSnapshotPublicoV223_(false).catch(()=>{});
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const local=lerSnapshotLocalV224_(true);
+    if(local&&!forcar&&snapshotTemResultadosV224_(local)){
+      renderResultadosV224_(local,'cache');
+      buscarSnapshotServidorV224_(false).then(s=>renderResultadosV224_(s,'atualizado')).catch(()=>{});
       return;
     }
-    const box=document.getElementById('resultadosPublicosTickerV213');
-    if(box&&!cache)box.innerHTML='<div class="notice info"><span class="loading-dot-v223">Carregando últimos resultados</span></div>';
-    await carregarSnapshotPublicoV223_(!!forcar);
+    if(box)box.innerHTML='<div class="notice info"><span class="v224-loading">Carregando últimos resultados</span></div>';
+    try{
+      const snap=await buscarSnapshotServidorV224_(!!forcar);
+      if(snapshotTemResultadosV224_(snap)){renderResultadosV224_(snap,'atualizado');return;}
+      await buscarResultadosDiretoV224_();
+    }catch(err){
+      const fallback=lerSnapshotLocalV224_(true);
+      if(fallback&&snapshotTemResultadosV224_(fallback)){renderResultadosV224_(fallback,'cache');return;}
+      if(box)box.innerHTML='<div class="home-note v224-warn">Últimos resultados temporariamente indisponíveis. Clique em Atualizar resultados novamente em instantes.</div>';
+    }
   };
 
   window.carregarHomePublicaBoloes = async function(forcar){
-    const cache=lerSnapshotLocalV223_(true);
-    if(cache&&!forcar){
-      renderBoloesSnapshotV223_(cache,{cache:true});
-      carregarSnapshotPublicoV223_(false).catch(()=>{});
+    const box=document.getElementById('homeBoloesPublicosConteudo');
+    const local=lerSnapshotLocalV224_(true);
+    if(local&&!forcar&&snapshotTemBoloesV224_(local)){
+      renderBoloesV224_(local,'cache');
+      buscarSnapshotServidorV224_(false).then(s=>renderBoloesV224_(s,'atualizado')).catch(()=>{});
       return;
     }
-    const box=document.getElementById('homeBoloesPublicosConteudo');
-    if(box&&!cache)box.innerHTML='<div class="notice info"><span class="loading-dot-v223">Carregando bolões ativos</span></div>';
-    await carregarSnapshotPublicoV223_(!!forcar);
+    if(box)box.innerHTML='<div class="notice info"><span class="v224-loading">Atualizando bolões ativos</span></div>';
+    try{
+      const snap=await buscarSnapshotServidorV224_(!!forcar);
+      if(snapshotTemBoloesV224_(snap)){renderBoloesV224_(snap,'atualizado');return;}
+      await buscarBoloesDiretoV224_();
+    }catch(err){
+      const fallback=lerSnapshotLocalV224_(true);
+      if(fallback&&snapshotTemBoloesV224_(fallback)){renderBoloesV224_(fallback,'cache');return;}
+      if(box)box.innerHTML=`
+        <div class="home-note v224-warn">Não foi possível carregar os bolões ativos automaticamente neste momento. Clique em Atualizar dados ou acesse a área restrita.</div>
+        <div class="actions" style="margin-top:14px;"><button class="btn" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button><button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button></div>`;
+    }
   };
 
-  const renderHomePublicaBaseV223=window.renderHomePublica||renderHomePublica;
+  const renderHomePublicaBaseV224=window.renderHomePublica||renderHomePublica;
   window.renderHomePublica=renderHomePublica=function(){
-    renderHomePublicaBaseV223();
-    setTimeout(()=>carregarSnapshotPublicoV223_(false),150);
+    renderHomePublicaBaseV224();
+    setTimeout(()=>{
+      carregarLetreiroResultadosPublicosV213(false);
+      carregarHomePublicaBoloes(false);
+    },120);
   };
 
   window.preCarregarDadosEstaticos = preCarregarDadosEstaticos = function(){
-    // V223: nada pesado na abertura. Menus carregam sob demanda.
     setTimeout(()=>{
-      try{carregarSnapshotPublicoV223_(false).catch(()=>{});}catch(e){}
-    },800);
+      try{buscarSnapshotServidorV224_(false).catch(()=>{});}catch(e){}
+    },1200);
   };
 })();
 
