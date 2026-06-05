@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V228_TOPO_LIMPO_INSCRITOS_APROVADOS_TELEGRAM_AUTO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V228 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V229 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -956,7 +956,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V228_TOPO_LIMPO_INSCRITOS_APROVADOS_TELEGRAM_AUTO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5482,7 +5482,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V228_TOPO_LIMPO_INSCRITOS_APROVADOS_TELEGRAM_AUTO'; }catch(e){}
+  try{ CONFIG.versao='V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -10620,6 +10620,179 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   };
 
   setInterval(removerBotoesTopoV228_,1500);
+})();
+  </script>
+
+
+  <style>
+    /* V229 — canal no início e inscritos corretos */
+    .v229-sistema-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .v229-telegram-sistema{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      border:1px solid rgba(255,255,255,.36);
+      background:rgba(255,255,255,.14);
+      color:#fff!important;
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:14px;
+      font-weight:1000;
+      text-decoration:none!important;
+      box-shadow:0 8px 18px rgba(0,0,0,.12);
+    }
+    .v229-telegram-sistema:hover{background:rgba(255,255,255,.23)}
+    .v229-inscritos-sistema{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.32);
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:14px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+  </style>
+
+
+  <script>
+/* =====================================================================
+ * PATCH V229 — INSCRITOS APROVADOS + CANAL TELEGRAM NO INÍCIO
+ * - Remove botão do canal apenas do menu superior.
+ * - Exibe canal dentro do bloco Sistema ativo para admin e usuário comum.
+ * - Força contagem pela aba SOLICITACOES_CADASTRO STATUS=Aprovado.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var LINK_CANAL_FALLBACK_V229 = 'https://t.me/boloesloteriasespeciais';
+
+  function localizarCardSistemaV229_(){
+    var h2s=[].slice.call(document.querySelectorAll('#view h2'));
+    var h=h2s.find(function(x){return String(x.textContent||'').trim().toLowerCase()==='sistema ativo';});
+    return h ? (h.closest('.panel') || h.parentElement) : null;
+  }
+
+  async function buscarResumoInscritosV229_(){
+    try{
+      localStorage.removeItem('PSS_RESUMO_INSCRITOS_TOPO');
+      localStorage.removeItem('PSS_RESUMO_INSCRITOS_TOPO_V228');
+      localStorage.removeItem('PSS_RESUMO_INSCRITOS_TOPO_V229');
+    }catch(e){}
+    return await apiMulti([
+      {action:'getResumoInscritosBoloes',args:[ESTADO.email]},
+      {action:'resumoInscritosBoloes',args:[ESTADO.email]}
+    ]);
+  }
+
+  function aplicarCardSistemaV229_(dados){
+    var card=localizarCardSistemaV229_();
+    if(!card) return;
+
+    var total=num((dados&&dados.totalInscritos)||(dados&&dados.total)||0);
+    var link=(dados&&dados.linkCanal)||LINK_CANAL_FALLBACK_V229;
+
+    var ps=[].slice.call(card.querySelectorAll('p'));
+    ps.forEach(function(p){
+      if((p.textContent||'').toLowerCase().indexOf('cadastros aprovados')>=0 || (p.textContent||'').toLowerCase().indexOf('abertura rápida')>=0){
+        p.textContent='Cadastros aprovados e canal oficial dos bolões.';
+      }
+    });
+
+    var old=card.querySelector('#sistemaAtivoInscritosV228');
+    if(old) old.remove();
+
+    var box=card.querySelector('#sistemaAtivoAcoesV229');
+    if(!box){
+      box=document.createElement('div');
+      box.id='sistemaAtivoAcoesV229';
+      box.className='v228-sistema-inscritos';
+      card.appendChild(box);
+    }
+
+    box.innerHTML=`
+      <span class="label">Participantes aprovados no cadastro</span>
+      <div class="v229-sistema-actions">
+        <button type="button" class="v229-inscritos-sistema" onclick="abrirResumoInscritosTopo()">👥 Inscritos: ${escapeHtml(total)}</button>
+        <a class="v229-telegram-sistema" href="${escapeAttr(link)}" target="_blank" rel="noopener">📣 Entrar no canal</a>
+      </div>
+    `;
+
+    window.PSS_RESUMO_INSCRITOS_TOPO=dados||{};
+  }
+
+  async function atualizarSistemaAtivoV229_(){
+    try{
+      var dados=await buscarResumoInscritosV229_();
+      aplicarCardSistemaV229_(dados);
+    }catch(e){
+      aplicarCardSistemaV229_({totalInscritos:0,total:0,usuariosAprovados:[],linkCanal:LINK_CANAL_FALLBACK_V229});
+    }
+  }
+
+  /* Canal não volta para o menu superior, mas aparece no Início. */
+  window.carregarTelegramCanalLogadoV212=function(){
+    document.querySelectorAll('#btnTelegramCanalTopo,.telegram-canal-topo,#badgeInscritosTopo,.badge-inscritos-topo').forEach(function(el){
+      try{el.style.display='none';el.classList.add('hidden');}catch(e){}
+    });
+    setTimeout(atualizarSistemaAtivoV229_,80);
+    return Promise.resolve({sucesso:true, canalNoInicio:true});
+  };
+
+  window.carregarBadgeInscritosTopo=async function(){
+    var el=document.getElementById('badgeInscritosTopo');
+    if(el){el.style.display='none';el.classList.add('hidden');}
+    return atualizarSistemaAtivoV229_();
+  };
+
+  window.abrirResumoInscritosTopo=async function(){
+    abrirModal('Cadastros aprovados','<div class="notice info">Atualizando cadastros aprovados...</div>');
+    try{
+      var dados=await buscarResumoInscritosV229_();
+      aplicarCardSistemaV229_(dados);
+      var usuarios=Array.isArray(dados.usuariosAprovados)?dados.usuariosAprovados:[];
+      var total=num(dados.totalInscritos||dados.total||usuarios.length||0);
+      document.getElementById('modalConteudo').innerHTML=`
+        <div class="notice"><strong>Total de aprovados no site:</strong> ${escapeHtml(total)}</div>
+        ${usuarios.length?`
+          <div class="resumo-inscritos-lista">
+            ${usuarios.map(function(u){return `
+              <div class="resumo-inscritos-item">
+                <strong>${escapeHtml(u.nome||u.email||'-')}</strong>
+                <span class="resumo-inscritos-num">${escapeHtml(u.email||'')}</span>
+              </div>`;}).join('')}
+          </div>
+        `:'<div class="notice warn">A API retornou total, mas não retornou a lista detalhada. Execute diagnosticarInscritosV229 no Apps Script.</div>'}
+      `;
+    }catch(err){
+      document.getElementById('modalConteudo').innerHTML='<div class="notice error">'+escapeHtml(err.message||err)+'</div>';
+    }
+  };
+
+  var renderInicioBaseV229=window.renderInicio||renderInicio;
+  window.renderInicio=renderInicio=async function(){
+    var r=await renderInicioBaseV229.apply(this,arguments);
+    setTimeout(atualizarSistemaAtivoV229_,120);
+    return r;
+  };
+
+  var navBaseV229=window.navegar||navegar;
+  window.navegar=navegar=function(v){
+    var r=navBaseV229.apply(this,arguments);
+    if(v==='inicio') setTimeout(atualizarSistemaAtivoV229_,220);
+    return r;
+  };
+
+  setTimeout(atualizarSistemaAtivoV229_,500);
 })();
   </script>
 
