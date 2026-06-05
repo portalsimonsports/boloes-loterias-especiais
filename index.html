@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V230_MENUS_PESADOS_SOB_DEMANDA_MOBILE -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V229 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V230 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -956,7 +956,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V230_MENUS_PESADOS_SOB_DEMANDA_MOBILE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5482,7 +5482,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX'; }catch(e){}
+  try{ CONFIG.versao='V230_MENUS_PESADOS_SOB_DEMANDA_MOBILE'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -10793,6 +10793,158 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   };
 
   setTimeout(atualizarSistemaAtivoV229_,500);
+})();
+  </script>
+
+
+  <style>
+    /* V230 — menus pesados sob demanda */
+    .v230-fast-panel{border-left:5px solid #0b6f28!important;}
+    .v230-fast-grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:14px;margin-top:16px;}
+    .v230-fast-card{border:1px solid #d7eadc;background:#fbfffc;border-radius:14px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.05);}
+    .v230-fast-card h3{margin:0 0 8px;color:#003b12;font-size:16px;}
+    .v230-fast-card p{margin:0 0 12px;color:#40566f;font-size:13px;line-height:1.45;}
+    .v230-fast-note{border:1px solid #d2e3fc;background:#f5f9ff;color:#073b68;border-radius:12px;padding:12px 14px;font-size:13px;font-weight:800;line-height:1.45;margin:12px 0;}
+    .v230-fast-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+    .v230-light-table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top:10px;}
+    .v230-light-table td,.v230-light-table th{padding:10px;border:1px solid #d7eadc;background:#fff;text-align:left;font-size:13px;}
+    .v230-light-table th{background:#f3fff6;color:#003b12;font-weight:1000;}
+    @media(max-width:900px){.v230-fast-grid{grid-template-columns:1fr}}
+  </style>
+
+
+  <script>
+/* =====================================================================
+ * PATCH V230 — MENUS PESADOS SOB DEMANDA / MOBILE MAIS LEVE
+ * Base: V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX
+ * Não altera menus já rápidos: início, bolões, palpite, jogos, especiais,
+ * regulamento, config e página pública.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  const V230 = {
+    renderComprovanteBase: window.renderComprovante,
+    renderPagamentosBase: window.renderPagamentosAdmin,
+    renderUsuariosBase: window.renderUsuariosAdmin,
+    renderSolicitacoesBase: window.renderSolicitacoesAdmin,
+    renderBaseLoteriasBase: window.renderBaseLoteriasAdmin,
+    renderParticipantesBase: window.renderParticipantesBolaoAdmin,
+    renderConsultaBase: window.renderConsultaParticipanteAdmin
+  };
+
+  function painelRapidoV230_(titulo, subtitulo, cards){
+    setView(`
+      <div class="panel v230-fast-panel">
+        <h2>${escapeHtml(titulo)}</h2>
+        <p>${escapeHtml(subtitulo||'')}</p>
+        <div class="v230-fast-note">
+          Este menu foi colocado em carregamento sob demanda para não travar a abertura no celular. Clique apenas no bloco que deseja consultar ou atualizar.
+        </div>
+        <div class="v230-fast-grid">
+          ${cards.map(c=>`
+            <div class="v230-fast-card">
+              <h3>${escapeHtml(c.titulo)}</h3>
+              <p>${escapeHtml(c.texto||'')}</p>
+              <button class="btn" onclick="${c.acao}">${escapeHtml(c.botao||'Carregar')}</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `);
+  }
+
+  function rodarPesadoV230_(label, fn){
+    loading(label || 'Carregando dados');
+    setTimeout(function(){
+      try{
+        const r = fn && fn();
+        if(r && typeof r.catch === 'function') r.catch(err=>setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||err)}</div><button class="btn btn-light" onclick="navegar('inicio')">Voltar ao início</button></div>`));
+      }catch(err){
+        setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||err)}</div><button class="btn btn-light" onclick="navegar('inicio')">Voltar ao início</button></div>`);
+      }
+    },60);
+  }
+
+  window.v230CarregarComprovanteCompleto = function(){rodarPesadoV230_('Carregando comprovante', V230.renderComprovanteBase);};
+  window.v230CarregarPagamentosCompleto = function(tab){rodarPesadoV230_('Carregando pagamentos', ()=>V230.renderPagamentosBase(tab||'efetuados'));};
+  window.v230CarregarUsuariosCompleto = function(){rodarPesadoV230_('Carregando usuários', V230.renderUsuariosBase);};
+  window.v230CarregarSolicitacoesCompleto = function(){rodarPesadoV230_('Carregando solicitações', V230.renderSolicitacoesBase);};
+  window.v230CarregarBaseLoteriasCompleto = function(){rodarPesadoV230_('Carregando base de loterias', V230.renderBaseLoteriasBase);};
+  window.v230CarregarParticipantesCompleto = function(){rodarPesadoV230_('Carregando participantes por bolão', V230.renderParticipantesBase);};
+  window.v230CarregarConsultaCompleto = function(){rodarPesadoV230_('Carregando consulta administrativa', V230.renderConsultaBase);};
+
+  window.renderComprovante = renderComprovante = async function(){
+    painelRapidoV230_('Comprovantes', 'Envio e consulta de comprovantes.', [
+      {titulo:'Enviar comprovante', texto:'Abrir formulário de envio próprio ou de terceiro. Carrega a lista de bolões somente ao abrir.', botao:'Abrir envio', acao:'v230CarregarComprovanteCompleto()'},
+      {titulo:'Pagamentos', texto:'Para conferir baixas, OCR e comprovantes processados, abra o menu Pagamentos sob demanda.', botao:'Abrir pagamentos', acao:"navegar('pagamentos')"},
+      {titulo:'Voltar ao início', texto:'Retorna ao painel principal sem carregar planilhas grandes.', botao:'Voltar', acao:"navegar('inicio')"}
+    ]);
+  };
+
+  window.renderPagamentosAdmin = renderPagamentosAdmin = async function(tab){
+    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
+    painelRapidoV230_('Pagamentos', 'Resumo, comprovantes, recebimentos e conferências.', [
+      {titulo:'Pagamentos efetuados', texto:'Carrega a visão completa de pagamentos somente agora.', botao:'Carregar pagamentos', acao:"v230CarregarPagamentosCompleto('efetuados')"},
+      {titulo:'Resumo financeiro', texto:'Abre o painel de pagamentos para conferir resumo e baixas.', botao:'Carregar resumo', acao:"v230CarregarPagamentosCompleto('resumo')"},
+      {titulo:'Dados de recebimento', texto:'Abre o painel de dados de recebimento quando necessário.', botao:'Carregar recebimento', acao:"v230CarregarPagamentosCompleto('recebimento')"}
+    ]);
+  };
+
+  window.renderUsuariosAdmin = renderUsuariosAdmin = async function(){
+    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
+    painelRapidoV230_('Usuários', 'Administração de usuários cadastrados.', [
+      {titulo:'Carregar usuários', texto:'Lista completa de usuários e permissões. Pode demorar porque consulta a planilha.', botao:'Carregar agora', acao:'v230CarregarUsuariosCompleto()'},
+      {titulo:'Solicitações', texto:'Para aprovar novos cadastros, abra solicitações sob demanda.', botao:'Abrir solicitações', acao:"navegar('solicitacoes')"},
+      {titulo:'Voltar ao início', texto:'Não carrega nenhuma tabela pesada.', botao:'Voltar', acao:"navegar('inicio')"}
+    ]);
+  };
+
+  window.renderSolicitacoesAdmin = renderSolicitacoesAdmin = async function(){
+    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
+    painelRapidoV230_('Solicitações de cadastro', 'Aprovação, recusa e consulta de cadastros.', [
+      {titulo:'Carregar solicitações', texto:'Carrega pendentes, aprovadas e recusadas somente quando você pedir.', botao:'Carregar agora', acao:'v230CarregarSolicitacoesCompleto()'},
+      {titulo:'Diagnóstico de inscritos', texto:'Conferir a contagem dos aprovados usada no bloco Sistema ativo.', botao:'Ver inscritos', acao:'abrirResumoInscritosTopo()'},
+      {titulo:'Voltar ao início', texto:'Retorna sem nova leitura pesada.', botao:'Voltar', acao:"navegar('inicio')"}
+    ]);
+  };
+
+  window.renderBaseLoteriasAdmin = renderBaseLoteriasAdmin = async function(){
+    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
+    painelRapidoV230_('Base Loterias', 'Modelos de loterias, range e quantidades.', [
+      {titulo:'Carregar base completa', texto:'Abre a base da planilha somente sob demanda.', botao:'Carregar agora', acao:'v230CarregarBaseLoteriasCompleto()'},
+      {titulo:'Criar por modelo rápido', texto:'Use o menu Especiais, que já está pré-configurado e abre mais rápido.', botao:'Abrir especiais', acao:"navegar('especiais')"},
+      {titulo:'Voltar ao início', texto:'Retorna ao painel principal.', botao:'Voltar', acao:"navegar('inicio')"}
+    ]);
+  };
+
+  window.renderParticipantesBolaoAdmin = renderParticipantesBolaoAdmin = async function(){
+    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
+    painelRapidoV230_('Participantes por bolão', 'Consulta administrativa de vínculos e cotas.', [
+      {titulo:'Carregar participantes', texto:'Abre a lista completa apenas quando necessário.', botao:'Carregar agora', acao:'v230CarregarParticipantesCompleto()'},
+      {titulo:'Consulta individual', texto:'Para buscar uma pessoa específica, use a consulta administrativa.', botao:'Abrir consulta', acao:"navegar('consulta')"},
+      {titulo:'Voltar ao início', texto:'Retorna sem carregar planilhas.', botao:'Voltar', acao:"navegar('inicio')"}
+    ]);
+  };
+
+  if(typeof window.renderConsultaParticipanteAdmin === 'function'){
+    window.renderConsultaParticipanteAdmin = async function(){
+      if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
+      painelRapidoV230_('Consulta administrativa', 'Busca detalhada de participante, cotas, comprovantes e palpites.', [
+        {titulo:'Abrir consulta completa', texto:'Carrega o módulo completo de consulta individual somente agora.', botao:'Abrir consulta', acao:'v230CarregarConsultaCompleto()'},
+        {titulo:'Participantes por bolão', texto:'Abre o menu de participantes por bolão.', botao:'Abrir participantes', acao:"navegar('participantes')"},
+        {titulo:'Voltar ao início', texto:'Retorna ao painel principal.', botao:'Voltar', acao:"navegar('inicio')"}
+      ]);
+    };
+  }
+
+  /* Evita pré-cargas desnecessárias depois do login. Mantém somente o que já é leve. */
+  window.preCarregarDadosEstaticos = preCarregarDadosEstaticos = function(){
+    setTimeout(function(){
+      try{carregarBoloes(true).catch(function(){});}catch(e){}
+      /* Regulamento, usuários, pagamentos, base, participantes e comprovantes ficam sob demanda. */
+    },450);
+  };
 })();
   </script>
 
