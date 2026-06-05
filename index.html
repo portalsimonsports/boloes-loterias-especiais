@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V227_FRACIONADA_TERCEIRO_INSCRITOS_CORRETO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V228_TOPO_LIMPO_INSCRITOS_APROVADOS_TELEGRAM_AUTO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V227 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V228 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -956,7 +956,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V227_FRACIONADA_TERCEIRO_INSCRITOS_CORRETO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V228_TOPO_LIMPO_INSCRITOS_APROVADOS_TELEGRAM_AUTO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5482,7 +5482,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V227_FRACIONADA_TERCEIRO_INSCRITOS_CORRETO'; }catch(e){}
+  try{ CONFIG.versao='V228_TOPO_LIMPO_INSCRITOS_APROVADOS_TELEGRAM_AUTO'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5645,7 +5645,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
             <div class="col-4">
               <div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
                 <h2 style="color:#fff;font-size:32px;">Sistema ativo</h2>
-                <p style="color:#fff;">Abertura rápida sem travar no carregamento da planilha.</p>
+                <p style="color:#fff;">Cadastros aprovados no site.</p>
                 <div style="margin-top:30px;font-weight:800;" data-live-clock>${escapeHtml(dataHoraAtualCurta())}</div>
               </div>
             </div>
@@ -10391,6 +10391,235 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }
   };
 
+})();
+  </script>
+
+
+  <style>
+    /* V228 — topo mais leve: remove botões extras do menu superior */
+    #btnTelegramCanalTopo,
+    .telegram-canal-topo,
+    #badgeInscritosTopo,
+    .badge-inscritos-topo{
+      display:none!important;
+      visibility:hidden!important;
+      width:0!important;
+      min-width:0!important;
+      max-width:0!important;
+      padding:0!important;
+      margin:0!important;
+      border:0!important;
+      overflow:hidden!important;
+      pointer-events:none!important;
+    }
+
+    .v228-sistema-inscritos{
+      margin-top:16px;
+      border-top:1px solid rgba(255,255,255,.22);
+      padding-top:14px;
+    }
+    .v228-sistema-inscritos .label{
+      display:block;
+      color:rgba(255,255,255,.88);
+      font-size:13px;
+      font-weight:800;
+      line-height:1.35;
+      margin-bottom:5px;
+    }
+    .v228-sistema-inscritos button{
+      border:1px solid rgba(255,255,255,.28);
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:15px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+    .v228-sistema-inscritos button:hover{
+      background:rgba(255,255,255,.2);
+    }
+  </style>
+
+
+  <script>
+/* =====================================================================
+ * PATCH V228 — TOPO LIMPO + INSCRITOS APROVADOS NO BLOCO SISTEMA ATIVO
+ * Base: V227 + V226_ULTRAVELOCIDADE_CORRIGIDO
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  function removerBotoesTopoV228_(){
+    document.querySelectorAll('#btnTelegramCanalTopo,.telegram-canal-topo,#badgeInscritosTopo,.badge-inscritos-topo').forEach(function(el){
+      try{
+        el.classList.add('hidden');
+        el.style.display='none';
+        el.style.visibility='hidden';
+        el.style.width='0';
+        el.style.minWidth='0';
+        el.style.maxWidth='0';
+        el.style.padding='0';
+        el.style.margin='0';
+        el.style.border='0';
+        el.style.overflow='hidden';
+        el.setAttribute('aria-hidden','true');
+      }catch(e){}
+    });
+  }
+
+  function localizarCardSistemaAtivoV228_(){
+    var h2s=[].slice.call(document.querySelectorAll('#view h2'));
+    var alvo=h2s.find(function(h){
+      return String(h.textContent||'').trim().toLowerCase()==='sistema ativo';
+    });
+    if(alvo) return alvo.closest('.panel') || alvo.parentElement;
+
+    /* Fallback: card verde da coluna direita no início */
+    var panels=[].slice.call(document.querySelectorAll('#view .panel'));
+    return panels.find(function(p){
+      var bg=(p.getAttribute('style')||'').toLowerCase();
+      return bg.indexOf('linear-gradient')>=0 && bg.indexOf('#0b6f28')>=0;
+    }) || null;
+  }
+
+  function inserirInscritosSistemaAtivoV228_(total, dados){
+    var card=localizarCardSistemaAtivoV228_();
+    if(!card) return;
+
+    var titulo=card.querySelector('h2');
+    if(titulo && String(titulo.textContent||'').trim().toLowerCase()==='sistema ativo'){
+      titulo.style.color='#fff';
+      titulo.style.fontSize=titulo.style.fontSize || '32px';
+    }
+
+    var ps=[].slice.call(card.querySelectorAll('p'));
+    ps.forEach(function(p){
+      if((p.textContent||'').toLowerCase().indexOf('abertura rápida')>=0){
+        p.textContent='Cadastros aprovados no site.';
+      }
+    });
+
+    var box=card.querySelector('#sistemaAtivoInscritosV228');
+    if(!box){
+      box=document.createElement('div');
+      box.id='sistemaAtivoInscritosV228';
+      box.className='v228-sistema-inscritos';
+      var relogio=card.querySelector('[data-live-clock]');
+      if(relogio && relogio.parentNode===card) card.insertBefore(box,relogio);
+      else card.appendChild(box);
+    }
+
+    box.innerHTML=
+      '<span class="label">Participantes aprovados no cadastro</span>'+
+      '<button type="button" title="Ver resumo de cadastros aprovados" onclick="abrirResumoInscritosTopo()">👥 Inscritos: '+escapeHtml(total||0)+'</button>';
+
+    window.PSS_RESUMO_INSCRITOS_TOPO=dados || window.PSS_RESUMO_INSCRITOS_TOPO || {};
+  }
+
+  async function carregarInscritosSistemaAtivoV228_(forcar){
+    removerBotoesTopoV228_();
+
+    var dados=null;
+    var cacheKey='PSS_RESUMO_INSCRITOS_TOPO_V228';
+
+    if(!forcar){
+      try{
+        var c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(c && Date.now()-Number(c.ts||0)<60*1000) dados=c.dados;
+      }catch(e){}
+    }
+
+    if(!dados){
+      dados=await apiMulti([
+        {action:'getResumoInscritosBoloes',args:[ESTADO.email]},
+        {action:'resumoInscritosBoloes',args:[ESTADO.email]}
+      ]);
+      try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),dados:dados}));}catch(e){}
+    }
+
+    var total=num(dados.totalInscritos||dados.total||0);
+    inserirInscritosSistemaAtivoV228_(total,dados);
+    return dados;
+  }
+
+  /* Remove as chamadas extras do botão Telegram no topo. O link permanece no bloco do início. */
+  window.carregarTelegramCanalLogadoV212 = function(){
+    removerBotoesTopoV228_();
+    return Promise.resolve({sucesso:true, topoRemovido:true});
+  };
+
+  window.carregarBadgeInscritosTopo = async function(){
+    var el=document.getElementById('badgeInscritosTopo');
+    if(el) el.classList.add('hidden');
+    try{ await carregarInscritosSistemaAtivoV228_(true); }catch(e){}
+  };
+
+  var abrirResumoBaseV228 = window.abrirResumoInscritosTopo;
+  window.abrirResumoInscritosTopo = async function(){
+    abrirModal('Cadastros aprovados', '<div class="notice info">Carregando cadastros aprovados...</div>');
+    try{
+      var dados=window.PSS_RESUMO_INSCRITOS_TOPO || await carregarInscritosSistemaAtivoV228_(true);
+      var usuarios=Array.isArray(dados.usuariosAprovados)?dados.usuariosAprovados:[];
+      var por=Array.isArray(dados.porBolao)?dados.porBolao:[];
+      document.getElementById('modalConteudo').innerHTML=`
+        <div class="notice">
+          <strong>Total de aprovados no site:</strong> ${escapeHtml(dados.totalInscritos||dados.total||0)}
+        </div>
+        <div class="resumo-inscritos-lista">
+          ${usuarios.length?usuarios.map(u=>`
+            <div class="resumo-inscritos-item">
+              <strong>${escapeHtml(u.nome||u.email||'-')}</strong>
+              <span class="resumo-inscritos-num">${escapeHtml(u.status||'Aprovado')}</span>
+            </div>
+          `).join(''):'<div class="notice warn">Nenhum cadastro aprovado localizado.</div>'}
+        </div>
+        ${por.length?`
+          <hr style="border:0;border-top:1px solid #ddd;margin:16px 0;">
+          <h4>Resumo por bolão confirmado</h4>
+          <div class="resumo-inscritos-lista">
+            ${por.map(x=>`
+              <div class="resumo-inscritos-item">
+                <strong>${escapeHtml(x.loteria||x.bolao||'-')}</strong>
+                <span class="resumo-inscritos-num">${escapeHtml(x.inscritos||x.total||0)} participante(s)</span>
+              </div>
+            `).join('')}
+          </div>
+        `:''}
+      `;
+    }catch(err){
+      document.getElementById('modalConteudo').innerHTML=`<div class="notice error">${escapeHtml(err.message||err)}</div>`;
+    }
+  };
+
+  var renderInicioBaseV228=window.renderInicio||renderInicio;
+  window.renderInicio=renderInicio=async function(){
+    var r=await renderInicioBaseV228.apply(this,arguments);
+    removerBotoesTopoV228_();
+    setTimeout(function(){
+      carregarInscritosSistemaAtivoV228_(false).catch(function(){
+        inserirInscritosSistemaAtivoV228_(0,{totalInscritos:0,total:0,usuariosAprovados:[]});
+      });
+    },120);
+    return r;
+  };
+
+  var aplicarLayoutBaseV228=window.aplicarLayoutLogado||aplicarLayoutLogado;
+  window.aplicarLayoutLogado=aplicarLayoutLogado=function(){
+    aplicarLayoutBaseV228.apply(this,arguments);
+    removerBotoesTopoV228_();
+    setTimeout(function(){ carregarInscritosSistemaAtivoV228_(false).catch(function(){}); },600);
+  };
+
+  var navegarBaseV228=window.navegar||navegar;
+  window.navegar=navegar=function(v){
+    var r=navegarBaseV228.apply(this,arguments);
+    removerBotoesTopoV228_();
+    if(v==='inicio') setTimeout(function(){carregarInscritosSistemaAtivoV228_(false).catch(function(){});},250);
+    return r;
+  };
+
+  setInterval(removerBotoesTopoV228_,1500);
 })();
   </script>
 
