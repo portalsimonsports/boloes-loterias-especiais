@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V224_PERFORMANCE_SEM_CACHE_VAZIO_MOBILE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V226_COMPROVANTE_TERCEIRO_OCR_AUTOMATICO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V224</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V226</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -910,6 +910,35 @@
       75%,100%{content:'...'}
     }
 
+  
+    /* V225 — Especiais pré-configuradas e comprovante de terceiros */
+    .v225-special-wrap{display:grid;gap:20px;margin-top:18px}
+    .v225-special-section{background:#fff;border:1px solid #d8eadc;border-radius:16px;padding:18px;box-shadow:0 8px 22px rgba(0,0,0,.06)}
+    .v225-special-section h3{margin:0 0 6px;color:var(--v900);font-size:18px}
+    .v225-special-section p{margin:0 0 14px;color:#506174;font-size:13px;line-height:1.45}
+    .v225-special-grid{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:14px}
+    .v225-lottery-card{border:1px solid #d6eadb;border-top:5px solid var(--v700);background:#fff;border-radius:14px;padding:14px;min-height:136px;cursor:pointer;text-align:left;box-shadow:0 8px 18px rgba(0,0,0,.08);transition:.15s ease;display:flex;flex-direction:column;justify-content:space-between}
+    .v225-lottery-card:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(0,0,0,.12);border-color:var(--v700)}
+    .v225-lottery-card.active{outline:2px solid var(--v700);box-shadow:0 12px 28px rgba(0,80,20,.18)}
+    .v225-lottery-card .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+    .v225-lottery-card .ico{font-size:25px;font-weight:1000;line-height:1;color:var(--v900)}
+    .v225-lottery-card .name{font-size:15px;font-weight:1000;color:var(--v900);line-height:1.2}
+    .v225-lottery-card .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+    .v225-lottery-card .meta span{background:#f8fffa;border:1px solid #e1f0e4;border-radius:9px;padding:6px 7px;font-size:11px;font-weight:900;color:#173020}
+    .v225-ajuda{border:1px solid #cfe8ff;background:#f5fbff;color:#073b68;border-radius:12px;padding:11px 13px;font-size:13px;font-weight:800;line-height:1.45;margin:10px 0 14px}
+    .v225-campo-pendente{border-left:4px solid #ffb300!important;background:#fffdf5!important;padding-left:10px;border-radius:8px}
+    .v225-admin-box{border:1px solid #d7eadc;background:#fbfffc;border-radius:14px;padding:14px;margin:12px 0}
+    .v225-admin-box h3{font-size:16px;margin-bottom:8px}
+    .v225-search-results{display:grid;gap:8px;margin:8px 0 12px}
+    .v225-user-result{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #d7eadc;background:#fff;border-radius:10px;padding:10px 12px}
+    .v225-user-result b{display:block;color:var(--v900);font-size:13px}
+    .v225-user-result small{display:block;color:#506174;font-size:12px;margin-top:2px}
+    .v225-selected-user{border:1px solid #b9e1c4;background:#f3fff6;color:#003b12;border-radius:10px;padding:10px 12px;font-weight:900;margin:8px 0 12px}
+    .v225-two-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .v225-hidden{display:none!important}
+    @media(max-width:1100px){.v225-special-grid{grid-template-columns:repeat(2,minmax(170px,1fr))}}
+    @media(max-width:700px){.v225-special-grid,.v225-two-columns{grid-template-columns:1fr}.v225-lottery-card{min-height:120px}}
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -927,7 +956,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V224_PERFORMANCE_SEM_CACHE_VAZIO_MOBILE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V226_COMPROVANTE_TERCEIRO_OCR_AUTOMATICO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5453,7 +5482,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V224_PERFORMANCE_SEM_CACHE_VAZIO_MOBILE'; }catch(e){}
+  try{ CONFIG.versao='V226_COMPROVANTE_TERCEIRO_OCR_AUTOMATICO'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -9285,6 +9314,528 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     setTimeout(()=>{
       try{buscarSnapshotServidorV224_(false).catch(()=>{});}catch(e){}
     },1200);
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V225 — ESPECIAIS PRÉ-CONFIGURADAS + COMPROVANTE DE TERCEIROS
+ * Base oficial: index_V224_MOBILE_CORRIGIDO / Code_API_V224_CORRIGIDO
+ * - Não carrega BASE_LOTERIAS na abertura do menu Especiais.
+ * - Modelos ficam no código para abrir rápido.
+ * - Admin pode enviar comprovante de terceiro e vincular ao cadastro.
+ * ===================================================================== */
+(function(){
+  const ANO_V225 = () => new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric'});
+
+  const LOTERIAS_V225 = [
+    {grupo:'especial',id:'mega-da-virada',icone:'🍀',titulo:'Mega da Virada',nome:'Mega da Virada',range:'60',qtdMin:'6',qtdMax:'15',qtdPalpite:'10',cor:'#209869'},
+    {grupo:'especial',id:'lotofacil-da-independencia',icone:'BR',titulo:'Lotofácil da Independência',nome:'Lotofacil-da-Independencia',range:'25',qtdMin:'15',qtdMax:'20',qtdPalpite:'10',cor:'#930089'},
+    {grupo:'especial',id:'quina-de-sao-joao',icone:'🔥',titulo:'Quina de São João',nome:'Quina-de-Sao-Joao',range:'80',qtdMin:'5',qtdMax:'15',qtdPalpite:'10',cor:'#260085'},
+    {grupo:'especial',id:'dupla-sena-de-pascoa',icone:'🐰',titulo:'Dupla Sena de Páscoa',nome:'Dupla-Sena-de-pascoa',range:'50',qtdMin:'6',qtdMax:'15',qtdPalpite:'10',cor:'#a61324'},
+
+    {grupo:'comum',id:'mega-sena',icone:'🍀',titulo:'Mega-Sena',nome:'Mega-Sena',range:'60',qtdMin:'6',qtdMax:'15',qtdPalpite:'10',cor:'#209869'},
+    {grupo:'comum',id:'lotofacil',icone:'BR',titulo:'Lotofácil',nome:'Lotofacil',range:'25',qtdMin:'15',qtdMax:'20',qtdPalpite:'10',cor:'#930089'},
+    {grupo:'comum',id:'lotofacil-mensal',icone:'BR',titulo:'Lotofácil Mensal',nome:'Lotofacil Mensal',range:'25',qtdMin:'15',qtdMax:'20',qtdPalpite:'10',cor:'#930089'},
+    {grupo:'comum',id:'quina',icone:'🔥',titulo:'Quina',nome:'Quina',range:'80',qtdMin:'5',qtdMax:'15',qtdPalpite:'10',cor:'#260085'},
+    {grupo:'comum',id:'dupla-sena',icone:'🐰',titulo:'Dupla-Sena',nome:'Dupla-Sena',range:'50',qtdMin:'6',qtdMax:'15',qtdPalpite:'10',cor:'#a61324'},
+    {grupo:'comum',id:'dia-de-sorte',icone:'🌞',titulo:'Dia de Sorte',nome:'Dia-de-Sorte',range:'31',qtdMin:'7',qtdMax:'15',qtdPalpite:'10',cor:'#cb852b'},
+    {grupo:'comum',id:'super-sete',icone:'7️⃣',titulo:'Super Sete',nome:'Super-Sete',range:'9',qtdMin:'7',qtdMax:'7',qtdPalpite:'10',cor:'#a8cf45'},
+    {grupo:'comum',id:'timemania',icone:'⚽',titulo:'Timemania',nome:'Timemania',range:'80',qtdMin:'10',qtdMax:'10',qtdPalpite:'10',cor:'#00a651'},
+    {grupo:'comum',id:'lotomania',icone:'🔢',titulo:'Lotomania',nome:'Lotomania',range:'100',qtdMin:'50',qtdMax:'50',qtdPalpite:'10',cor:'#f78100'},
+    {grupo:'comum',id:'mais-milionaria',icone:'💰',titulo:'Mais Milionária',nome:'Mais Milionaria',range:'50',qtdMin:'6',qtdMax:'12',qtdPalpite:'10',cor:'#2e3078'}
+  ];
+
+  function modeloV225(id){
+    return LOTERIAS_V225.find(x=>x.id===id) || {grupo:'manual',id:'nova',icone:'➕',titulo:'Nova Loteria',nome:'',range:'',qtdMin:'',qtdMax:'',qtdPalpite:'10',cor:'#0b6f28'};
+  }
+
+  function cardV225(m, selecionado){
+    return `
+      <button type="button" class="v225-lottery-card ${selecionado===m.id?'active':''}" style="border-top-color:${escapeAttr(m.cor||'#0b6f28')}" onclick="abrirEspecialClick('${escapeAttr(m.id)}')">
+        <div>
+          <div class="top">
+            <div class="name">${escapeHtml(m.titulo)}</div>
+            <div class="ico">${escapeHtml(m.icone)}</div>
+          </div>
+          <div class="meta">
+            <span>Range: ${escapeHtml(m.range||'-')}</span>
+            <span>Min: ${escapeHtml(m.qtdMin||'-')}</span>
+            <span>Máx: ${escapeHtml(m.qtdMax||'-')}</span>
+            <span>Palpites: ${escapeHtml(m.qtdPalpite||'-')}</span>
+          </div>
+        </div>
+      </button>
+    `;
+  }
+
+  window.renderEspeciais = renderEspeciais = function(tipoSelecionado=''){
+    const especiais = LOTERIAS_V225.filter(x=>x.grupo==='especial');
+    const comuns = LOTERIAS_V225.filter(x=>x.grupo==='comum');
+
+    setView(`
+      <div class="panel no-left center">
+        <h2>Configurar Bolão Especial</h2>
+        <p>Escolha uma loteria já pré-configurada. O sistema preenche automaticamente range, mínimo, máximo e quantidade por palpite.</p>
+        <div class="v225-special-wrap">
+          <section class="v225-special-section">
+            <h3>🍀 Loterias especiais</h3>
+            <p>Modelos principais para bolões especiais.</p>
+            <div class="v225-special-grid">
+              ${especiais.map(m=>cardV225(m,tipoSelecionado)).join('')}
+            </div>
+          </section>
+
+          <section class="v225-special-section">
+            <h3>🎯 Loterias comuns</h3>
+            <p>Modelos normais para criar bolões recorrentes, mensais ou avulsos.</p>
+            <div class="v225-special-grid">
+              ${comuns.map(m=>cardV225(m,tipoSelecionado)).join('')}
+              ${cardV225({id:'nova',icone:'➕',titulo:'Nova Loteria Manual',nome:'',range:'',qtdMin:'',qtdMax:'',qtdPalpite:'10',cor:'#0b6f28'},tipoSelecionado)}
+            </div>
+          </section>
+        </div>
+      </div>
+      <div id="especialFormBox"></div>
+    `);
+
+    if(tipoSelecionado) abrirFormularioEspecial(tipoSelecionado);
+  };
+
+  window.abrirEspecialClick = abrirEspecialClick = function(tipo){
+    renderEspeciais(tipo);
+    setTimeout(()=>{
+      const box=document.getElementById('especialFormBox');
+      if(box) box.scrollIntoView({behavior:'smooth',block:'start'});
+    },120);
+  };
+
+  window.especialPadrao = especialPadrao = function(tipo){
+    const m = modeloV225(tipo);
+    return Object.assign({}, m, {ano: ANO_V225()});
+  };
+
+  window.abrirFormularioEspecial = abrirFormularioEspecial = async function(tipo){
+    const cfg = especialPadrao(tipo);
+    const box = document.getElementById('especialFormBox');
+    if(!box) return;
+
+    box.innerHTML = `
+      <div class="panel no-left">
+        <h3>${escapeHtml(cfg.icone)} ${escapeHtml(cfg.titulo)}</h3>
+        <div class="v225-ajuda">
+          Modelo pré-configurado no código para abrir rápido. Complete apenas os dados operacionais do bolão: valor da cota, total de cotas, premiação e datas.
+        </div>
+
+        <div class="config-grid" style="margin-top:14px;">
+          <div class="field">
+            <label>Nome da loteria</label>
+            <input id="esp_nome" value="${escapeAttr(cfg.nome||'')}" placeholder="Nome da loteria">
+          </div>
+          <div class="field">
+            <label>Ano do concurso</label>
+            <input id="esp_ano" value="${escapeAttr(cfg.ano||ANO_V225())}" placeholder="2026">
+          </div>
+          <div class="field">
+            <label>Universo/RANGE</label>
+            <input id="esp_range" value="${escapeAttr(cfg.range||'')}" placeholder="60">
+          </div>
+          <div class="field">
+            <label>Qtd mínima</label>
+            <input id="esp_qtdMin" value="${escapeAttr(cfg.qtdMin||'')}" placeholder="6">
+          </div>
+          <div class="field">
+            <label>Qtd máxima</label>
+            <input id="esp_qtdMax" value="${escapeAttr(cfg.qtdMax||'')}" placeholder="15">
+          </div>
+          <div class="field">
+            <label>Números por palpite</label>
+            <input id="esp_qtdPalpite" value="${escapeAttr(cfg.qtdPalpite||'10')}" placeholder="10">
+          </div>
+
+          <div class="field v225-campo-pendente">
+            <label>Valor da cota</label>
+            <input id="esp_valorCota" value="" placeholder="Ex.: R$ 50,00" oninput="calcularPremioPorCotaV225()">
+          </div>
+          <div class="field v225-campo-pendente">
+            <label>Total de cotas</label>
+            <input id="esp_totalCotas" value="" placeholder="Ex.: 50" oninput="calcularPremioPorCotaV225()">
+          </div>
+          <div class="field v225-campo-pendente">
+            <label>Premiação total</label>
+            <input id="esp_premiacao" value="" placeholder="Ex.: R$ 10.000,00" oninput="calcularPremioPorCotaV225()">
+          </div>
+          <div class="field">
+            <label>Prêmio por cota</label>
+            <input id="esp_premioPorCota" value="" placeholder="Calculado automaticamente" readonly>
+          </div>
+          <div class="field">
+            <label>Qtd parcelas</label>
+            <input id="esp_qtdParcelas" value="1" placeholder="1">
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:12px;">
+          <label>Data do sorteio:</label>
+          <input id="esp_dataSorteio" type="date">
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Início depósitos:</label>
+            <input id="esp_iniBol" type="date">
+          </div>
+          <div class="field">
+            <label>Fim depósitos:</label>
+            <input id="esp_fimBol" type="date">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Início palpites:</label>
+            <input id="esp_iniPal" type="date">
+          </div>
+          <div class="field">
+            <label>Fim palpites:</label>
+            <input id="esp_fimPal" type="date">
+          </div>
+        </div>
+
+        <button class="btn btn-block" id="btnAtivarEspecial" onclick="ativarBolaoEspecialGit('${escapeAttr(tipo)}')">Ativar Bolão</button>
+      </div>
+    `;
+    calcularPremioPorCotaV225();
+  };
+
+  window.calcularPremioPorCotaV225 = function(){
+    const premio = num(document.getElementById('esp_premiacao')?.value || 0);
+    const total = num(document.getElementById('esp_totalCotas')?.value || 0);
+    const out = document.getElementById('esp_premioPorCota');
+    if(!out) return;
+    out.value = total > 0 && premio > 0 ? moeda(premio/total) : '';
+  };
+
+  window.nomeFinalEspecial = nomeFinalEspecial = function(nomeBase, ano, tipo){
+    let nome = String(nomeBase||'').trim();
+    const a = String(ano||'').trim();
+    if(!nome) return '';
+    if(a && !new RegExp('\\b'+a+'\\b').test(nome)) nome += ' ' + a;
+    return nome;
+  };
+
+  window.ativarBolaoEspecialGit = ativarBolaoEspecialGit = async function(tipo){
+    const btn = document.getElementById('btnAtivarEspecial');
+    const nomeBase = document.getElementById('esp_nome').value.trim();
+    const ano = document.getElementById('esp_ano').value.trim();
+    const nome = nomeFinalEspecial(nomeBase, ano, tipo);
+
+    if(!nomeBase){ toast('Informe o nome da loteria.','error'); return; }
+
+    const totalCotas = valorNumeroConfig(document.getElementById('esp_totalCotas').value,'');
+    const valorCota = valorNumeroConfig(document.getElementById('esp_valorCota').value,'');
+    const premiacao = valorNumeroConfig(document.getElementById('esp_premiacao').value,'');
+
+    if(!valorCota || !totalCotas){
+      toast('Informe valor da cota e total de cotas.','error');
+      return;
+    }
+
+    const premioPorCota = (num(premiacao)>0 && num(totalCotas)>0) ? String(num(premiacao)/num(totalCotas)) : '';
+
+    const dados = {
+      nome: nome,
+      loteria: nome,
+      status: 'ATIVO',
+      valorCota: valorCota,
+      totalCotas: totalCotas,
+      cotasTotaisAdquiridas: '0',
+      qtdParcelas: valorNumeroConfig(document.getElementById('esp_qtdParcelas').value,'1'),
+      premiacao: premiacao,
+      premioPorCota: premioPorCota,
+      dataSorteio: dataInputParaBR('esp_dataSorteio'),
+      iniBol: dataInputParaBR('esp_iniBol'),
+      fimBol: dataInputParaBR('esp_fimBol'),
+      iniPal: dataInputParaBR('esp_iniPal'),
+      fimPal: dataInputParaBR('esp_fimPal'),
+      range: valorNumeroConfig(document.getElementById('esp_range').value,''),
+      qtdMin: valorNumeroConfig(document.getElementById('esp_qtdMin').value,''),
+      qtdMax: valorNumeroConfig(document.getElementById('esp_qtdMax').value,''),
+      qtdPalpite: valorNumeroConfig(document.getElementById('esp_qtdPalpite').value,'10')
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Ativando...';
+
+    try{
+      const r = await api('salvarConfigBolaoAtivoAdmin',{},[dados]);
+      toast((r&&r.msg)||'Bolão ativado com sucesso.');
+      cacheDel_('boloes');
+      await carregarBoloes(true);
+      renderEspeciais(tipo);
+    }catch(err){
+      toast(err.message,'error');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Ativar Bolão';
+    }
+  };
+
+  let timerBuscaTerceiroV225 = null;
+
+  window.renderComprovante = renderComprovante = async function(){
+    loading('Carregando comprovante');
+    try{
+      const lista = await carregarBoloes();
+      const hist = await apiMulti([
+        {action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},
+        {action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}
+      ]).catch(()=>[]);
+
+      setView(`
+        <div class="panel no-left">
+          <form onsubmit="enviarComprovante(event)">
+            <div class="wide-control">
+              <label>Tipo de envio:</label>
+              <select id="tipoEnvioComprovante" onchange="alternarTipoEnvioComprovanteV225()">
+                <option value="meu">Meu comprovante</option>
+                ${isAdmin()?'<option value="terceiro">Comprovante de terceiro / administrador</option>':''}
+              </select>
+            </div>
+
+            <div id="boxComprovanteTerceiroV225" class="v225-admin-box v225-hidden">
+              <h3>Comprovante de terceiro</h3>
+              <p>Use esta opção para vincular um comprovante a um participante já cadastrado. A conferência seguirá automaticamente por OCR, igual aos demais comprovantes.</p>
+
+              <div class="field">
+                <label>Buscar participante por nome ou e-mail</label>
+                <input id="buscaParticipanteTerceiroV225" placeholder="Digite pelo menos 2 letras..." oninput="buscarParticipantesTerceiroV225()">
+              </div>
+              <div id="resultadosParticipanteTerceiroV225" class="v225-search-results"></div>
+              <input type="hidden" id="emailParticipanteTerceiroV225">
+              <input type="hidden" id="nomeParticipanteTerceiroV225">
+              <div id="participanteSelecionadoTerceiroV225"></div>
+
+              <div class="v225-two-columns">
+                <div class="field">
+                  <label>Cota vinculada ao comprovante</label>
+                  <select id="fracaoCotaTerceiroV225">
+                    <option value="1">Cota integral</option>
+                    <option value="0.5">Cota fracionada 1/2</option>
+                    <option value="0.333333">Cota fracionada 1/3</option>
+                    <option value="0.25">Cota fracionada 1/4</option>
+                    <option value="0.2">Cota fracionada 1/5</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Observação administrativa</label>
+                  <input id="obsComprovanteTerceiroV225" placeholder="Opcional">
+                </div>
+              </div>
+            </div>
+
+            <div class="wide-control">
+              <label>Tipo de cota:</label>
+              <select id="tipoCota" onchange="renderCamposPartes()">
+                <option value="unica">Cota única</option>
+                <option value="dividida">Cota dividida</option>
+              </select>
+            </div>
+
+            <div id="partesBox"></div>
+
+            <div class="upload-center">
+              <label>Selecione a loteria do depósito:</label>
+              <select id="uploadBolao" required>
+                <option value="">Selecione...</option>
+                ${lista.map(b=>`<option value="${escapeAttr(b.loteria)}" ${b.loteria===ESTADO.bolaoSelecionado?'selected':''}>${escapeHtml(b.loteria)}</option>`).join('')}
+              </select>
+
+              <h3>Enviar Comprovante</h3>
+              <small>Formatos aceitos: JPG, PNG, PDF</small>
+              <input id="arquivoComprovante" type="file" accept="image/*,.pdf,application/pdf" required style="margin:16px 0 10px;" />
+              <button class="btn btn-block" id="btnEnviarComprovante" type="submit">Enviar agora</button>
+
+              <div class="upload-progress-box" id="comprovanteUploadProgressBox">
+                <div class="upload-progress-top">
+                  <span id="comprovanteUploadTitulo">Preparando envio...</span>
+                  <span id="comprovanteUploadPercentual">0%</span>
+                </div>
+                <div class="upload-progress-bar">
+                  <div class="upload-progress-fill" id="comprovanteUploadFill"></div>
+                </div>
+                <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Aguardando arquivo...</div>
+              </div>
+            </div>
+          </form>
+
+          <hr style="border:0;border-top:1px solid #ddd;margin:24px 0;">
+          <h3>🕘 Meus Envios Recentes</h3>
+          ${renderHistoricoComprovantes(hist)}
+        </div>
+      `);
+      renderCamposPartes();
+      alternarTipoEnvioComprovanteV225();
+    }catch(err){
+      setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+    }
+  };
+
+  window.alternarTipoEnvioComprovanteV225 = function(){
+    const tipo = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    const box = document.getElementById('boxComprovanteTerceiroV225');
+    if(box) box.classList.toggle('v225-hidden', tipo !== 'terceiro');
+  };
+
+  window.buscarParticipantesTerceiroV225 = function(){
+    clearTimeout(timerBuscaTerceiroV225);
+    timerBuscaTerceiroV225 = setTimeout(async()=>{
+      const q = (document.getElementById('buscaParticipanteTerceiroV225')?.value || '').trim();
+      const box = document.getElementById('resultadosParticipanteTerceiroV225');
+      if(!box) return;
+
+      if(q.length < 2){
+        box.innerHTML = '<div class="notice info">Digite pelo menos 2 letras para buscar.</div>';
+        return;
+      }
+
+      box.innerHTML = '<div class="notice info">Buscando participante...</div>';
+
+      try{
+        const r = await api('buscarParticipantesComprovanteTerceiroV225',{query:q,adminEmail:ESTADO.email},[q,ESTADO.email]);
+        const lista = Array.isArray(r) ? r : (r.lista || r.participantes || []);
+        if(!lista.length){
+          box.innerHTML = '<div class="notice warn">Nenhum participante localizado.</div>';
+          return;
+        }
+
+        box.innerHTML = lista.map(p=>`
+          <div class="v225-user-result">
+            <div>
+              <b>${escapeHtml(p.nome||p.email||'-')}</b>
+              <small>${escapeHtml(p.email||'')}</small>
+            </div>
+            <button type="button" class="btn btn-light" onclick="selecionarParticipanteTerceiroV225('${escapeAttr(encodeURIComponent(p.email||''))}','${escapeAttr(encodeURIComponent(p.nome||''))}')">Selecionar</button>
+          </div>
+        `).join('');
+      }catch(err){
+        box.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+      }
+    },350);
+  };
+
+  window.selecionarParticipanteTerceiroV225 = function(emailCod,nomeCod){
+    const email = decodeURIComponent(emailCod||'');
+    const nome = decodeURIComponent(nomeCod||'');
+    const emailInput = document.getElementById('emailParticipanteTerceiroV225');
+    const nomeInput = document.getElementById('nomeParticipanteTerceiroV225');
+    const box = document.getElementById('participanteSelecionadoTerceiroV225');
+    if(emailInput) emailInput.value = email;
+    if(nomeInput) nomeInput.value = nome;
+    if(box) box.innerHTML = `<div class="v225-selected-user">Participante selecionado: ${escapeHtml(nome||email)} — ${escapeHtml(email)}</div>`;
+    const resultados = document.getElementById('resultadosParticipanteTerceiroV225');
+    if(resultados) resultados.innerHTML = '';
+  };
+
+  window.apiUploadComprovante_ = apiUploadComprovante_ = async function(base64,file,loteria,meta={}){
+    meta = meta || {};
+    const emailEnvio = meta.tipoEnvio === 'TERCEIRO' ? (ESTADO.email || '') : (meta.emailParticipante || ESTADO.email || '');
+    const dados = {
+      fileData: base64,
+      fileName: file.name,
+      mimeType: file.type,
+      email: emailEnvio,
+      loteria,
+      meta: meta,
+      emailParticipante: meta.emailParticipante || '',
+      adminEmail: ESTADO.email || '',
+      tipoEnvio: meta.tipoEnvio || 'PROPRIO',
+      tipoCota: meta.tipoCota || '',
+      fracaoCota: meta.fracaoCota || '',
+      obsAdmin: meta.obsAdmin || ''
+    };
+    const args = [base64, file.name, emailEnvio, loteria, meta];
+    const action = meta.tipoEnvio === 'TERCEIRO' ? 'uploadComprovanteTerceiroAdmin' : 'uploadComprovante';
+
+    try{
+      return await apiPostFormWindowName_(action,dados,args,120000);
+    }catch(errPost){
+      if(String(base64||'').length < 350000){
+        return await apiMulti([{action,dados,args},{action:'uploadComprovante',dados,args}]);
+      }
+      throw errPost;
+    }
+  };
+
+  window.enviarComprovante = enviarComprovante = async function(ev){
+    ev.preventDefault();
+
+    const tipoEnvio = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    const loteria = document.getElementById('uploadBolao').value;
+    const input = document.getElementById('arquivoComprovante');
+    const file = input && input.files ? input.files[0] : null;
+    const btn = document.getElementById('btnEnviarComprovante');
+
+    if(!loteria) return toast('Selecione a loteria do depósito.','error');
+    if(!file) return toast('Selecione o arquivo do comprovante.','error');
+
+    let meta = {
+      tipoEnvio: tipoEnvio === 'terceiro' ? 'TERCEIRO' : 'PROPRIO',
+      tipoCota: document.getElementById('tipoCota')?.value || 'unica',
+      qtdPartes: document.getElementById('qtdPartes')?.value || '',
+      nomesPartes: []
+    };
+
+    if(meta.tipoCota === 'dividida'){
+      document.querySelectorAll('#nomesPartes input').forEach(inp=>meta.nomesPartes.push(inp.value||''));
+    }
+
+    if(tipoEnvio === 'terceiro'){
+      if(!isAdmin()) return toast('Apenas administrador pode enviar comprovante de terceiro.','error');
+      const emailParticipante = (document.getElementById('emailParticipanteTerceiroV225')?.value || '').trim();
+      const nomeParticipante = (document.getElementById('nomeParticipanteTerceiroV225')?.value || '').trim();
+      const fracao = document.getElementById('fracaoCotaTerceiroV225')?.value || '1';
+
+      if(!emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
+
+      meta.emailParticipante = emailParticipante;
+      meta.nomeParticipante = nomeParticipante;
+      meta.fracaoCota = fracao;
+      meta.tipoCota = fracao === '1' ? 'integral' : 'fracionada';
+      meta.obsAdmin = document.getElementById('obsComprovanteTerceiroV225')?.value || '';
+    }
+
+    ESTADO.bolaoSelecionado = loteria;
+    localStorage.setItem('PSS_BOLAO_SELECIONADO', loteria);
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    atualizarProgressoUploadComprovante_(5,'Preparando envio...','Lendo arquivo selecionado.','run');
+
+    try{
+      await aguardarFrame_();
+
+      atualizarProgressoUploadComprovante_(18,'Lendo arquivo...','Preparando '+file.name,'run');
+      const base64 = await lerArquivoBase64(file);
+
+      atualizarProgressoUploadComprovante_(45,'Enviando comprovante...','Gravando arquivo no Drive e vinculando ao pagamento.','run');
+      const r = await apiUploadComprovante_(base64,file,loteria,meta);
+
+      atualizarProgressoUploadComprovante_(100,'Envio concluído',(r&&r.msg)||'Comprovante enviado com sucesso.','ok');
+
+      toast((r&&r.msg)||'Comprovante enviado com sucesso.');
+      input.value = '';
+      cacheDel_(cacheKeyLoteria_('historicoComprovantes',loteria));
+      cacheDel_('boloes');
+      setTimeout(()=>renderComprovante(),700);
+    }catch(err){
+      atualizarProgressoUploadComprovante_(0,'Falha no envio',err.message,'error');
+      toast(err.message,'error');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Enviar agora';
+    }
   };
 })();
 
