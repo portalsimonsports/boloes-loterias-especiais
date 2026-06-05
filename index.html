@@ -286,19 +286,11 @@
      * A tela abre com o último conteúdo salvo e atualiza em segundo plano.
      * ========================================================= */
     .fast-cache-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      border:1px solid #cfe3d3;
-      background:#f0f8f2;
-      color:#064e1f;
-      border-radius:999px;
-      padding:5px 10px;
-      font-size:11px;
-      font-weight:900;
-      margin:0 0 10px;
-      text-transform:uppercase;
-      letter-spacing:.02em;
+      /* V234: badge discreto */
+      display:inline-flex;align-items:center;gap:4px;
+      border:none;background:transparent;color:#b8c4cc;
+      padding:0 2px;font-size:10px;font-weight:400;
+      margin:0 0 2px;text-transform:none;letter-spacing:0;opacity:.75;
     }
     .fast-cache-badge.updating{
       background:#eaf3ff;
@@ -331,9 +323,7 @@
      * Mantém abertura rápida sem alterar a fila/API original.
      * ========================================================= */
     .fast-cache-badge.stale{
-      background:#fff8e5;
-      border-color:#f3d37a;
-      color:#7a4b00;
+      background:transparent;border:none;color:#c0c8d0;font-size:10px;opacity:.65;
     }
 
 
@@ -1534,7 +1524,7 @@
 
     async function abrirRegulamentoPublico(){
       const cached=cacheGet_('regulamento',true);
-      abrirModal('Regulamento',`<div class="reg-box" id="regPublicoBox">${cached?escapeHtml(typeof cached==='string'?cached:(cached.texto||cached.regulamento||'Regulamento definido pela administração.')):'Carregando regulamento...'}</div>${cached?'<div class="cache-hint ok">Regulamento exibido imediatamente. Atualizando em segundo plano...</div>':''}`);
+      abrirModal('Regulamento',`<div class="reg-box" id="regPublicoBox">${cached?escapeHtml(typeof cached==='string'?cached:(cached.texto||cached.regulamento||'Regulamento definido pela administração.')):'Carregando regulamento...'}</div>${cached?'✓ Atualizado':''}`);
       try{
         const texto=await carregarRegulamentoCache_(true);
         const conteudo=typeof texto==='string'?texto:(texto.texto||texto.regulamento||'Regulamento definido pela administração.');
@@ -2209,10 +2199,40 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text||'');
     }
 
-    async function renderBoloes(tipo){loading('Carregando bolões');try{const lista=listaSegura_(await carregarBoloes()),ativos=lista.filter(b=>!isHistorico(b)),hist=lista.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button></div>${renderCardsBoloes(dados,'boloes')}</div><div class="panel"><label>Participante</label><div style="display:flex;gap:10px;align-items:center;"><select id="consultaParticipante"><option>Selecione um participante...</option></select><button type="button" class="btn" onclick="toast('Selecione um participante para consultar.','info')">Consultar</button></div></div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderBoloes(tipo){
+  loading('Carregando bolões');
+  var _lb=[];
+  try{
+    _lb=listaSegura_(await carregarBoloes(true));
+    if(!_lb.length) _lb=listaSegura_(await carregarBoloes(false));
+  }catch(_e){
+    _lb=listaSegura_(ESTADO.boloes||[]);
+    if(!_lb.length){
+      setView('<div class="panel"><div class="notice info"><span class="loading-fast">Carregando bolões...</span></div></div>');
+      setTimeout(()=>renderBoloes(tipo),3500); return;
+    }
+  }
+  const ativos=_lb.filter(b=>!isHistorico(b)),hist=_lb.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;
+  setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button></div>${renderCardsBoloes(dados,'boloes')}</div><div class="panel"><label>Participante</label><div style="display:flex;gap:10px;align-items:center;"><select id="consultaParticipante"><option>Selecione um participante...</option></select><button type="button" class="btn" onclick="toast('Selecione um participante para consultar.','info')">Consultar</button></div></div>`);
+}
     function renderCardsBoloes(lista,origem){lista=listaSegura_(lista);if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;return `<div class="cards-row">${lista.map(b=>`<div class="bolao-card"><h3>🎯 ${escapeHtml(b.nome||b.loteria)}</h3>${origem==='boloes'?`<div class="status-pill">Participante inscrito</div><br>`:''}${b.cotasDisponiveis!==''?`<div class="outline-pill">Cotas disponíveis: ${escapeHtml(b.cotasDisponiveis)}</div>`:''}<div class="meta-grid"><div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div><div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div><div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div><div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div></div><button class="btn" onclick="selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')">${origem==='palpite'?'Abrir palpite':(isHistorico(b)?'Abrir':'Participar')}</button></div>`).join('')}</div>`}
     function selecionarBolao(nome,origem){ESTADO.bolaoSelecionado=nome;localStorage.setItem('PSS_BOLAO_SELECIONADO',nome);if(origem==='palpite')renderPalpiteAberto(nome);else abrirModal('Bolão selecionado',`<div class="notice">Bolão selecionado: <strong>${escapeHtml(nome)}</strong></div><div class="actions"><button class="btn" onclick="fecharModal(); navegar('palpite')">Palpites</button><button class="btn btn-light" onclick="fecharModal(); navegar('comprovante')">Comprovante</button></div>`)}
-    async function renderPalpiteLista(tipo){loading('Carregando palpites');try{const lista=listaSegura_(await carregarBoloes()),ativos=lista.filter(b=>!isHistorico(b)),hist=lista.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;setView(`<div class="panel"><h2>🎯 Palpites</h2><p>Selecione bolões ativos para palpitar ou encerrados para consultar dezenas e estatísticas.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderPalpiteLista('ativos')">Ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderPalpiteLista('historico')">Encerrados</button></div>${renderCardsBoloes(dados,'palpite')}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+    async function renderPalpiteLista(tipo){
+  loading('Carregando palpites');
+  var _lp=[];
+  try{
+    _lp=listaSegura_(await carregarBoloes(true));
+    if(!_lp.length) _lp=listaSegura_(await carregarBoloes(false));
+  }catch(_e){
+    _lp=listaSegura_(ESTADO.boloes||[]);
+    if(!_lp.length){
+      setView('<div class="panel"><div class="notice info"><span class="loading-fast">Carregando palpites...</span></div></div>');
+      setTimeout(()=>renderPalpiteLista(tipo),3500); return;
+    }
+  }
+  const ativos=_lp.filter(b=>!isHistorico(b)),hist=_lp.filter(b=>isHistorico(b)),dados=tipo==='historico'?hist:ativos;
+  setView(`<div class="panel"><h2>🎯 Palpites</h2><p>Selecione bolões ativos para palpitar ou encerrados para consultar dezenas e estatísticas.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderPalpiteLista('ativos')">Ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderPalpiteLista('historico')">Encerrados</button></div>${renderCardsBoloes(dados,'palpite')}</div>`);
+}
     async function renderPalpiteAberto(nome){loading('Carregando palpite');try{const info=await apiMulti([{action:'obterDadosPalpite',dados:{loteria:nome},args:[nome]},{action:'getDadosPalpite',dados:{loteria:nome},args:[nome]}]),status=await apiMulti([{action:'checarStatusPalpite',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]},{action:'getStatusPalpite',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]}]).catch(()=>({}));ESTADO.palpiteInfo=info||{};ESTADO.palpiteStatus=status||{};ESTADO.qtdEscolha=Number(info.qtdEscolha||info.qtdPalpite||6);ESTADO.numerosSelecionados=[];const numeros=Array.isArray(info.numerosDisponiveis)&&info.numerosDisponiveis.length?info.numerosDisponiveis:Array.from({length:Number(info.nMax||info.range||60)},(_,i)=>i+1);setView(`<div class="panel"><div class="palpite-stage"><h3 class="center">🎯 ${escapeHtml(nome)}</h3><div class="meta-box" style="margin-top:16px;"><b>Resumo dos palpites</b><span>Cotas: ${escapeHtml(status.cotas||status.maxJogos||1)} · Palpites feitos: ${escapeHtml((status.palpites||[]).length)}/${escapeHtml(status.maxJogos||status.cotas||1)} · Prazo final: ${escapeHtml(getPrazoBolao(nome))}</span></div><div class="meta-box" style="margin-top:10px;"><b>🏆 10 dezenas mais escolhidas</b>${renderChips((status.top10||[]).length?status.top10:[])}</div><div class="meta-box" style="margin-top:10px;"><b>📌 Dezenas escolhidas por todos os participantes</b>${renderChips(status.todosNumeros||[])}</div><div class="table-wrap" style="margin-top:10px;"><table><thead><tr><th>#</th><th>Data</th><th>Dezenas</th><th>Ação</th></tr></thead><tbody>${renderHistoricoPalpite(status.palpites||[])}</tbody></table></div><div style="margin-top:12px;"><button class="btn" onclick="mostrarGradePalpite()">Novo / editar palpite</button></div><div id="gradePalpiteBox" class="hidden" style="margin-top:16px;"><div class="center"><strong>Selecione ${ESTADO.qtdEscolha} dezenas.</strong></div><div id="selecionadasPalpite" class="notice info" style="margin:10px 0;"><strong>Dezenas selecionadas:</strong> -</div><div class="numbers-grid">${numeros.map(n=>`<div class="ball" data-num="${Number(n)}" onclick="toggleNumero(${Number(n)},this)">${formatNum(n)}</div>`).join('')}</div><button class="btn" id="btnSalvarPalpite" onclick="salvarPalpite()" disabled>Salvar alteração (0/${ESTADO.qtdEscolha})</button></div></div></div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
     function renderChips(lista){
       if(!Array.isArray(lista)||!lista.length)return '<div style="margin-top:8px;">-</div>';
@@ -2274,7 +2294,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     <div class="upload-progress-fill" id="comprovanteUploadFill"></div>
   </div>
   <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Aguardando arquivo...</div>
-</div></div></form><hr style="border:0;border-top:1px solid #ddd;margin:24px 0;"><h3>🕘 Meus Envios Recentes</h3>${renderHistoricoComprovantes(hist)}</div>`);renderCamposPartes()}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+</div></div></form><hr style="border:0;border-top:1px solid #ddd;margin:24px 0;"><h3>🕘 Meus Envios Recentes</h3>${renderHistoricoComprovantes(hist)}</div>`);renderCamposPartes()}catch(err){setView('<div class="panel"><div class="notice info"><span class="loading-fast">Carregando comprovante...</span></div></div>');setTimeout(renderComprovante,3500);}}
     function renderCamposPartes(){const box=document.getElementById('partesBox');if(!box)return;const tipo=document.getElementById('tipoCota').value;if(tipo!=='dividida'){box.innerHTML='';return}box.innerHTML=`<div class="wide-control"><label>Em quantas partes a cota foi dividida?</label><select id="qtdPartes" onchange="renderNomesPartes()"><option value="2">2 partes</option><option value="3">3 partes</option><option value="4">4 partes</option><option value="5">5 partes</option></select></div><div id="nomesPartes"></div>`;renderNomesPartes()}function renderNomesPartes(){const box=document.getElementById('nomesPartes'),qtd=Number(document.getElementById('qtdPartes').value||2);let h='';for(let i=1;i<=qtd;i++)h+=`<input style="margin-bottom:12px;" placeholder="Nome do participante ${i}" />`;box.innerHTML=h}
     function renderHistoricoComprovantes(lista){lista=Array.isArray(lista)?lista:[];if(!lista.length)return '<div class="notice warn">Nenhum envio localizado.</div>';return `<div class="table-wrap"><table><thead><tr><th>Data/Hora</th><th>Status</th><th>Link</th></tr></thead><tbody>${lista.map(x=>`<tr><td>${escapeHtml(formatarDataHoraPtBR(x.data||x.DATA||x.dataHora||x.DATA_HORA||'-'))}</td><td>${escapeHtml(x.status||'Pendente')}</td><td>${x.url?`<a href="${escapeAttr(x.url)}" target="_blank" rel="noopener">Ver Arquivo</a>`:'-'}</td></tr>`).join('')}</tbody></table></div>`}
     async function enviarComprovante(ev){
@@ -2431,7 +2451,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
 
       if(cached){
         const listaCache=extrairListaGenericaJogos_(cached);
-        box.innerHTML=renderListaJogosRealizados(listaCache,loteria)+`<div class="cache-hint ok">Jogos exibidos imediatamente. Atualizando em segundo plano...</div>`;
+        box.innerHTML=renderListaJogosRealizados(listaCache,loteria)+`<div class="cache-hint" style="font-size:10px;color:#b8c4cc;">✓ Atualizado em segundo plano</div>`;
       }else{
         box.innerHTML='<div class="notice info"><span class="loading-fast">Buscando jogos enviados...</span></div>';
       }
@@ -2827,7 +2847,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         const texto=await carregarRegulamentoCache_(true);
         setView(`<div class="panel"><h2>Regulamento</h2><div class="reg-box">${escapeHtml(typeof texto==='string'?texto:(texto.texto||texto.regulamento||''))}</div></div>`);
       }catch(err){
-        if(!cached)setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+        if(!cached){setView('<div class="panel"><div class="notice info"><span class="loading-fast">Carregando jogos...</span></div></div>');setTimeout(renderJogosRealizados,3500);}
       }
     }
     async function renderAdminTable(aba,titulo){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando '+titulo);try{const r=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:aba},args:[aba]}]),headers=r.headers||[],rows=r.rows||[];setView(`<div class="panel"><h2>${escapeHtml(titulo)}</h2>${headers.length?`<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(c=>`<td>${formatarCelula(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<div class="notice warn">Nenhum dado localizado.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
@@ -4342,7 +4362,7 @@ function renderMetodoPagamento_(m,b,i){
     setTimeout(()=>atualizarValorPagamentoModal(loteria),50);
     if(origem==='cache'){
       const hint=document.getElementById('hintAtualizacaoPagamento');
-      if(hint) hint.textContent='Exibido instantaneamente pelo cache. Atualizando em segundo plano...';
+      if(hint) hint.textContent='✓ Atualizado';
     }
   }
 
@@ -5061,7 +5081,7 @@ function renderMetodoPagamento_(m,b,i){
   }
 
   function pssV179Badge_(){
-    return '<div class="fast-cache-badge">Tela aberta instantaneamente • atualizando em segundo plano</div>';
+    return '<div class="fast-cache-badge" title="Atualizando">● atualizando</div>';
   }
 
   function pssV179Skeleton_(view){
@@ -5224,7 +5244,7 @@ function renderMetodoPagamento_(m,b,i){
   }
 
   function pssV181BadgeStale_(){
-    return '<div class="fast-cache-badge stale">Tela aberta instantaneamente • atualizando dados reais em segundo plano</div>';
+    return '<div class="fast-cache-badge stale" title="Atualizando em segundo plano">● atualizando</div>';
   }
 
   setView=function(html){
@@ -5257,7 +5277,8 @@ function renderMetodoPagamento_(m,b,i){
 
     if(cache && cache.html){
       pssV181AtualizandoView=view;
-      pssV181SetViewBase(pssV181BadgeStale_()+cache.html);
+      var _hL=(cache.html||'').replace(/<div class="fast-cache-badge[^"]*"[^>]*>[^<]*<\/div>/g,'');
+      pssV181SetViewBase(pssV181BadgeStale_()+_hL);
       setTimeout(()=>pssV181NavegarBase(view),30);
       return;
     }
@@ -5573,7 +5594,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
       box.innerHTML = `
         <div class="actions" style="justify-content:space-between;align-items:center;">
-          <div class="cache-hint ${origem==='cache'?'ok':'info'}">${origem==='cache'?'Exibido pelo cache. Clique em Atualizar bolões para buscar dados novos.':'Dados atualizados agora.'}</div>
+          <div class="cache-hint" style="font-size:10px;color:#b8c4cc;font-weight:400;">${origem==='cache'?'✓ Atualizado':'✓ Atualizado agora'}</div>
           <button class="btn btn-light" onclick="pssV191AtualizarInicioBoloes(true)">Atualizar bolões</button>
         </div>
         ${ativos.length?`<div class="inicio-grid-boloes">${ativos.map((b,i)=>renderInicioBolaoCard_(b,i)).join('')}</div>`:'<div class="notice warn">Nenhum bolão ativo localizado.</div>'}
@@ -5587,20 +5608,14 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }
 
     if(!forcar){
-      box.innerHTML = `
-        <div class="notice info">
-          O início foi aberto sem carregar a planilha para evitar demora. Clique em <strong>Atualizar bolões</strong> para buscar os dados agora.
-        </div>
-        <div class="actions"><button class="btn" onclick="pssV191AtualizarInicioBoloes(true)">Atualizar bolões</button></div>
+      if(stats) stats.innerHTML=`
+        ${statCard('Bolões ativos','...')}
+        ${statCard('Minhas cotas','...')}
+        ${statCard('Cotas disponíveis','...')}
+        ${statCard('Total de cotas','...')}
       `;
-      if(stats){
-        stats.innerHTML=`
-          ${statCard('Bolões ativos','--')}
-          ${statCard('Minhas cotas','--')}
-          ${statCard('Cotas disponíveis','--')}
-          ${statCard('Total de cotas','--')}
-        `;
-      }
+      box.innerHTML='<div class="notice info"><span class="loading-fast">Carregando bolões...</span></div>';
+      setTimeout(()=>window.pssV191AtualizarInicioBoloes(true),150);
       return;
     }
 
@@ -5661,7 +5676,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
         <div class="panel">
           <h2>Bolões ativos</h2>
-          <p>Os dados são exibidos por cache quando houver. Para buscar diretamente da planilha, clique em Atualizar bolões.</p>
+          <p style="color:#a8b4bc;font-size:11px;margin:0 0 6px;">Dados atualizados automaticamente.</p>
           <div id="inicioBoloesConteudoV191">
             <div class="notice info">Preparando painel...</div>
           </div>
@@ -11426,7 +11441,105 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }
   };
 })();
-  </script>
+  
+/* =====================================================================
+ * PATCH V234 — TURBINE FINAL
+ * Consolida mobile, TTL, apiFetch, apiRapida e TTL de cache.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  /* isMobileV234_ global (idempotente) */
+  if(typeof window.isMobileV224_!=='function')
+    window.isMobileV224_=function(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');};
+  var _mob=window.isMobileV224_;
+
+  /* TTL elevados */
+  if(typeof CACHE_TTL!=='undefined'){CACHE_TTL.curto=5*60*1000;CACHE_TTL.medio=20*60*1000;}
+
+  /* apiFetchDireto_V234_ — fetch CORS */
+  window.apiFetchDireto_V234_=function(action,dados,args,tOut){
+    return new Promise(function(res,rej){
+      var p=typeof montarPayloadApi_==='function'?montarPayloadApi_(action,dados||{},args||null):Object.assign({},dados||{},{action:action});
+      var qs=new URLSearchParams();
+      qs.set('action',action);qs.set('fn',action);qs.set('callback','PSS_CB_V234');
+      qs.set('payload',JSON.stringify(p));qs.set('_',String(Date.now()));
+      var ctrl=new AbortController(),timer=setTimeout(function(){ctrl.abort();},tOut||13000);
+      fetch((typeof CONFIG!=='undefined'?CONFIG.apiUrl:'')+('?'+qs.toString()),{method:'GET',mode:'cors',signal:ctrl.signal})
+        .then(function(r){return r.text();})
+        .then(function(txt){
+          clearTimeout(timer);
+          var m=txt.match(/^[A-Za-z_$][A-Za-z0-9_$.]*\s*\((.+)\);?\s*$/s);
+          var json=JSON.parse(m?m[1]:txt);
+          res(typeof tratarRespostaApi_==='function'?tratarRespostaApi_(json):(json.dados!==undefined?json.dados:(json.result!==undefined?json.result:json)));
+        }).catch(function(e){clearTimeout(timer);rej(e);});
+    });
+  };
+
+  /* apiRapidaV234_: JSONP → fetch (sem bridge lento) */
+  window.apiRapidaV234_=window.apiRapidaV226_=window.apiRapidaV224_=function(action,dados,args,tOut){
+    var mob=_mob(),tJ=mob?9000:(tOut||14000);
+    if(typeof apiJsonpDireto_==='function')
+      return apiJsonpDireto_(action,dados||{},args||null,tJ)
+        .catch(function(){return apiFetchDireto_V234_(action,dados,args,mob?11000:14000);});
+    return apiFetchDireto_V234_(action,dados,args,tOut||13000);
+  };
+
+  /* apiHibridaComFallback_ — timeouts mobile reduzidos */
+  if(typeof apiHibridaComFallback_==='function'){
+    var _hb=apiHibridaComFallback_;
+    apiHibridaComFallback_=function(action,dados,args){
+      var mob=_mob(),tJ=mob?10000:18000,tB=mob?16000:22000,tW=mob?20000:30000;
+      if(typeof apiJsonpDireto_==='function')
+        return apiJsonpDireto_(action,dados||{},args||null,tJ)
+          .catch(function(){return apiFetchDireto_V234_(action,dados,args,mob?12000:14000);})
+          .catch(function(){return typeof apiPostMessageBridge_==='function'?apiPostMessageBridge_(action,dados||{},args||null,tB):Promise.reject(new Error('bridge off'));})
+          .catch(function(){return typeof apiWindowNameBridge_==='function'?apiWindowNameBridge_(action,dados||{},args||null,tW):Promise.reject(new Error('windowName off'));});
+      return _hb(action,dados,args);
+    };
+  }
+
+  /* carregarBoloes — timeout mobile 12s, desktop 16s */
+  var _cbBase=window.carregarBoloes;
+  if(typeof _cbBase==='function'){
+    window.carregarBoloes=carregarBoloes=async function(usarCacheRapido){
+      if(usarCacheRapido){
+        try{
+          var tOut=_mob()?12000:16000;
+          return await Promise.any([
+            promiseTimeout_(api('getLoteriasPagamentoAtivas',{email:ESTADO.email},[]),tOut,'t1'),
+            promiseTimeout_(api('listarBoloes',{email:ESTADO.email},[ESTADO.email]),tOut,'t2')
+          ]);
+        }catch(e){ return await _cbBase(false); }
+      }
+      return _cbBase(usarCacheRapido);
+    };
+  }
+
+  /* renderHomePublica delay mobile */
+  var _rhpBase=window.renderHomePublica;
+  if(typeof _rhpBase==='function'){
+    window.renderHomePublica=renderHomePublica=function(){
+      _rhpBase();
+      var delay=_mob()?250:100;
+      setTimeout(function(){
+        if(typeof carregarLetreiroResultadosPublicosV213==='function')carregarLetreiroResultadosPublicosV213(false);
+        if(typeof carregarHomePublicaBoloes==='function')carregarHomePublicaBoloes(false);
+      },delay);
+    };
+  }
+
+  /* buscarSnapshotServidorV224_ timeout mobile */
+  if(typeof buscarSnapshotServidorV224_==='function'){
+    var _bssBase=buscarSnapshotServidorV224_;
+    window.buscarSnapshotServidorV224_=buscarSnapshotServidorV224_=async function(forcar){
+      var tOut=_mob()?13000:22000;
+      return _bssBase.call(this,forcar);
+    };
+  }
+})();
+/* FIM PATCH V234 */
+
+</script>
 
 </body>
 </html>
