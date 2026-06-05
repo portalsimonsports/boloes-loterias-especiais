@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V236_CORE_CACHE_ATIVOS_SEM_TIMEOUT_LETREIRO_RESTAURADO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V237_VISUAL_ORIGINAL_CACHE_ATIVO_FIX_SEM_SUBMENUS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V236 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V237 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V236_CORE_CACHE_ATIVOS_SEM_TIMEOUT_LETREIRO_RESTAURADO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V237_VISUAL_ORIGINAL_CACHE_ATIVO_FIX_SEM_SUBMENUS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5503,7 +5503,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V236_CORE_CACHE_ATIVOS_SEM_TIMEOUT_LETREIRO_RESTAURADO'; }catch(e){}
+  try{ CONFIG.versao='V237_VISUAL_ORIGINAL_CACHE_ATIVO_FIX_SEM_SUBMENUS'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -10812,156 +10812,9 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  <style>
-    /* V230 — menus pesados sob demanda */
-    .v230-fast-panel{border-left:5px solid #0b6f28!important;}
-    .v230-fast-grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:14px;margin-top:16px;}
-    .v230-fast-card{border:1px solid #d7eadc;background:#fbfffc;border-radius:14px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.05);}
-    .v230-fast-card h3{margin:0 0 8px;color:#003b12;font-size:16px;}
-    .v230-fast-card p{margin:0 0 12px;color:#40566f;font-size:13px;line-height:1.45;}
-    .v230-fast-note{border:1px solid #d2e3fc;background:#f5f9ff;color:#073b68;border-radius:12px;padding:12px 14px;font-size:13px;font-weight:800;line-height:1.45;margin:12px 0;}
-    .v230-fast-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
-    .v230-light-table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top:10px;}
-    .v230-light-table td,.v230-light-table th{padding:10px;border:1px solid #d7eadc;background:#fff;text-align:left;font-size:13px;}
-    .v230-light-table th{background:#f3fff6;color:#003b12;font-weight:1000;}
-    @media(max-width:900px){.v230-fast-grid{grid-template-columns:1fr}}
-  </style>
+  
+<!-- V237: Patch V230 de submenus removido para restaurar o visual original de Comprovante/Pagamentos. -->
 
-
-  <script>
-/* =====================================================================
- * PATCH V230 — MENUS PESADOS SOB DEMANDA / MOBILE MAIS LEVE
- * Base: V229_INSCRITOS_APROVADOS_CANAL_INICIO_TELEGRAM_FIX
- * Não altera menus já rápidos: início, bolões, palpite, jogos, especiais,
- * regulamento, config e página pública.
- * ===================================================================== */
-(function(){
-  'use strict';
-
-  const V230 = {
-    renderComprovanteBase: window.renderComprovante,
-    renderPagamentosBase: window.renderPagamentosAdmin,
-    renderUsuariosBase: window.renderUsuariosAdmin,
-    renderSolicitacoesBase: window.renderSolicitacoesAdmin,
-    renderBaseLoteriasBase: window.renderBaseLoteriasAdmin,
-    renderParticipantesBase: window.renderParticipantesBolaoAdmin,
-    renderConsultaBase: window.renderConsultaParticipanteAdmin
-  };
-
-  function painelRapidoV230_(titulo, subtitulo, cards){
-    setView(`
-      <div class="panel v230-fast-panel">
-        <h2>${escapeHtml(titulo)}</h2>
-        <p>${escapeHtml(subtitulo||'')}</p>
-        <div class="v230-fast-note">
-          Este menu foi colocado em carregamento sob demanda para não travar a abertura no celular. Clique apenas no bloco que deseja consultar ou atualizar.
-        </div>
-        <div class="v230-fast-grid">
-          ${cards.map(c=>`
-            <div class="v230-fast-card">
-              <h3>${escapeHtml(c.titulo)}</h3>
-              <p>${escapeHtml(c.texto||'')}</p>
-              <button class="btn" onclick="${c.acao}">${escapeHtml(c.botao||'Carregar')}</button>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `);
-  }
-
-  function rodarPesadoV230_(label, fn){
-    loading(label || 'Carregando dados');
-    setTimeout(function(){
-      try{
-        const r = fn && fn();
-        if(r && typeof r.catch === 'function') r.catch(err=>setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||err)}</div><button class="btn btn-light" onclick="navegar('inicio')">Voltar ao início</button></div>`));
-      }catch(err){
-        setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||err)}</div><button class="btn btn-light" onclick="navegar('inicio')">Voltar ao início</button></div>`);
-      }
-    },60);
-  }
-
-  window.v230CarregarComprovanteCompleto = function(){rodarPesadoV230_('Carregando comprovante', V230.renderComprovanteBase);};
-  window.v230CarregarPagamentosCompleto = function(tab){rodarPesadoV230_('Carregando pagamentos', ()=>V230.renderPagamentosBase(tab||'efetuados'));};
-  window.v230CarregarUsuariosCompleto = function(){rodarPesadoV230_('Carregando usuários', V230.renderUsuariosBase);};
-  window.v230CarregarSolicitacoesCompleto = function(){rodarPesadoV230_('Carregando solicitações', V230.renderSolicitacoesBase);};
-  window.v230CarregarBaseLoteriasCompleto = function(){rodarPesadoV230_('Carregando base de loterias', V230.renderBaseLoteriasBase);};
-  window.v230CarregarParticipantesCompleto = function(){rodarPesadoV230_('Carregando participantes por bolão', V230.renderParticipantesBase);};
-  window.v230CarregarConsultaCompleto = function(){rodarPesadoV230_('Carregando consulta administrativa', V230.renderConsultaBase);};
-
-  window.renderComprovante = renderComprovante = async function(){
-    painelRapidoV230_('Comprovantes', 'Envio e consulta de comprovantes.', [
-      {titulo:'Enviar comprovante', texto:'Abrir formulário de envio próprio ou de terceiro. Carrega a lista de bolões somente ao abrir.', botao:'Abrir envio', acao:'v230CarregarComprovanteCompleto()'},
-      {titulo:'Pagamentos', texto:'Para conferir baixas, OCR e comprovantes processados, abra o menu Pagamentos sob demanda.', botao:'Abrir pagamentos', acao:"navegar('pagamentos')"},
-      {titulo:'Voltar ao início', texto:'Retorna ao painel principal sem carregar planilhas grandes.', botao:'Voltar', acao:"navegar('inicio')"}
-    ]);
-  };
-
-  window.renderPagamentosAdmin = renderPagamentosAdmin = async function(tab){
-    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
-    painelRapidoV230_('Pagamentos', 'Resumo, comprovantes, recebimentos e conferências.', [
-      {titulo:'Pagamentos efetuados', texto:'Carrega a visão completa de pagamentos somente agora.', botao:'Carregar pagamentos', acao:"v230CarregarPagamentosCompleto('efetuados')"},
-      {titulo:'Resumo financeiro', texto:'Abre o painel de pagamentos para conferir resumo e baixas.', botao:'Carregar resumo', acao:"v230CarregarPagamentosCompleto('resumo')"},
-      {titulo:'Dados de recebimento', texto:'Abre o painel de dados de recebimento quando necessário.', botao:'Carregar recebimento', acao:"v230CarregarPagamentosCompleto('recebimento')"}
-    ]);
-  };
-
-  window.renderUsuariosAdmin = renderUsuariosAdmin = async function(){
-    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
-    painelRapidoV230_('Usuários', 'Administração de usuários cadastrados.', [
-      {titulo:'Carregar usuários', texto:'Lista completa de usuários e permissões. Pode demorar porque consulta a planilha.', botao:'Carregar agora', acao:'v230CarregarUsuariosCompleto()'},
-      {titulo:'Solicitações', texto:'Para aprovar novos cadastros, abra solicitações sob demanda.', botao:'Abrir solicitações', acao:"navegar('solicitacoes')"},
-      {titulo:'Voltar ao início', texto:'Não carrega nenhuma tabela pesada.', botao:'Voltar', acao:"navegar('inicio')"}
-    ]);
-  };
-
-  window.renderSolicitacoesAdmin = renderSolicitacoesAdmin = async function(){
-    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
-    painelRapidoV230_('Solicitações de cadastro', 'Aprovação, recusa e consulta de cadastros.', [
-      {titulo:'Carregar solicitações', texto:'Carrega pendentes, aprovadas e recusadas somente quando você pedir.', botao:'Carregar agora', acao:'v230CarregarSolicitacoesCompleto()'},
-      {titulo:'Diagnóstico de inscritos', texto:'Conferir a contagem dos aprovados usada no bloco Sistema ativo.', botao:'Ver inscritos', acao:'abrirResumoInscritosTopo()'},
-      {titulo:'Voltar ao início', texto:'Retorna sem nova leitura pesada.', botao:'Voltar', acao:"navegar('inicio')"}
-    ]);
-  };
-
-  window.renderBaseLoteriasAdmin = renderBaseLoteriasAdmin = async function(){
-    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
-    painelRapidoV230_('Base Loterias', 'Modelos de loterias, range e quantidades.', [
-      {titulo:'Carregar base completa', texto:'Abre a base da planilha somente sob demanda.', botao:'Carregar agora', acao:'v230CarregarBaseLoteriasCompleto()'},
-      {titulo:'Criar por modelo rápido', texto:'Use o menu Especiais, que já está pré-configurado e abre mais rápido.', botao:'Abrir especiais', acao:"navegar('especiais')"},
-      {titulo:'Voltar ao início', texto:'Retorna ao painel principal.', botao:'Voltar', acao:"navegar('inicio')"}
-    ]);
-  };
-
-  window.renderParticipantesBolaoAdmin = renderParticipantesBolaoAdmin = async function(){
-    if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
-    painelRapidoV230_('Participantes por bolão', 'Consulta administrativa de vínculos e cotas.', [
-      {titulo:'Carregar participantes', texto:'Abre a lista completa apenas quando necessário.', botao:'Carregar agora', acao:'v230CarregarParticipantesCompleto()'},
-      {titulo:'Consulta individual', texto:'Para buscar uma pessoa específica, use a consulta administrativa.', botao:'Abrir consulta', acao:"navegar('consulta')"},
-      {titulo:'Voltar ao início', texto:'Retorna sem carregar planilhas.', botao:'Voltar', acao:"navegar('inicio')"}
-    ]);
-  };
-
-  if(typeof window.renderConsultaParticipanteAdmin === 'function'){
-    window.renderConsultaParticipanteAdmin = async function(){
-      if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
-      painelRapidoV230_('Consulta administrativa', 'Busca detalhada de participante, cotas, comprovantes e palpites.', [
-        {titulo:'Abrir consulta completa', texto:'Carrega o módulo completo de consulta individual somente agora.', botao:'Abrir consulta', acao:'v230CarregarConsultaCompleto()'},
-        {titulo:'Participantes por bolão', texto:'Abre o menu de participantes por bolão.', botao:'Abrir participantes', acao:"navegar('participantes')"},
-        {titulo:'Voltar ao início', texto:'Retorna ao painel principal.', botao:'Voltar', acao:"navegar('inicio')"}
-      ]);
-    };
-  }
-
-  /* Evita pré-cargas desnecessárias depois do login. Mantém somente o que já é leve. */
-  window.preCarregarDadosEstaticos = preCarregarDadosEstaticos = function(){
-    setTimeout(function(){
-      try{carregarBoloes(true).catch(function(){});}catch(e){}
-      /* Regulamento, usuários, pagamentos, base, participantes e comprovantes ficam sob demanda. */
-    },450);
-  };
-})();
-  </script>
 
 
   <style>
@@ -11543,69 +11396,50 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 
   <style>
-    /* V236 — núcleo de carregamento estável */
-    .v236-cache-chip{display:inline-flex;align-items:center;margin-left:8px;border-radius:999px;padding:3px 8px;background:#e3f7e9;color:#064f1e;font-size:10px;font-weight:1000;text-transform:uppercase;white-space:nowrap}
-    .v236-soft-note{border:1px solid #ffe2a5;background:#fff8e6;color:#805400;border-radius:12px;padding:12px 14px;font-weight:800}
-    .v236-loading{display:inline-flex;gap:8px;align-items:center;font-weight:900;color:#123c74}
-    .v236-loading:before{content:"";width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spinFast .7s linear infinite}
+    /* V237 — cache sem alterar visual original */
+    .v237-cache-chip{display:inline-flex;align-items:center;margin-left:8px;border-radius:999px;padding:3px 8px;background:#e3f7e9;color:#064f1e;font-size:10px;font-weight:1000;text-transform:uppercase;white-space:nowrap}
   </style>
 
 
   <script>
 /* =====================================================================
- * V236 — CORREÇÃO DEFINITIVA DO CORE DE CARREGAMENTO
- * Base oficial: index_V234_TURBINADO_FINAL_REFERENCIA.
- * - Bolões ativos: cache primeiro, servidor em segundo plano.
- * - INATIVO/HISTÓRICO nunca aparece como ativo.
- * - Sem tela vermelha de timeout nos blocos de bolões.
- * - Letreiro: cache local/servidor antes de indisponível.
+ * V237 — CORE DE CARREGAMENTO SEM ALTERAR COMPROVANTE/PAGAMENTOS
+ * Base oficial: index_V234_TURBINADO_FINAL_REFERENCIA, com patch V230 removido.
  * ===================================================================== */
 (function(){
   'use strict';
 
-  const V236_HOME_KEY='PSS_HOME_ULTRA_V236';
-  const V236_BOLOES_KEY='PSS_BOLOES_ATIVOS_V236';
-  const V236_RESULT_KEY='PSS_RESULTADOS_PUBLICOS_V236';
-  const V236_TTL=6*60*60*1000;
-  let V236_BG=false;
-  let V236_LAST_REFRESH=0;
+  const V237_HOME_KEY='PSS_HOME_ULTRA_V237';
+  const V237_BOLOES_KEY='PSS_BOLOES_ATIVOS_V237';
+  const V237_RESULT_KEY='PSS_RESULTADOS_PUBLICOS_V237';
+  const V237_TTL=6*60*60*1000;
+  let V237_BG=false;
+  let V237_LAST_REFRESH=0;
 
-  function v236Mobile_(){
-    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
-  }
+  function v237Mobile_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
+  function v237Text_(v){return String(v===undefined||v===null?'':v).trim();}
 
-  function v236Text_(v){
-    return String(v===undefined||v===null?'':v).trim();
-  }
-
-  function v236AtivoReal_(status){
-    const st=normalizar(v236Text_(status||'ATIVO'));
-    if(!st) return true;
-    if(st.includes('INAT')) return false;
-    if(st.includes('HIST')) return false;
-    if(st.includes('ENCERR')) return false;
-    if(st.includes('FINAL')) return false;
-    if(st.includes('CANCEL')) return false;
-    if(st.includes('EXCLU')) return false;
-    if(st.includes('BLOQ')) return false;
-    if(st==='NAO'||st==='NÃO'||st==='FALSE'||st==='0') return false;
+  function v237AtivoReal_(status){
+    const st=normalizar(v237Text_(status||'ATIVO'));
+    if(!st)return true;
+    if(st.includes('INAT'))return false;
+    if(st.includes('HIST'))return false;
+    if(st.includes('ENCERR'))return false;
+    if(st.includes('FINAL'))return false;
+    if(st.includes('CANCEL'))return false;
+    if(st.includes('EXCLU'))return false;
+    if(st.includes('BLOQ'))return false;
+    if(st==='NAO'||st==='NÃO'||st==='FALSE'||st==='0')return false;
     return st==='ATIVO'||st==='SIM'||st==='TRUE'||st==='ABERTO'||st==='DISPONIVEL'||st==='DISPONÍVEL';
   }
 
-  window.isHistorico = function(b){
-    const st=normalizar((b&&b.status)||'');
-    return !v236AtivoReal_(st);
-  };
+  window.isHistorico=function(b){return !v237AtivoReal_((b&&b.status)||'ATIVO');};
 
-  function v236Num_(v){
-    return num(v||0)||0;
-  }
-
-  function v236NormalizarBolao_(b){
+  function v237NormalizarBolao_(b){
     b=b||{};
-    const nome=v236Text_(b.loteria||b.nome||b.NOME||b.LOTERIA);
-    const total=v236Num_(b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||b.COTAS_TOTAL);
-    const adquiridas=v236Num_(b.cotasAdquiridas||b.cotasTotaisAdquiridas||b.COTAS_TOTAIS_ADQUIRIDAS||b.COTAS_ADQUIRIDAS);
+    const nome=v237Text_(b.loteria||b.nome||b.NOME||b.LOTERIA);
+    const total=num(b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||b.COTAS_TOTAL||0)||0;
+    const adquiridas=num(b.cotasAdquiridas||b.cotasTotaisAdquiridas||b.COTAS_TOTAIS_ADQUIRIDAS||b.COTAS_ADQUIRIDAS||0)||0;
     let disp=b.cotasDisponiveis;
     if((disp===undefined||disp===null||disp==='')&&total)disp=Math.max(0,total-adquiridas);
     return {
@@ -11613,7 +11447,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       id:b.id||b.ID||b.idBolao||b.ID_BOLAO||nome,
       nome:nome,
       loteria:nome,
-      status:v236Text_(b.status||b.STATUS||'ATIVO')||'ATIVO',
+      status:v237Text_(b.status||b.STATUS||'ATIVO')||'ATIVO',
       totalCotas:total||(b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||''),
       cotasTotal:total||(b.cotasTotal||b.totalCotas||b.TOTAL_COTAS||''),
       cotasAdquiridas:adquiridas||(b.cotasAdquiridas||0),
@@ -11627,11 +11461,11 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     };
   }
 
-  function v236FiltrarAtivos_(lista){
+  function v237FiltrarAtivos_(lista){
     const usados={};
-    return listaSegura_(lista).map(v236NormalizarBolao_).filter(b=>{
-      if(!v236Text_(b.loteria||b.nome))return false;
-      return v236AtivoReal_(b.status);
+    return listaSegura_(lista).map(v237NormalizarBolao_).filter(b=>{
+      if(!v237Text_(b.loteria||b.nome))return false;
+      return v237AtivoReal_(b.status);
     }).filter(b=>{
       const key=normalizar((b.loteria||b.nome||'')+'|'+(b.dataSorteio||'')+'|'+(b.fimPagamento||'')).replace(/[^A-Z0-9]+/g,'_');
       if(usados[key])return false;
@@ -11640,24 +11474,21 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }).sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||''))||String(a.loteria||'').localeCompare(String(b.loteria||'')));
   }
 
-  function v236Set_(key,dados){
-    try{localStorage.setItem(key,JSON.stringify({ts:Date.now(),dados}));}catch(e){}
-  }
-
-  function v236Get_(key,ttl,stale){
+  function v237Set_(key,dados){try{localStorage.setItem(key,JSON.stringify({ts:Date.now(),dados}));}catch(e){}}
+  function v237Get_(key,ttl,stale){
     try{
       const o=JSON.parse(localStorage.getItem(key)||'null');
       if(!o||o.dados===undefined)return null;
-      if(!stale && Date.now()-Number(o.ts||0)>(ttl||V236_TTL))return null;
+      if(!stale&&Date.now()-Number(o.ts||0)>(ttl||V237_TTL))return null;
       return o.dados;
     }catch(e){return null;}
   }
 
-  function v236Snapshot_(raw){
+  function v237Snapshot_(raw){
     let s=raw||{};
     if(s.dados!==undefined)s=s.dados;
     if(s.result!==undefined)s=s.result;
-    const boloes=v236FiltrarAtivos_(s.boloesPublicosAtivos||s.boloes||s.lista||[]);
+    const boloes=v237FiltrarAtivos_(s.boloesPublicosAtivos||s.boloes||s.lista||[]);
     const resultados=s.resultadosPublicos||s.resultados_publicos||{};
     return {
       sucesso:s.sucesso!==false,
@@ -11675,181 +11506,131 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     };
   }
 
-  function v236SalvarSnapshot_(s){
-    s=v236Snapshot_(s);
-    if(s.boloes.length || s.resultadosPublicos.letreiroTexto || s.resultadosPublicos.resultados.length){
-      v236Set_(V236_HOME_KEY,s);
-      if(s.boloes.length)v236Set_(V236_BOLOES_KEY,s.boloes);
-      if(s.resultadosPublicos.letreiroTexto||s.resultadosPublicos.resultados.length)v236Set_(V236_RESULT_KEY,s.resultadosPublicos);
+  function v237SalvarSnapshot_(s){
+    s=v237Snapshot_(s);
+    if(s.boloes.length||s.resultadosPublicos.letreiroTexto||s.resultadosPublicos.resultados.length){
+      v237Set_(V237_HOME_KEY,s);
+      if(s.boloes.length)v237Set_(V237_BOLOES_KEY,s.boloes);
+      if(s.resultadosPublicos.letreiroTexto||s.resultadosPublicos.resultados.length)v237Set_(V237_RESULT_KEY,s.resultadosPublicos);
     }
     return s;
   }
 
-  function v236LocalSnapshot_(stale){
-    const home=v236Get_(V236_HOME_KEY,V236_TTL,stale);
+  function v237LocalSnapshot_(stale){
+    const home=v237Get_(V237_HOME_KEY,V237_TTL,stale);
     if(home){
-      const s=v236Snapshot_(home);
-      if(s.boloes.length || s.resultadosPublicos.letreiroTexto || s.resultadosPublicos.resultados.length){s.cacheLocal=true;return s;}
+      const s=v237Snapshot_(home);
+      if(s.boloes.length||s.resultadosPublicos.letreiroTexto||s.resultadosPublicos.resultados.length){s.cacheLocal=true;return s;}
     }
-    const bol=v236FiltrarAtivos_(v236Get_(V236_BOLOES_KEY,V236_TTL,stale)||[]);
-    const res=v236Get_(V236_RESULT_KEY,V236_TTL,stale)||v236Get_('PSS_RESULTADOS_PUBLICOS_V213',V236_TTL,stale)||{};
-    const s=v236Snapshot_({boloes:bol,resultadosPublicos:res,atualizadoEm:dataHoraAtualCurta()});
-    if(s.boloes.length || s.resultadosPublicos.letreiroTexto || s.resultadosPublicos.resultados.length){s.cacheLocal=true;return s;}
+    const bol=v237FiltrarAtivos_(v237Get_(V237_BOLOES_KEY,V237_TTL,stale)||[]);
+    const res=v237Get_(V237_RESULT_KEY,V237_TTL,stale)||v237Get_('PSS_RESULTADOS_PUBLICOS_V213',V237_TTL,stale)||{};
+    const s=v237Snapshot_({boloes:bol,resultadosPublicos:res,atualizadoEm:dataHoraAtualCurta()});
+    if(s.boloes.length||s.resultadosPublicos.letreiroTexto||s.resultadosPublicos.resultados.length){s.cacheLocal=true;return s;}
     return null;
   }
 
-  function v236Api_(action,dados,args,timeoutMs){
-    const t=timeoutMs||(v236Mobile_()?9000:14000);
+  function v237Api_(action,dados,args,timeoutMs){
+    const t=timeoutMs||(v237Mobile_()?9000:14000);
     if(typeof apiRapidaV234_==='function')return apiRapidaV234_(action,dados||{},args||[],t);
     if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados||{},args||[],t);
     return promiseTimeout_(api(action,dados||{},args||[]),t,'Tempo limite ao carregar dados.');
   }
 
-  async function v236Servidor_(forcar){
+  async function v237Servidor_(forcar){
     const r=await Promise.any([
-      v236Api_('getHomeUltraV236',{email:ESTADO.email||'',forcar:!!forcar},[ESTADO.email||'',!!forcar],v236Mobile_()?10000:16000),
-      v236Api_('getHomePublicaUltraV236',{email:ESTADO.email||'',forcar:!!forcar},[ESTADO.email||'',!!forcar],v236Mobile_()?10000:16000),
-      v236Api_('getHomePublicaRapidaV224',{email:ESTADO.email||'',forcar:!!forcar},[!!forcar],v236Mobile_()?10000:16000)
+      v237Api_('getHomeUltraV237',{email:ESTADO.email||'',forcar:!!forcar},[ESTADO.email||'',!!forcar],v237Mobile_()?10000:16000),
+      v237Api_('getHomePublicaUltraV237',{email:ESTADO.email||'',forcar:!!forcar},[ESTADO.email||'',!!forcar],v237Mobile_()?10000:16000),
+      v237Api_('getBoloesAtivosUltraV237',{email:ESTADO.email||'',forcar:!!forcar},[ESTADO.email||'',!!forcar],v237Mobile_()?10000:16000)
     ]);
-    return v236SalvarSnapshot_(r);
+    return v237SalvarSnapshot_(r);
   }
 
-  function v236RefreshBg_(motivo){
-    if(V236_BG)return;
-    if(Date.now()-V236_LAST_REFRESH<20000)return;
-    V236_BG=true;
-    V236_LAST_REFRESH=Date.now();
-    v236Servidor_(false).then(s=>{
+  function v237RefreshBg_(){
+    if(V237_BG)return;
+    if(Date.now()-V237_LAST_REFRESH<20000)return;
+    V237_BG=true;
+    V237_LAST_REFRESH=Date.now();
+    v237Servidor_(false).then(s=>{
       ESTADO.boloes=s.boloes;
-      cacheSet_('boloes_'+normalizar(ESTADO.email||'publico').replace(/[^A-Z0-9]+/g,'_'),s.boloes,CACHE_TTL.curto||300000);
-      if(ESTADO.view==='inicio' && typeof renderInicio==='function') setTimeout(()=>renderInicio(),250);
-      if(ESTADO.view==='boloes' && typeof renderBoloes==='function') setTimeout(()=>renderBoloes('ativos'),250);
-      if(ESTADO.view==='palpite' && typeof renderPalpiteLista==='function') setTimeout(()=>renderPalpiteLista('ativos'),250);
-      if(typeof carregarLetreiroResultadosPublicosV213==='function') setTimeout(()=>carregarLetreiroResultadosPublicosV213(false),400);
-    }).catch(()=>{}).finally(()=>{V236_BG=false;});
+      try{cacheSet_('boloes_'+normalizar(ESTADO.email||'publico').replace(/[^A-Z0-9]+/g,'_'),s.boloes,CACHE_TTL.curto||300000);}catch(e){}
+      if(typeof carregarLetreiroResultadosPublicosV213==='function')setTimeout(()=>carregarLetreiroResultadosPublicosV213(false),300);
+    }).catch(()=>{}).finally(()=>{V237_BG=false;});
   }
 
-  window.carregarBoloes = carregarBoloes = async function(forcar){
+  window.carregarBoloes=carregarBoloes=async function(forcar){
     const chave='boloes_'+normalizar(ESTADO.email||'publico').replace(/[^A-Z0-9]+/g,'_');
 
     if(!forcar){
-      const mem=v236FiltrarAtivos_(ESTADO.boloes||[]);
+      const mem=v237FiltrarAtivos_(ESTADO.boloes||[]);
       if(mem.length)return mem;
 
-      const local=v236LocalSnapshot_(true);
+      const local=v237LocalSnapshot_(true);
       if(local&&local.boloes.length){
         ESTADO.boloes=local.boloes;
-        v236RefreshBg_('local');
+        v237RefreshBg_();
         return local.boloes;
       }
 
-      const antigo=cacheGet_(chave,true)||cacheGet_('boloes_publicos',true);
-      const ativosAntigos=v236FiltrarAtivos_(antigo||[]);
-      if(ativosAntigos.length){
-        ESTADO.boloes=ativosAntigos;
-        v236Set_(V236_BOLOES_KEY,ativosAntigos);
-        v236RefreshBg_('cache_antigo');
-        return ativosAntigos;
+      const antigo=v237FiltrarAtivos_((typeof cacheGet_==='function'&&(cacheGet_(chave,true)||cacheGet_('boloes_publicos',true)))||[]);
+      if(antigo.length){
+        ESTADO.boloes=antigo;
+        v237Set_(V237_BOLOES_KEY,antigo);
+        v237RefreshBg_();
+        return antigo;
       }
 
-      v236RefreshBg_('sem_cache');
+      v237RefreshBg_();
       return [];
     }
 
     try{
-      const s=await v236Servidor_(true);
+      const s=await v237Servidor_(true);
       ESTADO.boloes=s.boloes;
-      cacheSet_(chave,s.boloes,CACHE_TTL.curto||300000);
+      try{cacheSet_(chave,s.boloes,CACHE_TTL.curto||300000);}catch(e){}
       return s.boloes;
     }catch(err){
-      const local=v236LocalSnapshot_(true);
+      const local=v237LocalSnapshot_(true);
       if(local&&local.boloes.length)return local.boloes;
       return [];
     }
   };
 
-  function v236RenderResumoInicio_(lista){
-    const ativos=v236FiltrarAtivos_(lista);
-    const total=ativos.reduce((acc,b)=>acc+v236Num_(b.totalCotas||b.cotasTotal),0);
-    const disp=ativos.reduce((acc,b)=>acc+v236Num_(b.cotasDisponiveis),0);
-    const elAtivos=[...document.querySelectorAll('.stat-card,.inicio-stat-card,.home-stat-card')].find(e=>/BOLÕES ATIVOS/i.test(e.textContent||''));
-    // Não força mexer em todos os cards porque a estrutura muda entre versões; renderInicio base já faz quando recebe lista.
-    return {ativos:ativos.length,total,disp};
-  }
-
-  const renderInicioBaseV236=window.renderInicio||renderInicio;
-  window.renderInicio = renderInicio = async function(){
-    try{
-      const local=v236LocalSnapshot_(true);
-      if(local&&local.boloes.length){
-        ESTADO.boloes=local.boloes;
-      }
-      await renderInicioBaseV236.apply(this,arguments);
-      v236RefreshBg_('inicio');
-    }catch(err){
-      const local=v236LocalSnapshot_(true);
-      const lista=local&&local.boloes?local.boloes:v236FiltrarAtivos_(ESTADO.boloes||[]);
-      if(lista.length){
-        ESTADO.boloes=lista;
-        setView(`<div class="panel"><div class="notice warn">Exibindo dados salvos em cache. Atualizando em segundo plano.</div>${lista.length?`<div class="inicio-grid-boloes">${lista.map((b,i)=>renderInicioBolaoCard_(b,i)).join('')}</div>`:''}</div>`);
-        v236RefreshBg_('inicio_fallback');
-      }else{
-        setView(`<div class="panel"><h2>Bolões ativos</h2><div class="v236-soft-note">Não foi possível carregar os bolões agora. O sistema continuará tentando em segundo plano.</div><div class="actions" style="margin-top:14px"><button class="btn" onclick="carregarBoloes(true).then(()=>renderInicio())">Tentar novamente</button></div></div>`);
-        v236RefreshBg_('inicio_sem_cache');
-      }
-    }
+  /* Mantém desempenho sem criar submenus: apenas pré-carrega leve em segundo plano. */
+  window.preCarregarDadosEstaticos=preCarregarDadosEstaticos=function(){
+    setTimeout(function(){
+      try{carregarBoloes(false).catch(function(){});}catch(e){}
+      try{if(typeof carregarLetreiroResultadosPublicosV213==='function')carregarLetreiroResultadosPublicosV213(false);}catch(e2){}
+    },450);
   };
 
-  const renderBoloesBaseV236=window.renderBoloes||renderBoloes;
-  window.renderBoloes = renderBoloes = async function(tipo){
-    try{
-      await renderBoloesBaseV236.apply(this,arguments);
-    }catch(err){
-      const lista=v236FiltrarAtivos_(ESTADO.boloes||[]);
-      setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><div class="v236-soft-note">Exibindo dados disponíveis. Atualizando em segundo plano.</div>${lista.length?renderCardsBoloes(lista,'boloes'):'<div class="notice warn">Nenhum bolão ativo carregado ainda.</div>'}<div class="actions"><button class="btn" onclick="carregarBoloes(true).then(()=>renderBoloes('ativos'))">Atualizar bolões</button></div></div>`);
-      v236RefreshBg_('boloes_fallback');
-    }
-  };
-
-  /* Letreiro com cache real */
-  const renderLetreiroBaseV236=window.renderLetreiroResultadosPublicosV213;
-  function v236RenderLetreiro_(snap,fonte){
-    const s=v236Snapshot_(snap);
+  const renderLetreiroBaseV237=window.renderLetreiroResultadosPublicosV213;
+  function v237RenderLetreiro_(snap,fonte){
+    const s=v237Snapshot_(snap);
     const dados=s.resultadosPublicos;
     const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
-    if(renderLetreiroBaseV236 && (dados.letreiroTexto || dados.resultados.length)){
-      try{renderLetreiroBaseV236(dados);}catch(e){}
-      if(atualizado)atualizado.innerHTML='Atualizado em '+escapeHtml(dados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta())+'<span class="v236-cache-chip">'+escapeHtml(fonte||'cache')+'</span>';
+    if(renderLetreiroBaseV237&&(dados.letreiroTexto||dados.resultados.length)){
+      try{renderLetreiroBaseV237(dados);}catch(e){}
+      if(atualizado)atualizado.innerHTML='Atualizado em '+escapeHtml(dados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta())+'<span class="v237-cache-chip">'+escapeHtml(fonte||'cache')+'</span>';
       return true;
     }
     return false;
   }
 
-  const carregarLetreiroBaseV236=window.carregarLetreiroResultadosPublicosV213;
-  window.carregarLetreiroResultadosPublicosV213 = async function(forcar){
-    const local=v236LocalSnapshot_(true);
-    if(local&&!forcar&&v236RenderLetreiro_(local,'cache')){
-      v236Servidor_(false).then(s=>v236RenderLetreiro_(s,'atualizado')).catch(()=>{});
+  const carregarLetreiroBaseV237=window.carregarLetreiroResultadosPublicosV213;
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    const local=v237LocalSnapshot_(true);
+    if(local&&!forcar&&v237RenderLetreiro_(local,'cache')){
+      v237Servidor_(false).then(s=>v237RenderLetreiro_(s,'atualizado')).catch(()=>{});
       return;
     }
-    if(carregarLetreiroBaseV236){
-      try{ await carregarLetreiroBaseV236.apply(this,arguments); }catch(e){}
+    if(carregarLetreiroBaseV237){
+      try{await carregarLetreiroBaseV237.apply(this,arguments);}catch(e){}
     }
-    v236Servidor_(!!forcar).then(s=>v236RenderLetreiro_(s,'atualizado')).catch(()=>{
-      const fb=v236LocalSnapshot_(true);
-      if(fb)v236RenderLetreiro_(fb,'cache');
+    v237Servidor_(!!forcar).then(s=>v237RenderLetreiro_(s,'atualizado')).catch(()=>{
+      const fb=v237LocalSnapshot_(true);
+      if(fb)v237RenderLetreiro_(fb,'cache');
     });
   };
-
-  const renderHomePublicaBaseV236=window.renderHomePublica||renderHomePublica;
-  if(renderHomePublicaBaseV236){
-    window.renderHomePublica = renderHomePublica = function(){
-      renderHomePublicaBaseV236.apply(this,arguments);
-      setTimeout(()=>{
-        if(typeof carregarLetreiroResultadosPublicosV213==='function')carregarLetreiroResultadosPublicosV213(false);
-      },120);
-    };
-  }
 
 })();
   </script>
