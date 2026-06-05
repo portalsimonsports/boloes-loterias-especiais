@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V222_REGULAMENTO_SEM_TIMEOUT_MOBILE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V223_PERFORMANCE_HOME_PUBLICA_CACHE_SNAPSHOT -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V222</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V223</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -870,6 +870,47 @@
       margin-top:12px;
     }
 
+  
+    /* V223 — Performance: home pública por snapshot/cache */
+    .home-note.soft-v223{
+      background:#f8fffa!important;
+      border-color:#d7eadc!important;
+      color:#003b12!important;
+    }
+    .home-note.warn-v223{
+      background:#fff9e8!important;
+      border-color:#ffd27a!important;
+      color:#7a4d00!important;
+    }
+    .snapshot-chip-v223{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid #d7eadc;
+      background:#f8fffa;
+      color:#003b12;
+      font-size:11px;
+      font-weight:900;
+      margin-left:8px;
+      white-space:nowrap;
+    }
+    .home-public-top .snapshot-chip-v223{margin-left:0;}
+    .loading-dot-v223::after{
+      content:'...';
+      display:inline-block;
+      animation:pssDotsV223 1.4s infinite;
+      width:18px;
+      text-align:left;
+    }
+    @keyframes pssDotsV223{
+      0%{content:''} 33%{content:'.'} 66%{content:'..'} 100%{content:'...'}
+    }
+    @media(max-width:760px){
+      .snapshot-chip-v223{font-size:10px;padding:5px 8px;margin-left:0;margin-top:6px;}
+    }
+
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -885,7 +926,7 @@
   <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitulo">Aviso</h3><button type="button" class="close" onclick="fecharModal()">×</button></div><div id="modalConteudo"></div></div></div>
   <div class="toast-container" id="toastContainer"></div>
   <script>
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V222_REGULAMENTO_SEM_TIMEOUT_MOBILE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V223_PERFORMANCE_HOME_PUBLICA_CACHE_SNAPSHOT',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5401,7 +5442,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V222_REGULAMENTO_SEM_TIMEOUT_MOBILE'; }catch(e){}
+  try{ CONFIG.versao='V223_PERFORMANCE_HOME_PUBLICA_CACHE_SNAPSHOT'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -8954,6 +8995,236 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       try{await carregarBoloes(true);}catch(e){}
       try{await carregarTelegramCache_(true);}catch(e){}
     },500);
+  };
+})();
+
+
+
+/* =====================================================================
+ * PATCH V223 — PERFORMANCE HOME PÚBLICA COM SNAPSHOT/CACHE
+ * Objetivo:
+ * - Abrir a página pública instantaneamente no mobile.
+ * - Trocar 2/3 chamadas pesadas por uma chamada curta: getHomePublicaRapidaV223.
+ * - Usar snapshot salvo no servidor + cache local do aparelho.
+ * - Nunca deixar a tela pública travada por timeout de resultados/bolões.
+ * ===================================================================== */
+(function(){
+  const SNAP_KEY_V223='PSS_HOME_PUBLICA_SNAPSHOT_V223';
+  const SNAP_TTL_LOCAL_V223=30*60*1000;
+  let snapshotPromiseV223=null;
+
+  function normalizarSnapshotV223_(raw){
+    let s=raw||{};
+    if(s.dados!==undefined)s=s.dados;
+    if(s.result!==undefined)s=s.result;
+    const resultados=s.resultadosPublicos||s.resultados_publicos||s.resultados||{};
+    return {
+      sucesso:s.sucesso!==false,
+      atualizadoEm:String(s.atualizadoEm||s.dataHora||dataHoraAtualCurta()),
+      cacheServidor:!!s.cacheServidor,
+      cacheLocal:!!s.cacheLocal,
+      origem:s.origem||'',
+      resultadosPublicos: resultados.resultados?resultados:{
+        sucesso:resultados.sucesso!==false,
+        atualizadoEm:resultados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta(),
+        letreiroTexto:resultados.letreiroTexto||s.letreiroTexto||'',
+        resultados:Array.isArray(resultados)?resultados:(resultados.resultados||[])
+      },
+      boloes:Array.isArray(s.boloes)?s.boloes:[],
+      nomesLoterias:Array.isArray(s.nomesLoterias)?s.nomesLoterias:[],
+      erros:s.erros||{}
+    };
+  }
+
+  function snapshotTemDadosV223_(s){
+    s=normalizarSnapshotV223_(s);
+    const temResultados=Array.isArray(s.resultadosPublicos.resultados)&&s.resultadosPublicos.resultados.length>0;
+    const temLetreiro=String(s.resultadosPublicos.letreiroTexto||'').trim();
+    const temBoloes=Array.isArray(s.boloes)&&s.boloes.length>0;
+    return !!(temResultados||temLetreiro||temBoloes);
+  }
+
+  function salvarSnapshotLocalV223_(s){
+    s=normalizarSnapshotV223_(s);
+    if(!snapshotTemDadosV223_(s))return;
+    try{localStorage.setItem(SNAP_KEY_V223,JSON.stringify({ts:Date.now(),dados:s}));}catch(e){}
+    try{localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V213',JSON.stringify({ts:Date.now(),dados:s.resultadosPublicos}));}catch(e){}
+  }
+
+  function lerSnapshotLocalV223_(aceitarExpirado=true){
+    try{
+      const raw=localStorage.getItem(SNAP_KEY_V223);
+      if(raw){
+        const obj=JSON.parse(raw);
+        if(obj&&obj.dados){
+          const expirado=Date.now()-Number(obj.ts||0)>SNAP_TTL_LOCAL_V223;
+          if(!expirado||aceitarExpirado){
+            const s=normalizarSnapshotV223_(obj.dados);
+            if(snapshotTemDadosV223_(s)){s.cacheLocal=true;return s;}
+          }
+        }
+      }
+    }catch(e){}
+
+    try{
+      const r=JSON.parse(localStorage.getItem('PSS_RESULTADOS_PUBLICOS_V213')||'null');
+      if(r&&r.dados){
+        return normalizarSnapshotV223_({resultadosPublicos:r.dados,boloes:[],atualizadoEm:dataHoraAtualCurta(),cacheLocal:true});
+      }
+    }catch(e){}
+    return null;
+  }
+
+  function apiPublicaRapidaV223_(action,dados,args,timeoutMs){
+    if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados||{},args||null,timeoutMs||8500);
+    return promiseTimeout_(api(action,dados||{},args||null),timeoutMs||8500,'Tempo limite na leitura rápida.');
+  }
+
+  function renderResultadosSnapshotV223_(snapshot, origem){
+    if(typeof inserirEstruturaLetreiroV213_==='function')inserirEstruturaLetreiroV213_();
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(!box)return;
+
+    const s=normalizarSnapshotV223_(snapshot);
+    const dados=s.resultadosPublicos||{};
+    const tem=(Array.isArray(dados.resultados)&&dados.resultados.length)||String(dados.letreiroTexto||'').trim();
+
+    if(tem){
+      try{renderLetreiroResultadosPublicosV213(dados);}catch(e){box.innerHTML='<div class="home-note warn-v223">Resultados carregados, mas houve falha visual. Clique em Atualizar resultados.</div>';}
+      if(atualizado){
+        atualizado.innerHTML='Atualizado em '+escapeHtml(dados.atualizadoEm||s.atualizadoEm||dataHoraAtualCurta())+
+          (s.cacheLocal?'<span class="snapshot-chip-v223">Cache rápido</span>':'<span class="snapshot-chip-v223">Leitura rápida</span>');
+      }
+      return;
+    }
+
+    if(atualizado)atualizado.textContent='Carregando informações...';
+    box.innerHTML='<div class="home-note soft-v223"><span class="loading-dot-v223">Atualizando últimos resultados em segundo plano</span></div>';
+  }
+
+  function renderBoloesSnapshotV223_(snapshot, opts){
+    opts=opts||{};
+    const box=document.getElementById('homeBoloesPublicosConteudo');
+    const lotBox=document.getElementById('homeTodasLoteriasConteudo');
+    if(!box)return;
+
+    const s=normalizarSnapshotV223_(snapshot);
+    const lista=Array.isArray(s.boloes)?s.boloes:[];
+    const ativos=lista
+      .filter(b=>!isHistorico(b)&&normalizar(b.status||'ATIVO').includes('ATIVO'))
+      .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')))
+      .slice(0,8);
+
+    if(ativos.length){
+      const nomes=s.nomesLoterias&&s.nomesLoterias.length?s.nomesLoterias:[...new Set(lista.map(b=>b.loteria||b.nome).filter(Boolean))];
+      box.innerHTML=`
+        <div class="home-public-top">
+          <span>Atualizado em ${escapeHtml(s.atualizadoEm||dataHoraAtualCurta())}</span>
+          <span class="snapshot-chip-v223">${s.cacheLocal?'Cache rápido':'Leitura rápida'}</span>
+          <button type="button" class="btn btn-light btn-pill" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button>
+        </div>
+        <div class="home-public-grid">
+          ${ativos.map(b=>renderCardHomeBolao_(b)).join('')}
+        </div>
+        <div class="actions" style="margin-top:18px;">
+          <button class="btn" onclick="renderLogin()">Entrar para participar</button>
+          <button class="btn btn-light" onclick="abrirCadastro()">Solicitar cadastro</button>
+        </div>
+      `;
+      if(lotBox && nomes.length){
+        lotBox.innerHTML=`<div class="home-loterias-list">${nomes.slice(0,20).map(n=>`<span>${escapeHtml(n)}</span>`).join('')}</div>`;
+      }
+      return;
+    }
+
+    box.innerHTML=`
+      <div class="home-note soft-v223">
+        <span class="loading-dot-v223">Atualizando bolões ativos em segundo plano</span>
+      </div>
+      <div class="actions" style="margin-top:14px;">
+        <button class="btn" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button>
+        <button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button>
+      </div>
+    `;
+  }
+
+  async function carregarSnapshotPublicoV223_(forcar){
+    const cache=lerSnapshotLocalV223_(true);
+    if(cache&&!forcar){
+      renderResultadosSnapshotV223_(cache,'cache');
+      renderBoloesSnapshotV223_(cache,{cache:true});
+    }
+
+    if(snapshotPromiseV223&&!forcar)return snapshotPromiseV223;
+
+    snapshotPromiseV223=apiPublicaRapidaV223_('getHomePublicaRapidaV223',{forcar:!!forcar},[!!forcar],9000)
+      .then(raw=>{
+        const snap=normalizarSnapshotV223_(raw);
+        if(snapshotTemDadosV223_(snap)){
+          salvarSnapshotLocalV223_(snap);
+          renderResultadosSnapshotV223_(snap,'api');
+          renderBoloesSnapshotV223_(snap,{api:true});
+        }else if(!cache){
+          renderResultadosSnapshotV223_(snap,'vazio');
+          renderBoloesSnapshotV223_(snap,{vazio:true});
+        }
+        return snap;
+      })
+      .catch(err=>{
+        const fallback=lerSnapshotLocalV223_(true);
+        if(fallback){
+          renderResultadosSnapshotV223_(fallback,'fallback');
+          renderBoloesSnapshotV223_(fallback,{fallback:true});
+          return fallback;
+        }
+        const box=document.getElementById('resultadosPublicosTickerV213');
+        if(box)box.innerHTML='<div class="home-note warn-v223">Ainda não há cache rápido neste aparelho. Clique em Atualizar resultados ou aguarde a atualização automática.</div>';
+        const hb=document.getElementById('homeBoloesPublicosConteudo');
+        if(hb)hb.innerHTML='<div class="home-note warn-v223">Ainda não há cache rápido dos bolões. Clique em Atualizar dados ou entre no sistema.</div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="carregarHomePublicaBoloes(true)">Atualizar dados</button><button class="btn btn-light" onclick="renderLogin()">Entrar no sistema</button></div>';
+        return null;
+      })
+      .finally(()=>{snapshotPromiseV223=null;});
+
+    return snapshotPromiseV223;
+  }
+
+  window.carregarLetreiroResultadosPublicosV213 = async function(forcar){
+    if(typeof inserirEstruturaLetreiroV213_==='function')inserirEstruturaLetreiroV213_();
+    const cache=lerSnapshotLocalV223_(true);
+    if(cache&&!forcar){
+      renderResultadosSnapshotV223_(cache,'cache');
+      carregarSnapshotPublicoV223_(false).catch(()=>{});
+      return;
+    }
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    if(box&&!cache)box.innerHTML='<div class="notice info"><span class="loading-dot-v223">Carregando últimos resultados</span></div>';
+    await carregarSnapshotPublicoV223_(!!forcar);
+  };
+
+  window.carregarHomePublicaBoloes = async function(forcar){
+    const cache=lerSnapshotLocalV223_(true);
+    if(cache&&!forcar){
+      renderBoloesSnapshotV223_(cache,{cache:true});
+      carregarSnapshotPublicoV223_(false).catch(()=>{});
+      return;
+    }
+    const box=document.getElementById('homeBoloesPublicosConteudo');
+    if(box&&!cache)box.innerHTML='<div class="notice info"><span class="loading-dot-v223">Carregando bolões ativos</span></div>';
+    await carregarSnapshotPublicoV223_(!!forcar);
+  };
+
+  const renderHomePublicaBaseV223=window.renderHomePublica||renderHomePublica;
+  window.renderHomePublica=renderHomePublica=function(){
+    renderHomePublicaBaseV223();
+    setTimeout(()=>carregarSnapshotPublicoV223_(false),150);
+  };
+
+  window.preCarregarDadosEstaticos = preCarregarDadosEstaticos = function(){
+    // V223: nada pesado na abertura. Menus carregam sob demanda.
+    setTimeout(()=>{
+      try{carregarSnapshotPublicoV223_(false).catch(()=>{});}catch(e){}
+    },800);
   };
 })();
 
