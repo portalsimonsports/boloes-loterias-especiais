@@ -944,7 +944,336 @@
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
   <script defer src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js">
+
+/* =====================================================================
+ * PATCH V226 — ULTRAVELOCIDADE GERAL + UPLOAD DRIVE RÁPIDO
+ *
+ * 1. isMobileV226_()          : detecção mobile global (idempotente)
+ * 2. CACHE_TTL elevados       : curto 5min, médio 20min (menos round-trips)
+ * 3. apiHibridaComFallback_   : timeouts mobile 10/16/20s (era 18/22/30s)
+ * 4. apiFetchDireto_V226_     : fetch() CORS como 2ª via no mobile
+ * 5. apiRapidaV226_           : JSONP→fetch em vez de JSONP→bridge lento
+ * 6. carregarRegulamentoCache_: paralela getRegulamento + obterRegulamento
+ * 7. carregarJogosCache_      : paralela 3 actions, timeout mobile 10s
+ * 8. carregarTelegramCache_   : paralela 2 actions, timeout mobile 9s
+ * 9. renderInicio dashboard   : Promise.all (simultâneo) em vez de sequencial
+ * 10. renderComprovante       : cache-first + segundo plano
+ * 11. renderJogosRealizados   : cache-first + segundo plano
+ * 12. uploadComprovante Drive : fetch() direto + iframe fallback
+ * 13. uploadJogoRealizado     : fetch() direto + loop sequencial garantido
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  /* ── 1. Detecção mobile global (idempotente) ─────────────────────── */
+  if(typeof window.isMobileV224_ !== 'function'){
+    window.isMobileV224_ = function(){
+      return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+    };
+  }
+  var _mob = window.isMobileV224_;
+
+  /* ── 2. TTL de cache elevados: menos round-trips ─────────────────── */
+  if(typeof CACHE_TTL !== 'undefined'){
+    CACHE_TTL.curto  = 5  * 60 * 1000;   // era 2 min
+    CACHE_TTL.medio  = 20 * 60 * 1000;   // era 10 min
+    // longo permanece 6h
+  }
+
+  /* ── 3. apiHibridaComFallback_ com timeouts mobile reduzidos ─────── */
+  if(typeof apiHibridaComFallback_ === 'function'){
+    var _hibBase = apiHibridaComFallback_;
+    apiHibridaComFallback_ = function(action,dados,args){
+      var mob=_mob();
+      var tJ=mob?10000:18000, tB=mob?16000:22000, tW=mob?20000:30000;
+      if(typeof apiJsonpDireto_==='function'){
+        return apiJsonpDireto_(action,dados||{},args||null,tJ)
+          .catch(function(){ return apiFetchDireto_V226_(action,dados,args,mob?12000:14000); })
+          .catch(function(){ return typeof apiPostMessageBridge_==='function'
+            ? apiPostMessageBridge_(action,dados||{},args||null,tB)
+            : Promise.reject(new Error('bridge indisponível')); })
+          .catch(function(){ return typeof apiWindowNameBridge_==='function'
+            ? apiWindowNameBridge_(action,dados||{},args||null,tW)
+            : Promise.reject(new Error('windowName indisponível')); });
+      }
+      return _hibBase(action,dados,args);
+    };
+  }
+
+  /* ── 4. apiFetchDireto_V226_ — fetch CORS como 2ª via ───────────── */
+  window.apiFetchDireto_V226_ = function(action,dados,args,timeoutMs){
+    return new Promise(function(resolve,reject){
+      var payload = typeof montarPayloadApi_==='function'
+        ? montarPayloadApi_(action,dados||{},args||null)
+        : Object.assign({},dados||{},{action:action});
+      var params=new URLSearchParams();
+      params.set('action',action);
+      params.set('fn',action);
+      params.set('callback','PSS_FETCH_CB_V226');
+      params.set('payload',JSON.stringify(payload));
+      params.set('_',String(Date.now()));
+      var url=(typeof CONFIG!=='undefined'?CONFIG.apiUrl:'')+('?'+params.toString());
+      var ctrl=new AbortController();
+      var timer=setTimeout(function(){ctrl.abort();reject(new Error('timeout fetch V226'));},timeoutMs||14000);
+      fetch(url,{method:'GET',mode:'cors',signal:ctrl.signal})
+        .then(function(r){return r.text();})
+        .then(function(txt){
+          clearTimeout(timer);
+          var m=txt.match(/^[A-Za-z_$][A-Za-z0-9_$.]*\s*\((.+)\);?\s*$/s);
+          var json=JSON.parse(m?m[1]:txt);
+          resolve(typeof tratarRespostaApi_==='function'
+            ? tratarRespostaApi_(json)
+            : (json.dados!==undefined?json.dados:(json.result!==undefined?json.result:json)));
+        })
+        .catch(function(err){clearTimeout(timer);reject(err);});
+    });
+  };
+
+  /* ── 5. apiRapidaV226_: JSONP→fetch em vez de JSONP→bridge ──────── */
+  window.apiRapidaV226_ = function(action,dados,args,timeoutMs){
+    var mob=_mob();
+    var tJ=mob?9000:(timeoutMs||14000);
+    if(typeof apiJsonpDireto_==='function'){
+      return apiJsonpDireto_(action,dados||{},args||null,tJ)
+        .catch(function(){ return apiFetchDireto_V226_(action,dados,args,mob?11000:14000); });
+    }
+    return apiFetchDireto_V226_(action,dados,args,timeoutMs||14000);
+  };
+
+  /* Alias retrocompat com V224 */
+  window.apiRapidaV224_ = window.apiRapidaV226_;
+
+  /* ── 6. carregarRegulamentoCache_ — paralela ─────────────────────── */
+  if(typeof carregarRegulamentoCache_ === 'function'){
+    var _regBase = carregarRegulamentoCache_;
+    carregarRegulamentoCache_ = function(segundoPlano){
+      var tOut=_mob()?10000:14000;
+      if(typeof apiCached_!=='function') return _regBase(segundoPlano);
+      return apiCached_(
+        'regulamento', CACHE_TTL.longo,
+        function(){
+          return Promise.any([
+            promiseTimeout_(api('getRegulamento',{},[]),tOut,'r1'),
+            promiseTimeout_(api('obterRegulamento',{},[]),tOut,'r2')
+          ]).catch(function(){throw new Error('Regulamento indisponível.');});
+        },
+        {usarCachePrimeiro:true,atualizarSegundoPlano:!!segundoPlano}
+      );
+    };
+  }
+
+  /* ── 7. carregarJogosCache_ — paralela + timeout mobile ─────────── */
+  if(typeof carregarJogosCache_ === 'function'){
+    var _jogBase = carregarJogosCache_;
+    carregarJogosCache_ = function(loteria,segundoPlano,onRefresh){
+      var tOut=_mob()?10000:13000;
+      if(typeof apiCached_!=='function') return _jogBase(loteria,segundoPlano,onRefresh);
+      var key=typeof cacheKeyLoteria_==='function'?cacheKeyLoteria_('jogos',loteria):('jogos_'+loteria);
+      return apiCached_(
+        key, CACHE_TTL.medio,
+        function(){
+          return Promise.any([
+            promiseTimeout_(api('getJogosRealizadosBolao',{email:ESTADO.email,loteria},[ESTADO.email,loteria]),tOut,'j1'),
+            promiseTimeout_(api('listarJogosRealizadosBolao',{email:ESTADO.email,loteria},[ESTADO.email,loteria]),tOut,'j2'),
+            promiseTimeout_(api('getJogosBolao',{email:ESTADO.email,loteria},[ESTADO.email,loteria]),tOut,'j3')
+          ]).catch(function(){throw new Error('Jogos indisponíveis.');});
+        },
+        {usarCachePrimeiro:true,atualizarSegundoPlano:!!segundoPlano,onRefresh:onRefresh}
+      );
+    };
+  }
+
+  /* ── 8. carregarTelegramCache_ — paralela ────────────────────────── */
+  if(typeof carregarTelegramCache_ === 'function'){
+    var _telBase = carregarTelegramCache_;
+    carregarTelegramCache_ = function(segundoPlano){
+      var tOut=_mob()?9000:12000;
+      if(typeof apiCached_!=='function') return _telBase(segundoPlano);
+      return apiCached_(
+        'telegram', CACHE_TTL.medio,
+        function(){
+          return Promise.any([
+            promiseTimeout_(api('getTelegramCanalLink',{},[]),tOut,'t1'),
+            promiseTimeout_(api('getConfigPublica',{},[]),tOut,'t2')
+          ]).catch(function(){throw new Error('Telegram indisponível.');});
+        },
+        {usarCachePrimeiro:true,atualizarSegundoPlano:!!segundoPlano}
+      );
+    };
+  }
+
+  /* ── 9. renderInicio dashboard — Promise.all simultâneo ─────────── */
+  /* Sobrescreve o renderInicio logado para disparar bolões+config em paralelo */
+  var _renderInicioBase226 = window.renderInicio;
+  window.renderInicio = renderInicio = async function(){
+    if(typeof loading==='function') loading('Carregando início');
+    try{
+      /* Disparo simultâneo: bolões + config pública */
+      var [lista, cfg] = await Promise.all([
+        carregarBoloes(true).catch(function(){return[];}),
+        (typeof apiCached_==='function'
+          ? apiCached_('configPublica', CACHE_TTL.medio, function(){return apiRapidaV226_('getConfigPublica',{},[],12000);},{usarCachePrimeiro:true,atualizarSegundoPlano:true})
+          : Promise.resolve({})
+        ).catch(function(){return{};})
+      ]);
+      ESTADO.boloes = lista;
+      ESTADO.configPublica = cfg;
+      /* Delega renderização ao original mantendo ESTADO preenchido */
+      if(typeof _renderInicioBase226==='function' && _renderInicioBase226 !== renderInicio){
+        try{ await _renderInicioBase226(); }catch(e){}
+      }
+    }catch(e){
+      if(typeof _renderInicioBase226==='function' && _renderInicioBase226 !== renderInicio){
+        try{ await _renderInicioBase226(); }catch(e2){}
+      }
+    }
+  };
+
+  /* ── 10. renderComprovante — cache-first ─────────────────────────── */
+  var _renderCompBase = window.renderComprovante;
+  window.renderComprovante = renderComprovante = async function(){
+    if(typeof loading==='function') loading('Carregando comprovante');
+    try{
+      /* Bolões do cache imediatamente */
+      var lista = typeof carregarBoloes==='function' ? await carregarBoloes(true).catch(function(){return[];}) : [];
+      ESTADO.boloes = lista;
+      /* Histórico de comprovantes em paralelo com bolões frescos */
+      var lotSel = ESTADO.bolaoSelecionado||(lista[0]?lista[0].loteria:'');
+      var cacheHistKey = typeof cacheKeyLoteria_==='function'?cacheKeyLoteria_('historicoComprovantes',lotSel):'hist_comp_'+lotSel;
+      var cachedHist = typeof cacheGet_==='function'?cacheGet_(cacheHistKey,true):null;
+      if(cachedHist){
+        /* Renderiza do cache enquanto busca frescos em segundo plano */
+        if(typeof _renderCompBase==='function') await _renderCompBase();
+        var tOut=_mob()?11000:15000;
+        Promise.any([
+          promiseTimeout_(api('getHistoricoComprovantes',{email:ESTADO.email},[ESTADO.email]),tOut,'h1'),
+          promiseTimeout_(api('historicoComprovantes',{email:ESTADO.email},[ESTADO.email]),tOut,'h2')
+        ]).then(function(h){ if(typeof cacheSet_==='function') cacheSet_(cacheHistKey,h,CACHE_TTL.curto); })
+          .catch(function(){});
+        return;
+      }
+      if(typeof _renderCompBase==='function') await _renderCompBase();
+    }catch(e){
+      if(typeof _renderCompBase==='function') try{ await _renderCompBase(); }catch(e2){}
+    }
+  };
+
+  /* ── 11. renderJogosRealizados — cache-first ─────────────────────── */
+  var _renderJogosBase = window.renderJogosRealizados;
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    if(typeof loading==='function') loading('Carregando jogos realizados');
+    try{
+      /* Bolões do cache — não bloqueia */
+      var lista = typeof carregarBoloes==='function' ? await carregarBoloes(true).catch(function(){return[];}) : [];
+      ESTADO.boloes = lista;
+      if(typeof _renderJogosBase==='function') await _renderJogosBase();
+    }catch(e){
+      if(typeof _renderJogosBase==='function') try{ await _renderJogosBase(); }catch(e2){}
+    }
+  };
+
+  /* ── 12+13. Upload Drive Rápido via fetch + FormData ─────────────── */
+  /*
+   * Substitui o fluxo iframe→form→window.name por fetch() com FormData.
+   * O GAS aceita multipart/form-data e lê os campos normalmente.
+   * Benefício: sem iframe, sem messageChannel, sem overhead de DOM.
+   * Fallback: se fetch falhar (ex. CORS estrito) cai no iframe original.
+   *
+   * COMPROVANTE: 1 arquivo por vez — já era assim, mantido e acelerado.
+   * JOGOS:       até MAX_FILES_JOGOS (10) em loop sequencial garantido.
+   */
+  var MAX_FILES_JOGOS = 10;
+
+  async function uploadFetchV226_(action, dados, args, timeoutMs){
+    var apiUrl = (typeof CONFIG!=='undefined'&&CONFIG.apiUrl)?CONFIG.apiUrl:'';
+    if(!apiUrl) throw new Error('apiUrl não configurada.');
+
+    var fd = new FormData();
+    fd.append('action', action);
+    fd.append('fn', action);
+    fd.append('fnName', action);
+    fd.append('mode', 'postmessage');
+    fd.append('callback', 'callback');
+    fd.append('email', ESTADO.email||'');
+    fd.append('payload', JSON.stringify(typeof montarPayloadApi_==='function'
+      ? montarPayloadApi_(action,dados||{},args||null)
+      : Object.assign({},dados||{},{action:action})));
+    fd.append('_', String(Date.now()));
+    // Campos diretos
+    Object.keys(dados||{}).forEach(function(k){
+      if(dados[k]!==undefined && dados[k]!==null && k!=='fileData'){
+        fd.append(k, String(dados[k]));
+      }
+    });
+    if(dados&&dados.fileData) fd.append('fileData', dados.fileData);
+    if(Array.isArray(args)) fd.append('args', JSON.stringify(args));
+
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ctrl.abort();}, timeoutMs||180000);
+
+    var resp = await fetch(apiUrl, {method:'POST', body:fd, signal:ctrl.signal});
+    clearTimeout(timer);
+    var txt = await resp.text();
+    // GAS pode retornar JSONP callback(json) ou JSON puro
+    var m = txt.match(/^[A-Za-z_$][A-Za-z0-9_$.]*\s*\((.+)\);?\s*$/s);
+    var json = JSON.parse(m?m[1]:txt);
+    return typeof tratarRespostaApi_==='function'
+      ? tratarRespostaApi_(json)
+      : (json.dados!==undefined?json.dados:(json.result!==undefined?json.result:json));
+  }
+
+  /* Comprovante — 1 arquivo por vez */
+  window.apiUploadComprovante_ = apiUploadComprovante_ = async function(base64,file,loteria,metaExtra){
+    var dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria};
+    if(metaExtra) Object.assign(dados,metaExtra);
+    var args=[base64,file.name,ESTADO.email,loteria];
+    try{
+      return await uploadFetchV226_('uploadComprovante',dados,args,120000);
+    }catch(errFetch){
+      /* Fallback: iframe form (comportamento original V182) */
+      if(typeof apiPostFormWindowName_==='function'){
+        return await apiPostFormWindowName_('uploadComprovante',dados,args,180000);
+      }
+      throw errFetch;
+    }
+  };
+
+  /* Jogos realizados — sequencial garantido, até MAX_FILES_JOGOS arquivos */
+  window.apiUploadJogoRealizado_ = apiUploadJogoRealizado_ = async function(base64,file,loteria,concurso,dataJogo,obs){
+    var dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,
+               loteria:loteria,concurso:concurso||'',dataJogo:dataJogo||'',obs:obs||''};
+    var args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+    try{
+      return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000);
+    }catch(errFetch){
+      if(typeof apiPostFormWindowName_==='function'){
+        return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000);
+      }
+      throw errFetch;
+    }
+  };
+
+  /* Guarda limite de arquivos acessível globalmente */
+  window.PSS_MAX_FILES_JOGOS_V226 = MAX_FILES_JOGOS;
+
+  /* Override do enviarJogoRealizadoBolao para respeitar limite máximo */
+  var _envJogosBase = window.enviarJogoRealizadoBolao;
+  window.enviarJogoRealizadoBolao = enviarJogoRealizadoBolao = async function(ev){
+    if(ev&&typeof ev.preventDefault==='function') ev.preventDefault();
+    var input=document.getElementById('arquivoJogoRealizado');
+    var files=input&&input.files?Array.from(input.files):[];
+    if(files.length>MAX_FILES_JOGOS){
+      if(typeof toast==='function') toast('Máximo de '+MAX_FILES_JOGOS+' arquivos por envio. Selecione até '+MAX_FILES_JOGOS+' arquivos.','warn');
+      return;
+    }
+    if(typeof _envJogosBase==='function') return _envJogosBase(ev);
+  };
+
+})();
+/* FIM PATCH V226 — ULTRAVELOCIDADE */
+
+</script>
 
 </head>
 <body>
