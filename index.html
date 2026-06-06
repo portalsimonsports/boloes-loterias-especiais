@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V245_UPLOAD_IFRAME_APPS_SCRIPT_RUN_OCR_VALIDACAO_FLEXIVEL -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V246_PASTAS_BOLAO_MES_PARTICIPANTE_OCR -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V245_UPLOAD_IFRAME_APPS_SCRIPT_RUN_OCR_VALIDACAO_FLEXIVEL',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V246_PASTAS_BOLAO_MES_PARTICIPANTE_OCR',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5513,7 +5513,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V245_UPLOAD_IFRAME_APPS_SCRIPT_RUN_OCR_VALIDACAO_FLEXIVEL'; }catch(e){}
+  try{ CONFIG.versao='V246_PASTAS_BOLAO_MES_PARTICIPANTE_OCR'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -12447,7 +12447,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
   <script>
 /* =====================================================================
- * V245 — UPLOAD DE COMPROVANTE VIA IFRAME APPS SCRIPT + google.script.run
+ * V246 — UPLOAD DE COMPROVANTE VIA IFRAME APPS SCRIPT + google.script.run
  * Mantém o painel principal no GitHub Pages, mas envia o arquivo pesado
  * em uma página HtmlService do Apps Script para evitar JSONP/chunks no PDF.
  * ===================================================================== */
@@ -12550,7 +12550,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     params.set('fracaoCota',meta.fracaoCota || '');
     params.set('nomesPartes',JSON.stringify(meta.nomesPartes || []));
     params.set('obsAdmin',meta.obsAdmin || '');
-    params.set('v',CONFIG.versao || 'V245');
+    params.set('v',CONFIG.versao || 'V246');
     params.set('t',Date.now());
     frame.src = CONFIG.apiUrl + '?' + params.toString();
     modal.classList.add('open');
