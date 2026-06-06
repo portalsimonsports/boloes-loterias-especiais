@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V247_UPLOAD_APP_DADOS_PRE_SELECIONADOS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V248_ADQUIRIR_COTAS_UPLOAD_DIRETO_OCR -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V247_UPLOAD_APP_DADOS_PRE_SELECIONADOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V248_ADQUIRIR_COTAS_UPLOAD_DIRETO_OCR',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -4153,8 +4153,7 @@ function renderCorpoAdquirirCotas_(b,nome,lista,carregando){
       `:''}
 
       <div class="actions" style="margin-top:12px;">
-        <button type="button" class="btn" onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
-        <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        <button type="button" class="btn" onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Adquirir cotas e carregar comprovante</button>
       </div>
     </div>
 
@@ -4598,8 +4597,7 @@ function renderMetodoPagamento_(m,b,i){
         `:''}
 
         <div class="actions" style="margin-top:12px;">
-          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
-          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Adquirir cotas e carregar comprovante</button>
         </div>
         <div id="pagReservaMsg"></div>
       </div>
@@ -5513,7 +5511,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V247_UPLOAD_APP_DADOS_PRE_SELECIONADOS'; }catch(e){}
+  try{ CONFIG.versao='V248_ADQUIRIR_COTAS_UPLOAD_DIRETO_OCR'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5916,8 +5914,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         `:''}
 
         <div class="actions" style="margin-top:12px;">
-          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
-          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Adquirir cotas e carregar comprovante</button>
         </div>
         <div id="pagReservaMsg"></div>
       </div>
@@ -6687,8 +6684,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         </div>
 
         <div class="actions" style="margin-top:12px;">
-          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
-          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Adquirir cotas e carregar comprovante</button>
         </div>
         <div id="pagReservaMsg"></div>
       </div>
@@ -6826,12 +6822,36 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
       var msg=document.getElementById('pagReservaMsg');
       if(msg){
-        msg.innerHTML='<div class="notice warn" style="margin-top:10px;"><strong>Cotas reservadas.</strong><br>Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.</div>';
+        msg.innerHTML='<div class="notice info" style="margin-top:10px;"><strong>Cotas reservadas/baixadas.</strong><br>Agora carregue o comprovante para o OCR validar o pagamento pelo valor esperado.</div>';
       }
 
-      toast((r&&r.msg)||'Cota(s) reservada(s). Envie o comprovante após realizar o pagamento.');
-      if(btn){btn.disabled=false;btn.textContent='Cotas reservadas';btn.classList.add('btn-reserved');btn.onclick=function(){abrirAvisoCotasReservadas(loteria)};}
+      toast((r&&r.msg)||'Cota(s) reservada(s). Abrindo envio de comprovante...');
+      if(btn){btn.disabled=true;btn.textContent='Abrindo comprovante...';}
       atualizarValorPagamentoModal(loteria);
+
+      var metaUpload={
+        tipoEnvio:'PROPRIO',
+        adminEmail:ESTADO.email||'',
+        emailParticipante:ESTADO.email||'',
+        nomeParticipante:(ESTADO.usuario&&ESTADO.usuario.nome)||'',
+        tipoCota:(calc.tipoCota==='FRACIONADA'?'dividida':'unica'),
+        qtdPartes:(calc.tipoCota==='FRACIONADA'?String(calc.fracaoCota):''),
+        fracaoCota:(calc.tipoCota==='FRACIONADA'?String(1/calc.fracaoCota):'1'),
+        nomesPartes:[],
+        valorEsperado:moeda(calc.valorAgora),
+        valorPagamentoAgora:moeda(calc.valorAgora),
+        valorTotal:moeda(calc.valorTotal),
+        cotasEquivalentes:String(calc.cotasEquivalentes),
+        qtdCotas:String(calc.qtdBase),
+        idAquisicao:(r&&r.idAquisicao)||'',
+        obsAdmin:'Aquisição registrada antes do envio do comprovante. OCR deve validar o valor esperado.'
+      };
+
+      setTimeout(function(){
+        try{fecharModal();}catch(e){}
+        try{abrirUploadComprovanteAppsScriptV245({loteria:loteria,meta:metaUpload});}
+        catch(eUp){toast('Cotas reservadas, mas não foi possível abrir o envio: '+(eUp.message||eUp),'error');}
+      },350);
     }catch(err){
       toast(err.message||err,'error');
       if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
@@ -7085,15 +7105,13 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         </div>
 
         <div class="actions" style="margin-top:12px;">
-          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
-          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Adquirir cotas e carregar comprovante</button>
         </div>
         <div id="pagReservaMsg"></div>
       </div>
 
-      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
-      <div id="metodosPagamentoBox">
-        ${v208RenderMetodosPagamento(lista,b,nome,carregando)}
+      <div class="notice info" style="margin-top:14px;">
+        O QR Code e os meios de pagamento não são obrigatórios para continuar. Ao clicar em <strong>Adquirir cotas e carregar comprovante</strong>, o sistema registra a reserva/baixa da cota e abre o envio seguro do comprovante pelo Apps Script.
       </div>
     `;
   };
@@ -7175,12 +7193,36 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
       var msg=document.getElementById('pagReservaMsg');
       if(msg){
-        msg.innerHTML='<div class="notice warn" style="margin-top:10px;"><strong>Cotas reservadas.</strong><br>Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.</div>';
+        msg.innerHTML='<div class="notice info" style="margin-top:10px;"><strong>Cotas reservadas/baixadas.</strong><br>Agora carregue o comprovante para o OCR validar o pagamento pelo valor esperado.</div>';
       }
 
-      toast((r&&r.msg)||'Cota(s) reservada(s). Envie o comprovante após realizar o pagamento.');
-      if(btn){btn.disabled=false;btn.textContent='Cotas reservadas';btn.classList.add('btn-reserved');btn.onclick=function(){abrirAvisoCotasReservadas(loteria)};}
+      toast((r&&r.msg)||'Cota(s) reservada(s). Abrindo envio de comprovante...');
+      if(btn){btn.disabled=true;btn.textContent='Abrindo comprovante...';}
       atualizarValorPagamentoModal(loteria);
+
+      var metaUpload={
+        tipoEnvio:'PROPRIO',
+        adminEmail:ESTADO.email||'',
+        emailParticipante:ESTADO.email||'',
+        nomeParticipante:(ESTADO.usuario&&ESTADO.usuario.nome)||'',
+        tipoCota:(calc.tipoCota==='FRACIONADA'?'dividida':'unica'),
+        qtdPartes:(calc.tipoCota==='FRACIONADA'?String(calc.fracaoCota):''),
+        fracaoCota:(calc.tipoCota==='FRACIONADA'?String(1/calc.fracaoCota):'1'),
+        nomesPartes:[],
+        valorEsperado:moeda(calc.valorAgora),
+        valorPagamentoAgora:moeda(calc.valorAgora),
+        valorTotal:moeda(calc.valorTotal),
+        cotasEquivalentes:String(calc.cotasEquivalentes),
+        qtdCotas:String(calc.qtdBase),
+        idAquisicao:(r&&r.idAquisicao)||'',
+        obsAdmin:'Aquisição registrada antes do envio do comprovante. OCR deve validar o valor esperado.'
+      };
+
+      setTimeout(function(){
+        try{fecharModal();}catch(e){}
+        try{abrirUploadComprovanteAppsScriptV245({loteria:loteria,meta:metaUpload});}
+        catch(eUp){toast('Cotas reservadas, mas não foi possível abrir o envio: '+(eUp.message||eUp),'error');}
+      },350);
     }catch(err){
       toast(err.message||err,'error');
       if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
@@ -12524,10 +12566,11 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     return meta;
   }
 
-  function abrirUploadComprovanteAppsScriptV245_(){
-    var loteria = document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '';
+  function abrirUploadComprovanteAppsScriptV245_(override){
+    override = override || null;
+    var loteria = override && override.loteria ? override.loteria : (document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '');
     if(!loteria) return toast('Selecione a loteria do depósito.','error');
-    var meta = montarMetaComprovanteV245_();
+    var meta = override && override.meta ? override.meta : montarMetaComprovanteV245_();
     if(meta.tipoEnvio === 'TERCEIRO'){
       if(typeof isAdmin === 'function' && !isAdmin()) return toast('Apenas administrador pode enviar comprovante de terceiro.','error');
       if(!meta.emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
@@ -12550,7 +12593,13 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     params.set('fracaoCota',meta.fracaoCota || '');
     params.set('nomesPartes',JSON.stringify(meta.nomesPartes || []));
     params.set('obsAdmin',meta.obsAdmin || '');
-    params.set('v',CONFIG.versao || 'V246');
+    params.set('valorEsperado',meta.valorEsperado || meta.valorPagamentoAgora || '');
+    params.set('valorPagamentoAgora',meta.valorPagamentoAgora || meta.valorEsperado || '');
+    params.set('valorTotal',meta.valorTotal || '');
+    params.set('cotasEquivalentes',meta.cotasEquivalentes || '');
+    params.set('qtdCotas',meta.qtdCotas || '');
+    params.set('idAquisicao',meta.idAquisicao || '');
+    params.set('v',CONFIG.versao || 'V248');
     params.set('t',Date.now());
     frame.src = CONFIG.apiUrl + '?' + params.toString();
     modal.classList.add('open');
@@ -12797,5 +12846,14 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 </script>
 
+
+<script>
+/* =====================================================================
+ * PATCH V248 — ADQUIRIR COTAS ABRE ENVIO DIRETO
+ * - A tela de aquisição não depende mais do QR Code para avançar.
+ * - O botão único registra a reserva/baixa e abre o módulo de comprovante.
+ * - O valor esperado é enviado para o OCR validar o pagamento.
+ * ===================================================================== */
+</script>
 </body>
 </html>
