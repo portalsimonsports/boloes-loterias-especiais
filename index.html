@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V237_VISUAL_ORIGINAL_CACHE_ATIVO_FIX_SEM_SUBMENUS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V238_TELEGRAM_6H_MENU_GUARD_VISUAL_ORIGINAL -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V237 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V238 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V237_VISUAL_ORIGINAL_CACHE_ATIVO_FIX_SEM_SUBMENUS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V238_TELEGRAM_6H_MENU_GUARD_VISUAL_ORIGINAL',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5503,7 +5503,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V237_VISUAL_ORIGINAL_CACHE_ATIVO_FIX_SEM_SUBMENUS'; }catch(e){}
+  try{ CONFIG.versao='V238_TELEGRAM_6H_MENU_GUARD_VISUAL_ORIGINAL'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -11631,6 +11631,168 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       if(fb)v237RenderLetreiro_(fb,'cache');
     });
   };
+
+})();
+  </script>
+
+
+  <style>
+    /* V238 — guarda de menu sem mexer no visual */
+    .v238-menu-guard-note{display:none!important}
+  </style>
+
+
+  <script>
+/* =====================================================================
+ * V238 — GUARDA DE MENU
+ * Impede que resposta atrasada de um menu substitua o conteúdo do menu atual.
+ * Exemplo corrigido: clicar em Comprovante, depois Jogos; se Comprovante terminar depois,
+ * o sistema restaura Jogos automaticamente.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  if(window.PSS_MENU_GUARD_V238_APLICADO) return;
+  window.PSS_MENU_GUARD_V238_APLICADO = true;
+
+  window.PSS_MENU_TOKEN_V238 = 0;
+  window.PSS_MENU_ATUAL_V238 = (window.ESTADO && ESTADO.view) || 'inicio';
+  window.PSS_MENU_RESTAURANDO_V238 = false;
+
+  const mapaRenderV238 = {
+    inicio: function(){ return typeof renderInicio === 'function' ? renderInicio() : null; },
+    boloes: function(){ return typeof renderBoloes === 'function' ? renderBoloes('ativos') : null; },
+    palpite: function(){ return typeof renderPalpiteLista === 'function' ? renderPalpiteLista('ativos') : (typeof renderPalpite === 'function' ? renderPalpite() : null); },
+    jogos: function(){ return typeof renderJogosRealizados === 'function' ? renderJogosRealizados() : null; },
+    comprovante: function(){ return typeof renderComprovante === 'function' ? renderComprovante() : null; },
+    pagamentos: function(){ return typeof renderPagamentos === 'function' ? renderPagamentos() : null; },
+    especiais: function(){ return typeof renderEspeciais === 'function' ? renderEspeciais() : null; },
+    regulamento: function(){ return typeof renderRegulamento === 'function' ? renderRegulamento() : null; },
+    config: function(){ return typeof renderConfigBoloesAdmin === 'function' ? renderConfigBoloesAdmin() : (typeof renderConfig === 'function' ? renderConfig() : null); },
+    usuarios: function(){ return typeof renderUsuarios === 'function' ? renderUsuarios() : null; },
+    solicitacoes: function(){ return typeof renderSolicitacoesCadastro === 'function' ? renderSolicitacoesCadastro() : null; },
+    base: function(){ return typeof renderBaseLoterias === 'function' ? renderBaseLoterias() : null; },
+    telegram: function(){ return typeof renderTelegram === 'function' ? renderTelegram() : null; }
+  };
+
+  function normalizarViewGuardV238_(v){
+    v=String(v||'inicio').toLowerCase();
+    if(v.includes('comprov')) return 'comprovante';
+    if(v.includes('pag')) return 'pagamentos';
+    if(v.includes('jogo')) return 'jogos';
+    if(v.includes('palp')) return 'palpite';
+    if(v.includes('bol')) return 'boloes';
+    if(v.includes('especial')) return 'especiais';
+    if(v.includes('regul')) return 'regulamento';
+    if(v.includes('config')) return 'config';
+    if(v.includes('usuario')) return 'usuarios';
+    if(v.includes('solicit')) return 'solicitacoes';
+    if(v.includes('base')) return 'base';
+    if(v.includes('telegram')) return 'telegram';
+    return v || 'inicio';
+  }
+
+  function marcarMenuV238_(v){
+    window.PSS_MENU_TOKEN_V238++;
+    window.PSS_MENU_ATUAL_V238 = normalizarViewGuardV238_(v);
+    if(window.ESTADO) ESTADO.view = window.PSS_MENU_ATUAL_V238;
+    return window.PSS_MENU_TOKEN_V238;
+  }
+
+  function restaurarMenuAtualV238_(){
+    if(window.PSS_MENU_RESTAURANDO_V238) return;
+    window.PSS_MENU_RESTAURANDO_V238 = true;
+
+    setTimeout(function(){
+      try{
+        const atual = normalizarViewGuardV238_(window.PSS_MENU_ATUAL_V238 || (window.ESTADO && ESTADO.view) || 'inicio');
+        const fn = mapaRenderV238[atual];
+        if(typeof fn === 'function'){
+          const antes = window.PSS_MENU_TOKEN_V238;
+          const r = fn();
+          if(r && typeof r.catch === 'function') r.catch(function(){});
+          window.PSS_MENU_TOKEN_V238 = antes;
+          window.PSS_MENU_ATUAL_V238 = atual;
+          if(window.ESTADO) ESTADO.view = atual;
+        }
+      }catch(e){}
+      setTimeout(function(){ window.PSS_MENU_RESTAURANDO_V238 = false; },120);
+    },40);
+  }
+
+  function wrapRenderGuardV238_(nome, view){
+    const original = window[nome];
+    if(typeof original !== 'function' || original.__v238Guard) return;
+
+    const wrapped = async function(){
+      const tokenInicio = window.PSS_MENU_TOKEN_V238;
+      const viewEsperada = normalizarViewGuardV238_(view);
+      try{
+        return await original.apply(this, arguments);
+      }finally{
+        const atual = normalizarViewGuardV238_(window.PSS_MENU_ATUAL_V238 || (window.ESTADO && ESTADO.view));
+        if(tokenInicio !== window.PSS_MENU_TOKEN_V238 && atual !== viewEsperada){
+          restaurarMenuAtualV238_();
+        }
+      }
+    };
+
+    wrapped.__v238Guard = true;
+    wrapped.__original = original;
+    window[nome] = wrapped;
+
+    try{
+      if(typeof eval(nome) === 'function'){
+        window[nome] = wrapped;
+      }
+    }catch(e){}
+  }
+
+  const navegarOriginalV238 = window.navegar;
+  if(typeof navegarOriginalV238 === 'function' && !navegarOriginalV238.__v238Guard){
+    const navegarWrap = function(view){
+      marcarMenuV238_(view);
+      return navegarOriginalV238.apply(this, arguments);
+    };
+    navegarWrap.__v238Guard = true;
+    navegarWrap.__original = navegarOriginalV238;
+    window.navegar = navegarWrap;
+    try{ navegar = navegarWrap; }catch(e){}
+  }
+
+  [
+    ['renderInicio','inicio'],
+    ['renderBoloes','boloes'],
+    ['renderPalpiteLista','palpite'],
+    ['renderPalpite','palpite'],
+    ['renderJogosRealizados','jogos'],
+    ['renderComprovante','comprovante'],
+    ['renderPagamentos','pagamentos'],
+    ['renderEspeciais','especiais'],
+    ['renderRegulamento','regulamento'],
+    ['renderConfigBoloesAdmin','config'],
+    ['renderConfig','config'],
+    ['renderUsuarios','usuarios'],
+    ['renderSolicitacoesCadastro','solicitacoes'],
+    ['renderBaseLoterias','base'],
+    ['renderTelegram','telegram']
+  ].forEach(function(item){ wrapRenderGuardV238_(item[0], item[1]); });
+
+  document.addEventListener('click',function(ev){
+    const el = ev.target && ev.target.closest ? ev.target.closest('[onclick],button,a') : null;
+    if(!el) return;
+    const txt = String(el.textContent||'').toLowerCase();
+    const on = String(el.getAttribute('onclick')||'').toLowerCase();
+    const mix = txt + ' ' + on;
+    if(mix.includes('comprov')) marcarMenuV238_('comprovante');
+    else if(mix.includes('pagamento')) marcarMenuV238_('pagamentos');
+    else if(mix.includes('jogo')) marcarMenuV238_('jogos');
+    else if(mix.includes('palpite')) marcarMenuV238_('palpite');
+    else if(mix.includes('bolões') || mix.includes('boloes')) marcarMenuV238_('boloes');
+    else if(mix.includes('especial')) marcarMenuV238_('especiais');
+    else if(mix.includes('regulamento')) marcarMenuV238_('regulamento');
+    else if(mix.includes('config')) marcarMenuV238_('config');
+  }, true);
 
 })();
   </script>
