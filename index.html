@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V243_UPLOAD_CHUNKS_JSONP_DRIVE_OCR_POSTERIOR -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V245_UPLOAD_IFRAME_APPS_SCRIPT_RUN_OCR_VALIDACAO_FLEXIVEL -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V243 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V245 UPLOAD APPS SCRIPT</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V243_UPLOAD_CHUNKS_JSONP_DRIVE_OCR_POSTERIOR',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V245_UPLOAD_IFRAME_APPS_SCRIPT_RUN_OCR_VALIDACAO_FLEXIVEL',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -3319,8 +3319,8 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
-        partesCota:cellObj(o,['PARTES_COTA','PARTES COTA']),
-        participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA']),
+        partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+        participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
       };
@@ -3335,9 +3335,15 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     }
 
     function formatarPartesPagamento_(v){
-      const n=num(v);
-      if(!n)return '-';
+      if(v===undefined||v===null||String(v).trim()==='')return '-';
+      const raw=String(v).trim();
+      const n=num(raw);
+      if(!n)return escapeHtml(raw);
       if(n===1)return 'Integral';
+      if(n>0&&n<1){
+        const partes=Math.round(1/n);
+        return partes>1?'1/'+partes:String(n);
+      }
       return '1/'+n;
     }
 
@@ -5507,7 +5513,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V243_UPLOAD_CHUNKS_JSONP_DRIVE_OCR_POSTERIOR'; }catch(e){}
+  try{ CONFIG.versao='V245_UPLOAD_IFRAME_APPS_SCRIPT_RUN_OCR_VALIDACAO_FLEXIVEL'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -12434,6 +12440,166 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }
   };
 
+})();
+  </script>
+
+
+
+  <script>
+/* =====================================================================
+ * V245 — UPLOAD DE COMPROVANTE VIA IFRAME APPS SCRIPT + google.script.run
+ * Mantém o painel principal no GitHub Pages, mas envia o arquivo pesado
+ * em uma página HtmlService do Apps Script para evitar JSONP/chunks no PDF.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_UPLOAD_IFRAME_APPS_SCRIPT_V245_APLICADO) return;
+  window.PSS_UPLOAD_IFRAME_APPS_SCRIPT_V245_APLICADO = true;
+
+  function injectUploadModalStyleV245_(){
+    if(document.getElementById('pss-upload-v245-style')) return;
+    var css = document.createElement('style');
+    css.id = 'pss-upload-v245-style';
+    css.textContent = `
+      .pss-upload-v245-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:20000;display:none;align-items:center;justify-content:center;padding:12px;}
+      .pss-upload-v245-backdrop.open{display:flex;}
+      .pss-upload-v245-box{width:min(680px,100%);height:min(720px,94vh);background:#fff;border-radius:16px;box-shadow:0 22px 70px rgba(0,0,0,.38);overflow:hidden;display:flex;flex-direction:column;border-top:5px solid #0b6f28;}
+      .pss-upload-v245-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid #dfe8e2;background:#f8fcf9;}
+      .pss-upload-v245-head b{color:#003b12;font-size:15px;}
+      .pss-upload-v245-close{border:0;border-radius:999px;background:#e9eef2;color:#111;font-weight:900;width:34px;height:34px;cursor:pointer;font-size:20px;line-height:1;}
+      .pss-upload-v245-frame{border:0;width:100%;height:100%;flex:1;background:#f4f7f5;}
+      @media(max-width:720px){.pss-upload-v245-backdrop{padding:0;align-items:stretch}.pss-upload-v245-box{width:100%;height:100vh;border-radius:0}.pss-upload-v245-head{padding-top:calc(12px + env(safe-area-inset-top));}}
+    `;
+    document.head.appendChild(css);
+  }
+
+  function ensureUploadModalV245_(){
+    injectUploadModalStyleV245_();
+    var modal = document.getElementById('pss-upload-v245-modal');
+    if(modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'pss-upload-v245-modal';
+    modal.className = 'pss-upload-v245-backdrop';
+    modal.innerHTML = '<div class="pss-upload-v245-box">'+
+      '<div class="pss-upload-v245-head"><b>Enviar comprovante</b><button type="button" class="pss-upload-v245-close" aria-label="Fechar">×</button></div>'+
+      '<iframe id="pss-upload-v245-iframe" class="pss-upload-v245-frame" allow="clipboard-read; clipboard-write"></iframe>'+
+      '</div>';
+    document.body.appendChild(modal);
+    modal.querySelector('.pss-upload-v245-close').addEventListener('click', fecharUploadModalV245_);
+    modal.addEventListener('click', function(ev){ if(ev.target === modal) fecharUploadModalV245_(); });
+    return modal;
+  }
+
+  function fecharUploadModalV245_(){
+    var modal = document.getElementById('pss-upload-v245-modal');
+    var frame = document.getElementById('pss-upload-v245-iframe');
+    if(frame) frame.src = 'about:blank';
+    if(modal) modal.classList.remove('open');
+  }
+
+  function montarMetaComprovanteV245_(){
+    var tipoEnvio = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    var meta = {
+      tipoEnvio: tipoEnvio === 'terceiro' ? 'TERCEIRO' : 'PROPRIO',
+      adminEmail: ESTADO.email || '',
+      tipoCota: document.getElementById('tipoCota')?.value || 'unica',
+      qtdPartes: document.getElementById('qtdPartes')?.value || '',
+      fracaoCota: document.getElementById('fracaoCotaTerceiroV225')?.value || document.getElementById('fracaoComprovanteTerceiroV225')?.value || '',
+      nomesPartes: [],
+      obsAdmin: document.getElementById('obsComprovanteTerceiroV225')?.value || ''
+    };
+    if(meta.tipoCota === 'dividida'){
+      document.querySelectorAll('#nomesPartes input').forEach(function(inp){
+        var v = (inp.value || '').trim();
+        if(v) meta.nomesPartes.push(v);
+      });
+    }
+    if(tipoEnvio === 'terceiro'){
+      meta.emailParticipante = (document.getElementById('emailParticipanteTerceiroV225')?.value || '').trim().toLowerCase();
+      meta.nomeParticipante = (document.getElementById('nomeParticipanteTerceiroV225')?.value || '').trim();
+    }else{
+      meta.emailParticipante = ESTADO.email || '';
+      meta.nomeParticipante = ESTADO.usuario?.nome || '';
+    }
+    return meta;
+  }
+
+  function abrirUploadComprovanteAppsScriptV245_(){
+    var loteria = document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '';
+    if(!loteria) return toast('Selecione a loteria do depósito.','error');
+    var meta = montarMetaComprovanteV245_();
+    if(meta.tipoEnvio === 'TERCEIRO'){
+      if(typeof isAdmin === 'function' && !isAdmin()) return toast('Apenas administrador pode enviar comprovante de terceiro.','error');
+      if(!meta.emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
+    }
+    ESTADO.bolaoSelecionado = loteria;
+    try{ localStorage.setItem('PSS_BOLAO_SELECIONADO', loteria); }catch(e){}
+
+    var modal = ensureUploadModalV245_();
+    var frame = document.getElementById('pss-upload-v245-iframe');
+    var params = new URLSearchParams();
+    params.set('mode','upload_app');
+    params.set('loteria',loteria);
+    params.set('email',ESTADO.email || '');
+    params.set('adminEmail',ESTADO.email || '');
+    params.set('tipoEnvio',meta.tipoEnvio || 'PROPRIO');
+    params.set('emailParticipante',meta.emailParticipante || ESTADO.email || '');
+    params.set('nomeParticipante',meta.nomeParticipante || '');
+    params.set('tipoCota',meta.tipoCota || '');
+    params.set('qtdPartes',meta.qtdPartes || '');
+    params.set('fracaoCota',meta.fracaoCota || '');
+    params.set('nomesPartes',JSON.stringify(meta.nomesPartes || []));
+    params.set('obsAdmin',meta.obsAdmin || '');
+    params.set('v',CONFIG.versao || 'V245');
+    params.set('t',Date.now());
+    frame.src = CONFIG.apiUrl + '?' + params.toString();
+    modal.classList.add('open');
+    if(typeof atualizarProgressoUploadComprovante_ === 'function'){
+      atualizarProgressoUploadComprovante_(1,'Abrindo módulo de envio','Envio será feito pelo Apps Script com google.script.run.','run');
+    }
+  }
+
+  window.addEventListener('message', function(ev){
+    var data = ev && ev.data ? ev.data : null;
+    if(!data || data.pssUploadComprovanteApp !== true) return;
+    if(data.tipo === 'fechar'){
+      fecharUploadModalV245_();
+      return;
+    }
+    if(data.tipo === 'sucesso'){
+      var r = data.payload || {};
+      if(typeof atualizarProgressoUploadComprovante_ === 'function'){
+        atualizarProgressoUploadComprovante_(100,'Comprovante enviado',(r.msg || 'Comprovante enviado e processado.'),'ok');
+      }
+      toast(r.msg || 'Comprovante enviado com sucesso.');
+      try{
+        var loteria = document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '';
+        cacheDel_(cacheKeyLoteria_('historicoComprovantes', loteria));
+      }catch(e){}
+      try{
+        var input = document.getElementById('arquivoComprovante');
+        if(input) input.value = '';
+      }catch(e2){}
+      try{
+        if(typeof carregarHistoricoComprovantes === 'function') carregarHistoricoComprovantes();
+        if(typeof renderComprovante === 'function') setTimeout(function(){ renderComprovante(); }, 900);
+      }catch(e3){}
+      return;
+    }
+    if(data.tipo === 'erro'){
+      var msg = (data.payload && (data.payload.msg || data.payload.erro)) || 'Falha ao enviar comprovante.';
+      if(typeof atualizarProgressoUploadComprovante_ === 'function'){
+        atualizarProgressoUploadComprovante_(0,'Falha no envio',msg,'error');
+      }
+      toast(msg,'error');
+    }
+  });
+
+  window.abrirUploadComprovanteAppsScriptV245 = abrirUploadComprovanteAppsScriptV245_;
+  window.enviarComprovante = enviarComprovante = function(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+    abrirUploadComprovanteAppsScriptV245_();
+  };
 })();
   </script>
 
