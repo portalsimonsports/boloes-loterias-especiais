@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V242_UPLOAD_DIRETO_DRIVE_SEM_BASE64_SEM_CHUNKS -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V243_UPLOAD_CHUNKS_JSONP_DRIVE_OCR_POSTERIOR -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V242 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V243 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V242_UPLOAD_DIRETO_DRIVE_SEM_BASE64_SEM_CHUNKS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V243_UPLOAD_CHUNKS_JSONP_DRIVE_OCR_POSTERIOR',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5507,7 +5507,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V242_UPLOAD_DIRETO_DRIVE_SEM_BASE64_SEM_CHUNKS'; }catch(e){}
+  try{ CONFIG.versao='V243_UPLOAD_CHUNKS_JSONP_DRIVE_OCR_POSTERIOR'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -12192,6 +12192,248 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       if(btn){btn.disabled=false;btn.textContent='Enviar jogos realizados';}
     }
   };
+})();
+  </script>
+
+
+
+  <script>
+/* =====================================================================
+ * V243 — UPLOAD EM CHUNKS JSONP
+ * Aplica o modelo enviado: FileReader -> DataURL -> blocos pequenos -> Apps Script.
+ * O backend junta os blocos, remove cabeçalho data:*;base64, grava no Drive e registra pendência.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  if(window.PSS_UPLOAD_CHUNKS_V243_APLICADO) return;
+  window.PSS_UPLOAD_CHUNKS_V243_APLICADO = true;
+
+  const PSS_CHUNK_SIZE_V243 = 3000; // seguro para JSONP/doGet mesmo com URL encoding
+
+  function lerArquivoBase64V243_(file){
+    return new Promise(function(resolve,reject){
+      var reader = new FileReader();
+      reader.onload = function(){ resolve(reader.result); };
+      reader.onerror = function(error){ reject(error); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function uploadIdV243_(){
+    return 'UP243_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+  }
+
+  function apiChunkV243_(action, dados, timeoutMs){
+    if(typeof apiJsonpDireto_ === 'function'){
+      return apiJsonpDireto_(action, dados || {}, null, timeoutMs || 22000);
+    }
+    return api(action, dados || {}, null);
+  }
+
+  async function enviarArquivoEmPedacosV243_(file, tipo, contexto, onProgress){
+    contexto = contexto || {};
+    var base64Completo = await lerArquivoBase64V243_(file);
+    var uploadId = uploadIdV243_();
+    var totalCaracteres = base64Completo.length;
+    var totalBlocos = Math.ceil(totalCaracteres / PSS_CHUNK_SIZE_V243);
+
+    if(onProgress) onProgress(2, 'Preparando arquivo', 'Arquivo será enviado em ' + totalBlocos + ' partes.');
+
+    for(var i = 0; i < totalBlocos; i++){
+      var inicio = i * PSS_CHUNK_SIZE_V243;
+      var fim = Math.min(inicio + PSS_CHUNK_SIZE_V243, totalCaracteres);
+      var pedaco = base64Completo.substring(inicio, fim);
+
+      await apiChunkV243_('uploadChunkArquivoV243', {
+        uploadId: uploadId,
+        index: i,
+        indice: i,
+        total: totalBlocos,
+        chunk: pedaco,
+        tipo: tipo,
+        fileName: file.name,
+        mimeType: file.type || '',
+        loteria: contexto.loteria || '',
+        email: contexto.email || ESTADO.email || ''
+      }, 22000);
+
+      if(onProgress){
+        var pct = Math.max(4, Math.min(92, Math.round(((i + 1) / totalBlocos) * 86)));
+        onProgress(pct, 'Enviando arquivo', 'Parte ' + (i + 1) + ' de ' + totalBlocos + ' confirmada.');
+      }
+
+      if(typeof aguardarFrame_ === 'function') await aguardarFrame_();
+    }
+
+    if(onProgress) onProgress(94, 'Finalizando gravação', 'Juntando partes e gravando no Drive.');
+
+    var final = await apiChunkV243_('finalizarUploadArquivoV243', {
+      uploadId: uploadId,
+      tipo: tipo,
+      fileName: file.name,
+      mimeType: file.type || '',
+      loteria: contexto.loteria || '',
+      email: contexto.email || ESTADO.email || '',
+      meta: contexto.meta || {}
+    }, 90000);
+
+    if(onProgress) onProgress(100, 'Arquivo gravado', (final && final.msg) || 'Arquivo gravado no Drive.');
+    return final;
+  }
+
+  function coletaMetaComprovanteV243_(){
+    var tipoEnvio = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    var meta = {
+      tipoEnvio: tipoEnvio === 'terceiro' ? 'TERCEIRO' : 'PROPRIO',
+      adminEmail: ESTADO.email || '',
+      tipoCota: document.getElementById('tipoCota')?.value || 'unica',
+      qtdPartes: document.getElementById('qtdPartes')?.value || '',
+      nomesPartes: []
+    };
+
+    if(meta.tipoCota === 'dividida'){
+      document.querySelectorAll('#nomesPartes input').forEach(function(inp){ meta.nomesPartes.push(inp.value || ''); });
+    }
+
+    if(tipoEnvio === 'terceiro'){
+      meta.emailParticipante = (document.getElementById('emailParticipanteTerceiroV225')?.value || '').trim();
+      meta.nomeParticipante = (document.getElementById('nomeParticipanteTerceiroV225')?.value || '').trim();
+      meta.fracaoCota = document.getElementById('fracaoCotaTerceiroV225')?.value || document.getElementById('fracaoComprovanteTerceiroV225')?.value || '1';
+      meta.obsAdmin = document.getElementById('obsComprovanteTerceiroV225')?.value || '';
+    }else{
+      meta.emailParticipante = ESTADO.email || '';
+    }
+
+    return meta;
+  }
+
+  window.enviarComprovante = enviarComprovante = async function(ev){
+    ev.preventDefault();
+
+    var loteria = document.getElementById('uploadBolao')?.value || '';
+    var input = document.getElementById('arquivoComprovante');
+    var file = input && input.files ? input.files[0] : null;
+    var btn = document.getElementById('btnEnviarComprovante');
+
+    if(!loteria) return toast('Selecione a loteria do depósito.','error');
+    if(!file) return toast('Selecione o arquivo do comprovante.','error');
+
+    var meta = coletaMetaComprovanteV243_();
+    if(meta.tipoEnvio === 'TERCEIRO'){
+      if(!isAdmin()) return toast('Apenas administrador pode enviar comprovante de terceiro.','error');
+      if(!meta.emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
+    }
+
+    ESTADO.bolaoSelecionado = loteria;
+    localStorage.setItem('PSS_BOLAO_SELECIONADO', loteria);
+
+    if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+    function progresso(pct,titulo,msg,st){
+      atualizarProgressoUploadComprovante_(pct, titulo, msg, st || 'run');
+    }
+
+    progresso(1, 'Preparando envio', 'Arquivo será enviado em partes pequenas e depois gravado no Drive.', 'run');
+
+    try{
+      var r = await enviarArquivoEmPedacosV243_(file, 'COMPROVANTE', {
+        loteria: loteria,
+        email: meta.emailParticipante || ESTADO.email || '',
+        meta: meta
+      }, progresso);
+
+      progresso(100, 'Comprovante gravado', (r && r.msg) || 'Comprovante gravado no Drive. OCR pendente.', 'ok');
+      toast((r && r.msg) || 'Comprovante gravado no Drive. A conferência será feita em seguida.');
+
+      input.value = '';
+      cacheDel_(cacheKeyLoteria_('historicoComprovantes', loteria));
+
+      var h3 = Array.from(document.querySelectorAll('h3')).find(function(x){ return /Meus Envios Recentes/i.test(x.textContent || ''); });
+      if(h3){
+        h3.insertAdjacentHTML('afterend',
+          '<div class="notice ok">Comprovante recebido e gravado no Drive. OCR pendente.' +
+          (r && r.url ? ' <a href="' + escapeAttr(r.url) + '" target="_blank" rel="noopener">Ver arquivo</a>' : '') +
+          '</div>'
+        );
+      }
+    }catch(err){
+      progresso(0, 'Falha no envio', err.message || 'Falha ao enviar/gravar arquivo.', 'error');
+      toast(err.message || 'Falha ao enviar/gravar arquivo.','error');
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = 'Enviar agora'; }
+    }
+  };
+
+  window.enviarJogoRealizadoBolao = window.enviarJogoRealizadoBolaoV232 = async function(ev){
+    ev.preventDefault();
+
+    var sel = document.getElementById('jogosBolao');
+    var input = document.getElementById('arquivoJogoRealizado');
+    var btn = document.getElementById('btnEnviarJogoRealizado');
+    var loteria = sel ? sel.value : '';
+    var files = input && input.files ? Array.from(input.files) : [];
+    var concurso = document.getElementById('jogoConcurso') ? document.getElementById('jogoConcurso').value.trim() : '';
+    var dataJogoInput = document.getElementById('jogoData') ? document.getElementById('jogoData').value : '';
+    var dataJogo = dataJogoInput ? dataInputValorParaBR_(dataJogoInput) : '';
+    var obs = document.getElementById('jogoObs') ? document.getElementById('jogoObs').value.trim() : '';
+
+    if(!loteria) return toast('Selecione a loteria/bolão.','error');
+    if(!files.length) return toast('Selecione ao menos um arquivo dos jogos.','error');
+
+    ESTADO.bolaoSelecionado = loteria;
+    localStorage.setItem('PSS_BOLAO_SELECIONADO', loteria);
+
+    if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+    function progresso(pct,titulo,msg,st){
+      var decimal = Math.max(0, Math.min(1, Number(pct || 0) / 100));
+      atualizarProgressoUploadJogos_(decimal, 1, titulo, msg, st || 'run');
+    }
+
+    progresso(1, 'Preparando envio', files.length + ' arquivo(s) serão enviados em partes.', 'run');
+
+    var enviados = [];
+    try{
+      for(var f = 0; f < files.length; f++){
+        var file = files[f];
+        var baseOffset = Math.round((f / files.length) * 100);
+        var peso = 100 / files.length;
+
+        var r = await enviarArquivoEmPedacosV243_(file, 'JOGO', {
+          loteria: loteria,
+          email: ESTADO.email || '',
+          meta: {
+            adminEmail: ESTADO.email || '',
+            concurso: concurso,
+            dataJogo: dataJogo,
+            obs: obs
+          }
+        }, function(pct,titulo,msg,st){
+          var geral = Math.min(99, Math.round(baseOffset + ((pct / 100) * peso)));
+          progresso(geral, 'Arquivo ' + (f + 1) + '/' + files.length + ' — ' + titulo, msg, st);
+        });
+
+        enviados.push(r);
+      }
+
+      progresso(100, 'Jogos gravados', enviados.length + ' arquivo(s) gravado(s) no Drive.', 'ok');
+      toast(enviados.length + ' arquivo(s) de jogos gravado(s) no Drive.');
+      input.value = '';
+      cacheDel_(cacheKeyLoteria_('jogos', loteria));
+
+      var box = document.getElementById('jogosRealizadosConteudo');
+      if(box){
+        box.insertAdjacentHTML('afterbegin','<div class="notice ok">Jogos recebidos e gravados no Drive. Clique em Carregar jogos para atualizar a lista.</div>');
+      }
+    }catch(err){
+      progresso(0, 'Falha no envio', err.message || 'Falha ao enviar/gravar jogos.', 'error');
+      toast(err.message || 'Falha ao enviar/gravar jogos.','error');
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = 'Enviar jogos realizados'; }
+    }
+  };
+
 })();
   </script>
 
