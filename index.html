@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V246_PASTAS_BOLAO_MES_PARTICIPANTE_OCR -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V247_UPLOAD_APP_DADOS_PRE_SELECIONADOS -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V246_PASTAS_BOLAO_MES_PARTICIPANTE_OCR',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V247_UPLOAD_APP_DADOS_PRE_SELECIONADOS',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5513,7 +5513,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V246_PASTAS_BOLAO_MES_PARTICIPANTE_OCR'; }catch(e){}
+  try{ CONFIG.versao='V247_UPLOAD_APP_DADOS_PRE_SELECIONADOS'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -12602,6 +12602,200 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   };
 })();
   </script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V247 — COMPROVANTE: BOTÃO ABRE MÓDULO APPS SCRIPT
+ * Ajustes:
+ * - Remove o seletor de arquivo da tela principal do GitHub.
+ * - Mantém os dados selecionados anteriormente na própria tela.
+ * - O botão abre o bloco/iframe do Apps Script já com bolão, participante,
+ *   tipo de cota, partes e nomes preenchidos.
+ * - Após sucesso, fecha o bloco automaticamente e atualiza o histórico.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  function montarResumoEnvioV247_(){
+    var tipoEnvio = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    var loteria = document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '-';
+    var tipoCota = document.getElementById('tipoCota')?.value || 'unica';
+    var qtdPartes = document.getElementById('qtdPartes')?.value || '';
+    var participante = ESTADO.usuario?.nome || ESTADO.email || '-';
+    if(tipoEnvio === 'terceiro'){
+      participante = document.getElementById('nomeParticipanteTerceiroV225')?.value || document.getElementById('emailParticipanteTerceiroV225')?.value || '-';
+    }
+    var nomes = [];
+    if(tipoCota === 'dividida'){
+      document.querySelectorAll('#nomesPartes input').forEach(function(inp){
+        var v=(inp.value||'').trim();
+        if(v) nomes.push(v);
+      });
+    }
+    var box = document.getElementById('resumoEnvioComprovanteV247');
+    if(!box) return;
+    box.innerHTML = `
+      <div class="pay-admin-grid" style="margin-top:10px;">
+        <div class="pay-admin-info"><b>Bolão</b><span>${escapeHtml(loteria)}</span></div>
+        <div class="pay-admin-info"><b>Participante</b><span>${escapeHtml(participante)}</span></div>
+        <div class="pay-admin-info"><b>Tipo de envio</b><span>${escapeHtml(tipoEnvio === 'terceiro' ? 'Comprovante de terceiro' : 'Meu comprovante')}</span></div>
+        <div class="pay-admin-info"><b>Tipo de cota</b><span>${escapeHtml(tipoCota)}</span></div>
+        ${qtdPartes ? `<div class="pay-admin-info"><b>Partes</b><span>${escapeHtml(qtdPartes)}</span></div>` : ''}
+        ${nomes.length ? `<div class="pay-admin-info full"><b>Participantes da divisão</b><span>${escapeHtml(nomes.join(' / '))}</span></div>` : ''}
+      </div>
+    `;
+  }
+
+  var renderCamposBaseV247 = window.renderCamposPartes;
+  window.renderCamposPartes = renderCamposPartes = function(){
+    if(typeof renderCamposBaseV247 === 'function') renderCamposBaseV247();
+    setTimeout(montarResumoEnvioV247_,60);
+  };
+
+  var renderNomesBaseV247 = window.renderNomesPartes;
+  window.renderNomesPartes = renderNomesPartes = function(){
+    if(typeof renderNomesBaseV247 === 'function') renderNomesBaseV247();
+    setTimeout(montarResumoEnvioV247_,60);
+  };
+
+  var alternarBaseV247 = window.alternarTipoEnvioComprovanteV225;
+  window.alternarTipoEnvioComprovanteV225 = function(){
+    if(typeof alternarBaseV247 === 'function') alternarBaseV247();
+    setTimeout(montarResumoEnvioV247_,80);
+  };
+
+  var selecionarBaseV247 = window.selecionarParticipanteTerceiroV225;
+  window.selecionarParticipanteTerceiroV225 = function(emailCod,nomeCod){
+    if(typeof selecionarBaseV247 === 'function') selecionarBaseV247(emailCod,nomeCod);
+    setTimeout(montarResumoEnvioV247_,100);
+  };
+
+  window.renderComprovante = renderComprovante = async function(){
+    if(typeof loading === 'function') loading('Carregando comprovante');
+    try{
+      var lista = typeof carregarBoloes === 'function' ? await carregarBoloes(true).catch(function(){return[];}) : [];
+      var hist = await apiMulti([
+        {action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},
+        {action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}
+      ]).catch(function(){return[];});
+
+      setView(`
+        <div class="panel no-left">
+          <div class="notice info">
+            Selecione os dados do comprovante abaixo. O arquivo será carregado no bloco seguro do Apps Script, usando <b>google.script.run</b>, com gravação no Drive e OCR/reprocessamento automático.
+          </div>
+
+          <div class="wide-control">
+            <label>Tipo de envio:</label>
+            <select id="tipoEnvioComprovante" onchange="alternarTipoEnvioComprovanteV225(); montarResumoEnvioComprovanteV247 && montarResumoEnvioComprovanteV247();">
+              <option value="meu">Meu comprovante</option>
+              ${isAdmin()?'<option value="terceiro">Comprovante de terceiro / administrador</option>':''}
+            </select>
+          </div>
+
+          <div id="boxComprovanteTerceiroV225" class="v225-admin-box v225-hidden">
+            <h3>Comprovante de terceiro</h3>
+            <p>Use esta opção para vincular um comprovante a um participante já cadastrado. A conferência seguirá automaticamente por OCR, igual aos demais comprovantes.</p>
+
+            <div class="field">
+              <label>Buscar participante por nome ou e-mail</label>
+              <input id="buscaParticipanteTerceiroV225" placeholder="Digite pelo menos 2 letras..." oninput="buscarParticipantesTerceiroV225()">
+            </div>
+            <div id="resultadosParticipanteTerceiroV225" class="v225-search-results"></div>
+            <input type="hidden" id="emailParticipanteTerceiroV225">
+            <input type="hidden" id="nomeParticipanteTerceiroV225">
+            <div id="participanteSelecionadoTerceiroV225"></div>
+
+            <div class="v225-two-columns">
+              <div class="field">
+                <label>Cota vinculada ao comprovante</label>
+                <select id="fracaoCotaTerceiroV225" onchange="sincronizarFracaoTerceiroComPartesV227 && sincronizarFracaoTerceiroComPartesV227(); montarResumoEnvioComprovanteV247 && montarResumoEnvioComprovanteV247();">
+                  <option value="1">Cota integral</option>
+                  <option value="0.5">Cota fracionada 1/2</option>
+                  <option value="0.333333">Cota fracionada 1/3</option>
+                  <option value="0.25">Cota fracionada 1/4</option>
+                  <option value="0.2">Cota fracionada 1/5</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Observação administrativa</label>
+                <input id="obsComprovanteTerceiroV225" placeholder="Opcional" oninput="montarResumoEnvioComprovanteV247 && montarResumoEnvioComprovanteV247();">
+              </div>
+            </div>
+          </div>
+
+          <div class="wide-control">
+            <label>Tipo de cota:</label>
+            <select id="tipoCota" onchange="renderCamposPartes(); montarResumoEnvioComprovanteV247 && montarResumoEnvioComprovanteV247();">
+              <option value="unica">Cota única</option>
+              <option value="dividida">Cota dividida</option>
+            </select>
+          </div>
+
+          <div id="partesBox"></div>
+
+          <div class="wide-control">
+            <label>Selecione a loteria do depósito:</label>
+            <select id="uploadBolao" required onchange="ESTADO.bolaoSelecionado=this.value;try{localStorage.setItem('PSS_BOLAO_SELECIONADO',this.value)}catch(e){};montarResumoEnvioComprovanteV247 && montarResumoEnvioComprovanteV247();">
+              <option value="">Selecione...</option>
+              ${lista.map(function(b){return `<option value="${escapeAttr(b.loteria)}" ${b.loteria===ESTADO.bolaoSelecionado?'selected':''}>${escapeHtml(b.loteria)}</option>`;}).join('')}
+            </select>
+          </div>
+
+          <div id="resumoEnvioComprovanteV247"></div>
+
+          <div class="upload-center" style="max-width:480px;">
+            <button class="btn btn-block" id="btnAbrirUploadComprovanteV247" type="button" onclick="abrirUploadComprovanteAppsScriptV245()">Carregar comprovante</button>
+            <small style="display:block;margin-top:8px;color:#546173;font-weight:800;">Ao clicar, será aberto o bloco do Apps Script para selecionar PDF, JPG ou PNG.</small>
+
+            <div class="upload-progress-box" id="comprovanteUploadProgressBox">
+              <div class="upload-progress-top">
+                <span id="comprovanteUploadTitulo">Aguardando envio...</span>
+                <span id="comprovanteUploadPercentual">0%</span>
+              </div>
+              <div class="upload-progress-bar">
+                <div class="upload-progress-fill" id="comprovanteUploadFill"></div>
+              </div>
+              <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Clique em Carregar comprovante para abrir o módulo de envio.</div>
+            </div>
+          </div>
+
+          <hr style="border:0;border-top:1px solid #ddd;margin:24px 0;">
+          <h3>🕘 Meus Envios Recentes</h3>
+          ${renderHistoricoComprovantes(hist)}
+        </div>
+      `);
+      renderCamposPartes();
+      alternarTipoEnvioComprovanteV225();
+      setTimeout(montarResumoEnvioV247_,120);
+    }catch(err){
+      setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+    }
+  };
+
+  window.montarResumoEnvioComprovanteV247 = montarResumoEnvioV247_;
+
+  window.addEventListener('message', function(ev){
+    var data = ev && ev.data ? ev.data : null;
+    if(!data || data.pssUploadComprovanteApp !== true) return;
+    if(data.tipo === 'sucesso'){
+      var r = data.payload || {};
+      var btn = document.getElementById('btnAbrirUploadComprovanteV247');
+      if(btn){ btn.disabled = true; btn.textContent = 'Comprovante enviado'; }
+      try{ fecharUploadModalV245_(); }catch(e){}
+      try{
+        var loteria = document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '';
+        if(typeof cacheDel_ === 'function' && typeof cacheKeyLoteria_ === 'function') cacheDel_(cacheKeyLoteria_('historicoComprovantes', loteria));
+      }catch(e2){}
+      setTimeout(function(){
+        try{ if(typeof renderComprovante === 'function') renderComprovante(); }catch(e3){}
+      },700);
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
