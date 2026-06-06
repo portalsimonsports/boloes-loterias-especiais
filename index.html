@@ -1664,7 +1664,8 @@
       const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
       const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
       try{
-        return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,120000);
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
       }catch(errPost){
         /* Fallback só para arquivos pequenos. Arquivo grande por JSONP/GET pode travar. */
         if(String(base64||'').length<350000){
@@ -1684,7 +1685,8 @@
       const args=[base64,file.name,ESTADO.email,loteria];
 
       try{
-        return await apiPostFormWindowName_('uploadComprovante',dados,args,90000);
+        try{ return await uploadFetchV226_('uploadComprovante',dados,args,120000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadComprovante',dados,args,180000); }
       }catch(errPost){
         /*
          * Fallback apenas para comprovantes pequenos.
@@ -5437,7 +5439,8 @@ function renderMetodoPagamento_(m,b,i){
     const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria};
     const args=[base64,file.name,ESTADO.email,loteria];
     try{
-      return await apiPostFormWindowName_('uploadComprovante',dados,args,180000);
+      try{ return await uploadFetchV226_('uploadComprovante',dados,args,120000); }
+      catch(_ef){ return await apiPostFormWindowName_('uploadComprovante',dados,args,180000); }
     }catch(errPost){
       if(String(base64||'').length<350000){
         return await apiMulti([
@@ -5453,7 +5456,8 @@ function renderMetodoPagamento_(m,b,i){
     const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
     const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
     try{
-      return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000);
+      try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+      catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
     }catch(errPost){
       if(String(base64||'').length<350000){
         return await apiMulti([
@@ -5667,10 +5671,10 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
           </div>
 
           <div class="grid" id="inicioStatsV191" style="margin-top:18px;">
-            ${statCard('Bolões ativos','--')}
-            ${statCard('Minhas cotas','--')}
-            ${statCard('Cotas disponíveis','--')}
-            ${statCard('Total de cotas','--')}
+            ${statCard('Bolões ativos','...')}
+            ${statCard('Minhas cotas','...')}
+            ${statCard('Cotas disponíveis','...')}
+            ${statCard('Total de cotas','...')}
           </div>
         </div>
 
@@ -11795,7 +11799,126 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   }, true);
 
 })();
-  </script>
+  
+/* =====================================================================
+ * PATCH V238-HTML — CONSOLIDAÇÃO FINAL
+ * - apiFetchV238_: fetch CORS direto
+ * - apiRapidaV238_: JSONP→fetch (sem bridge lento)
+ * - apiHibridaComFallback_: timeouts mobile reduzidos
+ * - carregarBoloes: Promise.any paralelo, timeout mobile 12s
+ * - TTL de cache: 5min curto, 20min médio
+ * - uploadFetchV226_ garantido (fallback se não existir)
+ * ===================================================================== */
+(function(){
+  'use strict';
+  /* isMobileV238_ idempotente */
+  if(typeof window.isMobileV224_!=='function')
+    window.isMobileV224_=function(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');};
+  var _mob=window.isMobileV224_;
+
+  /* TTL elevados */
+  if(typeof CACHE_TTL!=='undefined'){CACHE_TTL.curto=5*60*1000;CACHE_TTL.medio=20*60*1000;}
+
+  /* apiFetchV238_: fetch CORS */
+  window.apiFetchV238_=function(action,dados,args,tOut){
+    return new Promise(function(res,rej){
+      var p=typeof montarPayloadApi_==='function'
+        ?montarPayloadApi_(action,dados||{},args||null)
+        :Object.assign({},dados||{},{action:action});
+      var qs=new URLSearchParams();
+      qs.set('action',action);qs.set('fn',action);qs.set('callback','PSS_CB_V238');
+      qs.set('payload',JSON.stringify(p));qs.set('_',String(Date.now()));
+      var url=(typeof CONFIG!=='undefined'?CONFIG.apiUrl:'')+('?'+qs.toString());
+      var ctrl=new AbortController(),timer=setTimeout(function(){ctrl.abort();},tOut||13000);
+      fetch(url,{method:'GET',mode:'cors',signal:ctrl.signal})
+        .then(function(r){return r.text();})
+        .then(function(txt){
+          clearTimeout(timer);
+          var m=txt.match(/^[A-Za-z_$][A-Za-z0-9_$.]*\s*\((.+)\);?\s*$/s);
+          var json=JSON.parse(m?m[1]:txt);
+          res(typeof tratarRespostaApi_==='function'?tratarRespostaApi_(json)
+            :(json.dados!==undefined?json.dados:(json.result!==undefined?json.result:json)));
+        }).catch(function(e){clearTimeout(timer);rej(e);});
+    });
+  };
+
+  /* apiRapidaV238_: JSONP → fetch (sem bridge lento) */
+  window.apiRapidaV238_=window.apiRapidaV234_=window.apiRapidaV226_=window.apiRapidaV224_=function(action,dados,args,tOut){
+    var mob=_mob(),tJ=mob?9000:(tOut||14000);
+    if(typeof apiJsonpDireto_==='function')
+      return apiJsonpDireto_(action,dados||{},args||null,tJ)
+        .catch(function(){return apiFetchV238_(action,dados,args,mob?11000:13000);});
+    return apiFetchV238_(action,dados,args,tOut||13000);
+  };
+
+  /* apiHibridaComFallback_ com timeouts mobile reduzidos */
+  if(typeof apiHibridaComFallback_==='function'){
+    var _hb=apiHibridaComFallback_;
+    apiHibridaComFallback_=function(action,dados,args){
+      var mob=_mob(),tJ=mob?10000:18000,tB=mob?15000:22000,tW=mob?18000:28000;
+      if(typeof apiJsonpDireto_==='function')
+        return apiJsonpDireto_(action,dados||{},args||null,tJ)
+          .catch(function(){return apiFetchV238_(action,dados,args,mob?11000:13000);})
+          .catch(function(){return typeof apiPostMessageBridge_==='function'
+            ?apiPostMessageBridge_(action,dados||{},args||null,tB)
+            :Promise.reject(new Error('bridge off'));})
+          .catch(function(){return typeof apiWindowNameBridge_==='function'
+            ?apiWindowNameBridge_(action,dados||{},args||null,tW)
+            :Promise.reject(new Error('windowName off'));});
+      return _hb(action,dados,args);
+    };
+  }
+
+  /* uploadFetchV226_ garantido para upload Drive via fetch */
+  if(typeof uploadFetchV226_!=='function'){
+    window.uploadFetchV226_=uploadFetchV226_=async function(action,dados,args,tOut){
+      var apiUrl=(typeof CONFIG!=='undefined'&&CONFIG.apiUrl)?CONFIG.apiUrl:'';
+      if(!apiUrl)throw new Error('apiUrl não configurada.');
+      var fd=new FormData();
+      fd.append('action',action);fd.append('fn',action);fd.append('fnName',action);
+      fd.append('mode','postmessage');fd.append('callback','callback');
+      fd.append('email',typeof ESTADO!=='undefined'?ESTADO.email||'':'');
+      fd.append('payload',JSON.stringify(typeof montarPayloadApi_==='function'
+        ?montarPayloadApi_(action,dados||{},args||null):Object.assign({},dados||{},{action:action})));
+      fd.append('_',String(Date.now()));
+      Object.keys(dados||{}).forEach(function(k){
+        if(dados[k]!==undefined&&dados[k]!==null&&k!=='fileData')fd.append(k,String(dados[k]));
+      });
+      if(dados&&dados.fileData)fd.append('fileData',dados.fileData);
+      if(Array.isArray(args))fd.append('args',JSON.stringify(args));
+      var ctrl=new AbortController(),timer=setTimeout(function(){ctrl.abort();},tOut||180000);
+      var resp=await fetch(apiUrl,{method:'POST',body:fd,signal:ctrl.signal});
+      clearTimeout(timer);
+      var txt=await resp.text();
+      var m=txt.match(/^[A-Za-z_$][A-Za-z0-9_$.]*\s*\((.+)\);?\s*$/s);
+      var json=JSON.parse(m?m[1]:txt);
+      return typeof tratarRespostaApi_==='function'?tratarRespostaApi_(json)
+        :(json.dados!==undefined?json.dados:(json.result!==undefined?json.result:json));
+    };
+  }
+
+  /* carregarBoloes com Promise.any paralelo */
+  if(typeof carregarBoloes==='function'&&!carregarBoloes._v238){
+    var _cbBase=carregarBoloes;
+    carregarBoloes=window.carregarBoloes=async function(usarCache){
+      if(usarCache){
+        var tOut=_mob()?12000:16000;
+        try{
+          return await Promise.any([
+            promiseTimeout_(api('getLoteriasPagamentoAtivas',{email:ESTADO.email},[]),tOut,'t1'),
+            promiseTimeout_(api('listarBoloes',{email:ESTADO.email},[ESTADO.email]),tOut,'t2')
+          ]);
+        }catch(e){ return _cbBase(false); }
+      }
+      return _cbBase(usarCache);
+    };
+    carregarBoloes._v238=true;
+  }
+
+})();
+/* FIM PATCH V238-HTML */
+
+</script>
 
 </body>
 </html>
