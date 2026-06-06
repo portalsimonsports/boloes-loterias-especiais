@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V238_TELEGRAM_6H_MENU_GUARD_VISUAL_ORIGINAL -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V240_UPLOAD_LEAN_SEM_DUPLICAR_BASE64 -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V238 ULTRAVELOCIDADE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V240 ULTRAVELOCIDADE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V238_TELEGRAM_6H_MENU_GUARD_VISUAL_ORIGINAL',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V240_UPLOAD_LEAN_SEM_DUPLICAR_BASE64',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5507,7 +5507,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V238_TELEGRAM_6H_MENU_GUARD_VISUAL_ORIGINAL'; }catch(e){}
+  try{ CONFIG.versao='V240_UPLOAD_LEAN_SEM_DUPLICAR_BASE64'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -11919,6 +11919,359 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 /* FIM PATCH V238-HTML */
 
 </script>
+
+
+
+  <script>
+/* =====================================================================
+ * PATCH V240 — CORREÇÃO DEFINITIVA DO UPLOAD LENTO/FALHANDO
+ * Base: V238 limpa.
+ *
+ * Correção aplicada:
+ * 1) Para upload de comprovante e jogos, removeu o envio duplicado do base64.
+ *    Antes o arquivo ia dentro de payload + args + fileData, chegando a triplicar
+ *    o tamanho do PDF e provocar timeout no celular.
+ * 2) Removeu a tentativa fetch() antes do iframe. O fetch recebia HTML do
+ *    Apps Script, falhava no parse e reenviava o mesmo arquivo de novo.
+ * 3) O upload agora usa somente POST por iframe, com payload leve e fileData
+ *    uma única vez.
+ * 4) Após sucesso, não recarrega o menu inteiro; apenas exibe confirmação.
+ * 5) Jogos usam o mesmo fluxo enxuto, sem recarregar galeria automaticamente.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  if(window.PSS_UPLOAD_LEAN_V240_APLICADO) return;
+  window.PSS_UPLOAD_LEAN_V240_APLICADO = true;
+
+  function payloadLeveUploadV240_(action,dados){
+    dados = dados || {};
+    var payload = {
+      action: action,
+      fn: action,
+      fnName: action,
+      email: dados.email || (window.ESTADO && ESTADO.email) || '',
+      loteria: dados.loteria || ''
+    };
+
+    [
+      'fileName','nomeArquivo','mimeType','tipoEnvio','emailParticipante','nomeParticipante',
+      'fracaoCota','tipoCota','qtdPartes','obsAdmin','concurso','dataJogo','obs','observacao'
+    ].forEach(function(k){
+      if(dados[k] !== undefined && dados[k] !== null && dados[k] !== '') payload[k] = dados[k];
+    });
+
+    if(dados.nomesPartes !== undefined) payload.nomesPartes = dados.nomesPartes;
+    if(dados.meta !== undefined) payload.meta = dados.meta;
+
+    return payload;
+  }
+
+  function addHiddenV240_(form,name,value){
+    var input=document.createElement('input');
+    input.type='hidden';
+    input.name=name;
+    if(value === undefined || value === null) value = '';
+    if(typeof value === 'object') {
+      try{ value = JSON.stringify(value); }catch(e){ value = String(value); }
+    }
+    input.value=String(value);
+    form.appendChild(input);
+  }
+
+  window.apiPostFormWindowName_ = apiPostFormWindowName_ = function(action,dados={},args=null,timeoutMs=240000){
+    return new Promise(function(resolve,reject){
+      var token='PSSPOST_V240_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+      var isUpload = !!(dados && (dados.fileData || dados.arquivoBase64));
+      var payload = isUpload ? payloadLeveUploadV240_(action,dados) : (typeof montarPayloadApi_ === 'function' ? montarPayloadApi_(action,dados,args) : Object.assign({},dados||{},{action:action}));
+
+      var iframe=document.createElement('iframe');
+      iframe.name='pss_upload_iframe_v240_'+token;
+      iframe.style.position='fixed';
+      iframe.style.left='-9999px';
+      iframe.style.top='-9999px';
+      iframe.style.width='1px';
+      iframe.style.height='1px';
+      iframe.style.opacity='0';
+      iframe.style.pointerEvents='none';
+      iframe.setAttribute('aria-hidden','true');
+
+      var form=document.createElement('form');
+      form.method='POST';
+      form.action=CONFIG.apiUrl;
+      form.target=iframe.name;
+      form.acceptCharset='UTF-8';
+      form.enctype='application/x-www-form-urlencoded';
+      form.style.display='none';
+
+      addHiddenV240_(form,'mode','postmessage');
+      addHiddenV240_(form,'action',action);
+      addHiddenV240_(form,'fn',action);
+      addHiddenV240_(form,'fnName',action);
+      addHiddenV240_(form,'callback','callback');
+      addHiddenV240_(form,'token',token);
+      addHiddenV240_(form,'email',(dados&&dados.email)||ESTADO.email||'');
+      addHiddenV240_(form,'payload',JSON.stringify(payload));
+      addHiddenV240_(form,'_',String(Date.now()));
+
+      Object.keys(dados||{}).forEach(function(k){
+        var v=dados[k];
+        if(v === undefined || v === null) return;
+        if(k === 'args') return;
+        addHiddenV240_(form,k,v);
+      });
+
+      /*
+       * Só inclui args quando NÃO é upload.
+       * Em upload, args normalmente contém o base64 inteiro e causava duplicação.
+       */
+      if(!isUpload && Array.isArray(args)) addHiddenV240_(form,'args',JSON.stringify(args));
+
+      var finalizado=false;
+      var timer=null;
+
+      function limpar(){
+        window.removeEventListener('message',onMessage);
+        if(form && form.parentNode) form.parentNode.removeChild(form);
+        if(iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      }
+
+      function finalizarOk(resposta){
+        if(finalizado) return;
+        finalizado=true;
+        clearTimeout(timer);
+        limpar();
+        try{
+          resolve(typeof tratarRespostaApi_ === 'function' ? tratarRespostaApi_(resposta) : resposta);
+        }catch(e){
+          reject(e);
+        }
+      }
+
+      function finalizarErro(err){
+        if(finalizado) return;
+        finalizado=true;
+        clearTimeout(timer);
+        limpar();
+        reject(err instanceof Error ? err : new Error(String(err||'Falha no envio.')));
+      }
+
+      function onMessage(ev){
+        if(finalizado) return;
+        var msg=ev.data;
+        if(typeof msg === 'string'){
+          try{ msg=JSON.parse(msg); }catch(e){}
+        }
+        if(msg && msg.pssBoloesApi === true && msg.token === token){
+          finalizarOk(msg.response);
+        }
+      }
+
+      function tentarWindowNameFallback(){
+        if(finalizado) return;
+        try{
+          var raw=iframe.contentWindow && iframe.contentWindow.name ? iframe.contentWindow.name : '';
+          if(raw){
+            var msg=JSON.parse(raw);
+            if(msg && msg.pssBoloesApi === true && msg.token === token){
+              finalizarOk(msg.response);
+              return;
+            }
+          }
+        }catch(e){}
+        setTimeout(tentarWindowNameFallback,500);
+      }
+
+      window.addEventListener('message',onMessage);
+
+      timer=setTimeout(function(){
+        finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento. Verifique se a implantação do Code_API.gs foi atualizada e tente novamente.'));
+      },timeoutMs||240000);
+
+      iframe.onerror=function(){ finalizarErro(new Error('Falha ao abrir canal de upload.')); };
+      iframe.onload=function(){ setTimeout(tentarWindowNameFallback,150); };
+
+      document.body.appendChild(iframe);
+      document.body.appendChild(form);
+
+      try{
+        form.submit();
+        setTimeout(tentarWindowNameFallback,800);
+      }catch(err){
+        finalizarErro(err);
+      }
+    });
+  };
+
+  window.apiUploadComprovante_ = apiUploadComprovante_ = async function(base64,file,loteria,metaExtra){
+    metaExtra = metaExtra || {};
+    var tipoEnvio = String(metaExtra.tipoEnvio || '').toUpperCase();
+    var emailEnvio = tipoEnvio === 'TERCEIRO' ? (ESTADO.email || '') : (metaExtra.emailParticipante || ESTADO.email || '');
+
+    var dados = {
+      fileData: base64,
+      fileName: file.name,
+      mimeType: file.type,
+      email: emailEnvio,
+      loteria: loteria,
+      tipoEnvio: metaExtra.tipoEnvio || 'PROPRIO',
+      emailParticipante: metaExtra.emailParticipante || '',
+      nomeParticipante: metaExtra.nomeParticipante || '',
+      fracaoCota: metaExtra.fracaoCota || '',
+      tipoCota: metaExtra.tipoCota || '',
+      qtdPartes: metaExtra.qtdPartes || '',
+      nomesPartes: metaExtra.nomesPartes || [],
+      obsAdmin: metaExtra.obsAdmin || '',
+      meta: metaExtra
+    };
+
+    return await apiPostFormWindowName_('uploadComprovante',dados,null,240000);
+  };
+
+  window.apiUploadJogoRealizado_ = apiUploadJogoRealizado_ = async function(base64,file,loteria,concurso,dataJogo,obs){
+    var dados = {
+      fileData: base64,
+      fileName: file.name,
+      mimeType: file.type,
+      email: ESTADO.email || '',
+      loteria: loteria,
+      concurso: concurso || '',
+      dataJogo: dataJogo || '',
+      obs: obs || ''
+    };
+    return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,null,300000);
+  };
+
+  function inserirAvisoEnvioComprovanteV240_(r,loteria){
+    var h3 = Array.from(document.querySelectorAll('h3')).find(function(x){return /Meus Envios Recentes/i.test(x.textContent||'');});
+    if(!h3) return;
+    var html = '<div class="notice ok" style="margin-top:10px;">'
+      + 'Comprovante recebido para <strong>'+escapeHtml(loteria||'-')+'</strong>. '
+      + 'A conferência automática por OCR seguirá em segundo plano.'
+      + (r && r.url ? '<br><a href="'+escapeAttr(r.url)+'" target="_blank" rel="noopener">Ver arquivo enviado</a>' : '')
+      + '</div>';
+    h3.insertAdjacentHTML('afterend',html);
+  }
+
+  window.enviarComprovante = enviarComprovante = async function(ev){
+    ev.preventDefault();
+
+    var tipoEnvio = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    var loteria = document.getElementById('uploadBolao')?.value || '';
+    var input = document.getElementById('arquivoComprovante');
+    var file = input && input.files ? input.files[0] : null;
+    var btn = document.getElementById('btnEnviarComprovante');
+
+    if(!loteria) return toast('Selecione a loteria do depósito.','error');
+    if(!file) return toast('Selecione o arquivo do comprovante.','error');
+
+    var meta = {
+      tipoEnvio: tipoEnvio === 'terceiro' ? 'TERCEIRO' : 'PROPRIO',
+      tipoCota: document.getElementById('tipoCota')?.value || 'unica',
+      qtdPartes: document.getElementById('qtdPartes')?.value || '',
+      nomesPartes: []
+    };
+
+    if(meta.tipoCota === 'dividida'){
+      document.querySelectorAll('#nomesPartes input').forEach(function(inp){ meta.nomesPartes.push(inp.value || ''); });
+    }
+
+    if(tipoEnvio === 'terceiro'){
+      if(!isAdmin()) return toast('Apenas administrador pode enviar comprovante de terceiro.','error');
+
+      meta.emailParticipante = (document.getElementById('emailParticipanteTerceiroV225')?.value || '').trim();
+      meta.nomeParticipante = (document.getElementById('nomeParticipanteTerceiroV225')?.value || '').trim();
+      meta.fracaoCota = document.getElementById('fracaoCotaTerceiroV225')?.value || '1';
+      meta.tipoCota = meta.fracaoCota === '1' ? 'integral' : 'fracionada';
+      meta.obsAdmin = document.getElementById('obsComprovanteTerceiroV225')?.value || '';
+
+      if(!meta.emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
+    }
+
+    ESTADO.bolaoSelecionado = loteria;
+    localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);
+
+    if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+    atualizarProgressoUploadComprovante_(8,'Preparando envio...','Lendo arquivo selecionado.','run');
+
+    try{
+      await aguardarFrame_();
+      atualizarProgressoUploadComprovante_(22,'Lendo arquivo...','Preparando '+file.name,'run');
+      var base64 = await lerArquivoBase64(file);
+
+      atualizarProgressoUploadComprovante_(50,'Enviando comprovante...','Enviando arquivo uma única vez, sem duplicar o PDF no payload.','run');
+      var r = await apiUploadComprovante_(base64,file,loteria,meta);
+
+      atualizarProgressoUploadComprovante_(100,'Comprovante recebido',(r&&r.msg)||'Comprovante recebido com sucesso.','ok');
+      toast((r&&r.msg)||'Comprovante recebido com sucesso.');
+
+      input.value='';
+      cacheDel_(cacheKeyLoteria_('historicoComprovantes',loteria));
+      cacheDel_('boloes');
+      inserirAvisoEnvioComprovanteV240_(r,loteria);
+    }catch(err){
+      atualizarProgressoUploadComprovante_(0,'Falha no envio',err.message,'error');
+      toast(err.message,'error');
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Enviar agora';}
+    }
+  };
+
+  window.enviarJogoRealizadoBolao = enviarJogoRealizadoBolao = async function(ev){
+    if(ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+
+    var sel=document.getElementById('jogosBolao') || document.getElementById('jogosBolaoV232');
+    var input=document.getElementById('arquivoJogoRealizado');
+    var btn=document.getElementById('btnEnviarJogoRealizado');
+    var loteria=sel ? sel.value : (ESTADO.bolaoSelecionado || '');
+    var files=input && input.files ? Array.from(input.files) : [];
+    var concurso=document.getElementById('jogoConcurso') ? document.getElementById('jogoConcurso').value.trim() : '';
+    var dataJogoInput=document.getElementById('jogoData') ? document.getElementById('jogoData').value : '';
+    var dataJogo=dataJogoInput ? dataInputValorParaBR_(dataJogoInput) : '';
+    var obs=document.getElementById('jogoObs') ? document.getElementById('jogoObs').value.trim() : '';
+
+    if(!loteria) return toast('Selecione a loteria/bolão.','error');
+    if(!files.length) return toast('Selecione ao menos um arquivo dos jogos.','error');
+
+    ESTADO.bolaoSelecionado=loteria;
+    localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);
+
+    if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+    atualizarProgressoUploadJogos_(0.05,1,'Preparando envio...',files.length+' arquivo(s) selecionado(s).','run');
+
+    var enviados=0;
+    try{
+      for(var i=0;i<files.length;i++){
+        var file=files[i];
+        atualizarProgressoUploadJogos_((i/files.length)*0.40,1,'Arquivo '+(i+1)+'/'+files.length,'Lendo '+file.name,'run');
+        await aguardarFrame_();
+        var base64 = await lerArquivoBase64(file);
+
+        atualizarProgressoUploadJogos_(0.45+((i/files.length)*0.45),1,'Enviando '+(i+1)+'/'+files.length,'Upload enxuto sem duplicar base64.','run');
+        await apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs);
+        enviados++;
+      }
+
+      atualizarProgressoUploadJogos_(1,1,'Jogos recebidos',enviados+' arquivo(s) recebido(s). Clique em Carregar jogos para atualizar a lista quando precisar.','ok');
+      toast('Jogos realizados recebidos com sucesso.');
+      if(input) input.value='';
+      cacheDel_(cacheKeyLoteria_('jogos',loteria));
+
+      var area=document.getElementById('jogosLista') || document.getElementById('jogosRealizadosConteudo') || document.getElementById('jogosDetalheV232');
+      if(area){
+        area.insertAdjacentHTML('afterbegin','<div class="notice ok">Jogos recebidos com sucesso. A lista não foi recarregada automaticamente para evitar travamento. Clique em <strong>Carregar jogos</strong> para consultar.</div>');
+      }
+    }catch(err){
+      atualizarProgressoUploadJogos_(enviados,Math.max(1,files.length),'Falha no envio','Enviados: '+enviados+'/'+files.length+'. '+err.message,'error');
+      toast(err.message,'error');
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Enviar jogos realizados';}
+    }
+  };
+
+  window.enviarJogoRealizadoBolaoV232 = window.enviarJogoRealizadoBolao;
+})();
+  </script>
 
 </body>
 </html>
