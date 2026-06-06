@@ -12854,6 +12854,13 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - O botão único registra a reserva/baixa e abre o módulo de comprovante.
  * - O valor esperado é enviado para o OCR validar o pagamento.
  * ===================================================================== */
+
+/* PATCH V249 — preserva cache do letreiro digital.
+ * Não altera upload, pagamentos, aquisição de cotas, OCR ou estrutura de pastas.
+ * O backend agora mantém cache persistente do último letreiro válido via ScriptProperties.
+ */
+try{window.PSS_FRONT_VERSION='V249_CACHE_LETREIRO_PERSISTENTE_UPLOAD_DIRETO_OCR';}catch(e){}
+
 </script>
 </body>
 </html>
