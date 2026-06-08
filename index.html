@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V257_PALPITE_FAST_SEM_WINDOWNAME_TIMEOUT',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -2284,7 +2284,29 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       }
       atualizarSelecionadasPalpite()
     }
-    async function salvarPalpite(){const btn=document.getElementById('btnSalvarPalpite');btn.disabled=true;btn.textContent='Salvando...';try{const nums=ESTADO.numerosSelecionados.slice().sort((a,b)=>a-b),r=await apiMulti([{action:'salvarPalpite',dados:{numeros:nums,email:ESTADO.email,jogo:1,loteria:ESTADO.bolaoSelecionado},args:[nums,ESTADO.email,1,ESTADO.bolaoSelecionado]},{action:'registrarPalpite',dados:{numeros:nums,email:ESTADO.email,loteria:ESTADO.bolaoSelecionado},args:[ESTADO.email,ESTADO.bolaoSelecionado,nums]}]);toast((r&&r.msg)||'Palpite salvo com sucesso.');renderPalpiteAberto(ESTADO.bolaoSelecionado)}catch(err){toast(err.message,'error');btn.disabled=false}}
+    async function salvarPalpite(){
+      const btn=document.getElementById('btnSalvarPalpite');
+      if(!btn)return;
+      btn.disabled=true;
+      btn.textContent='Salvando...';
+      try{
+        const nums=ESTADO.numerosSelecionados.slice().sort((a,b)=>a-b);
+        const payload={numeros:nums,email:ESTADO.email,jogo:1,loteria:ESTADO.bolaoSelecionado};
+        /* V257: rota única, leve e direta. Não usa window.name para salvar palpite. */
+        let r;
+        try{
+          r=await apiJsonpDireto_('salvarPalpiteRapidoV257',payload,[nums,ESTADO.email,1,ESTADO.bolaoSelecionado],60000);
+        }catch(eJsonp){
+          r=await apiPostMessageBridge_('salvarPalpiteRapidoV257',payload,[nums,ESTADO.email,1,ESTADO.bolaoSelecionado],60000);
+        }
+        toast((r&&r.msg)||'Palpite salvo com sucesso.');
+        await renderPalpiteAberto(ESTADO.bolaoSelecionado);
+      }catch(err){
+        toast((err&&err.message)||'Erro ao salvar palpite.','error');
+        btn.disabled=false;
+        btn.textContent='Salvar alteração ('+(ESTADO.numerosSelecionados?ESTADO.numerosSelecionados.length:0)+'/'+(ESTADO.qtdEscolha||0)+')';
+      }
+    }
     function getPrazoBolao(nome){const b=listaSegura_(ESTADO.boloes).find(x=>normalizar(x.loteria)===normalizar(nome)||normalizar(x.nome)===normalizar(nome));return b?(b.fimPalpite||'-'):'-'}
     async function renderComprovante(){loading('Carregando comprovante');try{const lista=await carregarBoloes(),hist=await apiMulti([{action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},{action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}]).catch(()=>[]);setView(`<div class="panel no-left"><form onsubmit="enviarComprovante(event)"><div class="wide-control"><label>Tipo de cota:</label><select id="tipoCota" onchange="renderCamposPartes()"><option value="unica">Cota única</option><option value="dividida">Cota dividida</option></select></div><div id="partesBox"></div><div class="upload-center"><label>Selecione a loteria do depósito:</label><select id="uploadBolao" required><option value="">Selecione...</option>${lista.map(b=>`<option value="${escapeAttr(b.loteria)}" ${b.loteria===ESTADO.bolaoSelecionado?'selected':''}>${escapeHtml(b.loteria)}</option>`).join('')}</select><h3>Enviar Comprovante</h3><small>Formatos aceitos: JPG, PNG, PDF</small><input id="arquivoComprovante" type="file" accept="image/*,.pdf,application/pdf" required style="margin:16px 0 10px;" /><button class="btn btn-block" id="btnEnviarComprovante" type="submit">Enviar agora</button>
 <div class="upload-progress-box" id="comprovanteUploadProgressBox">
@@ -5519,7 +5541,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO'; }catch(e){}
+  try{ CONFIG.versao='V257_PALPITE_FAST_SEM_WINDOWNAME_TIMEOUT'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -13743,3 +13765,5 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 </body>
 </html>
+
+<!-- PATCH V257 — salvamento rápido de palpite sem window.name/time-out -->
