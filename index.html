@@ -13514,5 +13514,232 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * PATCH V256 — INSCRIÇÃO PAGA + CONSULTA ADMIN FUNCIONAL
+ * Portal SimonSports — Bolões Loterias Especiais
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V256_INSCRICAO_CONSULTA_APLICADO) return;
+  window.PSS_V256_INSCRICAO_CONSULTA_APLICADO = true;
+
+  function v256Key_(s){
+    try{return normalizar(s||'').replace(/[^A-Z0-9]+/g,'');}catch(e){}
+    return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'');
+  }
+
+  function v256Num_(v){
+    try{return num(v);}catch(e){}
+    var s=String(v||'').replace(/[R$\s]/g,'');
+    if(s.indexOf(',')>=0&&s.indexOf('.')>=0)s=s.replace(/\./g,'').replace(',','.');
+    else if(s.indexOf(',')>=0)s=s.replace(',','.');
+    var n=Number(s);return isNaN(n)?0:n;
+  }
+
+  function v256SetCacheMarker_(){
+    try{
+      var marcador='V256_INSCRICAO_CONSULTA';
+      if(localStorage.getItem('PSS_CACHE_MARKER_V256')===marcador)return;
+      Object.keys(localStorage).forEach(function(k){
+        if(/boloes|V237|HOME|SNAPSHOT|PSS_CACHE/i.test(k)) localStorage.removeItem(k);
+      });
+      localStorage.setItem('PSS_CACHE_MARKER_V256',marcador);
+    }catch(e){}
+  }
+  v256SetCacheMarker_();
+
+  function v256NormalizarBolao_(b){
+    b=b||{};
+    var minhas=v256Num_(b.cotasUsuario||b.minhasCotas||b.minhasCotasConfirmadas||b.cotasConfirmadasUsuario||0);
+    if(minhas>=1){
+      b.cotasUsuario=minhas;
+      b.minhasCotas=minhas;
+      b.minhasCotasConfirmadas=minhas;
+      b.cotasConfirmadasUsuario=minhas;
+      b.participanteInscrito=true;
+      b.statusParticipacao=b.statusParticipacao||'Pago/Confirmado';
+      b.statusPagamento=b.statusPagamento||'Pago/Confirmado';
+    }else{
+      b.cotasUsuario=0;
+      b.minhasCotas=0;
+      b.minhasCotasConfirmadas=0;
+      b.participanteInscrito=false;
+    }
+    return b;
+  }
+
+  var carregarBaseV256=window.carregarBoloes;
+  if(typeof carregarBaseV256==='function'){
+    window.carregarBoloes=carregarBoloes=async function(forcar){
+      var arr=[];
+      try{arr=listaSegura_(await carregarBaseV256.call(this,forcar===undefined?true:forcar));}catch(e){arr=listaSegura_(ESTADO.boloes||[]);}
+      arr=arr.map(v256NormalizarBolao_);
+      ESTADO.boloes=arr;
+      try{cacheSet_('boloes_'+normalizar(ESTADO.email||'publico').replace(/[^A-Z0-9]+/g,'_'),arr,30000);}catch(e2){}
+      return arr;
+    };
+  }
+
+  window.usuarioParticipaBolaoUI_=usuarioParticipaBolaoUI_=function(b){
+    b=b||{};
+    var minhas=v256Num_(b.cotasUsuario||b.minhasCotas||b.minhasCotasConfirmadas||b.cotasConfirmadasUsuario||0);
+    return minhas>=1 || b.participanteInscrito===true || String(b.participanteInscrito).toLowerCase()==='true';
+  };
+
+  window.usuarioTemReservaBolaoUI_=function(){return false;};
+
+  window.labelBotaoPrincipalBolao_=labelBotaoPrincipalBolao_=function(b,origem){
+    if(isHistorico(b))return 'Abrir';
+    if(origem==='palpite')return usuarioParticipaBolaoUI_(b)?'Abrir palpite':'Pagar';
+    if(usuarioParticipaBolaoUI_(b))return 'Ver opções';
+    return 'Pagar';
+  };
+
+  if(typeof renderCardsBoloes==='function'){
+    window.renderCardsBoloes=renderCardsBoloes=function(lista,origem){
+      lista=listaSegura_(lista).map(v256NormalizarBolao_);
+      if(!lista.length)return '<div class="notice warn">Nenhum bolão localizado.</div>';
+      return `<div class="cards-row">${lista.map(function(b){
+        var nome=b.nome||b.loteria||'Bolão';
+        var participa=usuarioParticipaBolaoUI_(b);
+        var minhas=v256Num_(b.cotasUsuario||b.minhasCotas||b.minhasCotasConfirmadas||0);
+        var disp=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):v256Num_(b.cotasDisponiveis||0);
+        var esgotado=disp<=0&&!participa&&!isHistorico(b);
+        var badge=participa?('Participante inscrito'+(minhas?` · ${String(minhas).replace('.',',')} cota(s)`:'')):'Não inscrito neste bolão';
+        var badgeClass=participa?'':'locked';
+        var botao=labelBotaoPrincipalBolao_(b,origem);
+        var acao=`selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')`;
+        return `
+          <div class="bolao-card">
+            <h3>🎯 ${escapeHtml(nome)}</h3>
+            ${origem==='boloes'?`<div class="status-pill ${badgeClass}">${escapeHtml(badge)}</div><br>`:''}
+            ${disp<999999?`<div class="outline-pill ${esgotado?'danger':''}">Cotas disponíveis: ${escapeHtml(disp)}</div>`:''}
+            <div class="meta-grid">
+              <div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div>
+              <div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div>
+              <div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div>
+              <div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div>
+            </div>
+            <button class="btn ${esgotado?'disabled':''}" ${esgotado?'disabled':''} onclick="${acao}">${escapeHtml(botao)}</button>
+          </div>`;
+      }).join('')}</div>`;
+    };
+  }
+
+  function v256RenderConsultaResumo_(d){
+    d=d||{};
+    var u=d.usuario||{};
+    var resumo=d.resumo||{};
+    return `
+      <div class="consulta-admin-grid">
+        ${consultaCardV256_('Nome',u.nome||'-')}
+        ${consultaCardV256_('E-mail',u.email||'-')}
+        ${consultaCardV256_('Status',u.status||'-')}
+        ${consultaCardV256_('Perfil',u.perfil||'-')}
+        ${consultaCardV256_('Cotas confirmadas',String(resumo.cotasConfirmadas||0).replace('.',','))}
+        ${consultaCardV256_('Cotas reservadas',String(resumo.cotasReservadas||0).replace('.',','))}
+        ${consultaCardV256_('Total pago',moeda(resumo.totalPago||0))}
+        ${consultaCardV256_('Em análise',moeda(resumo.totalAnalise||0))}
+      </div>
+      ${secaoConsultaV256_('Bolões vinculados',d.boloes||[],['loteria','cotas','partes','status','origem','data'])}
+      ${secaoConsultaV256_('Pagamentos e comprovantes',d.pagamentos||[],['data','loteria','valor','cotas','partes','status','pagador','recebedor','produto','idTransacao','mesReferencia','urlComprovante'])}
+      ${secaoConsultaV256_('Palpites registrados',d.palpites||[],['data','loteria','jogo','numeros','status'])}
+      ${secaoConsultaV256_('Solicitações e histórico',d.solicitacoes||[],['data','loteria','cotas','status','tipo','aceiteRegulamento'])}
+    `;
+  }
+
+  function consultaCardV256_(label,value){
+    return `<div class="consulta-card"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value===undefined||value===null||value===''?'-':value)}</strong></div>`;
+  }
+
+  function secaoConsultaV256_(titulo,lista,campos){
+    lista=Array.isArray(lista)?lista:[];
+    if(!lista.length)return `<div class="consulta-section"><h3>${escapeHtml(titulo)}</h3><div class="consulta-empty">Nenhum registro localizado.</div></div>`;
+    return `<div class="consulta-section"><h3>${escapeHtml(titulo)}</h3><div class="table-wrap"><table><thead><tr>${campos.map(c=>`<th>${escapeHtml(labelCampoConsultaV256_(c))}</th>`).join('')}</tr></thead><tbody>${lista.map(row=>`<tr>${campos.map(c=>`<td>${valorCampoConsultaV256_(row,c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+  }
+
+  function labelCampoConsultaV256_(c){
+    var map={loteria:'Bolão',cotas:'Cotas',partes:'Partes',status:'Status',origem:'Origem',data:'Data',valor:'Valor',pagador:'Pagador',recebedor:'Recebedor',produto:'Cód. produto',idTransacao:'ID transação',mesReferencia:'Mês referência',urlComprovante:'Comprovante',jogo:'Jogo',numeros:'Números',tipo:'Tipo',aceiteRegulamento:'Aceite'};
+    return map[c]||c;
+  }
+
+  function valorCampoConsultaV256_(row,c){
+    var v=row&&row[c];
+    if(c==='urlComprovante'||c==='url'){
+      return v?`<a href="${escapeAttr(v)}" target="_blank" rel="noopener">Abrir</a>`:'-';
+    }
+    if(c==='valor') return escapeHtml(v?String(v):'-');
+    if(c==='cotas') return escapeHtml(String(v||0).replace('.',','));
+    return escapeHtml(v===undefined||v===null||v===''?'-':v);
+  }
+
+  window.renderResultadoConsultaParticipanteAdmin_=renderResultadoConsultaParticipanteAdmin_=v256RenderConsultaResumo_;
+
+  window.executarConsultaParticipanteAdmin=async function(){
+    var email=(document.getElementById('consultaAdminEmail')||{}).value||'';
+    var box=document.getElementById('resultadoConsultaParticipanteAdmin');
+    if(!email){toast('Selecione um participante.','warn');return;}
+    if(box)box.innerHTML='<div class="notice info">Carregando dados do participante...</div>';
+    try{
+      var dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email,participanteEmail:email},[{adminEmail:ESTADO.email,participanteEmail:email}]);
+      if(box)box.innerHTML=v256RenderConsultaResumo_(dados);
+    }catch(err){
+      if(box)box.innerHTML=`<div class="notice error">${escapeHtml(err.message||String(err))}</div>`;
+    }
+  };
+
+  async function v256CarregarParticipantesAdmin_(){
+    if(!isAdmin())return [];
+    try{
+      var dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email},[{adminEmail:ESTADO.email}]);
+      return Array.isArray(dados.participantes)?dados.participantes:[];
+    }catch(e){return []}
+  }
+
+  window.renderBoloes=renderBoloes=async function(tipo){
+    loading('Carregando bolões');
+    var lista=[];
+    try{lista=listaSegura_(await carregarBoloes(true));}catch(e){lista=listaSegura_(ESTADO.boloes||[]);}
+    lista=lista.map(v256NormalizarBolao_);
+    var ativos=lista.filter(b=>!isHistorico(b));
+    var hist=lista.filter(b=>isHistorico(b));
+    var dados=tipo==='historico'?hist:ativos;
+    var consultaHtml='';
+    if(isAdmin()){
+      consultaHtml=`<div class="panel" id="consultaAdminBoloesPanel"><label>Participante</label><div style="display:flex;gap:10px;align-items:center;"><select id="consultaParticipanteBoloes"><option value="">Carregando participantes...</option></select><button type="button" class="btn" onclick="consultarParticipanteBoloesV256_()">Consultar</button></div><div id="resultadoConsultaParticipanteBoloes" style="margin-top:12px;"></div></div>`;
+    }
+    setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button></div>${renderCardsBoloes(dados,'boloes')}</div>${consultaHtml}`);
+    if(isAdmin()){
+      var ps=await v256CarregarParticipantesAdmin_();
+      var sel=document.getElementById('consultaParticipanteBoloes');
+      if(sel){
+        sel.innerHTML='<option value="">Selecione um participante...</option>'+ps.map(p=>`<option value="${escapeAttr(p.email)}">${escapeHtml((p.nome||p.email||'Participante')+' — '+(p.email||''))}</option>`).join('');
+      }
+    }
+  };
+
+  window.consultarParticipanteBoloesV256_=async function(){
+    var email=(document.getElementById('consultaParticipanteBoloes')||{}).value||'';
+    var box=document.getElementById('resultadoConsultaParticipanteBoloes');
+    if(!email){toast('Selecione um participante.','warn');return;}
+    if(box)box.innerHTML='<div class="notice info">Carregando dados do participante...</div>';
+    try{
+      var dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email,participanteEmail:email},[{adminEmail:ESTADO.email,participanteEmail:email}]);
+      if(box)box.innerHTML=v256RenderConsultaResumo_(dados);
+    }catch(err){
+      if(box)box.innerHTML=`<div class="notice error">${escapeHtml(err.message||String(err))}</div>`;
+    }
+  };
+
+  try{
+    if(ESTADO&&ESTADO.view==='boloes') setTimeout(function(){renderBoloes('ativos');},200);
+    if(ESTADO&&ESTADO.view==='inicio') setTimeout(function(){try{renderInicio();}catch(e){}},250);
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>
