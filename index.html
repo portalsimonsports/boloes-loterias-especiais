@@ -13565,9 +13565,9 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     try{
       var marcador='V256_INSCRICAO_CONSULTA';
       if(localStorage.getItem('PSS_CACHE_MARKER_V256')===marcador)return;
-      Object.keys(localStorage).forEach(function(k){
-        if(/boloes|V237|HOME|SNAPSHOT|PSS_CACHE/i.test(k)) localStorage.removeItem(k);
-      });
+      /* V260: NÃO apagar cache público/letreiro/home.
+       * O cache da página pública é parte do desempenho aprovado.
+       * A limpeza agressiva da V256 foi removida para preservar últimos resultados e snapshot público. */
       localStorage.setItem('PSS_CACHE_MARKER_V256',marcador);
     }catch(e){}
   }
@@ -13831,6 +13831,135 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   },true);
 
   try{if(ESTADO&&ESTADO.view==='boloes')setTimeout(function(){renderBoloes('ativos');},200);}catch(e){}
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V260 — RESTAURA CACHE PÚBLICO DA HOME / LETREIRO
+ * - Não apaga cache da página pública.
+ * - Mantém último letreiro válido mesmo se a API oscilar.
+ * - Atualiza em segundo plano sem deixar a home vazia.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V260_CACHE_PUBLICO_HOME_APLICADO) return;
+  window.PSS_V260_CACHE_PUBLICO_HOME_APLICADO = true;
+
+  var KEYS_RESULTADOS_V260 = [
+    'PSS_RESULTADOS_PUBLICOS_PERMANENTE_V260',
+    'PSS_RESULTADOS_PUBLICOS_V237',
+    'PSS_RESULTADOS_PUBLICOS_V213',
+    'PSS_HOME_ULTRA_V237',
+    'PSS_HOME_SNAPSHOT_V224',
+    'PSS_HOME_PUBLICA_SNAPSHOT_V224'
+  ];
+
+  function v260TemResultado_(dados){
+    var d = v260ExtrairResultados_(dados);
+    return !!(d && (String(d.letreiroTexto||'').trim() || (Array.isArray(d.resultados) && d.resultados.length)));
+  }
+
+  function v260ExtrairResultados_(raw){
+    var d = raw || {};
+    if(d.dados !== undefined) d = d.dados;
+    if(d.result !== undefined) d = d.result;
+    if(d.resultadosPublicos) d = d.resultadosPublicos;
+    if(d.resultados_publicos) d = d.resultados_publicos;
+    if(d.ultimosResultados && !d.resultados) d.resultados = d.ultimosResultados;
+    return d || {};
+  }
+
+  function v260LerObjeto_(key){
+    try{
+      var o = JSON.parse(localStorage.getItem(key) || 'null');
+      if(!o) return null;
+      if(o.dados !== undefined) return o.dados;
+      return o;
+    }catch(e){ return null; }
+  }
+
+  function v260LerResultadosCache_(){
+    for(var i=0;i<KEYS_RESULTADOS_V260.length;i++){
+      var raw = v260LerObjeto_(KEYS_RESULTADOS_V260[i]);
+      var d = v260ExtrairResultados_(raw);
+      if(v260TemResultado_(d)) return d;
+    }
+    return null;
+  }
+
+  function v260SalvarResultadosCache_(dados){
+    var d = v260ExtrairResultados_(dados);
+    if(!v260TemResultado_(d)) return;
+    try{
+      var payload = {
+        ts: Date.now(),
+        dados: {
+          sucesso: d.sucesso !== false,
+          atualizadoEm: d.atualizadoEm || d.dataHora || (typeof dataHoraAtualCurta === 'function' ? dataHoraAtualCurta() : ''),
+          titulo: d.titulo || 'Últimos resultados',
+          letreiroTexto: d.letreiroTexto || d.letreiroResultadosTexto || '',
+          resultados: Array.isArray(d.resultados) ? d.resultados : []
+        }
+      };
+      localStorage.setItem('PSS_RESULTADOS_PUBLICOS_PERMANENTE_V260', JSON.stringify(payload));
+      localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V237', JSON.stringify(payload));
+      localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V213', JSON.stringify(payload));
+    }catch(e){}
+  }
+
+  var renderBase = window.renderLetreiroResultadosPublicosV213;
+  if(typeof renderBase === 'function'){
+    window.renderLetreiroResultadosPublicosV213 = function(dados){
+      var d = v260ExtrairResultados_(dados);
+      if(v260TemResultado_(d)){
+        v260SalvarResultadosCache_(d);
+        return renderBase.call(this, d);
+      }
+      var cached = v260LerResultadosCache_();
+      if(cached){
+        return renderBase.call(this, cached);
+      }
+      return renderBase.apply(this, arguments);
+    };
+  }
+
+  var carregarBase = window.carregarLetreiroResultadosPublicosV213;
+  if(typeof carregarBase === 'function'){
+    window.carregarLetreiroResultadosPublicosV213 = async function(forcar){
+      var cached = v260LerResultadosCache_();
+      if(cached && typeof window.renderLetreiroResultadosPublicosV213 === 'function'){
+        try{ window.renderLetreiroResultadosPublicosV213(cached); }catch(e){}
+      }
+      try{
+        await carregarBase.apply(this, arguments);
+        var atual = v260ExtrairResultados_(window.PSS_RESULTADOS_PUBLICOS_V213 || {});
+        if(v260TemResultado_(atual)){
+          v260SalvarResultadosCache_(atual);
+        }else if(cached && typeof window.renderLetreiroResultadosPublicosV213 === 'function'){
+          window.renderLetreiroResultadosPublicosV213(cached);
+        }
+      }catch(err){
+        if(cached && typeof window.renderLetreiroResultadosPublicosV213 === 'function'){
+          window.renderLetreiroResultadosPublicosV213(cached);
+          return;
+        }
+        throw err;
+      }
+    };
+  }
+
+  /* Renderiza cache imediatamente após a home montar, sem esperar API. */
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(function(){
+      var cached = v260LerResultadosCache_();
+      if(cached && typeof window.renderLetreiroResultadosPublicosV213 === 'function'){
+        try{ window.renderLetreiroResultadosPublicosV213(cached); }catch(e){}
+      }
+    }, 250);
+  });
 })();
 </script>
 
