@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V252_PAGAMENTO_SEM_RESERVA_PALPITE_PAGO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V253_OCR_PRODUTO_PAGADOR_PARTES_EQUIVALENTES -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V252_PAGAMENTO_SEM_RESERVA_PALPITE_PAGO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V253_OCR_PRODUTO_PAGADOR_PARTES_EQUIVALENTES',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -3288,6 +3288,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
             <div class="pay-admin-info"><b>ID transação</b><span>${escapeHtml(o.idTransacao||'-')}</span></div>
             <div class="pay-admin-info"><b>Autenticação</b><span>${escapeHtml(o.autenticacao||'-')}</span></div>
             <div class="pay-admin-info"><b>Tipo cota</b><span>${escapeHtml(o.tipoCota||'-')}</span></div>
+            <div class="pay-admin-info"><b>Cód. produto</b><span>${escapeHtml(o.codigoProduto||'-')}</span></div>
             <div class="pay-admin-info"><b>Partes</b><span>${escapeHtml(formatarPartesPagamento_(o.partesCota))}</span></div>
             <div class="pay-admin-info full"><b>Validação / observação</b><span>${escapeHtml(o.validacao||'-')}</span></div>
             ${o.participantesCota?`<div class="pay-admin-info full"><b>Participantes da cota</b><span>${escapeHtml(o.participantesCota)}</span></div>`:''}
@@ -3319,7 +3320,8 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
-        partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+        codigoProduto:cellObj(o,['COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+        partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
@@ -3337,12 +3339,16 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
     function formatarPartesPagamento_(v){
       if(v===undefined||v===null||String(v).trim()==='')return '-';
       const raw=String(v).trim();
+      if(!raw)return '-';
+      if(raw.includes('/'))return raw;
+      if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+      if(/^integral$/i.test(raw))return '1/1';
       const n=num(raw);
-      if(!n)return escapeHtml(raw);
-      if(n===1)return 'Integral';
+      if(!n)return raw;
+      if(Math.abs(n-1)<0.0001)return '1/1';
       if(n>0&&n<1){
         const partes=Math.round(1/n);
-        return partes>1?'1/'+partes:String(n);
+        return partes>1?'1/'+partes:String(n).replace('.',',');
       }
       return '1/'+n;
     }
@@ -5513,7 +5519,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V252_PAGAMENTO_SEM_RESERVA_PALPITE_PAGO'; }catch(e){}
+  try{ CONFIG.versao='V253_OCR_PRODUTO_PAGADOR_PARTES_EQUIVALENTES'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -13404,5 +13410,29 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 </script>
+
+
+<script>
+/* V253 — exibição segura das partes no painel Pagamentos */
+(function(){
+  window.formatarPartesPagamento_ = formatarPartesPagamento_ = function(v){
+    if(v===undefined||v===null||String(v).trim()==='')return '-';
+    const raw=String(v).trim();
+    if(!raw)return '-';
+    if(raw.includes('/'))return raw;
+    if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+    if(/^integral$/i.test(raw))return '1/1';
+    const n=num(raw);
+    if(!n)return raw;
+    if(Math.abs(n-1)<0.0001)return '1/1';
+    if(n>0&&n<1){
+      const partes=Math.round(1/n);
+      return partes>1?'1/'+partes:String(n).replace('.',',');
+    }
+    return '1/'+n;
+  };
+})();
+</script>
+
 </body>
 </html>
