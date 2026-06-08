@@ -2242,7 +2242,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         if(typeof x==='object'){
           const n=x.numero||x.n||x.dezena||'';
           const q=x.qtd||x.quantidade||x.total||'';
-          return `<span class="chip">${escapeHtml(formatNum(n))}${q!==''?' ('+escapeHtml(q)+')':''}</span>`;
+          return `<span class="chip">${escapeHtml(formatNum(n))}${q!==''?' ('+escapeHtml(q)+'x)':''}</span>`;
         }
         return `<span class="chip">${escapeHtml(String(x))}</span>`;
       }).join('')}</div>`
@@ -4070,6 +4070,64 @@ function selecionarBolao(nome,origem){
       <button class="btn btn-light" onclick="fecharModal(); abrirAdquirirCotasBolao('${escapeAttr(nome)}')">Adquirir mais cotas</button>
     </div>
   `);
+}
+
+
+
+/* =====================================================================
+ * V263 — CORREÇÃO FRONTEND TOP 10 PALPITES
+ * Motivo:
+ * - A V262 chamava PSS_top10PalpiteV262_ e PSS_todosNumerosPalpiteV262_,
+ *   mas as funções auxiliares não ficaram definidas no index final.
+ * - Este bloco mantém compatibilidade com o backend V262 e calcula fallback
+ *   local usando os palpites carregados na tela.
+ * ===================================================================== */
+function PSS_numeroPalpiteV263_(valor){
+  const n=Number(String(valor||'').replace(/[^0-9]/g,''));
+  if(!n||isNaN(n))return '';
+  return n<10?'0'+n:String(n);
+}
+function PSS_extrairNumerosPalpiteV263_(valor){
+  return String(valor||'').split(/[^0-9]+/).map(n=>Number(n)).filter(n=>!isNaN(n)&&n>0&&n<=99).map(PSS_numeroPalpiteV263_).filter(Boolean);
+}
+function PSS_normalizarListaContagemPalpiteV263_(lista,contagem){
+  contagem=contagem||{};
+  if(!Array.isArray(lista))return [];
+  return lista.map(item=>{
+    if(item&&typeof item==='object'){
+      const numero=PSS_numeroPalpiteV263_(item.numero||item.n||item.dezena||item.valor||'');
+      const qtd=item.qtd||item.quantidade||item.total||item.contagem||contagem[numero]||'';
+      return numero?{numero:numero,qtd:qtd}:null;
+    }
+    const numero=PSS_numeroPalpiteV263_(item);
+    return numero?{numero:numero,qtd:contagem[numero]||''}:null;
+  }).filter(Boolean);
+}
+function PSS_resumoLocalPalpitesV263_(status){
+  const cont={};
+  const palpites=Array.isArray(status&&status.palpites)?status.palpites:[];
+  palpites.forEach(p=>{
+    PSS_extrairNumerosPalpiteV263_(p.numerosTexto||p.numeros||p.NUMEROS||p.DEZENAS||p.palpite||'').forEach(n=>{
+      cont[n]=(cont[n]||0)+1;
+    });
+  });
+  const todos=Object.keys(cont).sort((a,b)=>Number(a)-Number(b)).map(n=>({numero:n,qtd:cont[n]}));
+  const top=Object.keys(cont).sort((a,b)=>cont[b]-cont[a]||Number(a)-Number(b)).slice(0,10).map(n=>({numero:n,qtd:cont[n]}));
+  return {top10:top,todosNumeros:todos,contagemNumeros:cont};
+}
+function PSS_top10PalpiteV262_(status){
+  status=status||{};
+  const cont=status.contagemNumeros||{};
+  let lista=PSS_normalizarListaContagemPalpiteV263_(status.top10||status.dezenasMaisPalpitadas||[],cont);
+  if(lista.length)return lista.slice(0,10);
+  return PSS_resumoLocalPalpitesV263_(status).top10;
+}
+function PSS_todosNumerosPalpiteV262_(status){
+  status=status||{};
+  const cont=status.contagemNumeros||{};
+  let lista=PSS_normalizarListaContagemPalpiteV263_(status.todosNumeros||status.dezenasMaisPalpitadas||status.top10||[],cont);
+  if(lista.length)return lista;
+  return PSS_resumoLocalPalpitesV263_(status).todosNumeros;
 }
 
 async function renderPalpiteLista(tipo='ativos'){
@@ -13766,7 +13824,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 <script>
 (function(){
-  try{localStorage.setItem('PSS_INDEX_VERSION','V259_PALPITE_REAL_CONSULTA_UNICA');}catch(e){}
+  try{localStorage.setItem('PSS_INDEX_VERSION','V263_FIX_TOP10_FUNCTIONS_PALPITE');}catch(e){}
 
   /* V259: remove a busca de participante do menu Bolões. A consulta administrativa fica somente no menu Consulta. */
   if(typeof renderBoloes==='function'){
