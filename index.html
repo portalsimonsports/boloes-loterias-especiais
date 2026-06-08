@@ -13763,6 +13763,77 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 </script>
 
+
+<script>
+(function(){
+  try{localStorage.setItem('PSS_INDEX_VERSION','V259_PALPITE_REAL_CONSULTA_UNICA');}catch(e){}
+
+  /* V259: remove a busca de participante do menu Bolões. A consulta administrativa fica somente no menu Consulta. */
+  if(typeof renderBoloes==='function'){
+    window.renderBoloes=renderBoloes=async function(tipo){
+      loading('Carregando bolões');
+      try{
+        var lista=listaSegura_(await carregarBoloes(true));
+        if(typeof v256NormalizarBolao_==='function') lista=lista.map(v256NormalizarBolao_);
+        var ativos=lista.filter(function(b){return !isHistorico(b)});
+        var hist=lista.filter(function(b){return isHistorico(b)});
+        var dados=tipo==='historico'?hist:ativos;
+        setView(`<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab ${tipo==='ativos'?'active':''}" onclick="renderBoloes('ativos')">Bolões ativos</button><button type="button" class="btn btn-tab ${tipo==='historico'?'active':''}" onclick="renderBoloes('historico')">Histórico</button></div>${renderCardsBoloes(dados,'boloes')}</div>`);
+      }catch(err){
+        setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message||String(err))}</div></div>`);
+      }
+    };
+  }
+
+  /* V259: salvamento do palpite por rota única rápida, com retorno visual e recarregamento real. */
+  window.salvarPalpite=salvarPalpite=async function(){
+    var btn=document.getElementById('btnSalvarPalpite');
+    if(!btn)return;
+    var qtd=Number(ESTADO.qtdEscolha||0);
+    var nums=(ESTADO.numerosSelecionados||[]).slice().sort(function(a,b){return a-b});
+    if(qtd>0 && nums.length!==qtd){toast('Selecione exatamente '+qtd+' dezenas.','warn');return;}
+    btn.disabled=true;
+    btn.textContent='Salvando...';
+    try{
+      var loteria=ESTADO.bolaoSelecionado||'';
+      var payload={numeros:nums,email:ESTADO.email,jogo:1,loteria:loteria};
+      var r=await apiJsonpDireto_('salvarPalpiteRapidoV257',payload,[nums,ESTADO.email,1,loteria],60000)
+        .catch(function(){return apiPostMessageBridge_('salvarPalpiteRapidoV257',payload,[nums,ESTADO.email,1,loteria],60000);});
+      toast((r&&r.msg)||'Palpite salvo com sucesso.');
+      try{if(typeof cacheRemove_==='function')cacheRemove_('boloes_'+normalizar(ESTADO.email||'publico').replace(/[^A-Z0-9]+/g,'_'));}catch(eCache){}
+      setTimeout(function(){renderPalpiteAberto(loteria);},450);
+    }catch(err){
+      toast((err&&err.message)||'Erro ao salvar palpite.','error');
+      btn.disabled=false;
+      btn.textContent='Salvar alteração ('+nums.length+'/'+(ESTADO.qtdEscolha||0)+')';
+    }
+  };
+
+  /* V259: cadastro visual também normaliza nome antes do envio, sem substituir a validação do backend. */
+  window.PSS_nomeProprioV259_=function(valor){
+    var s=String(valor||'').trim().replace(/\s+/g,' ');
+    if(!s)return '';
+    var min={da:1,de:1,di:1,do:1,das:1,dos:1,e:1};
+    return s.toLowerCase().split(' ').map(function(p,i){
+      if(!p)return '';
+      if(i>0&&min[p])return p.charAt(0).toUpperCase()+p.slice(1);
+      return p.split('-').map(function(x){return x?x.charAt(0).toUpperCase()+x.slice(1):x}).join('-');
+    }).join(' ').trim();
+  };
+
+  document.addEventListener('change',function(ev){
+    var el=ev&&ev.target;
+    if(!el||!el.matches)return;
+    if(el.matches('input[name="nome"], #cadastroNome, #nome, input[id*="nome" i]')){
+      var v=window.PSS_nomeProprioV259_(el.value);
+      if(v)el.value=v;
+    }
+  },true);
+
+  try{if(ESTADO&&ESTADO.view==='boloes')setTimeout(function(){renderBoloes('ativos');},200);}catch(e){}
+})();
+</script>
+
 </body>
 </html>
 
