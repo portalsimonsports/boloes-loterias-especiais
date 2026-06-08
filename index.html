@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V253_OCR_PRODUTO_PAGADOR_PARTES_EQUIVALENTES -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V245 UPLOAD APPS SCRIPT</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V254 ENVIO SEGURO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V253_OCR_PRODUTO_PAGADOR_PARTES_EQUIVALENTES',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -1072,8 +1072,8 @@
           await firebaseSincronizarUsuarioAdmin_(dados);
         }
       }catch(e){
-        console.warn('Planilha atualizada, mas a sincronização Firebase falhou:',e);
-        toast('Ação feita na planilha, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
+        console.warn('Base atualizada, mas a sincronização Firebase falhou:',e);
+        toast('Ação concluída, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
       }
     }
 
@@ -5324,7 +5324,7 @@ function renderMetodoPagamento_(m,b,i){
  * Correção:
  * - O POST de upload agora envia o payload JSON e também campos diretos
  *   (fileData, fileName, email, loteria, concurso, dataJogo, obs).
- * - Isso evita falha quando o Apps Script não interpreta corretamente o
+ * - Isso evita falha quando o sistema não interpreta corretamente o
  *   payload grande com base64 dentro de JSON.
  * ===================================================================== */
 (function(){
@@ -5519,7 +5519,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V253_OCR_PRODUTO_PAGADOR_PARTES_EQUIVALENTES'; }catch(e){}
+  try{ CONFIG.versao='V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -5635,7 +5635,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       return;
     }
 
-    box.innerHTML='<div class="notice info"><span class="loading-fast">Atualizando bolões pela planilha...</span></div>';
+    box.innerHTML='<div class="notice info"><span class="loading-fast">Atualizando bolões...</span></div>';
     try{
       const lista=listaSegura_(await PSSV191_carregarBoloesBase(false));
       renderLista(lista,'api');
@@ -5643,7 +5643,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       const cacheDepois=pssV191LerCacheBoloes_();
       if(cacheDepois.length){
         renderLista(cacheDepois,'cache');
-        toast('A planilha demorou para responder. Exibindo cache salvo.','warn');
+        toast('A base demorou para responder. Exibindo dados salvos.','warn');
       }else{
         box.innerHTML=`
           <div class="notice error">${escapeHtml(err.message||'Não foi possível carregar os bolões agora.')}</div>
@@ -7534,8 +7534,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       }
       return false;
     }catch(e){
-      console.warn('Planilha atualizada, mas a sincronização Firebase falhou:',e);
-      toast('Ação feita na planilha, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
+      console.warn('Base atualizada, mas a sincronização Firebase falhou:',e);
+      toast('Ação concluída, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
       return false;
     }
   };
@@ -8190,7 +8190,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * PATCH V216 — CADASTRO COM NOME PÚBLICO PARA TELEGRAM
  * - Participante informa como deseja aparecer nas listas públicas do bolão.
  * - Nome completo continua sendo administrativo.
- * - Nome público é sincronizado com planilha, Firestore e payload de aprovação.
+ * - Nome público é sincronizado com base, Firestore e payload de aprovação.
  * ===================================================================== */
 (function(){
   function textoLimpoV216_(v){
@@ -8407,8 +8407,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       }
       return false;
     }catch(e){
-      console.warn('Planilha atualizada, mas a sincronização Firebase falhou:',e);
-      toast('Ação feita na planilha, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
+      console.warn('Base atualizada, mas a sincronização Firebase falhou:',e);
+      toast('Ação concluída, mas não consegui sincronizar o Firebase. Verifique Firestore/Regras.','warn');
       return false;
     }
   };
@@ -10802,7 +10802,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
                 <span class="resumo-inscritos-num">${escapeHtml(u.email||'')}</span>
               </div>`;}).join('')}
           </div>
-        `:'<div class="notice warn">A API retornou total, mas não retornou a lista detalhada. Execute diagnosticarInscritosV229 no Apps Script.</div>'}
+        `:'<div class="notice warn">A API retornou total, mas não retornou a lista detalhada. Execute diagnosticarInscritosV229 no sistema.</div>'}
       `;
     }catch(err){
       document.getElementById('modalConteudo').innerHTML='<div class="notice error">'+escapeHtml(err.message||err)+'</div>';
@@ -10966,7 +10966,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       <div class="v232-upload-box">
         <h3>⚡ Super envio dos jogos</h3>
         <div class="v232-super-note">
-          Envio otimizado: vários arquivos são enviados em um único processamento, reduzindo chamadas ao Apps Script.
+          Envio otimizado: vários arquivos são enviados em um único processamento, reduzindo chamadas externas.
         </div>
         <form onsubmit="enviarJogoRealizadoBolaoV232(event)">
           <input type="hidden" id="jogosBolaoV232" value="${escapeAttr(loteria)}">
@@ -11229,7 +11229,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       cacheSet_('boloes_'+normalizar(ESTADO.email||'').replace(/[^A-Z0-9]+/g,'_'), lista, CACHE_TTL.curto || 60000);
     }catch(e){}
 
-    return {origem:'planilha direta', lista};
+    return {origem:'base direta', lista};
   }
 
   function renderConfigCardV233_(b,i){
@@ -11289,7 +11289,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
           <h2>⚙️ Configurações dos bolões ativos</h2>
           <p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>
           <div class="v233-config-top">
-            <div class="v233-config-source">Origem dos dados: ${escapeHtml(r.origem || 'planilha')}</div>
+            <div class="v233-config-source">Origem dos dados: ${escapeHtml(r.origem || 'base de dados')}</div>
             <button class="btn btn-light" onclick="renderConfigBoloesAdmin(true)">Atualizar configurações</button>
           </div>
           ${lista.length ? lista.map((b,i)=>renderConfigCardV233_(b,i)).join('') : '<div class="notice warn">Nenhum bolão ativo com configuração localizado.</div>'}
@@ -11951,7 +11951,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * Correção definitiva do envio/gravação:
  * - Não lê arquivo em base64.
  * - Não envia em chunks.
- * - Envia o <input type="file"> real via multipart/form-data para o Apps Script.
+ * - Envia o arquivo selecionado por fluxo seguro.
  * - Servidor apenas grava no Drive e registra PENDENTE_OCR/ARQUIVO_GRAVADO.
  * ===================================================================== */
 (function(){
@@ -12212,7 +12212,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   <script>
 /* =====================================================================
  * V243 — UPLOAD EM CHUNKS JSONP
- * Aplica o modelo enviado: FileReader -> DataURL -> blocos pequenos -> Apps Script.
+ * Aplica o modelo enviado: FileReader -> DataURL -> blocos pequenos -> envio seguro.
  * O backend junta os blocos, remove cabeçalho data:*;base64, grava no Drive e registra pendência.
  * ===================================================================== */
 (function(){
@@ -12453,9 +12453,9 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
   <script>
 /* =====================================================================
- * V246 — UPLOAD DE COMPROVANTE VIA IFRAME APPS SCRIPT + google.script.run
- * Mantém o painel principal no GitHub Pages, mas envia o arquivo pesado
- * em uma página HtmlService do Apps Script para evitar JSONP/chunks no PDF.
+ * V246 — UPLOAD DE COMPROVANTE VIA ENVIO SEGURO
+ * Mantém o painel principal no GitHub Pages e envia o arquivo pesado
+ * em ambiente seguro para evitar falhas com PDF.
  * ===================================================================== */
 (function(){
   'use strict';
@@ -12561,7 +12561,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     frame.src = CONFIG.apiUrl + '?' + params.toString();
     modal.classList.add('open');
     if(typeof atualizarProgressoUploadComprovante_ === 'function'){
-      atualizarProgressoUploadComprovante_(1,'Abrindo módulo de envio','Envio será feito pelo Apps Script com google.script.run.','run');
+      atualizarProgressoUploadComprovante_(1,'Abrindo envio','Preparando envio seguro.','run');
     }
   }
 
@@ -12575,7 +12575,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     if(data.tipo === 'sucesso'){
       var r = data.payload || {};
       if(typeof atualizarProgressoUploadComprovante_ === 'function'){
-        atualizarProgressoUploadComprovante_(100,'Comprovante enviado',(r.msg || 'Comprovante enviado e processado.'),'ok');
+        atualizarProgressoUploadComprovante_(100,'Comprovante enviado',(r.msg || 'Comprovante enviado com sucesso.'),'ok');
       }
       toast(r.msg || 'Comprovante enviado com sucesso.');
       try{
@@ -12613,11 +12613,11 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 <script>
 /* =====================================================================
- * PATCH V247 — COMPROVANTE: BOTÃO ABRE MÓDULO APPS SCRIPT
+ * PATCH V247 — COMPROVANTE: BOTÃO ABRE ENVIO SEGURO
  * Ajustes:
  * - Remove o seletor de arquivo da tela principal do GitHub.
  * - Mantém os dados selecionados anteriormente na própria tela.
- * - O botão abre o bloco/iframe do Apps Script já com bolão, participante,
+ * - O botão abre o envio seguro já com bolão, participante,
  *   tipo de cota, partes e nomes preenchidos.
  * - Após sucesso, fecha o bloco automaticamente e atualiza o histórico.
  * ===================================================================== */
@@ -12690,7 +12690,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       setView(`
         <div class="panel no-left">
           <div class="notice info">
-            Selecione os dados do comprovante abaixo. O arquivo será carregado no bloco seguro do Apps Script, usando <b>google.script.run</b>, com gravação no Drive e OCR/reprocessamento automático.
+            Selecione os dados do comprovante abaixo. O arquivo será enviado em ambiente seguro, com gravação e conferência automática.
           </div>
 
           <div class="wide-control">
@@ -12754,7 +12754,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
           <div class="upload-center" style="max-width:480px;">
             <button class="btn btn-block" id="btnAbrirUploadComprovanteV247" type="button" onclick="abrirUploadComprovanteAppsScriptV245()">Carregar comprovante</button>
-            <small style="display:block;margin-top:8px;color:#546173;font-weight:800;">Ao clicar, será aberto o bloco do Apps Script para selecionar PDF, JPG ou PNG.</small>
+            <small style="display:block;margin-top:8px;color:#546173;font-weight:800;">Ao clicar, será aberto o seletor seguro para enviar PDF, JPG ou PNG.</small>
 
             <div class="upload-progress-box" id="comprovanteUploadProgressBox">
               <div class="upload-progress-top">
@@ -12764,7 +12764,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
               <div class="upload-progress-bar">
                 <div class="upload-progress-fill" id="comprovanteUploadFill"></div>
               </div>
-              <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Clique em Carregar comprovante para abrir o módulo de envio.</div>
+              <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Clique em Carregar comprovante para selecionar o arquivo.</div>
             </div>
           </div>
 
@@ -12810,7 +12810,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * V250 — PATCH CIRÚRGICO SOBRE INDEX V247
  * NÃO altera home pública, letreiro digital, cache público ou últimos resultados.
  * Ajustes restritos:
- * 1) Adquirir cotas registra reserva e abre upload do Apps Script diretamente.
+ * 1) Adquirir cotas registra reserva e abre upload do sistema diretamente.
  * 2) Remove QR/dados de pagamento do bloco de aquisição para evitar travamento.
  * 3) Envia valor esperado, partes e ID da aquisição para o comprovante.
  * 4) Menu Palpite passa a abrir/mostrar apenas bolões com vínculo de palpite.
@@ -13431,6 +13431,86 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }
     return '1/'+n;
   };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V254 — UI limpa no envio de comprovante
+ * - Fecha a janela de envio imediatamente após sucesso.
+ * - Oculta o quadro de progresso auxiliar da tela principal.
+ * - Remove mensagens técnicas do fluxo público.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V254_UPLOAD_UI_LIMPO_APLICADO) return;
+  window.PSS_V254_UPLOAD_UI_LIMPO_APLICADO = true;
+
+  function ocultarProgressoUploadComprovanteV254_(){
+    try{
+      var box=document.getElementById('comprovanteUploadProgressBox');
+      var fill=document.getElementById('comprovanteUploadFill');
+      var tit=document.getElementById('comprovanteUploadTitulo');
+      var pct=document.getElementById('comprovanteUploadPercentual');
+      var det=document.getElementById('comprovanteUploadDetalhe');
+      if(box) box.classList.remove('open');
+      if(fill) fill.style.width='0%';
+      if(tit) tit.textContent='Aguardando envio';
+      if(pct) pct.textContent='0%';
+      if(det) det.textContent='Clique em Carregar comprovante para selecionar o arquivo.';
+    }catch(e){}
+  }
+
+  function fecharUploadModalV254_(){
+    try{
+      var frame=document.getElementById('pss-upload-v245-iframe');
+      if(frame) frame.src='about:blank';
+      var modal=document.getElementById('pss-upload-v245-modal');
+      if(modal) modal.classList.remove('open');
+    }catch(e){}
+  }
+
+  window.ocultarProgressoUploadComprovanteV254_ = ocultarProgressoUploadComprovanteV254_;
+  window.fecharUploadModalV254_ = fecharUploadModalV254_;
+
+  function aplicarWrapAbertura(){
+    if(typeof window.abrirUploadComprovanteAppsScriptV245 !== 'function' || window.abrirUploadComprovanteAppsScriptV245.__v254Wrapped) return;
+    var base=window.abrirUploadComprovanteAppsScriptV245;
+    var wrapped=function(){
+      var r=base.apply(this,arguments);
+      setTimeout(ocultarProgressoUploadComprovanteV254_,80);
+      return r;
+    };
+    wrapped.__v254Wrapped=true;
+    window.abrirUploadComprovanteAppsScriptV245=wrapped;
+  }
+
+  aplicarWrapAbertura();
+  setTimeout(aplicarWrapAbertura,500);
+  setTimeout(aplicarWrapAbertura,1500);
+
+  window.addEventListener('message',function(ev){
+    var data=ev&&ev.data?ev.data:null;
+    if(!data || data.pssUploadComprovanteApp!==true) return;
+    if(data.tipo==='sucesso'){
+      fecharUploadModalV254_();
+      ocultarProgressoUploadComprovanteV254_();
+      try{ toast((data.payload&&data.payload.msg)||'Comprovante enviado com sucesso.'); }catch(e){}
+      try{ if(typeof carregarHistoricoComprovantes==='function') carregarHistoricoComprovantes(); }catch(e2){}
+      try{ if(typeof renderComprovante==='function') setTimeout(function(){ renderComprovante(); },350); }catch(e3){}
+    }
+    if(data.tipo==='fechar'){
+      fecharUploadModalV254_();
+      ocultarProgressoUploadComprovanteV254_();
+    }
+  });
+
+  document.addEventListener('click',function(ev){
+    var btn=ev.target&&ev.target.closest?ev.target.closest('#btnAbrirUploadComprovanteV247'):null;
+    if(btn) setTimeout(ocultarProgressoUploadComprovanteV254_,120);
+  },true);
 })();
 </script>
 
