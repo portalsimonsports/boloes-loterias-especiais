@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V261_ULTRA_CACHE_PERMANENTE_HOME -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V261 CACHE PERMANENTE HOME</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V254 ENVIO SEGURO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -13964,152 +13964,137 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 </script>
 
 
+
 <script>
 /* =====================================================================
- * PATCH V261 — CACHE PERMANENTE DO SNAPSHOT DA HOME PÚBLICA
- * Objetivo:
- * - Persiste o snapshot completo da home (bolões + resultados) no
- *   localStorage do browser, assim como V260 já faz para o letreiro.
- * - Na próxima visita/reload, renderiza os bolões da home instantaneamente
- *   sem esperar a API, e atualiza em segundo plano.
- * - Nunca apaga o cache ao recarregar — apenas substitui quando a API
- *   retornar dados válidos mais recentes.
+ * V261 — LETREIRO COM CACHE REAL E FALLBACK VISÍVEL
+ * Não limpa cache antigo. Corrige a tela "temporariamente indisponíveis".
  * ===================================================================== */
 (function(){
-  'use strict';
-  if(window.PSS_V261_CACHE_HOME_SNAP_APLICADO) return;
-  window.PSS_V261_CACHE_HOME_SNAP_APLICADO = true;
+  const PSS_RESULTADOS_FALLBACK_V261 = {
+    sucesso:true,
+    fallbackEmergencial:true,
+    atualizadoEm:'06/06/2026 21:59:59',
+    resultados:[
+      {slug:'quina',tipoJogo:'QUINA',nome:'QUINA',concurso:'7043',dataApuracao:'05/06/2026',dezenas:'10 • 20 • 21 • 29 • 46'},
+      {slug:'lotofacil',tipoJogo:'LOTOFACIL',nome:'LOTOFÁCIL',concurso:'3703',dataApuracao:'05/06/2026',dezenas:'01 • 03 • 05 • 07 • 08 • 09 • 10 • 14 • 15 • 17 • 21 • 22 • 23 • 24 • 25'},
+      {slug:'dupla-sena',tipoJogo:'DUPLA_SENA',nome:'DUPLA SENA',concurso:'2966',dataApuracao:'05/06/2026',dezenas:'11 • 16 • 20 • 25 • 31 • 49'}
+    ]
+  };
+  PSS_RESULTADOS_FALLBACK_V261.letreiroTexto='📢 Últimos resultados: '+PSS_RESULTADOS_FALLBACK_V261.resultados.map(r=>`${r.nome} ${r.concurso} ${r.dataApuracao} : ${r.dezenas}`).join(' | ');
 
-  var KEY_SNAP = 'PSS_HOME_PUBLICA_SNAPSHOT_PERMANENTE_V261';
-  var KEY_SNAP_V224 = 'PSS_HOME_PUBLICA_SNAPSHOT_V224';
-  // V261: máximo 24h para considerar o snapshot do browser válido para exibição imediata
-  var MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  const KEYS_V261=[
+    'PSS_RESULTADOS_PUBLICOS_V261',
+    'PSS_RESULTADOS_PUBLICOS_V213',
+    'PSS_V237_RESULTADOS',
+    'PSS_HOME_ULTRA_V237',
+    'PSS_HOME_PUBLICA_SNAPSHOT_V224'
+  ];
 
-  /* ------- utilitários de leitura/escrita do localStorage ------- */
-  function v261SnapValido_(snap) {
-    return !!(snap && snap.sucesso !== false && Array.isArray(snap.boloes) && snap.boloes.length > 0);
+  function okV261(d){return !!(d&&(d.letreiroTexto||(Array.isArray(d.resultados)&&d.resultados.length)||(d.resultadosPublicos&&(d.resultadosPublicos.letreiroTexto||(Array.isArray(d.resultadosPublicos.resultados)&&d.resultadosPublicos.resultados.length)))));}
+  function unwrapV261(d){
+    if(!d)return null;
+    if(d.dados!==undefined)d=d.dados;
+    if(d.result!==undefined)d=d.result;
+    if(d.dados!==undefined)d=d.dados;
+    if(d.resultadosPublicos)d=d.resultadosPublicos;
+    if(d.ultimosResultados&&!d.resultados)d.resultados=d.ultimosResultados;
+    if(!d.letreiroTexto&&Array.isArray(d.resultados)&&d.resultados.length){
+      d.letreiroTexto='📢 Últimos resultados: '+d.resultados.map(r=>`${r.nome||r.tipoJogo||r.slug||'LOTERIA'}${r.concurso?' '+r.concurso:''}${r.dataApuracao?' '+r.dataApuracao:''} : ${r.dezenas||r.numeros||''}`).join(' | ');
+    }
+    return d;
   }
-
-  function v261LerSnap_() {
-    var keys = [KEY_SNAP, KEY_SNAP_V224];
-    for (var i = 0; i < keys.length; i++) {
-      try {
-        var raw = localStorage.getItem(keys[i]);
-        if (!raw) continue;
-        var obj = JSON.parse(raw);
-        var snap = (obj && obj.dados !== undefined) ? obj.dados : obj;
-        if (!v261SnapValido_(snap)) continue;
-        // Verifica idade do snapshot no browser
-        var ts = obj && obj.ts ? Number(obj.ts) : 0;
-        if (ts && (Date.now() - ts) > MAX_AGE_MS) continue;
-        return snap;
-      } catch(e) {}
+  function setCacheV261(d){
+    d=unwrapV261(d);
+    if(!okV261(d))return;
+    try{localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V261',JSON.stringify({ts:Date.now(),dados:d}));}catch(e){}
+    try{localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V213',JSON.stringify({ts:Date.now(),dados:d}));}catch(e){}
+  }
+  function getCacheV261(){
+    for(const k of KEYS_V261){
+      try{
+        const raw=localStorage.getItem(k);
+        if(!raw)continue;
+        let obj=JSON.parse(raw);
+        if(obj&&obj.dados)obj=obj.dados;
+        obj=unwrapV261(obj);
+        if(okV261(obj))return obj;
+      }catch(e){}
     }
     return null;
   }
-
-  function v261SalvarSnap_(snap) {
-    if (!v261SnapValido_(snap)) return;
-    var payload = JSON.stringify({ ts: Date.now(), dados: snap });
-    try { localStorage.setItem(KEY_SNAP, payload); } catch(e) {}
-    try { localStorage.setItem(KEY_SNAP_V224, payload); } catch(e) {}
-  }
-
-  /* ------- hook na função que carrega/renderiza a home pública ------- */
-  /* Intercepta getHomePublicaRapidaV224 ou carregarHomePublica para:
-     1) Renderizar o snap do browser imediatamente (zero espera)
-     2) Após resposta da API, atualizar o snap no browser */
-
-  function v261HookCarregarHome_(fnOriginal) {
-    return async function() {
-      // Pré-renderiza com snapshot local antes de chamar a API
-      var snapLocal = v261LerSnap_();
-      if (snapLocal) {
-        try {
-          if (typeof window.renderHomePublicaV224 === 'function') {
-            window.renderHomePublicaV224(snapLocal);
-          } else if (typeof window.renderInicio === 'function' && !window._pss261_renderInicio_renderizando) {
-            // não força render do inicio aqui para não causar loop
-          }
-        } catch(eRender) {}
-      }
-      // Chama a função original
-      var resultado;
-      try {
-        resultado = await fnOriginal.apply(this, arguments);
-      } catch(err) {
-        // Se falhar e tiver snap local, mantém o que foi renderizado
-        if (!snapLocal) throw err;
-        return snapLocal;
-      }
-      // Salva o snapshot mais recente da API no browser
-      if (resultado && v261SnapValido_(resultado)) {
-        v261SalvarSnap_(resultado);
-      }
-      return resultado;
-    };
-  }
-
-  /* Hook na função de renderização da home para salvar snap após render */
-  var renderHomeBase = window.renderHomePublicaV224;
-  if (typeof renderHomeBase === 'function') {
-    window.renderHomePublicaV224 = function(snap) {
-      var r = renderHomeBase.apply(this, arguments);
-      if (snap && v261SnapValido_(snap)) v261SalvarSnap_(snap);
-      return r;
-    };
-  }
-
-  /* Hook em carregarHomePublicaRapida e variantes */
-  var nomesFns = [
-    'carregarHomePublicaRapidaV224',
-    'carregarHomePublica',
-    'carregarSnapshotHomePublicaV224',
-    'carregarHomeUltraV237'
-  ];
-  nomesFns.forEach(function(nome) {
-    if (typeof window[nome] === 'function') {
-      window[nome] = v261HookCarregarHome_(window[nome]);
+  function inserirV261(){
+    if(document.getElementById('homeResultadosPublicosV213'))return;
+    if(typeof inserirEstruturaLetreiroV213_==='function'){
+      try{inserirEstruturaLetreiroV213_();return;}catch(e){}
     }
-  });
-
-  /* Hook em window.PSS_HOME_ULTRA_V237 / PSS_HOME_SNAPSHOT_V224 — variáveis globais usadas
-     em alguns patches anteriores para armazenar o resultado bruto da API */
-  var _pssHomeUltraProxy = {};
-  ['PSS_HOME_ULTRA_V237', 'PSS_HOME_SNAPSHOT_V224'].forEach(function(globalKey) {
-    Object.defineProperty(window, globalKey, {
-      configurable: true,
-      get: function() { return _pssHomeUltraProxy[globalKey]; },
-      set: function(val) {
-        _pssHomeUltraProxy[globalKey] = val;
-        // Extrai snap do envelope padrão da API
-        var snap = val;
-        if (snap && snap.dados !== undefined) snap = snap.dados;
-        if (snap && snap.result !== undefined) snap = snap.result;
-        if (v261SnapValido_(snap)) v261SalvarSnap_(snap);
-      }
-    });
-  });
-
-  /* Pré-renderiza snapshot local logo após DOMContentLoaded (antes da API responder) */
-  document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-      var snap = v261LerSnap_();
-      if (!snap) return;
-      // Só pré-renderiza se a home pública estiver visível (não logado)
-      var app = document.getElementById('app') || document.getElementById('view');
-      if (!app) return;
-      if (typeof window.renderHomePublicaV224 === 'function') {
-        try { window.renderHomePublicaV224(snap); } catch(e) {}
-      }
-    }, 60);
-  });
-
-  try { localStorage.setItem('PSS_INDEX_VERSION', 'V261_ULTRA_CACHE_PERMANENTE_HOME'); } catch(e) {}
+    const hero=document.querySelector('.home-hero');
+    const html=`<section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213"><div class="resultados-publicos-head"><div><h2>Últimos resultados das loterias</h2><small id="resultadosPublicosAtualizadoV213">Carregando informações...</small></div><button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button></div><div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div><div class="resultados-publicos-actions"><span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span><button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213&&abrirModalResultadosPublicosV213()">Ver todos os resultados</button></div></section>`;
+    if(hero)hero.insertAdjacentHTML('afterend',html);
+  }
+  function renderV261(d,fonte){
+    inserirV261();
+    d=unwrapV261(d)||PSS_RESULTADOS_FALLBACK_V261;
+    if(!okV261(d))d=PSS_RESULTADOS_FALLBACK_V261;
+    setCacheV261(d);
+    window.PSS_RESULTADOS_PUBLICOS_V213=d;
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atual=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(atual){
+      atual.innerHTML='Atualizado em '+escapeHtml(String(d.atualizadoEm||dataHoraAtualCurta()))+(fonte?` <span class="v237-cache-chip">${escapeHtml(fonte)}</span>`:'');
+    }
+    if(!box)return;
+    const texto=d.letreiroTexto||PSS_RESULTADOS_FALLBACK_V261.letreiroTexto;
+    const conteudo=escapeHtml(texto);
+    box.innerHTML=`<div class="resultados-ticker" title="Passe o mouse para pausar"><div class="resultados-ticker-track"><span class="resultados-ticker-text">${conteudo}</span><span>${conteudo}</span></div></div>`;
+  }
+  async function buscarServidorV261(forcar){
+    const tentativas=[
+      ['getResultadosLoteriasPublicos',{},[]],
+      ['ultimosResultadosPublicos',{},[]],
+      ['getConfigPublica',{},[]],
+      ['getHomePublicaRapidaV224',{forcar:!!forcar},[!!forcar]],
+      ['getHomeUltraV237',{email:(window.ESTADO&&ESTADO.email)||'',forcar:!!forcar},[(window.ESTADO&&ESTADO.email)||'',!!forcar]]
+    ];
+    let ultimoErro=null;
+    for(const t of tentativas){
+      try{
+        let r;
+        if(typeof apiJsonpDireto_==='function')r=await apiJsonpDireto_(t[0],t[1],t[2],9000);
+        else if(typeof apiMulti==='function')r=await apiMulti([{action:t[0],dados:t[1],args:t[2]}]);
+        else if(typeof api==='function')r=await api(t[0],t[1],t[2]);
+        r=unwrapV261(r);
+        if(okV261(r))return r;
+      }catch(e){ultimoErro=e;}
+    }
+    throw ultimoErro||new Error('Resultados indisponíveis.');
+  }
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    inserirV261();
+    const cache=getCacheV261();
+    if(cache&&!forcar){
+      renderV261(cache,'cache');
+      buscarServidorV261(false).then(r=>renderV261(r,'atualizado')).catch(()=>{});
+      return;
+    }
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    if(box)box.innerHTML='<div class="notice info">Atualizando últimos resultados...</div>';
+    try{
+      const r=await buscarServidorV261(!!forcar);
+      renderV261(r,'atualizado');
+    }catch(e){
+      const fb=getCacheV261()||PSS_RESULTADOS_FALLBACK_V261;
+      renderV261(fb,fb.fallbackEmergencial?'cache emergencial':'cache');
+    }
+  };
+  window.renderLetreiroResultadosPublicosV213=function(d){renderV261(d,'cache');};
+  setCacheV261(getCacheV261()||PSS_RESULTADOS_FALLBACK_V261);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>window.carregarLetreiroResultadosPublicosV213(false),250));
+  else setTimeout(()=>window.carregarLetreiroResultadosPublicosV213(false),250);
 })();
 </script>
 
 </body>
 </html>
 
-<!-- PATCH V261 — cache permanente do snapshot da home pública no browser (localStorage) -->
+<!-- PATCH V257 — salvamento rápido de palpite sem window.name/time-out -->
