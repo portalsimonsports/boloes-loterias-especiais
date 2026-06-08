@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V261_ULTRA_CACHE_PERMANENTE_HOME -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V254 ENVIO SEGURO</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V261 CACHE PERMANENTE HOME</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -13963,7 +13963,153 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 </script>
 
+
+<script>
+/* =====================================================================
+ * PATCH V261 — CACHE PERMANENTE DO SNAPSHOT DA HOME PÚBLICA
+ * Objetivo:
+ * - Persiste o snapshot completo da home (bolões + resultados) no
+ *   localStorage do browser, assim como V260 já faz para o letreiro.
+ * - Na próxima visita/reload, renderiza os bolões da home instantaneamente
+ *   sem esperar a API, e atualiza em segundo plano.
+ * - Nunca apaga o cache ao recarregar — apenas substitui quando a API
+ *   retornar dados válidos mais recentes.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V261_CACHE_HOME_SNAP_APLICADO) return;
+  window.PSS_V261_CACHE_HOME_SNAP_APLICADO = true;
+
+  var KEY_SNAP = 'PSS_HOME_PUBLICA_SNAPSHOT_PERMANENTE_V261';
+  var KEY_SNAP_V224 = 'PSS_HOME_PUBLICA_SNAPSHOT_V224';
+  // V261: máximo 24h para considerar o snapshot do browser válido para exibição imediata
+  var MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+  /* ------- utilitários de leitura/escrita do localStorage ------- */
+  function v261SnapValido_(snap) {
+    return !!(snap && snap.sucesso !== false && Array.isArray(snap.boloes) && snap.boloes.length > 0);
+  }
+
+  function v261LerSnap_() {
+    var keys = [KEY_SNAP, KEY_SNAP_V224];
+    for (var i = 0; i < keys.length; i++) {
+      try {
+        var raw = localStorage.getItem(keys[i]);
+        if (!raw) continue;
+        var obj = JSON.parse(raw);
+        var snap = (obj && obj.dados !== undefined) ? obj.dados : obj;
+        if (!v261SnapValido_(snap)) continue;
+        // Verifica idade do snapshot no browser
+        var ts = obj && obj.ts ? Number(obj.ts) : 0;
+        if (ts && (Date.now() - ts) > MAX_AGE_MS) continue;
+        return snap;
+      } catch(e) {}
+    }
+    return null;
+  }
+
+  function v261SalvarSnap_(snap) {
+    if (!v261SnapValido_(snap)) return;
+    var payload = JSON.stringify({ ts: Date.now(), dados: snap });
+    try { localStorage.setItem(KEY_SNAP, payload); } catch(e) {}
+    try { localStorage.setItem(KEY_SNAP_V224, payload); } catch(e) {}
+  }
+
+  /* ------- hook na função que carrega/renderiza a home pública ------- */
+  /* Intercepta getHomePublicaRapidaV224 ou carregarHomePublica para:
+     1) Renderizar o snap do browser imediatamente (zero espera)
+     2) Após resposta da API, atualizar o snap no browser */
+
+  function v261HookCarregarHome_(fnOriginal) {
+    return async function() {
+      // Pré-renderiza com snapshot local antes de chamar a API
+      var snapLocal = v261LerSnap_();
+      if (snapLocal) {
+        try {
+          if (typeof window.renderHomePublicaV224 === 'function') {
+            window.renderHomePublicaV224(snapLocal);
+          } else if (typeof window.renderInicio === 'function' && !window._pss261_renderInicio_renderizando) {
+            // não força render do inicio aqui para não causar loop
+          }
+        } catch(eRender) {}
+      }
+      // Chama a função original
+      var resultado;
+      try {
+        resultado = await fnOriginal.apply(this, arguments);
+      } catch(err) {
+        // Se falhar e tiver snap local, mantém o que foi renderizado
+        if (!snapLocal) throw err;
+        return snapLocal;
+      }
+      // Salva o snapshot mais recente da API no browser
+      if (resultado && v261SnapValido_(resultado)) {
+        v261SalvarSnap_(resultado);
+      }
+      return resultado;
+    };
+  }
+
+  /* Hook na função de renderização da home para salvar snap após render */
+  var renderHomeBase = window.renderHomePublicaV224;
+  if (typeof renderHomeBase === 'function') {
+    window.renderHomePublicaV224 = function(snap) {
+      var r = renderHomeBase.apply(this, arguments);
+      if (snap && v261SnapValido_(snap)) v261SalvarSnap_(snap);
+      return r;
+    };
+  }
+
+  /* Hook em carregarHomePublicaRapida e variantes */
+  var nomesFns = [
+    'carregarHomePublicaRapidaV224',
+    'carregarHomePublica',
+    'carregarSnapshotHomePublicaV224',
+    'carregarHomeUltraV237'
+  ];
+  nomesFns.forEach(function(nome) {
+    if (typeof window[nome] === 'function') {
+      window[nome] = v261HookCarregarHome_(window[nome]);
+    }
+  });
+
+  /* Hook em window.PSS_HOME_ULTRA_V237 / PSS_HOME_SNAPSHOT_V224 — variáveis globais usadas
+     em alguns patches anteriores para armazenar o resultado bruto da API */
+  var _pssHomeUltraProxy = {};
+  ['PSS_HOME_ULTRA_V237', 'PSS_HOME_SNAPSHOT_V224'].forEach(function(globalKey) {
+    Object.defineProperty(window, globalKey, {
+      configurable: true,
+      get: function() { return _pssHomeUltraProxy[globalKey]; },
+      set: function(val) {
+        _pssHomeUltraProxy[globalKey] = val;
+        // Extrai snap do envelope padrão da API
+        var snap = val;
+        if (snap && snap.dados !== undefined) snap = snap.dados;
+        if (snap && snap.result !== undefined) snap = snap.result;
+        if (v261SnapValido_(snap)) v261SalvarSnap_(snap);
+      }
+    });
+  });
+
+  /* Pré-renderiza snapshot local logo após DOMContentLoaded (antes da API responder) */
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      var snap = v261LerSnap_();
+      if (!snap) return;
+      // Só pré-renderiza se a home pública estiver visível (não logado)
+      var app = document.getElementById('app') || document.getElementById('view');
+      if (!app) return;
+      if (typeof window.renderHomePublicaV224 === 'function') {
+        try { window.renderHomePublicaV224(snap); } catch(e) {}
+      }
+    }, 60);
+  });
+
+  try { localStorage.setItem('PSS_INDEX_VERSION', 'V261_ULTRA_CACHE_PERMANENTE_HOME'); } catch(e) {}
+})();
+</script>
+
 </body>
 </html>
 
-<!-- PATCH V257 — salvamento rápido de palpite sem window.name/time-out -->
+<!-- PATCH V261 — cache permanente do snapshot da home pública no browser (localStorage) -->
