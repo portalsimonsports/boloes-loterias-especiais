@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V268 PERFORMANCE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V267 FIX MENUS DATAS PALPITE COMPROVANTE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -929,157 +929,6 @@
     @media(max-width:1100px){.v225-special-grid{grid-template-columns:repeat(2,minmax(170px,1fr))}}
     @media(max-width:700px){.v225-special-grid,.v225-two-columns{grid-template-columns:1fr}.v225-lottery-card{min-height:120px}}
 
-/* V227 — comprovante de terceiro fracionado */
-    .v227-ajuda-fracao{
-      margin:8px 0 10px;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid #d7eadc;
-      background:#f7fff9;
-      color:#003b12;
-      font-size:12px;
-      font-weight:800;
-      line-height:1.45;
-    }
-    #nomesPartes input.v227-pagante{
-      border-color:#0b6f28!important;
-      background:#f4fff7!important;
-      font-weight:900!important;
-    }
-
-/* V228 — topo mais leve: remove botões extras do menu superior */
-    #btnTelegramCanalTopo,
-    .telegram-canal-topo,
-    #badgeInscritosTopo,
-    .badge-inscritos-topo{
-      display:none!important;
-      visibility:hidden!important;
-      width:0!important;
-      min-width:0!important;
-      max-width:0!important;
-      padding:0!important;
-      margin:0!important;
-      border:0!important;
-      overflow:hidden!important;
-      pointer-events:none!important;
-    }
-
-    .v228-sistema-inscritos{
-      margin-top:16px;
-      border-top:1px solid rgba(255,255,255,.22);
-      padding-top:14px;
-    }
-    .v228-sistema-inscritos .label{
-      display:block;
-      color:rgba(255,255,255,.88);
-      font-size:13px;
-      font-weight:800;
-      line-height:1.35;
-      margin-bottom:5px;
-    }
-    .v228-sistema-inscritos button{
-      border:1px solid rgba(255,255,255,.28);
-      background:rgba(255,255,255,.12);
-      color:#fff;
-      border-radius:999px;
-      padding:9px 12px;
-      font-size:15px;
-      font-weight:1000;
-      cursor:pointer;
-    }
-    .v228-sistema-inscritos button:hover{
-      background:rgba(255,255,255,.2);
-    }
-
-/* V229 — canal no início e inscritos corretos */
-    .v229-sistema-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:12px;
-    }
-    .v229-telegram-sistema{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      border:1px solid rgba(255,255,255,.36);
-      background:rgba(255,255,255,.14);
-      color:#fff!important;
-      border-radius:999px;
-      padding:9px 13px;
-      font-size:14px;
-      font-weight:1000;
-      text-decoration:none!important;
-      box-shadow:0 8px 18px rgba(0,0,0,.12);
-    }
-    .v229-telegram-sistema:hover{background:rgba(255,255,255,.23)}
-    .v229-inscritos-sistema{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      border:1px solid rgba(255,255,255,.32);
-      background:rgba(255,255,255,.12);
-      color:#fff;
-      border-radius:999px;
-      padding:9px 13px;
-      font-size:14px;
-      font-weight:1000;
-      cursor:pointer;
-    }
-
-/* V232 — Jogos realizados em modo link + super envio */
-    .v232-jogos-lista{display:grid;gap:10px;margin-top:14px}
-    .v232-jogos-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid #d7eadc;border-radius:12px;padding:12px 14px;box-shadow:0 5px 14px rgba(0,0,0,.05)}
-    .v232-jogos-row b{display:block;color:#003b12;font-size:15px}
-    .v232-jogos-row small{display:block;color:#5b6777;font-size:12px;margin-top:3px}
-    .v232-link-ver{border:1px solid #0b6f28;background:#fff;color:#0b6f28;border-radius:999px;padding:8px 14px;font-weight:1000;text-decoration:none;cursor:pointer;white-space:nowrap}
-    .v232-link-ver:hover{background:#0b6f28;color:#fff}
-    .v232-jogos-table{width:100%;border-collapse:separate;border-spacing:0 9px;margin-top:12px}
-    .v232-jogos-table th{text-align:left;font-size:11px;text-transform:uppercase;color:#536173;padding:0 10px}
-    .v232-jogos-table td{background:#fff;border-top:1px solid #d7eadc;border-bottom:1px solid #d7eadc;padding:12px 10px;font-size:13px;color:#152033;vertical-align:middle}
-    .v232-jogos-table td:first-child{border-left:1px solid #d7eadc;border-radius:12px 0 0 12px}
-    .v232-jogos-table td:last-child{border-right:1px solid #d7eadc;border-radius:0 12px 12px 0;text-align:right}
-    .v232-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
-    .v232-upload-box{border:1px solid #cbded0;border-radius:14px;padding:16px;background:#fbfffc;margin:14px 0}
-    .v232-upload-box h3{margin:0 0 10px;color:#003b12}
-    .v232-upload-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .v232-super-note{border:1px solid #cfe8ff;background:#f3faff;color:#083b67;border-radius:10px;padding:10px 12px;font-weight:800;font-size:12px;margin:10px 0}
-    @media(max-width:760px){
-      .v232-jogos-row{grid-template-columns:1fr}
-      .v232-jogos-row .v232-link-ver{width:100%;text-align:center}
-      .v232-upload-meta{grid-template-columns:1fr}
-      .v232-jogos-table,.v232-jogos-table tbody,.v232-jogos-table tr,.v232-jogos-table td{display:block;width:100%}
-      .v232-jogos-table thead{display:none}
-      .v232-jogos-table tr{margin-bottom:10px;border:1px solid #d7eadc;border-radius:12px;background:#fff;overflow:hidden}
-      .v232-jogos-table td{border:0!important;border-radius:0!important;text-align:left!important}
-      .v232-jogos-table td:before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;color:#536173;font-weight:900;margin-bottom:4px}
-    }
-
-/* V233 — Config sem tela de erro por timeout */
-    .v233-config-top{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin:10px 0 16px;
-    }
-    .v233-config-source{
-      border:1px solid #d7eadc;
-      background:#f8fffa;
-      color:#003b12;
-      border-radius:10px;
-      padding:9px 12px;
-      font-size:12px;
-      font-weight:900;
-    }
-
-/* V237 — cache sem alterar visual original */
-    .v237-cache-chip{display:inline-flex;align-items:center;margin-left:8px;border-radius:999px;padding:3px 8px;background:#e3f7e9;color:#064f1e;font-size:10px;font-weight:1000;text-transform:uppercase;white-space:nowrap}
-
-/* V238 — guarda de menu sem mexer no visual */
-    .v238-menu-guard-note{display:none!important}
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -1473,7 +1322,6 @@
       });
     }
 
-    // V268: paralelo — dispara todas as rotas ao mesmo tempo, retorna a primeira
     function apiDireto_(action,dados,args){return apiHibridaComFallback_(action,dados||{},args||null);}
     async function apiMulti(rotas){
       if(!rotas||!rotas.length) throw new Error('Nenhuma rota informada.');
@@ -10438,7 +10286,25 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 /* FIM PATCH V226 — ULTRAVELOCIDADE */
   </script>
 
-  
+  <style>
+    /* V227 — comprovante de terceiro fracionado */
+    .v227-ajuda-fracao{
+      margin:8px 0 10px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid #d7eadc;
+      background:#f7fff9;
+      color:#003b12;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.45;
+    }
+    #nomesPartes input.v227-pagante{
+      border-color:#0b6f28!important;
+      background:#f4fff7!important;
+      font-weight:900!important;
+    }
+  </style>
 
 
   <script>
@@ -10644,7 +10510,51 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V228 — topo mais leve: remove botões extras do menu superior */
+    #btnTelegramCanalTopo,
+    .telegram-canal-topo,
+    #badgeInscritosTopo,
+    .badge-inscritos-topo{
+      display:none!important;
+      visibility:hidden!important;
+      width:0!important;
+      min-width:0!important;
+      max-width:0!important;
+      padding:0!important;
+      margin:0!important;
+      border:0!important;
+      overflow:hidden!important;
+      pointer-events:none!important;
+    }
+
+    .v228-sistema-inscritos{
+      margin-top:16px;
+      border-top:1px solid rgba(255,255,255,.22);
+      padding-top:14px;
+    }
+    .v228-sistema-inscritos .label{
+      display:block;
+      color:rgba(255,255,255,.88);
+      font-size:13px;
+      font-weight:800;
+      line-height:1.35;
+      margin-bottom:5px;
+    }
+    .v228-sistema-inscritos button{
+      border:1px solid rgba(255,255,255,.28);
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:15px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+    .v228-sistema-inscritos button:hover{
+      background:rgba(255,255,255,.2);
+    }
+  </style>
 
 
   <script>
@@ -10829,7 +10739,44 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V229 — canal no início e inscritos corretos */
+    .v229-sistema-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .v229-telegram-sistema{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      border:1px solid rgba(255,255,255,.36);
+      background:rgba(255,255,255,.14);
+      color:#fff!important;
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:14px;
+      font-weight:1000;
+      text-decoration:none!important;
+      box-shadow:0 8px 18px rgba(0,0,0,.12);
+    }
+    .v229-telegram-sistema:hover{background:rgba(255,255,255,.23)}
+    .v229-inscritos-sistema{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.32);
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:14px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+  </style>
 
 
   <script>
@@ -10970,7 +10917,35 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 
 
-  
+  <style>
+    /* V232 — Jogos realizados em modo link + super envio */
+    .v232-jogos-lista{display:grid;gap:10px;margin-top:14px}
+    .v232-jogos-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid #d7eadc;border-radius:12px;padding:12px 14px;box-shadow:0 5px 14px rgba(0,0,0,.05)}
+    .v232-jogos-row b{display:block;color:#003b12;font-size:15px}
+    .v232-jogos-row small{display:block;color:#5b6777;font-size:12px;margin-top:3px}
+    .v232-link-ver{border:1px solid #0b6f28;background:#fff;color:#0b6f28;border-radius:999px;padding:8px 14px;font-weight:1000;text-decoration:none;cursor:pointer;white-space:nowrap}
+    .v232-link-ver:hover{background:#0b6f28;color:#fff}
+    .v232-jogos-table{width:100%;border-collapse:separate;border-spacing:0 9px;margin-top:12px}
+    .v232-jogos-table th{text-align:left;font-size:11px;text-transform:uppercase;color:#536173;padding:0 10px}
+    .v232-jogos-table td{background:#fff;border-top:1px solid #d7eadc;border-bottom:1px solid #d7eadc;padding:12px 10px;font-size:13px;color:#152033;vertical-align:middle}
+    .v232-jogos-table td:first-child{border-left:1px solid #d7eadc;border-radius:12px 0 0 12px}
+    .v232-jogos-table td:last-child{border-right:1px solid #d7eadc;border-radius:0 12px 12px 0;text-align:right}
+    .v232-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+    .v232-upload-box{border:1px solid #cbded0;border-radius:14px;padding:16px;background:#fbfffc;margin:14px 0}
+    .v232-upload-box h3{margin:0 0 10px;color:#003b12}
+    .v232-upload-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .v232-super-note{border:1px solid #cfe8ff;background:#f3faff;color:#083b67;border-radius:10px;padding:10px 12px;font-weight:800;font-size:12px;margin:10px 0}
+    @media(max-width:760px){
+      .v232-jogos-row{grid-template-columns:1fr}
+      .v232-jogos-row .v232-link-ver{width:100%;text-align:center}
+      .v232-upload-meta{grid-template-columns:1fr}
+      .v232-jogos-table,.v232-jogos-table tbody,.v232-jogos-table tr,.v232-jogos-table td{display:block;width:100%}
+      .v232-jogos-table thead{display:none}
+      .v232-jogos-table tr{margin-bottom:10px;border:1px solid #d7eadc;border-radius:12px;background:#fff;overflow:hidden}
+      .v232-jogos-table td{border:0!important;border-radius:0!important;text-align:left!important}
+      .v232-jogos-table td:before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;color:#536173;font-weight:900;margin-bottom:4px}
+    }
+  </style>
 
 
   <script>
@@ -11248,7 +11223,26 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V233 — Config sem tela de erro por timeout */
+    .v233-config-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin:10px 0 16px;
+    }
+    .v233-config-source{
+      border:1px solid #d7eadc;
+      background:#f8fffa;
+      color:#003b12;
+      border-radius:10px;
+      padding:9px 12px;
+      font-size:12px;
+      font-weight:900;
+    }
+  </style>
 
 
   <script>
@@ -11501,7 +11495,10 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 </script>
 
 
-  
+  <style>
+    /* V237 — cache sem alterar visual original */
+    .v237-cache-chip{display:inline-flex;align-items:center;margin-left:8px;border-radius:999px;padding:3px 8px;background:#e3f7e9;color:#064f1e;font-size:10px;font-weight:1000;text-transform:uppercase;white-space:nowrap}
+  </style>
 
 
   <script>
@@ -11739,7 +11736,10 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V238 — guarda de menu sem mexer no visual */
+    .v238-menu-guard-note{display:none!important}
+  </style>
 
 
   <script>
