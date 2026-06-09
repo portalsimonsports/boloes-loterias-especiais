@@ -1471,12 +1471,155 @@
             <button class="btn btn-light" onclick="abrirCadastro()">Solicitar cadastro</button>
           </div>
         </section>
-      \`);
+      `);
 
       carregarHomePublicaBoloes();
     }
 
-        function scrollHomePublica(id){
+        async function renderInicio(){
+  loading('Carregando início');
+
+  try{
+    if(!ESTADO.usuario)ESTADO.usuario=normalizarUsuarioSessao_({email:ESTADO.email});
+    const dash=await apiMulti([
+      {action:'getEstatisticasAtivaUsuario',dados:{email:ESTADO.email},args:[ESTADO.email]},
+      {action:'getEstatisticasAtiva',args:[]},
+      {action:'dashboard',args:[ESTADO.email]}
+    ]).catch(()=>({}));
+
+    const lista=listaSegura_(await carregarBoloes());
+    const ativos=lista
+      .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
+      .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
+
+    const cfg=await apiMulti([{action:'getConfigPublica',args:[]}]).catch(()=>({}));
+    const telegramLink=(cfg&&cfg.telegramCanalLink)||dash.telegramCanalLink||'';
+
+    const minhasCotas=ativos.reduce((s,b)=>s+num(b.cotasUsuario||b.minhasCotas||0),0);
+    const totalCotas=ativos.reduce((s,b)=>s+num(b.totalCotas||b.cotasTotal||0),0);
+    const cotasDisponiveis=ativos.reduce((s,b)=>s+num(b.cotasDisponiveis||0),0);
+
+    setView(`
+      <div class="panel no-left">
+        <div class="grid">
+          <div class="col-8">
+            <div class="panel no-left" style="margin:0;padding:24px;">
+              <h2 style="font-size:32px;">Olá, ${escapeHtml((ESTADO.usuario&&ESTADO.usuario.nome)||'Usuário')}</h2>
+              <p>Painel de acompanhamento dos bolões ativos, pagamentos, palpites, comprovantes, jogos realizados e atualizações oficiais.</p>
+              <div class="actions">
+                <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
+                <button class="btn btn-light" onclick="navegar('palpite')">Fazer palpite</button>
+                <button class="btn btn-light" onclick="navegar('comprovante')">Comprovantes</button>
+                <button class="btn btn-light" onclick="navegar('jogos')">Jogos</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
+              <h2 style="color:#fff;font-size:42px;">${escapeHtml(ativos.length)}</h2>
+              <p style="color:#fff;">Bolões ativos em acompanhamento.</p>
+              <div style="margin-top:40px;font-weight:800;" data-live-clock>${escapeHtml(dataHoraAtualCurta())}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:18px;">
+          ${statCard('Bolões ativos',ativos.length)}
+          ${statCard('Minhas cotas',minhasCotas)}
+          ${statCard('Cotas disponíveis',cotasDisponiveis)}
+          ${statCard('Total de cotas',totalCotas)}
+        </div>
+
+        ${telegramLink?`
+          <div class="telegram-card">
+            <div>
+              <strong>Canal oficial de atualizações no Telegram</strong>
+              <p style="margin:4px 0 0;color:#385066;">Entre no canal para acompanhar avisos, resultados, jogos realizados e atualizações dos bolões em andamento.</p>
+            </div>
+            <a class="btn" href="${escapeAttr(telegramLink)}" target="_blank" rel="noopener">Entrar no canal</a>
+          </div>
+        `:''}
+      </div>
+
+      <div class="panel">
+        <h2>Bolões ativos</h2>
+        <p>Clique em uma loteria para abrir o resumo detalhado, consultar prazos e acessar as opções de pagamento.</p>
+        ${ativos.length?`<div class="inicio-grid-boloes">${ativos.map((b,i)=>renderInicioBolaoCard_(b,i)).join('')}</div>`:'<div class="notice warn">Nenhum bolão ativo localizado.</div>'}
+      </div>
+    `);
+  }catch(err){
+    setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+  }
+}
+
+    async function carregarBoloes(usarCacheRapido=false){
+      const cacheNome=ESTADO.email?'boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'):'boloes_publicos';
+      const cached=cacheGet_(cacheNome,true);
+
+      if(usarCacheRapido&&cached){
+        ESTADO.boloes=listaSegura_(cached);
+        return ESTADO.boloes;
+      }
+
+      const loader=async()=>{
+        /* V224-MOBILE: tentativas paralelas no mobile; timeout menor */
+        const tOut=(typeof isMobileV224_==='function'&&isMobileV224_())?12000:16000;
+        const lista=await Promise.any([
+          promiseTimeout_(api('getLoteriasPagamentoAtivas',{email:ESTADO.email},[]),tOut,'t1'),
+          promiseTimeout_(api('listarBoloes',{email:ESTADO.email},[ESTADO.email]),tOut,'t2')
+        ]).catch(()=>{throw new Error('Tempo limite ao carregar bolões.');});
+        const arr=Array.isArray(lista)?lista:(lista.boloes||lista.ativas||[]),map={};
+        arr.forEach(b=>{
+          const nome=b.loteria||b.nome||b.NOME||b.id||'';
+          if(!nome)return;
+          const key=normalizar(nome+'|'+(b.dataSorteio||b.sorteio||''));
+          const item={
+            id:b.id||b.ID||b.eventoId||b.EVENTO_ID||nome,
+            nome:b.nome||b.NOME||nome,
+            loteria:b.loteria||b.LOTERIA||nome,
+            status:b.status||b.STATUS||'ATIVO',
+            dataSorteio:b.dataSorteio||b.DATA_SORTEIO||b.sorteio||'',
+            inicioPagamento:b.inicioPagamento||b.INI_BOL||b.iniBol||b.INICIO_PAGAMENTO||'',
+            fimPagamento:b.fimPagamento||b.FIM_BOL||b.fimBol||b.FIM_PAGAMENTO||'',
+            inicioPalpite:b.inicioPalpite||b.inicioPalpites||b.INI_PAL||b.iniPal||b.INICIO_PALPITES||'',
+            fimPalpite:b.fimPalpite||b.fimPalpites||b.FIM_PAL||b.fimPal||b.PRAZO_PALPITES||'',
+            valorCota:b.valorCota||b.VALOR_COTA||'',
+            totalCotas:b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
+            cotasTotal:b.cotasTotal||b.totalCotas||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
+            cotasAdquiridas:b.cotasAdquiridas||b.cotasTotaisAdquiridas||b.COTAS_TOTAIS_ADQUIRIDAS||b.COTAS_ADQUIRIDAS||0,
+            cotasDisponiveis:(b.cotasDisponiveis!==undefined?b.cotasDisponiveis:(b.cotasDisponíveis!==undefined?b.cotasDisponíveis:'')),
+            qtdParcelas:b.qtdParcelas||b.QTD_PARCELAS||'1',
+            premiacao:b.premiacao||b.premiacaoEstimado||b.premioEstimado||b.PREMIACAO||b.PREMIO||'',
+            premioPorCota:b.premioPorCota||b.premiacaoPorCota||b.PREMIO_POR_COTA||b.PREMIACAO_POR_COTA||b.PREMIO_COTA||b.valorPremioPorCota||'',
+            range:b.range||b.RANGE||'',
+            qtdMin:b.qtdMin||b.QTD_MIN||'',
+            qtdMax:b.qtdMax||b.QTD_MAX||'',
+            qtdPalpite:b.qtdPalpite||b.QTD_PALPITE||b.qtdEscolha||b.qtdEscolhaPalpite||'',
+            participanteInscrito:b.participanteInscrito!==false
+          };
+          if((item.cotasDisponiveis===''||item.cotasDisponiveis===undefined) && item.totalCotas!=='') item.cotasDisponiveis=Math.max(0,num(item.totalCotas)-num(item.cotasAdquiridas));
+          if(!map[key]) map[key]=item;
+          else map[key]=Object.assign(map[key],Object.fromEntries(Object.entries(item).filter(([k,v])=>v!==''&&v!==undefined&&v!==null)));
+        });
+        return Object.values(map).sort((a,b)=>String(a.dataSorteio).localeCompare(String(b.dataSorteio)));
+      };
+
+      if(cached){
+        ESTADO.boloes=listaSegura_(cached);
+        loader().then(novos=>{
+          ESTADO.boloes=listaSegura_(novos);
+          cacheSet_(cacheNome,ESTADO.boloes,CACHE_TTL.curto);
+        }).catch(()=>{});
+        return ESTADO.boloes;
+      }
+
+      const novos=listaSegura_(await loader());
+      ESTADO.boloes=novos;
+      cacheSet_(cacheNome,novos,CACHE_TTL.curto);
+      return novos;
+    }
+
+    function scrollHomePublica(id){
       const el=document.getElementById(id);
       if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
     }
