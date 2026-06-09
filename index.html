@@ -1664,6 +1664,14 @@
       });
     }
 
+    // Stub de uploadFetchV226_ — será sobrescrita pelo patch V226 mais adiante
+    // Garante que L1667/1688 não deem ReferenceError antes do patch carregar
+    if(typeof uploadFetchV226_==='undefined'){
+      var uploadFetchV226_=async function(action,dados,args,tOut){
+        return apiHibridaComFallback_(action,dados||{},args||null);
+      };
+    }
+
     async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
       const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
       const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
@@ -1903,12 +1911,16 @@
       {action:'dashboard',args:[ESTADO.email]}
     ]).catch(()=>({}));
 
-    const lista=listaSegura_(await carregarBoloes());
+    // V269: usar bolões do JSON estático se disponíveis (instantâneo)
+    // caso contrário cair no GAS normalmente
+    var _jsonBoloes = window.ESTADO&&ESTADO.jsonEstatico&&Array.isArray(ESTADO.jsonEstatico.boloes)&&ESTADO.jsonEstatico.boloes.length?ESTADO.jsonEstatico.boloes:null;
+    const lista=listaSegura_(_jsonBoloes || await carregarBoloes());
     const ativos=lista
       .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
       .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
 
-    const cfg=await apiMulti([{action:'getConfigPublica',args:[]}]).catch(()=>({}));
+    // V269: config do JSON estático se disponível
+    const cfg=(window.ESTADO&&ESTADO.jsonEstatico&&ESTADO.jsonEstatico.configPublica)||await apiMulti([{action:'getConfigPublica',args:[]}]).catch(()=>({}));
     const telegramLink=(cfg&&cfg.telegramCanalLink)||dash.telegramCanalLink||'';
 
     const minhasCotas=ativos.reduce((s,b)=>s+num(b.cotasUsuario||b.minhasCotas||0),0);
@@ -5017,7 +5029,7 @@ function renderMetodoPagamento_(m,b,i){
 
     try{
       const dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email,participanteEmail:email},[{adminEmail:ESTADO.email,participanteEmail:email}]);
-      if(box)box.innerHTML=renderResultadoConsultaParticipanteAdmin_(dados);
+      if(box)box.innerHTML=(window.renderResultadoConsultaParticipanteAdmin_||window.v256RenderConsultaResumo_||function(d){return escapeHtml(JSON.stringify(d));})(dados);
     }catch(err){
       if(box)box.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
     }
@@ -10982,13 +10994,15 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       if(!lista.length) lista = await carregarBoloes(true);
       if(!lista.length) lista = await carregarBoloes();
 
-      const ativos = (lista || []).filter(b => b && b.loteria && !isHistorico(b));
+      const todos = (lista || []).filter(b => b && b.loteria);
+      const ativos = todos.filter(b => !isHistorico(b));
+      const hist   = todos.filter(b => isHistorico(b));
       const box = document.getElementById('jogosListaV232');
       if(!box) return;
 
-      if(!ativos.length){
+      if(!todos.length){
         box.innerHTML = `
-          <div class="notice warn">Nenhum bolão ativo localizado para exibir jogos.</div>
+          <div class="notice warn">Nenhum bolão localizado para exibir jogos.</div>
           <div class="v232-actions">
             <button class="btn" onclick="renderJogosRealizados()">Atualizar</button>
           </div>
@@ -10996,17 +11010,27 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         return;
       }
 
+      function renderLinhaJogo(b){
+        return `
+          <div class="v232-jogos-row">
+            <div>
+              <b>${escapeHtml(b.loteria)}</b>
+              <small>${escapeHtml((b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+escapeHtml(b.dataSorteio):''}</small>
+            </div>
+            <button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${escapeAttr(encodeURIComponent(b.loteria))}')">Ver</button>
+          </div>
+        `;
+      }
+
       box.innerHTML = `
         <div class="v232-jogos-lista">
-          ${ativos.map(b=>`
-            <div class="v232-jogos-row">
-              <div>
-                <b>${escapeHtml(b.loteria)}</b>
-                <small>${escapeHtml((b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+escapeHtml(b.dataSorteio):''}</small>
-              </div>
-              <button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${escapeAttr(encodeURIComponent(b.loteria))}')">Ver</button>
+          ${ativos.length ? ativos.map(renderLinhaJogo).join('') : ''}
+          ${hist.length ? `
+            <div style="margin-top:16px;padding-top:12px;border-top:1px solid #e0e0e0;">
+              <p style="font-weight:700;margin:0 0 8px;color:#546070;">📋 Histórico / Encerrados</p>
+              ${hist.map(renderLinhaJogo).join('')}
             </div>
-          `).join('')}
+          ` : ''}
         </div>
       `;
     }catch(err){
