@@ -9815,6 +9815,39 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     const tipo = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
     const box = document.getElementById('boxComprovanteTerceiroV225');
     if(box) box.classList.toggle('v225-hidden', tipo !== 'terceiro');
+    if(tipo === 'terceiro') alternarCadastroTerceiroV269();
+  };
+
+  window.alternarCadastroTerceiroV269 = function(){
+    var sel = document.getElementById('terceiroTipoCadastroV269');
+    var tipo = sel ? sel.value : 'com';
+    var boxCom = document.getElementById('boxTerceiroComCadastroV269');
+    var boxSem = document.getElementById('boxTerceiroSemCadastroV269');
+    if(boxCom) boxCom.style.display = tipo === 'com' ? '' : 'none';
+    if(boxSem) boxSem.style.display = tipo === 'sem' ? '' : 'none';
+    // Limpar campos ao trocar
+    if(tipo === 'com'){
+      var em = document.getElementById('emailParticipanteTerceiroV225');
+      var nm = document.getElementById('nomeParticipanteTerceiroV225');
+      var nm2 = document.getElementById('nomeManualTerceiroV269');
+      if(em) em.value = '';
+      if(nm) nm.value = '';
+      if(nm2) nm2.value = '';
+      var box = document.getElementById('participanteSelecionadoTerceiroV225');
+      if(box) box.innerHTML = '';
+    } else {
+      var busca = document.getElementById('buscaParticipanteTerceiroV225');
+      var res = document.getElementById('resultadosParticipanteTerceiroV225');
+      var em = document.getElementById('emailParticipanteTerceiroV225');
+      var nm = document.getElementById('nomeParticipanteTerceiroV225');
+      if(busca) busca.value = '';
+      if(res) res.innerHTML = '';
+      if(em) em.value = '';
+      if(nm) nm.value = '';
+      var box2 = document.getElementById('participanteSelecionadoTerceiroV225');
+      if(box2) box2.innerHTML = '';
+    }
+    try{ montarResumoEnvioComprovanteV247 && montarResumoEnvioComprovanteV247(); }catch(e){}
   };
 
   window.buscarParticipantesTerceiroV225 = function(){
@@ -9926,7 +9959,11 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       const nomeParticipante = (document.getElementById('nomeParticipanteTerceiroV225')?.value || '').trim();
       const fracao = document.getElementById('fracaoCotaTerceiroV225')?.value || '1';
 
-      if(!emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
+      // Sem cadastro: verifica se nome foi digitado
+      var _semCad = (document.getElementById('terceiroTipoCadastroV269')?.value||'com')==='sem';
+      if(_semCad && !nomeParticipante) return toast('Informe o nome do participante.','error');
+      if(!_semCad && !emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
+      if(_semCad && !emailParticipante) meta.emailParticipante = 'sem-cadastro@manual';
 
       meta.emailParticipante = emailParticipante;
       meta.nomeParticipante = nomeParticipante;
@@ -12825,16 +12862,44 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
           <div id="boxComprovanteTerceiroV225" class="v225-admin-box v225-hidden">
             <h3>Comprovante de terceiro</h3>
-            <p>Use esta opção para vincular um comprovante a um participante já cadastrado. A conferência seguirá automaticamente por OCR, igual aos demais comprovantes.</p>
+            <p>Use esta opção para vincular um comprovante a um participante. A conferência seguirá automaticamente por OCR, igual aos demais comprovantes.</p>
 
             <div class="field">
-              <label>Buscar participante por nome ou e-mail</label>
-              <input id="buscaParticipanteTerceiroV225" placeholder="Digite pelo menos 2 letras..." oninput="buscarParticipantesTerceiroV225()">
+              <label>Participante tem cadastro no sistema?</label>
+              <select id="terceiroTipoCadastroV269" onchange="alternarCadastroTerceiroV269()">
+                <option value="com">Com cadastro — buscar pelo e-mail</option>
+                <option value="sem">Sem cadastro — informar nome manualmente</option>
+              </select>
             </div>
-            <div id="resultadosParticipanteTerceiroV225" class="v225-search-results"></div>
+
+            <div id="boxTerceiroComCadastroV269">
+              <div class="field">
+                <label>Buscar participante por nome ou e-mail</label>
+                <input id="buscaParticipanteTerceiroV225" placeholder="Digite pelo menos 2 letras..." oninput="buscarParticipantesTerceiroV225()">
+              </div>
+              <div id="resultadosParticipanteTerceiroV225" class="v225-search-results"></div>
+              <div id="participanteSelecionadoTerceiroV225"></div>
+            </div>
+
+            <div id="boxTerceiroSemCadastroV269" style="display:none">
+              <div class="field">
+                <label>Nome do participante</label>
+                <input id="nomeManualTerceiroV269" placeholder="Nome completo do participante" oninput="
+                  var n=this.value.trim();
+                  var hidden=document.getElementById('nomeParticipanteTerceiroV225');
+                  var email=document.getElementById('emailParticipanteTerceiroV225');
+                  if(hidden)hidden.value=n;
+                  if(email)email.value='sem-cadastro@manual';
+                  var box=document.getElementById('participanteSelecionadoTerceiroV225');
+                  if(box&&n)box.innerHTML='<div class=\'v225-selected-user\'>Participante: '+escapeHtml(n)+' (sem cadastro)</div>';
+                  else if(box)box.innerHTML='';
+                  montarResumoEnvioComprovanteV247&&montarResumoEnvioComprovanteV247();
+                ">
+              </div>
+            </div>
+
             <input type="hidden" id="emailParticipanteTerceiroV225">
             <input type="hidden" id="nomeParticipanteTerceiroV225">
-            <div id="participanteSelecionadoTerceiroV225"></div>
 
             <div class="v225-two-columns">
               <div class="field">
