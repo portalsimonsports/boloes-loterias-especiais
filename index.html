@@ -1914,7 +1914,8 @@
     // V269: usar bolões do JSON estático se disponíveis (instantâneo)
     // caso contrário cair no GAS normalmente
     var _jsonBoloes = window.ESTADO&&ESTADO.jsonEstatico&&Array.isArray(ESTADO.jsonEstatico.boloes)&&ESTADO.jsonEstatico.boloes.length?ESTADO.jsonEstatico.boloes:null;
-    const lista=listaSegura_(_jsonBoloes || await carregarBoloes());
+    var _listaBase = _jsonBoloes || (window.ESTADO&&Array.isArray(ESTADO.boloes)&&ESTADO.boloes.length?ESTADO.boloes:null) || await carregarBoloes();
+    const lista=listaSegura_(_listaBase);
     const ativos=lista
       .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
       .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
@@ -1932,7 +1933,7 @@
         <div class="grid">
           <div class="col-8">
             <div class="panel no-left" style="margin:0;padding:24px;">
-              <h2 style="font-size:32px;">Olá, ${escapeHtml((ESTADO.usuario&&ESTADO.usuario.nome)||'Usuário')}</h2>
+              <h2 style="font-size:32px;">Olá, ${escapeHtml((ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.displayName||ESTADO.usuario.email&&ESTADO.usuario.email.split('@')[0]))||dash.nome||dash.nomeUsuario||'Usuário')}</h2>
               <p>Painel de acompanhamento dos bolões ativos, pagamentos, palpites, comprovantes, jogos realizados e atualizações oficiais.</p>
               <div class="actions">
                 <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
