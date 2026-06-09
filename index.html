@@ -4975,6 +4975,73 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   }
 
 
+    function renderHomePublica(){
+      document.body.classList.remove('app-logado');
+      document.getElementById('publicHeader').classList.add('hidden');
+      document.getElementById('appHeader').classList.add('hidden');
+
+      setView(`
+        <section class="home-hero">
+          <div class="home-badge">Portal SimonSports • Gestão transparente de bolões</div>
+          <h1>Bolões de Loterias Especiais com controle, histórico e transparência.</h1>
+          <p>
+            Acompanhe bolões ativos, cotas, prazos, pagamentos, comprovantes, palpites, jogos realizados e regulamento interno em uma plataforma moderna e segura.
+          </p>
+          <div class="home-actions">
+            <button class="btn" onclick="renderLogin()">Entrar no sistema</button>
+            <button class="btn btn-light" onclick="abrirCadastro()">Solicitar cadastro</button>
+            <button class="btn btn-light" onclick="abrirRegulamentoPublico()">Ver regulamento</button>
+            <button class="btn btn-light" onclick="scrollHomePublica('homeBoloesPublicos')">Ver bolões ativos</button>
+          </div>
+        </section>
+
+        <section class="home-section">
+          <h2>Controle completo em um só lugar</h2>
+          <p>Um painel desenvolvido para dar mais clareza ao participante e mais organização ao administrador.</p>
+          <div class="home-feature-grid">
+            <div class="home-feature"><span class="ico">🎯</span><h3>Bolões ativos</h3><p>Consulta de bolões disponíveis, prazos, sorteios e status de participação.</p></div>
+            <div class="home-feature"><span class="ico">🔢</span><h3>Palpites</h3><p>Registro de dezenas, histórico por participante e acompanhamento dos jogos realizados.</p></div>
+            <div class="home-feature"><span class="ico">💳</span><h3>Pagamentos</h3><p>Organização de cotas, comprovantes, parcelas, valores e situação financeira.</p></div>
+            <div class="home-feature"><span class="ico">🧾</span><h3>Transparência</h3><p>Regulamento, comprovantes, jogos enviados e histórico individual do participante.</p></div>
+          </div>
+        </section>
+
+        <section class="home-section" id="homeBoloesPublicos">
+          <h2>Bolões ativos e próximos sorteios</h2>
+          <p>Informações atualizadas dos bolões ativos, conforme o cadastro interno do sistema.</p>
+          <div id="homeBoloesPublicosConteudo">
+            <div class="notice info">Carregando bolões ativos...</div>
+          </div>
+        </section>
+
+        <section class="home-section">
+          <h2>Loterias especiais acompanhadas</h2>
+          <p>Confira os principais bolões especiais acompanhados pelo Portal SimonSports.</p>
+          <div id="homeTodasLoteriasConteudo">
+            <div class="home-loterias-list">
+              <span>Mega da Virada</span>
+              <span>Lotofácil da Independência</span>
+              <span>Quina de São João</span>
+              <span>Dupla Sena de Páscoa</span>
+              <span>Mega Sena 30 Anos</span>
+              <span>Outras loterias cadastradas</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="home-section">
+          <h2>Área restrita do participante</h2>
+          <p>Ao entrar no sistema, cada participante acessa seus dados, cotas, palpites, comprovantes e histórico vinculado ao bolão.</p>
+          <div class="actions">
+            <button class="btn" onclick="renderLogin()">Entrar no sistema</button>
+            <button class="btn btn-light" onclick="abrirCadastro()">Solicitar cadastro</button>
+          </div>
+        </section>
+      \`);
+
+      carregarHomePublicaBoloes();
+    }
+
   const renderHomePublicaBaseV213=window.renderHomePublica||renderHomePublica;
 })();
 
