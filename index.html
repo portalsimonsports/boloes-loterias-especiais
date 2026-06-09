@@ -13784,7 +13784,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     return escapeHtml(v===undefined||v===null||v===''?'-':v);
   }
 
-  window.renderResultadoConsultaParticipanteAdmin_=renderResultadoConsultaParticipanteAdmin_=v256RenderConsultaResumo_;
+  window.renderResultadoConsultaParticipanteAdmin_=window.v256RenderConsultaResumo_;
 
   window.executarConsultaParticipanteAdmin=async function(){
     var email=(document.getElementById('consultaAdminEmail')||{}).value||'';
@@ -14927,7 +14927,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     if(s.indexOf('boxcomprovanteterceirov225')>=0 || s.indexOf('meus envios recentes')>=0 || s.indexOf('carregar comprovante')>=0 || s.indexOf('tipoenviocomprovante')>=0) return 'comprovante';
     if(s.indexOf('palpite-stage')>=0 || s.indexOf('palpites do participante')>=0 || s.indexOf('10 dezenas mais palpitadas')>=0) return 'palpite';
     if(s.indexOf('menu de bolões')>=0) return 'boloes';
-    if(s.indexOf('jogos realizados')>=0 || s.indexOf('jogos-gallery')>=0 || s.indexOf('uploadjogos')>=0) return 'jogos';
+    if(s.indexOf('jogos-gallery')>=0 || s.indexOf('uploadjogos')>=0 || s.indexOf('jogoslistav232')>=0 || s.indexOf('v232-jogos')>=0 || s.indexOf('🎟️')>=0) return 'jogos';
     if(s.indexOf('consulta administrativa de participante')>=0) return 'consulta';
     if(s.indexOf('pagamentos')>=0 && s.indexOf('pay-')>=0) return 'pagamentos';
     if(s.indexOf('base loterias')>=0 || s.indexOf('base_loterias')>=0) return 'baseLoterias';
@@ -14938,8 +14938,10 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     window.setView = setView = function(html){
       var atual=(window.PSS_MENU_ATUAL_V267 || (window.ESTADO&&ESTADO.view) || '').trim();
       var alvo=detectarViewHtmlV267(html);
-      if(alvo && atual && alvo!==atual){
-        try{ console.warn('PSS V267 bloqueou conteúdo atrasado de outro menu:',alvo,'atual:',atual); }catch(e){}
+      // V269: só bloqueia conteúdo substancial de menu diferente (>500 chars)
+      // Conteúdo pequeno/loading/skeleton sempre passa
+      if(alvo && atual && alvo!==atual && String(html||'').length > 500){
+        try{ console.warn('PSS bloqueou menu atrasado:',alvo,'atual:',atual); }catch(e){}
         return;
       }
       return setViewBaseV267.apply(this,arguments);
