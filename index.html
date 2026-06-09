@@ -15976,5 +15976,216 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 </script>
 
+
+<script>
+/* =====================================================================
+ * V276 — CORREÇÃO FINAL PONTUAL
+ * - Remove duplicidade do bloco Sistema ativo.
+ * - Conta inscritos aprovados por API e, para admin, por leitura direta da aba.
+ * - Impede duplo envio do formulário de cadastro no navegador.
+ * - Mantém o menu Início limpo da V275 e não altera comprovante/pagamentos/OCR.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  try{ if(window.CONFIG) CONFIG.versao='V276_CADASTRO_INSCRITOS_SEM_DUPLICIDADE'; }catch(e){}
+
+  function n(v){
+    if(typeof num==='function') return num(v);
+    var s=String(v==null?'':v).replace(/[R$\s]/g,'');
+    if(s.indexOf(',')>=0 && s.indexOf('.')>=0) s=s.replace(/\./g,'').replace(',','.');
+    else if(s.indexOf(',')>=0) s=s.replace(',','.');
+    var x=Number(s); return isNaN(x)?0:x;
+  }
+  function esc(v){ return typeof escapeHtml==='function'?escapeHtml(v):String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return typeof escapeAttr==='function'?escapeAttr(v):esc(v); }
+  function norm(v){ return String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+  function isAdminLocal(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+
+  function esconderBotoesTopoV276(){
+    document.querySelectorAll('#badgeInscritosTopo,.badge-inscritos-topo,#btnTelegramCanalTopo,.telegram-canal-topo').forEach(function(el){
+      try{ el.classList.add('hidden'); el.style.display='none'; }catch(e){}
+    });
+  }
+
+  function localizarCardSistemaV276(){
+    return document.getElementById('sistemaAtivoCardV275') || (function(){
+      var h2s=[].slice.call(document.querySelectorAll('#view h2'));
+      var h=h2s.find(function(x){return String(x.textContent||'').trim().toLowerCase()==='sistema ativo';});
+      return h ? (h.closest('.panel') || h.parentElement) : null;
+    })();
+  }
+
+  function limparDuplicidadesSistemaV276(){
+    var card=localizarCardSistemaV276();
+    if(!card) return;
+
+    /* Remove blocos antigos que eram inseridos por patches V228/V229. */
+    ['#sistemaAtivoInscritosV228','#sistemaAtivoAcoesV229'].forEach(function(sel){
+      card.querySelectorAll(sel).forEach(function(el){ try{el.remove();}catch(e){} });
+    });
+    card.querySelectorAll('.v228-sistema-inscritos').forEach(function(el){
+      if(el.id!=='sistemaAtivoResumoV275'){
+        try{el.remove();}catch(e){}
+      }
+    });
+
+    /* Garante um único container oficial. */
+    var box=document.getElementById('sistemaAtivoResumoV275');
+    if(!box){
+      box=document.createElement('div');
+      box.id='sistemaAtivoResumoV275';
+      box.style.borderTop='1px solid rgba(255,255,255,.25)';
+      box.style.marginTop='14px';
+      box.style.paddingTop='14px';
+      card.appendChild(box);
+    }
+  }
+
+  function contarAprovadosAdminV276_(dadosAdmin){
+    try{
+      var headers=(dadosAdmin&&dadosAdmin.headers)||[];
+      var rows=(dadosAdmin&&dadosAdmin.rows)||[];
+      var hn=headers.map(function(h){return norm(h).replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');});
+      function idx(aliases){
+        aliases=aliases.map(function(a){return norm(a).replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');});
+        for(var i=0;i<aliases.length;i++){ var p=hn.indexOf(aliases[i]); if(p>=0)return p; }
+        return -1;
+      }
+      var iEmail=idx(['EMAIL','E-MAIL']);
+      var iStatus=idx(['STATUS','SITUACAO','SITUAÇÃO']);
+      var vistos={};
+      rows.forEach(function(r){
+        var email=iEmail>=0?String(r[iEmail]||'').trim().toLowerCase():String((r.join(' ').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)||[''])[0]).toLowerCase();
+        if(!email) return;
+        var st=iStatus>=0?norm(r[iStatus]):norm(r.join(' | '));
+        if(st.indexOf('APROV')>=0 && st.indexOf('DUPLIC')<0 && st.indexOf('RECUS')<0 && st.indexOf('PEND')<0 && st.indexOf('INAT')<0 && st.indexOf('BLOQ')<0){
+          vistos[email]=true;
+        }
+      });
+      return Object.keys(vistos).length;
+    }catch(e){return 0;}
+  }
+
+  async function obterResumoInscritosV276(){
+    var dados={};
+    try{
+      dados=await apiMulti([
+        {action:'getResumoInscritosBoloes',dados:{email:(ESTADO&&ESTADO.email)||''},args:[(ESTADO&&ESTADO.email)||'']},
+        {action:'resumoInscritosBoloes',dados:{email:(ESTADO&&ESTADO.email)||''},args:[(ESTADO&&ESTADO.email)||'']}
+      ]);
+    }catch(e){ dados={}; }
+
+    var total=n(dados.totalAprovadosSite||dados.totalInscritosSite||dados.totalInscritos||dados.total||dados.aprovados||0);
+
+    /* Fallback administrativo: lê a própria aba quando o resumo antigo vier zerado. */
+    if(total===0 && isAdminLocal()){
+      try{
+        var adm=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'SOLICITACOES_CADASTRO'},args:['SOLICITACOES_CADASTRO']}]);
+        total=contarAprovadosAdminV276_(adm);
+        dados.totalInscritos=total;
+        dados.total=total;
+      }catch(eAdm){}
+    }
+
+    var link=String(dados.linkCanal||dados.telegramCanalLink||dados.linkTelegram||dados.urlTelegram||'').trim();
+    if(!link){
+      try{
+        var cfg=await apiMulti([{action:'getConfigPublica',args:[]},{action:'getTelegramCanalLink',args:[]}]);
+        link=String(cfg.telegramCanalLink||cfg.linkCanal||cfg.linkTelegram||cfg.urlTelegram||cfg.link||'').trim();
+      }catch(eCfg){}
+    }
+    dados.linkCanal=link;
+    return dados;
+  }
+
+  function aplicarSistemaAtivoUnicoV276(dados){
+    limparDuplicidadesSistemaV276();
+    var box=document.getElementById('sistemaAtivoResumoV275');
+    if(!box) return;
+    var total=n((dados&&dados.totalAprovadosSite)||(dados&&dados.totalInscritosSite)||(dados&&dados.totalInscritos)||(dados&&dados.total)||0);
+    var link=String((dados&&dados.linkCanal)||'').trim();
+
+    box.innerHTML=''+
+      '<div style="font-weight:900;color:#fff;margin-bottom:8px;">Participantes aprovados no cadastro</div>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'+
+        '<button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{abrirResumoInscritosTopo()}catch(e){}">👥 Inscritos: '+esc(total)+'</button>'+
+        (link?'<a class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;text-decoration:none;" href="'+attr(link)+'" target="_blank" rel="noopener">📣 Entrar no canal</a>':'')+
+      '</div>';
+    window.PSS_RESUMO_INSCRITOS_TOPO=dados||{};
+    esconderBotoesTopoV276();
+  }
+
+  async function atualizarSistemaAtivoUnicoV276(){
+    esconderBotoesTopoV276();
+    limparDuplicidadesSistemaV276();
+    try{ aplicarSistemaAtivoUnicoV276(await obterResumoInscritosV276()); }
+    catch(e){ aplicarSistemaAtivoUnicoV276({totalInscritos:0,total:0,linkCanal:''}); }
+    setTimeout(limparDuplicidadesSistemaV276,150);
+    setTimeout(limparDuplicidadesSistemaV276,800);
+  }
+
+  /* Substitui os patches antigos que duplicavam o card. */
+  window.carregarBadgeInscritosTopo=async function(){
+    return atualizarSistemaAtivoUnicoV276();
+  };
+  window.carregarTelegramCanalLogadoV212=function(){
+    atualizarSistemaAtivoUnicoV276();
+    return Promise.resolve({sucesso:true, canalNoInicio:true});
+  };
+
+  window.abrirResumoInscritosTopo=async function(){
+    abrirModal('Cadastros aprovados','<div class="notice info">Atualizando cadastros aprovados...</div>');
+    try{
+      var dados=await obterResumoInscritosV276();
+      aplicarSistemaAtivoUnicoV276(dados);
+      var usuarios=Array.isArray(dados.usuariosAprovados)?dados.usuariosAprovados:[];
+      var total=n(dados.totalInscritos||dados.total||usuarios.length||0);
+      var lista=usuarios.length?usuarios.map(function(u){return '<div class="resumo-inscritos-item"><strong>'+esc(u.nome||u.email||'Participante')+'</strong><span>'+esc(u.email||'')+'</span></div>';}).join(''):'<div class="notice warn">A contagem foi calculada, mas a lista detalhada não veio da API.</div>';
+      document.getElementById('modalConteudo').innerHTML='<div class="notice"><strong>Total de aprovados no site:</strong> '+esc(total)+'</div><div class="resumo-inscritos-lista">'+lista+'</div>';
+    }catch(e){
+      document.getElementById('modalConteudo').innerHTML='<div class="notice error">'+esc(e.message||e)+'</div>';
+    }
+  };
+
+  /* Reforço: depois que o Início renderiza, limpa qualquer inserção atrasada dos patches antigos. */
+  if(typeof window.renderInicio==='function'){
+    var baseRenderInicioV276=window.renderInicio;
+    window.renderInicio=renderInicio=async function(){
+      var r=await baseRenderInicioV276.apply(this,arguments);
+      setTimeout(atualizarSistemaAtivoUnicoV276,120);
+      setTimeout(atualizarSistemaAtivoUnicoV276,900);
+      setTimeout(limparDuplicidadesSistemaV276,1800);
+      return r;
+    };
+  }
+
+  /* Impede clique duplo/submissão dupla no cadastro. A barreira definitiva fica também no Code_API V276. */
+  if(typeof window.enviarCadastro==='function'){
+    var baseEnviarCadastroV276=window.enviarCadastro;
+    window.enviarCadastro=enviarCadastro=async function(ev){
+      if(ev&&ev.preventDefault) ev.preventDefault();
+      if(window.PSS_CADASTRO_ENVIANDO_V276){
+        try{toast('Cadastro já está sendo enviado. Aguarde a confirmação.','warn');}catch(e){}
+        return false;
+      }
+      window.PSS_CADASTRO_ENVIANDO_V276=true;
+      var btn=document.getElementById('btnEnviarCadastro');
+      if(btn){btn.disabled=true;btn.textContent='Enviando... aguarde';}
+      try{
+        return await baseEnviarCadastroV276.call(this, ev || {preventDefault:function(){}});
+      }finally{
+        setTimeout(function(){ window.PSS_CADASTRO_ENVIANDO_V276=false; },1200);
+      }
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(esconderBotoesTopoV276,80);
+    setTimeout(limparDuplicidadesSistemaV276,500);
+  });
+})();
+</script>
+
 </body>
 </html>
