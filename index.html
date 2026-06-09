@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V272_LIMPO_INICIO_COMPROVANTE_SEM_CADASTRO',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V273_INICIO_LIMPO_INSCRITOS_COMPROVANTE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -10114,6 +10114,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   /* ── 9. renderInicio dashboard — Promise.all simultâneo ─────────── */
   /* Sobrescreve o renderInicio logado para disparar bolões+config em paralelo */
   var _renderInicioBase226 = window.renderInicio;
+
   window.renderInicio = renderInicio = async function(){
     if(typeof loading==='function') loading('Carregando início');
     try{
@@ -14538,7 +14539,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   if(window.PSS_V267_CORRECOES_CRITICAS_APLICADO) return;
   window.PSS_V267_CORRECOES_CRITICAS_APLICADO = true;
 
-  try{ if(window.CONFIG) CONFIG.versao = 'V272_LIMPO_INICIO_COMPROVANTE_SEM_CADASTRO'; }catch(e){}
+  try{ if(window.CONFIG) CONFIG.versao = 'V273_INICIO_LIMPO_INSCRITOS_COMPROVANTE'; }catch(e){}
   try{ localStorage.setItem('PSS_INDEX_VERSION','V267_FIX_MENUS_DATAS_PALPITE_COMPROVANTE'); }catch(e){}
 
   function esc(v){
@@ -14971,8 +14972,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   if(window.PSS_V268_PERFORMANCE_MENUS_APLICADO) return;
   window.PSS_V268_PERFORMANCE_MENUS_APLICADO = true;
 
-  try{ if(window.CONFIG) CONFIG.versao = 'V272_LIMPO_INICIO_COMPROVANTE_SEM_CADASTRO'; }catch(e){}
-  try{ localStorage.setItem('PSS_INDEX_VERSION','V272_LIMPO_INICIO_COMPROVANTE_SEM_CADASTRO'); }catch(e){}
+  try{ if(window.CONFIG) CONFIG.versao = 'V273_INICIO_LIMPO_INSCRITOS_COMPROVANTE'; }catch(e){}
+  try{ localStorage.setItem('PSS_INDEX_VERSION','V273_INICIO_LIMPO_INSCRITOS_COMPROVANTE'); }catch(e){}
 
   function esc(v){
     if(typeof escapeHtml === 'function') return escapeHtml(v);
@@ -15283,7 +15284,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 <script>
 /* =====================================================================
- * V272 — CORREÇÃO LIMPA E RESTRITA
+ * V273 — INÍCIO LIMPO + INSCRITOS NO SISTEMA ATIVO
  * Base: V268 estável. Sem misturar página pública dentro da área logada.
  * 1) Login nunca fica com menu logado visível.
  * 2) Início logado volta a ser painel interno simples e objetivo.
@@ -15291,9 +15292,9 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * ===================================================================== */
 (function(){
   'use strict';
-  if(window.PSS_V272_LIMPO_APLICADO) return;
-  window.PSS_V272_LIMPO_APLICADO = true;
-  try{ if(window.CONFIG) CONFIG.versao='V272_LIMPO_INICIO_COMPROVANTE_SEM_CADASTRO'; }catch(e){}
+  if(window.PSS_V273_LIMPO_APLICADO) return;
+  window.PSS_V273_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V273_INICIO_LIMPO_INSCRITOS_COMPROVANTE'; }catch(e){}
 
   function byId(id){ return document.getElementById(id); }
   function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -15390,14 +15391,6 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
           '<button class="btn" onclick="'+acaoCota+'">Adquirir cotas</button>'+
           (participa?'<button class="btn btn-light" onclick="'+acaoPalpite+'">Palpite</button>':'')+
         '</div>'+
-        '<div class="table-wrap" style="margin-top:10px;"><table><tbody>'+
-          '<tr><th>Loteria</th><td>'+esc(nome)+'</td></tr>'+
-          '<tr><th>Total de cotas</th><td>'+esc(total)+'</td></tr>'+
-          '<tr><th>Cotas disponíveis</th><td>'+esc(disp)+'</td></tr>'+
-          '<tr><th>Minhas cotas</th><td>'+esc(minhas)+'</td></tr>'+
-          (b.premiacao?'<tr><th>Premiação</th><td>'+esc(money(b.premiacao))+'</td></tr>':'')+
-          (b.premioPorCota?'<tr><th>Prêmio por cota</th><td>'+esc(money(b.premioPorCota))+'</td></tr>':'')+
-        '</tbody></table></div>'+
       '</article>';
   }
 
@@ -15423,10 +15416,16 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
             '</div>'+
             (atualizando?'<div class="cache-hint warn">Atualizando dados em segundo plano...</div>':'<div class="cache-hint ok">Dados carregados.</div>')+
           '</div></div>'+
-          '<div class="col-4"><div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">'+
+          '<div class="col-4"><div id="sistemaAtivoCardV273" class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">'+
             '<h2 style="color:#fff;font-size:32px;">Sistema ativo</h2>'+
             '<p style="color:#fff;">Sessão logada e menus disponíveis.</p>'+
-            '<div style="margin-top:30px;font-weight:800;" data-live-clock>'+esc(dataHoraV272())+'</div>'+
+            '<div style="margin-top:18px;font-weight:800;" data-live-clock>'+esc(dataHoraV272())+'</div>'+
+            '<div style="height:1px;background:rgba(255,255,255,.25);margin:14px 0;"></div>'+
+            '<div style="font-weight:900;color:#fff;margin-bottom:8px;">Participantes aprovados no cadastro</div>'+
+            '<div id="sistemaAtivoInscritosV273" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'+
+              '<button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{abrirResumoInscritosTopo()}catch(e){}">👥 Inscritos: ...</button>'+
+              '<span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:800;">Atualizando...</span>'+
+            '</div>'+
           '</div></div>'+
         '</div>'+
         '<div class="grid" style="margin-top:18px;">'+
@@ -15441,15 +15440,44 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       '</div>';
   }
 
+
+  async function atualizarSistemaAtivoCardV273(){
+    var box=byId('sistemaAtivoInscritosV273');
+    if(!box) return;
+    var total=null, link='';
+    try{
+      var dados=await apiMulti([
+        {action:'getResumoInscritosBoloes',dados:{email:(ESTADO&&ESTADO.email)||''},args:[(ESTADO&&ESTADO.email)||'']},
+        {action:'resumoInscritosBoloes',dados:{email:(ESTADO&&ESTADO.email)||''},args:[(ESTADO&&ESTADO.email)||'']}
+      ]);
+      total=n(dados.totalAprovadosSite||dados.totalInscritosSite||dados.totalInscritos||dados.total||0);
+      link=dados.linkCanal||dados.telegramCanalLink||dados.linkTelegram||'';
+      try{ window.PSS_RESUMO_INSCRITOS_TOPO=dados; }catch(e){}
+    }catch(e1){}
+    if(total===null){ total=0; }
+    if(!link){
+      try{
+        var cfg=await apiMulti([{action:'getConfigPublica',args:[]},{action:'getTelegramCanalLink',args:[]}]).catch(function(){return {};});
+        link=cfg.telegramCanalLink||cfg.linkCanal||cfg.linkTelegram||cfg.urlTelegram||cfg.link||'';
+      }catch(e2){}
+    }
+    box=byId('sistemaAtivoInscritosV273');
+    if(!box) return;
+    box.innerHTML=
+      '<button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{abrirResumoInscritosTopo()}catch(e){}">👥 Inscritos: '+esc(total)+'</button>'+ 
+      (link?'<a class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;text-decoration:none;" href="'+attr(link)+'" target="_blank" rel="noopener">📣 Entrar no canal</a>':'');
+  }
+
   window.renderInicio = renderInicio = async function(){
     try{ ESTADO.view='inicio'; window.PSS_MENU_ATUAL_V268='inicio'; window.PSS_MENU_ATUAL_V267='inicio'; }catch(e){}
     mostrarCabecalhoLogadoV272();
     var inicial=[];
     try{ inicial=await carregarBoloesLimpoV272(false); }catch(e1){}
     setViewDiretoV272(htmlInicioLimpoV272(inicial,true));
+    setTimeout(atualizarSistemaAtivoCardV273,120);
     try{
       var atualizada=await carregarBoloesLimpoV272(true);
-      if((ESTADO&&ESTADO.view)==='inicio') setViewDiretoV272(htmlInicioLimpoV272(atualizada,false));
+      if((ESTADO&&ESTADO.view)==='inicio'){ setViewDiretoV272(htmlInicioLimpoV272(atualizada,false)); setTimeout(atualizarSistemaAtivoCardV273,120); }
     }catch(e2){
       if(!inicial.length) setViewDiretoV272(htmlInicioLimpoV272([],false));
     }
