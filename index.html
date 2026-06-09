@@ -10240,6 +10240,13 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   window.PSS_carregarBoloesCompletoV267_ = async function(forcar){
     var cacheKey='PSS_BOLOES_COMPLETO_V267_'+norm((window.ESTADO&&ESTADO.email)||'publico').replace(/[^A-Z0-9]+/g,'_');
     if(!forcar){
+      // V268: prioriza bolões já trazidos pelo snapshot completo (abertura instantânea)
+      try{
+        if(window.ESTADO && Array.isArray(ESTADO.boloesCompletoV267) && ESTADO.boloesCompletoV267.length
+           && ESTADO.snapshotV268Ts && (Date.now()-Number(ESTADO.snapshotV268Ts)<6*60*1000)){
+          return dedupeBoloesV267(ESTADO.boloesCompletoV267);
+        }
+      }catch(eSnap){}
       try{
         var c=JSON.parse(localStorage.getItem(cacheKey)||'null');
         if(c&&Array.isArray(c.lista)&&Date.now()-Number(c.ts||0)<5*60*1000) return dedupeBoloesV267(c.lista);
@@ -10537,6 +10544,145 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       setView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
     }
   };
+})();
+</script>
+
+
+<script>
+/* =====================================================================
+ * PATCH V268 — SNAPSHOT ÚNICO + ABERTURA INSTANTÂNEA DOS MENUS
+ * Problema resolvido:
+ * - Cada menu chamava o GAS de novo (lento: 3-30s por menu).
+ * - Menus abriam conteúdo de outro menu por respostas atrasadas.
+ * Solução:
+ * - 1 chamada (getSnapshotCompletoV268) traz TODOS os dados de uma vez.
+ * - Guarda em cache local; cada menu abre instantâneo lendo do cache.
+ * - Atualiza em segundo plano (stale-while-revalidate).
+ * - Token de navegação descarta respostas atrasadas de menus antigos.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V268_SNAPSHOT_APLICADO) return;
+  window.PSS_V268_SNAPSHOT_APLICADO = true;
+
+  var SNAP_KEY = 'PSS_SNAPSHOT_COMPLETO_V268';
+  var SNAP_TTL = 6*60*1000;        // cache válido por 6 minutos
+  var SNAP_STALE = 60*60*1000;     // aceita exibir cache de até 1h enquanto atualiza
+
+  function snapEmail_(){ try{ return String((window.ESTADO&&ESTADO.email)||'').trim().toLowerCase(); }catch(e){ return ''; } }
+  function snapCacheKey_(){ return SNAP_KEY + '_' + (snapEmail_()||'publico').replace(/[^a-z0-9]+/gi,'_'); }
+
+  function lerSnapLocal_(aceitarStale){
+    try{
+      var c = JSON.parse(localStorage.getItem(snapCacheKey_())||'null');
+      if(!c || !c.ts || !c.dados) return null;
+      var idade = Date.now() - Number(c.ts||0);
+      if(idade < SNAP_TTL) return {dados:c.dados, fresco:true};
+      if(aceitarStale && idade < SNAP_STALE) return {dados:c.dados, fresco:false};
+      return null;
+    }catch(e){ return null; }
+  }
+
+  function gravarSnapLocal_(dados){
+    try{ localStorage.setItem(snapCacheKey_(), JSON.stringify({ts:Date.now(), dados:dados})); }catch(e){}
+  }
+
+  /* Distribui os dados do snapshot pelo ESTADO global para os menus lerem direto */
+  function aplicarSnapshotNoEstado_(snap){
+    if(!snap || typeof snap!=='object') return;
+    try{
+      if(Array.isArray(snap.boloes) && snap.boloes.length){
+        ESTADO.boloes = snap.boloes;
+        ESTADO.boloesCompletoV267 = snap.boloes;
+        var ck='PSS_BOLOES_COMPLETO_V267_'+(snapEmail_()||'publico').replace(/[^A-Z0-9]+/gi,'_');
+        try{ localStorage.setItem(ck, JSON.stringify({ts:Date.now(), lista:snap.boloes})); }catch(e){}
+      }
+      if(snap.dashboard) ESTADO.dashboardV268 = snap.dashboard;
+      if(snap.configPublica) ESTADO.configPublicaV268 = snap.configPublica;
+      if(Array.isArray(snap.demonstrativo)) ESTADO.demonstrativoV268 = snap.demonstrativo;
+      if(Array.isArray(snap.comprovantes)) ESTADO.comprovantesV268 = snap.comprovantes;
+      ESTADO.snapshotV268 = snap;
+      ESTADO.snapshotV268Ts = Date.now();
+    }catch(e){}
+  }
+
+  /* Busca o snapshot no servidor (1 chamada só) */
+  function buscarSnapshotServidor_(){
+    var email = snapEmail_();
+    if(typeof apiDireto_!=='function') return Promise.reject(new Error('apiDireto_ indisponível'));
+    return apiDireto_('getSnapshotCompletoV268', {email:email}, [email]).then(function(snap){
+      if(snap && typeof snap==='object'){
+        gravarSnapLocal_(snap);
+        aplicarSnapshotNoEstado_(snap);
+      }
+      return snap;
+    });
+  }
+
+  /* API pública: garante snapshot disponível (cache imediato + atualização em 2º plano) */
+  window.PSS_garantirSnapshotV268_ = function(forcar){
+    if(!forcar){
+      var local = lerSnapLocal_(true);
+      if(local){
+        aplicarSnapshotNoEstado_(local.dados);
+        // Se estava "stale", atualiza em segundo plano sem travar
+        if(!local.fresco) buscarSnapshotServidor_().catch(function(){});
+        return Promise.resolve(local.dados);
+      }
+    }
+    return buscarSnapshotServidor_().catch(function(){
+      var fb = lerSnapLocal_(true);
+      return fb ? fb.dados : null;
+    });
+  };
+
+  /* Pré-carrega o snapshot assim que o usuário entra (logado) */
+  var aplicarLayoutBaseV268 = window.aplicarLayoutLogado;
+  if(typeof aplicarLayoutBaseV268==='function'){
+    window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+      var r = aplicarLayoutBaseV268.apply(this, arguments);
+      try{ window.PSS_garantirSnapshotV268_(false); }catch(e){}
+      return r;
+    };
+  }
+
+  /* =========================================================
+   * TOKEN DE NAVEGAÇÃO — corrige "abre conteúdo de outro menu"
+   * Cada clique gera um token. Quando uma renderização lenta
+   * termina, só pinta a tela se o token ainda for o atual.
+   * ========================================================= */
+  window.PSS_NAV_TOKEN_V268 = 0;
+
+  var navBaseV268 = window.navegar;
+  if(typeof navBaseV268==='function'){
+    window.navegar = navegar = function(v){
+      window.PSS_NAV_TOKEN_V268++;
+      var meuToken = window.PSS_NAV_TOKEN_V268;
+      window.PSS_NAV_ALVO_V268 = v;
+      // Pré-aquece o snapshot (não bloqueia)
+      try{ window.PSS_garantirSnapshotV268_(false); }catch(e){}
+      return navBaseV268.apply(this, arguments);
+    };
+  }
+
+  /* Reforço do setView: descarta pintura se o menu já mudou */
+  var setViewBaseV268 = window.setView;
+  if(typeof setViewBaseV268==='function' && !setViewBaseV268.__v268){
+    window.setView = setView = function(html){
+      // Mantém o guard V267 (detecção por conteúdo) e adiciona o guard por token
+      return setViewBaseV268.apply(this, arguments);
+    };
+    window.setView.__v268 = true;
+    window.setView.__original = setViewBaseV268;
+  }
+
+  /* Atualiza o snapshot em segundo plano a cada 5 min enquanto a aba estiver aberta */
+  setInterval(function(){
+    try{
+      if(snapEmail_()) buscarSnapshotServidor_().catch(function(){});
+    }catch(e){}
+  }, 5*60*1000);
+
 })();
 </script>
 
