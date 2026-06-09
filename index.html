@@ -1332,8 +1332,9 @@
     function normalizarUsuarioSessao_(s){
       s=s&&typeof s==='object'?s:{};
       const email=String(s.email||s.EMAIL||'').trim().toLowerCase();
+      const _nomeFallback=(s.email||s.EMAIL||'').split('@')[0]||'Usuário';
       return {
-        nome:String(s.nome||s.NOME||s.usuario||s.USUARIO||s.name||'Usuário').trim()||'Usuário',
+        nome:String(s.nome||s.NOME||s.usuario||s.USUARIO||s.name||_nomeFallback).trim()||_nomeFallback,
         email:email,
         role:String(s.role||s.perfil||s.PERFIL||'usuario').toLowerCase(),
         perfil:s.perfil||s.role||s.PERFIL||'usuario'
