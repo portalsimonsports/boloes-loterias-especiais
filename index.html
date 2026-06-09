@@ -14961,5 +14961,185 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 </script>
 
+<script>
+/* =====================================================================
+ * PATCH V269 — JSON ESTÁTICO: LEITURA INSTANTÂNEA VIA GITHUB PAGES
+ * Dados públicos vêm do CDN do GitHub (~50ms) em vez do GAS (3-30s).
+ * Escritas continuam indo ao GAS normalmente.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V269_JSON_ESTATICO_APLICADO) return;
+  window.PSS_V269_JSON_ESTATICO_APLICADO = true;
+
+  var JSON_URL = 'https://portalsimonsports.github.io/boloes-loterias-especiais/dados-publicos.json';
+  var JSON_CACHE_KEY = 'PSS_JSON_ESTATICO_V269';
+  var JSON_TTL = 14 * 60 * 1000;      // 14 minutos (JSON atualiza a cada 15)
+  var JSON_STALE = 60 * 60 * 1000;    // aceita cache de até 1h enquanto atualiza
+
+  // ── Cache local do JSON ───────────────────────────────────────────
+  function lerJSONLocal_(aceitarStale) {
+    try {
+      var c = JSON.parse(localStorage.getItem(JSON_CACHE_KEY) || 'null');
+      if (!c || !c.ts || !c.dados) return null;
+      var idade = Date.now() - Number(c.ts || 0);
+      if (idade < JSON_TTL) return { dados: c.dados, fresco: true };
+      if (aceitarStale && idade < JSON_STALE) return { dados: c.dados, fresco: false };
+      return null;
+    } catch(e) { return null; }
+  }
+
+  function gravarJSONLocal_(dados) {
+    try { localStorage.setItem(JSON_CACHE_KEY, JSON.stringify({ ts: Date.now(), dados: dados })); } catch(e) {}
+  }
+
+  // ── Busca o JSON do GitHub (instantâneo via CDN) ──────────────────
+  function buscarJSONGitHub_() {
+    return fetch(JSON_URL + '?t=' + Date.now(), {
+      cache: 'no-store',
+      credentials: 'omit'
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(dados) {
+      gravarJSONLocal_(dados);
+      aplicarJSONNoEstado_(dados);
+      return dados;
+    });
+  }
+
+  // ── API pública: garante JSON disponível ─────────────────────────
+  window.PSS_garantirJSONV269_ = function(forcar) {
+    if (!forcar) {
+      var local = lerJSONLocal_(true);
+      if (local) {
+        aplicarJSONNoEstado_(local.dados);
+        if (!local.fresco) buscarJSONGitHub_().catch(function(){});
+        return Promise.resolve(local.dados);
+      }
+    }
+    return buscarJSONGitHub_().catch(function(e) {
+      var fb = lerJSONLocal_(true);
+      return fb ? fb.dados : null;
+    });
+  };
+
+  // ── Distribui os dados do JSON pelo ESTADO global ────────────────
+  function aplicarJSONNoEstado_(dados) {
+    if (!dados || typeof dados !== 'object') return;
+    try {
+      // Bolões → ESTADO e cache local para carregarBoloes/PSS_carregarBoloesCompletoV267_
+      if (Array.isArray(dados.boloes) && dados.boloes.length) {
+        window.ESTADO = window.ESTADO || {};
+        ESTADO.boloesJSON = dados.boloes;
+        // Grava no cache de bolões para as funções existentes lerem
+        var ck = 'PSS_BOLOES_COMPLETO_V267_publico';
+        try { localStorage.setItem(ck, JSON.stringify({ ts: Date.now(), lista: dados.boloes })); } catch(e) {}
+        var ck2 = 'boloes_publico';
+        try { localStorage.setItem(ck2, JSON.stringify({ data: dados.boloes, ts: Date.now(), ttl: 900000 })); } catch(e) {}
+      }
+      // Resultados → cache do letreiro
+      if (dados.resultadosPublicos && dados.resultadosPublicos.resultados) {
+        try {
+          localStorage.setItem('PSS_RESULTADOS_V224', JSON.stringify({
+            ts: Date.now(),
+            dados: {
+              resultadosPublicos: dados.resultadosPublicos,
+              atualizadoEm: dados.atualizadoEm || dados.geradoEm
+            }
+          }));
+        } catch(e) {}
+      }
+      // Config pública
+      if (dados.configPublica) {
+        ESTADO.configPublicaJSON = dados.configPublica;
+      }
+      // Regulamento
+      if (dados.regulamento) {
+        try { localStorage.setItem('PSS_REGULAMENTO_RAPIDO_V222_LOCAL', dados.regulamento); } catch(e) {}
+        ESTADO.regulamentoJSON = dados.regulamento;
+      }
+      ESTADO.jsonEstatico = dados;
+      ESTADO.jsonEstaticoTs = Date.now();
+    } catch(e) {}
+  }
+
+  // ── Interceptar carregarHomePublicaBoloes para usar JSON ─────────
+  var _chpbBase = window.carregarHomePublicaBoloes;
+  if (typeof _chpbBase === 'function') {
+    window.carregarHomePublicaBoloes = carregarHomePublicaBoloes = function(forcar) {
+      // Se não forçou e JSON está fresco, usar direto (instantâneo)
+      if (!forcar) {
+        var local = lerJSONLocal_(false);
+        if (local && local.fresco) {
+          aplicarJSONNoEstado_(local.dados);
+          // Chamar a função original — ela vai ler do cache local que acabamos de popular
+          return _chpbBase.call(this, false);
+        }
+      }
+      // Sem JSON fresco: buscar do GitHub primeiro, depois renderizar
+      window.PSS_garantirJSONV269_(!!forcar).then(function() {
+        _chpbBase.call(window, false);
+      }).catch(function() {
+        _chpbBase.call(window, forcar);
+      });
+    };
+  }
+
+  // ── Interceptar carregarLetreiroResultadosPublicosV213 ───────────
+  var _letreiroBase = window.carregarLetreiroResultadosPublicosV213;
+  if (typeof _letreiroBase === 'function') {
+    window.carregarLetreiroResultadosPublicosV213 = carregarLetreiroResultadosPublicosV213 = function(forcar) {
+      if (!forcar) {
+        var local = lerJSONLocal_(false);
+        if (local && local.fresco && local.dados.resultadosPublicos) {
+          aplicarJSONNoEstado_(local.dados);
+        }
+      }
+      return _letreiroBase.call(this, forcar);
+    };
+  }
+
+  // ── Interceptar renderRegulamento para usar JSON ─────────────────
+  var _regBase = window.renderRegulamento;
+  if (typeof _regBase === 'function') {
+    window.renderRegulamento = renderRegulamento = async function() {
+      var local = lerJSONLocal_(true);
+      if (local && local.dados && local.dados.regulamento) {
+        aplicarJSONNoEstado_(local.dados);
+      } else {
+        await window.PSS_garantirJSONV269_(false).catch(function(){});
+      }
+      return _regBase.apply(this, arguments);
+    };
+  }
+
+  // ── Carregar JSON assim que a página abre (antes do login) ───────
+  document.addEventListener('DOMContentLoaded', function() {
+    // Carregar imediatamente para ter dados prontos
+    window.PSS_garantirJSONV269_(false).catch(function(){});
+  });
+
+  // ── Atualizar JSON em segundo plano a cada 14 minutos ────────────
+  setInterval(function() {
+    buscarJSONGitHub_().catch(function(){});
+  }, 14 * 60 * 1000);
+
+  // ── Expor função de diagnóstico ──────────────────────────────────
+  window.PSS_diagnosticarJSON = function() {
+    var local = lerJSONLocal_(true);
+    console.log('[PSS_JSON]', {
+      temCache: !!local,
+      fresco: local ? local.fresco : false,
+      geradoEm: local ? (local.dados && local.dados.geradoEm) : null,
+      boloes: local ? (local.dados && local.dados.boloes ? local.dados.boloes.length : 0) : 0,
+      url: JSON_URL
+    });
+  };
+
+})();
+</script>
 </body>
 </html>
