@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V267 FIX MENUS DATAS PALPITE COMPROVANTE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V270 CABECALHO INICIO COMPROVANTE SEM CADASTRO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V267_FIX_MENUS_DATAS_PALPITE_COMPROVANTE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V270_CABECALHO_INICIO_COMPROVANTE_SEM_CADASTRO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -9815,39 +9815,6 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     const tipo = document.getElementById('tipoEnvioComprovante')?.value || 'meu';
     const box = document.getElementById('boxComprovanteTerceiroV225');
     if(box) box.classList.toggle('v225-hidden', tipo !== 'terceiro');
-    if(tipo === 'terceiro') alternarCadastroTerceiroV269();
-  };
-
-  window.alternarCadastroTerceiroV269 = function(){
-    var sel = document.getElementById('terceiroTipoCadastroV269');
-    var tipo = sel ? sel.value : 'com';
-    var boxCom = document.getElementById('boxTerceiroComCadastroV269');
-    var boxSem = document.getElementById('boxTerceiroSemCadastroV269');
-    if(boxCom) boxCom.style.display = tipo === 'com' ? '' : 'none';
-    if(boxSem) boxSem.style.display = tipo === 'sem' ? '' : 'none';
-    // Limpar campos ao trocar
-    if(tipo === 'com'){
-      var em = document.getElementById('emailParticipanteTerceiroV225');
-      var nm = document.getElementById('nomeParticipanteTerceiroV225');
-      var nm2 = document.getElementById('nomeManualTerceiroV269');
-      if(em) em.value = '';
-      if(nm) nm.value = '';
-      if(nm2) nm2.value = '';
-      var box = document.getElementById('participanteSelecionadoTerceiroV225');
-      if(box) box.innerHTML = '';
-    } else {
-      var busca = document.getElementById('buscaParticipanteTerceiroV225');
-      var res = document.getElementById('resultadosParticipanteTerceiroV225');
-      var em = document.getElementById('emailParticipanteTerceiroV225');
-      var nm = document.getElementById('nomeParticipanteTerceiroV225');
-      if(busca) busca.value = '';
-      if(res) res.innerHTML = '';
-      if(em) em.value = '';
-      if(nm) nm.value = '';
-      var box2 = document.getElementById('participanteSelecionadoTerceiroV225');
-      if(box2) box2.innerHTML = '';
-    }
-    try{ montarResumoEnvioComprovanteV247 && montarResumoEnvioComprovanteV247(); }catch(e){}
   };
 
   window.buscarParticipantesTerceiroV225 = function(){
@@ -9959,11 +9926,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       const nomeParticipante = (document.getElementById('nomeParticipanteTerceiroV225')?.value || '').trim();
       const fracao = document.getElementById('fracaoCotaTerceiroV225')?.value || '1';
 
-      // Sem cadastro: verifica se nome foi digitado
-      var _semCad = (document.getElementById('terceiroTipoCadastroV269')?.value||'com')==='sem';
-      if(_semCad && !nomeParticipante) return toast('Informe o nome do participante.','error');
-      if(!_semCad && !emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
-      if(_semCad && !emailParticipante) meta.emailParticipante = 'sem-cadastro@manual';
+      if(!emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
 
       meta.emailParticipante = emailParticipante;
       meta.nomeParticipante = nomeParticipante;
@@ -10171,18 +10134,6 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   var _renderInicioBase226 = window.renderInicio;
   window.renderInicio = renderInicio = async function(){
     if(typeof loading==='function') loading('Carregando início');
-    // V269: usar JSON estático imediatamente se disponível — sem esperar GAS
-    var _jsonDisp = window.ESTADO&&ESTADO.jsonEstatico&&Array.isArray(ESTADO.jsonEstatico.boloes)&&ESTADO.jsonEstatico.boloes.length;
-    if(_jsonDisp){
-      ESTADO.boloes = ESTADO.jsonEstatico.boloes;
-      ESTADO.configPublica = ESTADO.jsonEstatico.configPublica||{};
-      if(typeof _renderInicioBase226==='function' && _renderInicioBase226!==renderInicio){
-        try{ await _renderInicioBase226(); }catch(e){}
-      }
-      // Atualizar em segundo plano sem bloquear
-      carregarBoloes(true).then(function(l){if(l&&l.length)ESTADO.boloes=l;}).catch(function(){});
-      return;
-    }
     try{
       /* Disparo simultâneo: bolões + config pública */
       var [lista, cfg] = await Promise.all([
@@ -12862,44 +12813,16 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
           <div id="boxComprovanteTerceiroV225" class="v225-admin-box v225-hidden">
             <h3>Comprovante de terceiro</h3>
-            <p>Use esta opção para vincular um comprovante a um participante. A conferência seguirá automaticamente por OCR, igual aos demais comprovantes.</p>
+            <p>Use esta opção para vincular um comprovante a um participante já cadastrado. A conferência seguirá automaticamente por OCR, igual aos demais comprovantes.</p>
 
             <div class="field">
-              <label>Participante tem cadastro no sistema?</label>
-              <select id="terceiroTipoCadastroV269" onchange="alternarCadastroTerceiroV269()">
-                <option value="com">Com cadastro — buscar pelo e-mail</option>
-                <option value="sem">Sem cadastro — informar nome manualmente</option>
-              </select>
+              <label>Buscar participante por nome ou e-mail</label>
+              <input id="buscaParticipanteTerceiroV225" placeholder="Digite pelo menos 2 letras..." oninput="buscarParticipantesTerceiroV225()">
             </div>
-
-            <div id="boxTerceiroComCadastroV269">
-              <div class="field">
-                <label>Buscar participante por nome ou e-mail</label>
-                <input id="buscaParticipanteTerceiroV225" placeholder="Digite pelo menos 2 letras..." oninput="buscarParticipantesTerceiroV225()">
-              </div>
-              <div id="resultadosParticipanteTerceiroV225" class="v225-search-results"></div>
-              <div id="participanteSelecionadoTerceiroV225"></div>
-            </div>
-
-            <div id="boxTerceiroSemCadastroV269" style="display:none">
-              <div class="field">
-                <label>Nome do participante</label>
-                <input id="nomeManualTerceiroV269" placeholder="Nome completo do participante" oninput="
-                  var n=this.value.trim();
-                  var hidden=document.getElementById('nomeParticipanteTerceiroV225');
-                  var email=document.getElementById('emailParticipanteTerceiroV225');
-                  if(hidden)hidden.value=n;
-                  if(email)email.value='sem-cadastro@manual';
-                  var box=document.getElementById('participanteSelecionadoTerceiroV225');
-                  if(box&&n)box.innerHTML='<div class=\'v225-selected-user\'>Participante: '+escapeHtml(n)+' (sem cadastro)</div>';
-                  else if(box)box.innerHTML='';
-                  montarResumoEnvioComprovanteV247&&montarResumoEnvioComprovanteV247();
-                ">
-              </div>
-            </div>
-
+            <div id="resultadosParticipanteTerceiroV225" class="v225-search-results"></div>
             <input type="hidden" id="emailParticipanteTerceiroV225">
             <input type="hidden" id="nomeParticipanteTerceiroV225">
+            <div id="participanteSelecionadoTerceiroV225"></div>
 
             <div class="v225-two-columns">
               <div class="field">
@@ -15078,7 +15001,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   window.PSS_V269_JSON_ESTATICO_APLICADO = true;
 
   var JSON_URL = 'https://portalsimonsports.github.io/boloes-loterias-especiais/dados-publicos.json';
-  var JSON_CACHE_KEY = 'PSS_JSON_ESTATICO_V269';
+  var JSON_CACHE_KEY = 'PSS_JSON_ESTATICO_V270';
   var JSON_TTL = 14 * 60 * 1000;      // 14 minutos (JSON atualiza a cada 15)
   var JSON_STALE = 60 * 60 * 1000;    // aceita cache de até 1h enquanto atualiza
 
@@ -15246,5 +15169,592 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 })();
 </script>
+
+
+<script>
+/* =====================================================================
+ * PATCH V270 — CABEÇALHO/MENUS + INÍCIO INSTANTÂNEO + COMPROVANTE
+ * Correções:
+ * 1) Garante cabeçalho logado: data/hora, e-mail, nome e menus.
+ * 2) Evita que o bloqueio de menu atrasado esconda o INÍCIO.
+ * 3) INÍCIO abre com dados locais/JSON, sem aguardar API lenta.
+ * 4) Comprovante de terceiro: COM CADASTRO ou SEM CADASTRO.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V270_CABECALHO_COMPROVANTE_PATCH) return;
+  window.PSS_V270_CABECALHO_COMPROVANTE_PATCH = true;
+
+  try{ if(window.CONFIG) CONFIG.versao = 'V270_CABECALHO_INICIO_COMPROVANTE_SEM_CADASTRO'; }catch(e){}
+
+  function esc(v){
+    if(typeof escapeHtml === 'function') return escapeHtml(v);
+    return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function attr(v){
+    if(typeof escapeAttr === 'function') return escapeAttr(v);
+    return esc(v);
+  }
+  function norm(v){
+    if(typeof normalizar === 'function') return normalizar(v);
+    return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+  }
+  function n(v){
+    if(typeof num === 'function') return num(v);
+    var x=parseFloat(String(v||'0').replace(/\./g,'').replace(',','.'));
+    return isNaN(x)?0:x;
+  }
+  function fmtData(v){
+    if(typeof formatarDataHoraPtBR === 'function') return formatarDataHoraPtBR(v||'-');
+    return v||'-';
+  }
+  function fmtMoeda(v){
+    if(typeof moeda === 'function') return moeda(v||0);
+    return String(v||'');
+  }
+  function ehAdminV270_(){
+    try{ return typeof isAdmin === 'function' && isAdmin(); }catch(e){ return false; }
+  }
+  function lerSessaoV270_(){
+    try{ return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null'); }catch(e){ return null; }
+  }
+  function normalizarSessaoV270_(s){
+    if(typeof normalizarUsuarioSessao_ === 'function') return normalizarUsuarioSessao_(s||{});
+    s=s||{};
+    var email=String(s.email||s.EMAIL||'').trim().toLowerCase();
+    var nome=String(s.nome||s.NOME||s.name||email.split('@')[0]||'Usuário').trim();
+    var perfil=String(s.perfil||s.role||'usuario');
+    return {nome:nome,email:email,perfil:perfil,role:perfil.toLowerCase()};
+  }
+
+  function garantirHeaderLogadoV270_(){
+    try{
+      var s = (window.ESTADO && ESTADO.usuario && ESTADO.usuario.email) ? ESTADO.usuario : lerSessaoV270_();
+      if(!s || !s.email) return false;
+      var u = normalizarSessaoV270_(s);
+      window.ESTADO = window.ESTADO || {};
+      ESTADO.usuario = u;
+      ESTADO.email = u.email;
+      ESTADO.role = String(u.role || u.perfil || ESTADO.role || 'usuario').toLowerCase();
+
+      document.body.classList.add('app-logado');
+      var publicHeader=document.getElementById('publicHeader');
+      var appHeader=document.getElementById('appHeader');
+      if(publicHeader) publicHeader.classList.add('hidden');
+      if(appHeader){
+        appHeader.classList.remove('hidden');
+        appHeader.style.display='';
+        appHeader.style.visibility='visible';
+      }
+      var user=document.getElementById('userDisplay');
+      if(user) user.textContent = (u.nome || 'Usuário') + (u.email ? ' • ' + u.email : '');
+      var nav=document.getElementById('navMenu');
+      if(nav){
+        nav.style.display='flex';
+        nav.style.visibility='visible';
+        nav.querySelectorAll('.admin-only').forEach(function(el){ el.classList.toggle('hidden', !ehAdminV270_()); });
+      }
+      if(typeof atualizarRelogio === 'function') atualizarRelogio();
+      return true;
+    }catch(e){ return false; }
+  }
+
+  var aplicarLayoutBaseV270 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    try{ if(typeof aplicarLayoutBaseV270 === 'function') aplicarLayoutBaseV270.apply(this, arguments); }catch(e){}
+    return garantirHeaderLogadoV270_();
+  };
+
+  function inicializarSessaoV270_(){
+    try{
+      var s=lerSessaoV270_();
+      if(!s || !s.email) return;
+      var estavaSemHeader = !document.getElementById('appHeader') || document.getElementById('appHeader').classList.contains('hidden');
+      garantirHeaderLogadoV270_();
+      var view=document.getElementById('view');
+      var html=view?String(view.innerHTML||''):'';
+      var precisaInicio = estavaSemHeader || html.indexOf('home-hero')>=0 || html.trim()==='';
+      if(precisaInicio && typeof navegar === 'function'){
+        window.PSS_MENU_ATUAL_V267='inicio';
+        setTimeout(function(){ try{ navegar('inicio'); }catch(e){} }, 80);
+      }
+    }catch(e){}
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inicializarSessaoV270_);
+  else setTimeout(inicializarSessaoV270_, 0);
+  setTimeout(inicializarSessaoV270_, 700);
+  setTimeout(inicializarSessaoV270_, 1800);
+
+  /* Substitui a guarda antiga que confundia o atalho de consulta dentro do INÍCIO. */
+  (function corrigirSetViewGuardV270_(){
+    var raw = (window.setView && window.setView.__original) ? window.setView.__original : window.setView;
+    if(typeof raw !== 'function') return;
+    function detectar(html){
+      var s=String(html||'').toLowerCase();
+      if(!s || (s.indexOf('carregando')>=0 && s.length<360)) return '';
+      if(s.indexOf('tipoenviocomprovante')>=0 || s.indexOf('boxcomprovanteterceirov225')>=0 || s.indexOf('meus envios recentes')>=0) return 'comprovante';
+      if(s.indexOf('palpites do participante')>=0 || s.indexOf('palpite-stage')>=0 || s.indexOf('10 dezenas mais palpitadas')>=0) return 'palpite';
+      if(s.indexOf('menu de bolões')>=0) return 'boloes';
+      if(s.indexOf('jogos realizados')>=0 || s.indexOf('jogos-gallery')>=0 || s.indexOf('jogosbolao')>=0) return 'jogos';
+      if(s.indexOf('consulta-admin-grid')>=0 || s.indexOf('id="consultaemail')>=0 || s.indexOf('id="buscaparticipanteadmin')>=0) return 'consulta';
+      if(s.indexOf('dados para pagamento')>=0 || (s.indexOf('pagamentos efetuados')>=0 && s.indexOf('pay-')>=0)) return 'pagamentos';
+      if(s.indexOf('base loterias')>=0 || s.indexOf('base_loterias')>=0) return 'baseLoterias';
+      return '';
+    }
+    window.setView = setView = function(html){
+      var atual = String((window.PSS_MENU_ATUAL_V267 || (window.ESTADO&&ESTADO.view) || '')).trim();
+      var alvo = detectar(html);
+      if(alvo && atual && alvo!==atual && String(html||'').length>500){
+        try{ console.warn('PSS V270 bloqueou resposta atrasada:', alvo, 'atual:', atual); }catch(e){}
+        return;
+      }
+      return raw.apply(this, arguments);
+    };
+    window.setView.__original = raw;
+    window.setView.__v270Guard = true;
+  })();
+
+  function cacheBolaoUsuarioV270_(){
+    var keys=[];
+    try{
+      var email=(ESTADO.email||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+      if(email) keys.push('PSS_BOLAO_CACHE_'+CONFIG.versao+'_boloes_'+email);
+      keys.push('PSS_BOLAO_CACHE_'+CONFIG.versao+'_boloes_publicos');
+      keys.push('PSS_JSON_ESTATICO_V270');
+      keys.push('PSS_JSON_ESTATICO_V269');
+    }catch(e){}
+    for(var i=0;i<keys.length;i++){
+      try{
+        var obj=JSON.parse(localStorage.getItem(keys[i])||'null');
+        if(!obj) continue;
+        if(Array.isArray(obj.dados)) return obj.dados;
+        if(obj.dados && Array.isArray(obj.dados.boloes)) return obj.dados.boloes;
+        if(Array.isArray(obj.lista)) return obj.lista;
+        if(Array.isArray(obj.data)) return obj.data;
+        if(Array.isArray(obj.boloes)) return obj.boloes;
+      }catch(e){}
+    }
+    return [];
+  }
+  function listaBoloesInstantaneaV270_(){
+    var lista=[];
+    try{ if(ESTADO.jsonEstatico && Array.isArray(ESTADO.jsonEstatico.boloes)) lista=ESTADO.jsonEstatico.boloes; }catch(e){}
+    try{ if(!lista.length && Array.isArray(ESTADO.boloesJSON)) lista=ESTADO.boloesJSON; }catch(e){}
+    try{ if(!lista.length && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes; }catch(e){}
+    if(!lista.length) lista=cacheBolaoUsuarioV270_();
+    return Array.isArray(lista)?lista.filter(function(x){return x&&typeof x==='object';}):[];
+  }
+  function bolaoNormalV270_(b){
+    b=b||{};
+    var nome=b.loteria||b.LOTERIA||b.nome||b.NOME||b.id||b.ID||'';
+    var total=b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||b.COTAS_TOTAL||'';
+    var adquiridas=b.cotasAdquiridas||b.COTAS_ADQUIRIDAS||b.cotasTotaisAdquiridas||b.COTAS_TOTAIS_ADQUIRIDAS||0;
+    var disp=(b.cotasDisponiveis!==undefined?b.cotasDisponiveis:b.cotasDisponíveis);
+    if((disp===''||disp===undefined||disp===null) && total!=='') disp=Math.max(0,n(total)-n(adquiridas));
+    return {
+      id:b.id||b.ID||nome,
+      nome:b.nome||b.NOME||nome,
+      loteria:b.loteria||b.LOTERIA||nome,
+      status:b.status||b.STATUS||'ATIVO',
+      dataSorteio:b.dataSorteio||b.DATA_SORTEIO||b.sorteio||'',
+      inicioPagamento:b.inicioPagamento||b.INICIO_PAGAMENTO||b.iniBol||b.INI_BOL||'',
+      fimPagamento:b.fimPagamento||b.FIM_PAGAMENTO||b.fimBol||b.FIM_BOL||'',
+      inicioPalpite:b.inicioPalpite||b.inicioPalpites||b.INICIO_PALPITES||b.iniPal||b.INI_PAL||'',
+      fimPalpite:b.fimPalpite||b.fimPalpites||b.PRAZO_PALPITES||b.FIM_PAL||b.fimPal||'',
+      valorCota:b.valorCota||b.VALOR_COTA||'',
+      totalCotas:total,
+      cotasTotal:b.cotasTotal||b.totalCotas||total,
+      cotasAdquiridas:adquiridas,
+      cotasDisponiveis:disp,
+      cotasUsuario:b.cotasUsuario||b.minhasCotas||0,
+      minhasCotas:b.minhasCotas||b.cotasUsuario||0,
+      premiacao:b.premiacao||b.PREMIACAO||b.premio||'',
+      premioPorCota:b.premioPorCota||b.PREMIO_POR_COTA||''
+    };
+  }
+  function ativoRealV270_(b){
+    try{ if(typeof isHistorico === 'function' && isHistorico(b)) return false; }catch(e){}
+    var st=norm(b.status||'ATIVO');
+    if(st.indexOf('INAT')>=0 || st.indexOf('CANCEL')>=0 || st.indexOf('ENCERR')>=0 || st.indexOf('HIST')>=0) return false;
+    return st.indexOf('ATIVO')>=0 || st.indexOf('ABERTO')>=0 || st==='SIM' || st==='TRUE';
+  }
+  function statV270_(t,v){ return `<div class="col-3"><div class="stat-card"><span>${esc(t)}</span><strong>${esc(v)}</strong></div></div>`; }
+  function cardInicioV270_(b,i){
+    var minhas=n(b.cotasUsuario||b.minhasCotas||0);
+    var disp=(b.cotasDisponiveis!==undefined&&b.cotasDisponiveis!==null&&b.cotasDisponiveis!=='')?b.cotasDisponiveis:'-';
+    return `<article class="inicio-bolao-card">
+      <h3>🎯 ${esc(b.loteria||b.nome||'Bolão')}</h3>
+      <div class="inicio-badges">
+        <span class="inicio-badge">${esc(b.status||'ATIVO')}</span>
+        <span class="inicio-badge warn">Minhas cotas: ${esc(minhas)}</span>
+        <span class="inicio-badge warn">Disponíveis: ${esc(disp)}</span>
+      </div>
+      <div class="inicio-mini">
+        <div><b>Sorteio</b>${esc(fmtData(b.dataSorteio||'-'))}</div>
+        <div><b>Valor da cota</b>${esc(b.valorCota?fmtMoeda(b.valorCota):'-')}</div>
+        <div><b>Pagamento</b>${esc(fmtData(b.inicioPagamento||'-'))} a ${esc(fmtData(b.fimPagamento||'-'))}</div>
+        <div><b>Palpites</b>${esc(fmtData(b.inicioPalpite||'-'))} a ${esc(fmtData(b.fimPalpite||'-'))}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-light" onclick="window.PSS_v270_toggleResumo(${i})">Ver resumo</button>
+        <button class="btn" onclick="if(typeof abrirPagamentoBolao==='function')abrirPagamentoBolao('${attr(b.loteria||b.nome)}')">Adquirir cotas</button>
+        <button class="btn btn-light" onclick="ESTADO.bolaoSelecionado='${attr(b.loteria||b.nome)}';navegar('palpite')">Palpite</button>
+      </div>
+      <div class="inicio-resumo" id="v270InicioResumo_${i}">
+        <div class="table-wrap"><table><tbody>
+          <tr><th>Loteria</th><td>${esc(b.loteria||b.nome||'-')}</td></tr>
+          <tr><th>Status</th><td>${esc(b.status||'-')}</td></tr>
+          <tr><th>Valor da cota</th><td>${esc(b.valorCota?fmtMoeda(b.valorCota):'-')}</td></tr>
+          <tr><th>Total de cotas</th><td>${esc(b.totalCotas||b.cotasTotal||'-')}</td></tr>
+          <tr><th>Cotas disponíveis</th><td>${esc(disp)}</td></tr>
+          <tr><th>Minhas cotas</th><td>${esc(minhas)}</td></tr>
+          <tr><th>Data do sorteio</th><td>${esc(fmtData(b.dataSorteio||'-'))}</td></tr>
+          <tr><th>Pagamento</th><td>${esc(fmtData(b.inicioPagamento||'-'))} a ${esc(fmtData(b.fimPagamento||'-'))}</td></tr>
+          <tr><th>Palpites</th><td>${esc(fmtData(b.inicioPalpite||'-'))} a ${esc(fmtData(b.fimPalpite||'-'))}</td></tr>
+        </tbody></table></div>
+      </div>
+    </article>`;
+  }
+  window.PSS_v270_toggleResumo=function(i){ var el=document.getElementById('v270InicioResumo_'+i); if(el) el.classList.toggle('open'); };
+
+  var renderInicioBaseV270 = window.renderInicio;
+  window.renderInicio = renderInicio = async function(){
+    try{
+      window.PSS_MENU_ATUAL_V267='inicio';
+      garantirHeaderLogadoV270_();
+      if(typeof window.PSS_garantirJSONV269_ === 'function') window.PSS_garantirJSONV269_(false).catch(function(){});
+      var lista = listaBoloesInstantaneaV270_().map(bolaoNormalV270_);
+      if(!lista.length && typeof carregarBoloes === 'function'){
+        try{ lista=(await carregarBoloes(true)).map(bolaoNormalV270_); }catch(e){}
+      }
+      var ativos = lista.filter(ativoRealV270_).sort(function(a,b){return String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||''));});
+      var nome = (ESTADO.usuario && (ESTADO.usuario.nome || ESTADO.usuario.email)) || ESTADO.email || 'Usuário';
+      var minhas = ativos.reduce(function(s,b){return s+n(b.cotasUsuario||b.minhasCotas||0);},0);
+      var total = ativos.reduce(function(s,b){return s+n(b.totalCotas||b.cotasTotal||0);},0);
+      var disp = ativos.reduce(function(s,b){return s+n(b.cotasDisponiveis||0);},0);
+      setView(`<div class="panel no-left">
+        <div class="grid">
+          <div class="col-8"><div class="panel no-left" style="margin:0;padding:24px;">
+            <h2 style="font-size:32px;">Olá, ${esc(String(nome).split('@')[0]||nome)}</h2>
+            <p>Painel de acompanhamento dos bolões, pagamentos, palpites, comprovantes, jogos realizados e atualizações oficiais.</p>
+            <div class="actions">
+              <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
+              <button class="btn btn-light" onclick="navegar('palpite')">Fazer palpite</button>
+              <button class="btn btn-light" onclick="navegar('comprovante')">Comprovantes</button>
+              <button class="btn btn-light" onclick="navegar('jogos')">Jogos</button>
+            </div>
+          </div></div>
+          <div class="col-4"><div class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">
+            <h2 style="color:#fff;font-size:42px;">Sistema ativo</h2>
+            <p style="color:#fff;">${esc(ESTADO.email||'')}<br>Data/hora: ${esc(typeof dataHoraAtualCurta==='function'?dataHoraAtualCurta():new Date().toLocaleString('pt-BR'))}</p>
+          </div></div>
+        </div>
+        <div class="grid" style="margin-top:18px;">
+          ${statV270_('Bolões ativos',ativos.length)}
+          ${statV270_('Minhas cotas',minhas)}
+          ${statV270_('Cotas disponíveis',disp)}
+          ${statV270_('Total de cotas',total)}
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Bolões ativos</h2>
+        <p>Dados atualizados automaticamente. Use o botão Atualizar para forçar nova consulta.</p>
+        <div class="actions" style="justify-content:flex-end"><button class="btn btn-light" onclick="PSS_v270_atualizarInicio()">Atualizar bolões</button></div>
+        ${ativos.length?`<div class="inicio-grid-boloes">${ativos.map(cardInicioV270_).join('')}</div>`:'<div class="notice warn">Nenhum bolão ativo localizado.</div>'}
+      </div>`);
+      if(typeof carregarBoloes === 'function'){
+        carregarBoloes(false).then(function(novos){
+          try{ ESTADO.boloes=novos; if((ESTADO.view||'')==='inicio'){} }catch(e){}
+        }).catch(function(){});
+      }
+    }catch(err){
+      if(typeof renderInicioBaseV270 === 'function') return renderInicioBaseV270.apply(this, arguments);
+      setView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+  window.PSS_v270_atualizarInicio = async function(){
+    try{ if(typeof carregarBoloes==='function') await carregarBoloes(false); }catch(e){}
+    return renderInicio();
+  };
+
+  function historicoCompV270_(lista){
+    if(typeof renderHistoricoComprovantes === 'function') return renderHistoricoComprovantes(lista||[]);
+    if(!Array.isArray(lista)||!lista.length) return '<div class="notice warn">Nenhum envio localizado.</div>';
+    return '<div class="table-wrap"><table><thead><tr><th>Data/Hora</th><th>Status</th><th>Link</th></tr></thead><tbody>'+lista.map(function(x){return `<tr><td>${esc(x.data||x.DATA||'-')}</td><td>${esc(x.status||'Pendente')}</td><td>${x.url?`<a href="${attr(x.url)}" target="_blank" rel="noopener">Ver Arquivo</a>`:'-'}</td></tr>`;}).join('')+'</tbody></table></div>';
+  }
+
+  function adicionarEventosPartesV270_(){
+    setTimeout(function(){
+      document.querySelectorAll('#nomesPartes input').forEach(function(inp){ inp.addEventListener('input', montarResumoComprovanteV270_); });
+      montarResumoComprovanteV270_();
+    },80);
+  }
+  var renderCamposBaseV270 = window.renderCamposPartes;
+  window.renderCamposPartes = renderCamposPartes = function(){
+    try{ if(typeof renderCamposBaseV270 === 'function') renderCamposBaseV270.apply(this, arguments); }catch(e){}
+    adicionarEventosPartesV270_();
+  };
+  var renderNomesBaseV270 = window.renderNomesPartes;
+  window.renderNomesPartes = renderNomesPartes = function(){
+    try{ if(typeof renderNomesBaseV270 === 'function') renderNomesBaseV270.apply(this, arguments); }catch(e){}
+    adicionarEventosPartesV270_();
+  };
+
+  window.alternarTipoEnvioComprovanteV225 = function(){
+    var tipo=document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    var box=document.getElementById('boxComprovanteTerceiroV225');
+    if(box) box.classList.toggle('v225-hidden', tipo!=='terceiro');
+    if(tipo!=='terceiro'){
+      var e=document.getElementById('emailParticipanteTerceiroV225'); if(e) e.value='';
+      var n1=document.getElementById('nomeParticipanteTerceiroV225'); if(n1) n1.value='';
+    }
+    alternarModoCadastroTerceiroV270();
+    montarResumoComprovanteV270_();
+  };
+  window.alternarModoCadastroTerceiroV270 = function(){
+    var modo=document.getElementById('modoCadastroTerceiroV270')?.value || 'com';
+    var areaBusca=document.getElementById('areaBuscaTerceiroV270');
+    var areaSem=document.getElementById('areaSemCadastroTerceiroV270');
+    if(areaBusca) areaBusca.classList.toggle('v225-hidden', modo!=='com');
+    if(areaSem) areaSem.classList.toggle('v225-hidden', modo!=='sem');
+    if(modo==='sem'){
+      var e=document.getElementById('emailParticipanteTerceiroV225'); if(e) e.value='';
+      var n1=document.getElementById('nomeParticipanteTerceiroV225'); if(n1) n1.value='SEM CADASTRO';
+      var r=document.getElementById('resultadosParticipanteTerceiroV225'); if(r) r.innerHTML='';
+      var s=document.getElementById('participanteSelecionadoTerceiroV225'); if(s) s.innerHTML='<div class="v225-selected-user">Comprovante sem cadastro: participante será identificado por conferência/OCR ou pela observação administrativa.</div>';
+    }else{
+      var s2=document.getElementById('participanteSelecionadoTerceiroV225');
+      var em=document.getElementById('emailParticipanteTerceiroV225')?.value||'';
+      var nm=document.getElementById('nomeParticipanteTerceiroV225')?.value||'';
+      if(s2 && !em && !nm) s2.innerHTML='';
+    }
+    montarResumoComprovanteV270_();
+  };
+
+  var selecionarBaseV270 = window.selecionarParticipanteTerceiroV225;
+  window.selecionarParticipanteTerceiroV225 = function(emailCod,nomeCod){
+    try{ if(typeof selecionarBaseV270==='function') selecionarBaseV270(emailCod,nomeCod); }catch(e){}
+    setTimeout(montarResumoComprovanteV270_,80);
+  };
+
+  function gerarEmailSemCadastroV270_(){
+    var d=new Date();
+    var s=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0');
+    return 'semcadastro.'+s+'@portalsimonsports.com.br';
+  }
+  function metaComprovanteV270_(){
+    var tipo=document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    var modo=document.getElementById('modoCadastroTerceiroV270')?.value || 'com';
+    var tipoCota=document.getElementById('tipoCota')?.value || 'unica';
+    var meta={
+      tipoEnvio: tipo==='terceiro'?'TERCEIRO':'PROPRIO',
+      modoCadastro: tipo==='terceiro' ? (modo==='sem'?'SEM_CADASTRO':'COM_CADASTRO') : 'PROPRIO',
+      semCadastro: tipo==='terceiro' && modo==='sem',
+      adminEmail: ESTADO.email || '',
+      tipoCota: tipoCota,
+      qtdPartes: document.getElementById('qtdPartes')?.value || '',
+      fracaoCota: document.getElementById('fracaoCotaTerceiroV225')?.value || document.getElementById('fracaoComprovanteTerceiroV225')?.value || '',
+      obsAdmin: document.getElementById('obsComprovanteTerceiroV225')?.value || '',
+      nomesPartes: []
+    };
+    if(tipoCota==='dividida'){
+      document.querySelectorAll('#nomesPartes input').forEach(function(inp){ meta.nomesPartes.push((inp.value||'').trim()); });
+    }
+    if(tipo==='terceiro'){
+      if(modo==='sem'){
+        meta.emailParticipante = gerarEmailSemCadastroV270_();
+        meta.nomeParticipante = 'SEM CADASTRO';
+      }else{
+        meta.emailParticipante = (document.getElementById('emailParticipanteTerceiroV225')?.value || '').trim().toLowerCase();
+        meta.nomeParticipante = (document.getElementById('nomeParticipanteTerceiroV225')?.value || '').trim();
+      }
+    }else{
+      meta.emailParticipante = ESTADO.email || '';
+      meta.nomeParticipante = (ESTADO.usuario && ESTADO.usuario.nome) || '';
+    }
+    return meta;
+  }
+
+  function montarResumoComprovanteV270_(){
+    var box=document.getElementById('resumoEnvioComprovanteV247') || document.getElementById('resumoEnvioComprovanteV270');
+    if(!box) return;
+    var meta=metaComprovanteV270_();
+    var tipo=document.getElementById('tipoEnvioComprovante')?.value || 'meu';
+    var loteria=document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '-';
+    var participante='-';
+    if(tipo==='terceiro') participante = meta.semCadastro ? 'SEM CADASTRO / conferência por OCR' : (meta.nomeParticipante || meta.emailParticipante || '-');
+    else participante = (ESTADO.usuario && ESTADO.usuario.nome) || ESTADO.email || '-';
+    var nomes=(meta.nomesPartes||[]).filter(Boolean);
+    box.innerHTML=`<div class="pay-admin-grid" style="margin-top:10px;">
+      <div class="pay-admin-info"><b>Bolão</b><span>${esc(loteria)}</span></div>
+      <div class="pay-admin-info"><b>Participante</b><span>${esc(participante)}</span></div>
+      <div class="pay-admin-info"><b>Tipo de envio</b><span>${esc(tipo==='terceiro'?'Comprovante de terceiro':'Meu comprovante')}</span></div>
+      <div class="pay-admin-info"><b>Cadastro</b><span>${esc(meta.modoCadastro||'PROPRIO')}</span></div>
+      <div class="pay-admin-info"><b>Tipo de cota</b><span>${esc(meta.tipoCota)}</span></div>
+      ${meta.qtdPartes?`<div class="pay-admin-info"><b>Partes</b><span>${esc(meta.qtdPartes)}</span></div>`:''}
+      ${nomes.length?`<div class="pay-admin-info full"><b>Participantes da divisão</b><span>${esc(nomes.join(' / '))}</span></div>`:''}
+    </div>`;
+  }
+  window.montarResumoEnvioComprovanteV247 = montarResumoComprovanteV270_;
+  window.montarResumoComprovanteV270_ = montarResumoComprovanteV270_;
+
+  async function carregarHistoricoComprovantesV270_(){
+    var box=document.getElementById('historicoComprovantesV270');
+    if(!box) return;
+    try{
+      var hist=await apiMulti([
+        {action:'getHistoricoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]},
+        {action:'historicoComprovantes',dados:{email:ESTADO.email},args:[ESTADO.email]}
+      ]).catch(function(){return[];});
+      box.innerHTML=historicoCompV270_(hist);
+    }catch(err){ box.innerHTML='<div class="notice warn">Histórico não carregado agora.</div>'; }
+  }
+
+  window.renderComprovante = renderComprovante = async function(){
+    try{
+      window.PSS_MENU_ATUAL_V267='comprovante';
+      garantirHeaderLogadoV270_();
+      var lista=[];
+      try{ lista=listaBoloesInstantaneaV270_().map(bolaoNormalV270_); }catch(e){}
+      if(!lista.length && typeof carregarBoloes==='function'){
+        try{ lista=(await carregarBoloes(true)).map(bolaoNormalV270_); }catch(e){}
+      }
+      if(!lista.length && typeof carregarBoloes==='function'){
+        carregarBoloes(false).then(function(novos){ try{ ESTADO.boloes=novos; }catch(e){} }).catch(function(){});
+      }
+      setView(`<div class="panel no-left">
+        <div class="notice info">Selecione os dados do comprovante abaixo. O arquivo será enviado em ambiente seguro, com gravação e conferência automática.</div>
+        <div class="wide-control">
+          <label>Tipo de envio:</label>
+          <select id="tipoEnvioComprovante" onchange="alternarTipoEnvioComprovanteV225()">
+            <option value="meu">Meu comprovante</option>
+            ${ehAdminV270_()?'<option value="terceiro">Comprovante de terceiro / administrador</option>':''}
+          </select>
+        </div>
+        <div id="boxComprovanteTerceiroV225" class="v225-admin-box v225-hidden">
+          <h3>Comprovante de terceiro</h3>
+          <p>Escolha se o participante já possui cadastro. Com cadastro, use a busca. Sem cadastro, o envio segue sem busca e a conferência será feita pelo comprovante/OCR e observação.</p>
+          <div class="field">
+            <label>Vínculo do participante</label>
+            <select id="modoCadastroTerceiroV270" onchange="alternarModoCadastroTerceiroV270()">
+              <option value="com">Com cadastro — buscar participante</option>
+              <option value="sem">Sem cadastro — enviar sem busca</option>
+            </select>
+          </div>
+          <div id="areaBuscaTerceiroV270">
+            <div class="field">
+              <label>Buscar participante por nome ou e-mail</label>
+              <input id="buscaParticipanteTerceiroV225" placeholder="Digite pelo menos 2 letras..." oninput="buscarParticipantesTerceiroV225()">
+            </div>
+            <div id="resultadosParticipanteTerceiroV225" class="v225-search-results"></div>
+          </div>
+          <div id="areaSemCadastroTerceiroV270" class="notice warn v225-hidden">Sem cadastro selecionado. Não será necessário buscar e-mail. O comprovante será enviado como terceiro sem cadastro, com identificação posterior por OCR/conferência.</div>
+          <input type="hidden" id="emailParticipanteTerceiroV225">
+          <input type="hidden" id="nomeParticipanteTerceiroV225">
+          <div id="participanteSelecionadoTerceiroV225"></div>
+          <div class="v225-two-columns">
+            <div class="field">
+              <label>Cota vinculada ao comprovante</label>
+              <select id="fracaoCotaTerceiroV225" onchange="montarResumoComprovanteV270_()">
+                <option value="1">Cota integral</option>
+                <option value="0.5">Cota fracionada 1/2</option>
+                <option value="0.333333">Cota fracionada 1/3</option>
+                <option value="0.25">Cota fracionada 1/4</option>
+                <option value="0.2">Cota fracionada 1/5</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Observação administrativa</label>
+              <input id="obsComprovanteTerceiroV225" placeholder="Opcional" oninput="montarResumoComprovanteV270_()">
+            </div>
+          </div>
+        </div>
+        <div class="wide-control">
+          <label>Tipo de cota:</label>
+          <select id="tipoCota" onchange="renderCamposPartes(); montarResumoComprovanteV270_();">
+            <option value="unica">Cota única</option>
+            <option value="dividida">Cota dividida</option>
+          </select>
+        </div>
+        <div id="partesBox"></div>
+        <div class="wide-control">
+          <label>Selecione a loteria do depósito:</label>
+          <select id="uploadBolao" required onchange="ESTADO.bolaoSelecionado=this.value;try{localStorage.setItem('PSS_BOLAO_SELECIONADO',this.value)}catch(e){};montarResumoComprovanteV270_();">
+            <option value="">Selecione...</option>
+            ${lista.map(function(b){var nome=b.loteria||b.nome||'';return `<option value="${attr(nome)}" ${nome===ESTADO.bolaoSelecionado?'selected':''}>${esc(nome)}</option>`;}).join('')}
+          </select>
+        </div>
+        <div id="resumoEnvioComprovanteV247"></div>
+        <div class="upload-center" style="max-width:480px;">
+          <button class="btn btn-block" id="btnAbrirUploadComprovanteV247" type="button" onclick="abrirUploadComprovanteAppsScriptV245()">Carregar comprovante</button>
+          <small style="display:block;margin-top:8px;color:#546173;font-weight:800;">Ao clicar, será aberto o seletor seguro para enviar PDF, JPG ou PNG.</small>
+          <div class="upload-progress-box" id="comprovanteUploadProgressBox">
+            <div class="upload-progress-top"><span id="comprovanteUploadTitulo">Aguardando envio...</span><span id="comprovanteUploadPercentual">0%</span></div>
+            <div class="upload-progress-bar"><div class="upload-progress-fill" id="comprovanteUploadFill"></div></div>
+            <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Clique em Carregar comprovante para selecionar o arquivo.</div>
+          </div>
+        </div>
+        <hr style="border:0;border-top:1px solid #ddd;margin:24px 0;">
+        <h3>🕘 Meus Envios Recentes</h3>
+        <div id="historicoComprovantesV270"><div class="notice info"><span class="loading-fast">Carregando histórico...</span></div></div>
+      </div>`);
+      renderCamposPartes();
+      alternarTipoEnvioComprovanteV225();
+      carregarHistoricoComprovantesV270_();
+    }catch(err){
+      setView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+
+  function ensureUploadModalV270_(){
+    var modal=document.getElementById('pss-upload-v245-modal');
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.id='pss-upload-v245-modal';
+    modal.className='pss-upload-v245-backdrop open';
+    modal.innerHTML='<div class="pss-upload-v245-box"><div class="pss-upload-v245-head"><b>Enviar comprovante</b><button type="button" class="pss-upload-v245-close" aria-label="Fechar">×</button></div><iframe id="pss-upload-v245-iframe" class="pss-upload-v245-frame" allow="clipboard-read; clipboard-write"></iframe></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('.pss-upload-v245-close').addEventListener('click',function(){ var f=document.getElementById('pss-upload-v245-iframe'); if(f)f.src='about:blank'; modal.classList.remove('open'); });
+    return modal;
+  }
+  window.abrirUploadComprovanteAppsScriptV245 = function(){
+    var loteria=document.getElementById('uploadBolao')?.value || ESTADO.bolaoSelecionado || '';
+    if(!loteria) return toast('Selecione a loteria do depósito.','error');
+    var meta=metaComprovanteV270_();
+    if(meta.tipoEnvio==='TERCEIRO'){
+      if(!ehAdminV270_()) return toast('Apenas administrador pode enviar comprovante de terceiro.','error');
+      if(meta.modoCadastro==='COM_CADASTRO' && !meta.emailParticipante) return toast('Selecione o participante vinculado ao comprovante.','error');
+    }
+    ESTADO.bolaoSelecionado=loteria;
+    try{localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);}catch(e){}
+    var modal=ensureUploadModalV270_();
+    var frame=document.getElementById('pss-upload-v245-iframe');
+    var params=new URLSearchParams();
+    params.set('mode','upload_app');
+    params.set('loteria',loteria);
+    params.set('email',ESTADO.email||'');
+    params.set('adminEmail',ESTADO.email||'');
+    params.set('tipoEnvio',meta.tipoEnvio||'PROPRIO');
+    params.set('modoCadastro',meta.modoCadastro||'');
+    params.set('semCadastro',meta.semCadastro?'SIM':'NAO');
+    params.set('emailParticipante',meta.emailParticipante||ESTADO.email||'');
+    params.set('nomeParticipante',meta.nomeParticipante||'');
+    params.set('tipoCota',meta.tipoCota||'');
+    params.set('qtdPartes',meta.qtdPartes||'');
+    params.set('fracaoCota',meta.fracaoCota||'');
+    params.set('nomesPartes',JSON.stringify(meta.nomesPartes||[]));
+    params.set('obsAdmin',meta.obsAdmin||'');
+    params.set('metaJson',JSON.stringify(meta));
+    params.set('v',CONFIG.versao||'V270');
+    params.set('t',Date.now());
+    if(frame) frame.src=CONFIG.apiUrl+'?'+params.toString();
+    modal.classList.add('open');
+    if(typeof atualizarProgressoUploadComprovante_==='function') atualizarProgressoUploadComprovante_(1,'Abrindo envio','Preparando envio seguro.','run');
+  };
+
+})();
+</script>
+
 </body>
 </html>
