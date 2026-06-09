@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V268_CONSOLIDADO_PERFORMANCE -->
+<!-- Portal SimonSports — Bolões Loterias Especiais — GitHub Pages — V254_UPLOAD_FECHA_PARTICIPANTES_REESTRUTURADO -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V268 CONSOLIDADO</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V267 FIX MENUS DATAS PALPITE COMPROVANTE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -286,6 +286,7 @@
      * A tela abre com o último conteúdo salvo e atualiza em segundo plano.
      * ========================================================= */
     .fast-cache-badge{
+      /* V234: badge discreto */
       display:inline-flex;align-items:center;gap:4px;
       border:none;background:transparent;color:#b8c4cc;
       padding:0 2px;font-size:10px;font-weight:400;
@@ -325,6 +326,8 @@
       background:transparent;border:none;color:#c0c8d0;font-size:10px;opacity:.65;
     }
 
+
+    /* V198 — topo público fixo opcional e modal de pagamento mais rápido */
     body:not(.app-logado) .home-hero{
       position: sticky !important;
       top: 0 !important;
@@ -337,10 +340,14 @@
     .qr-holder img{width:180px;max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;padding:6px}
     .pay-copy{word-break:break-all;white-space:normal}
 
+  
+    /* V199 — QR Code automático do Pix */
     .qr-auto-box{margin-top:10px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
     .qr-auto-box img{width:180px;max-width:100%;height:auto;border:1px solid #d7e8dc;border-radius:10px;background:#fff;padding:6px}
     .qr-auto-status{font-size:12px;color:#506070;max-width:280px;line-height:1.45}
 
+  
+    /* V201 — badge discreto de inscritos + QR visual */
     .badge-inscritos-topo{border:1px solid rgba(255,179,0,.55)!important;background:rgba(255,179,0,.16)!important;color:#fff!important;border-radius:999px!important;padding:8px 12px!important;margin-left:auto!important;font-size:12px!important;font-weight:900!important;white-space:nowrap!important}
     .badge-inscritos-topo:hover{background:rgba(255,179,0,.28)!important}
     .badge-inscritos-topo + .sair{margin-left:8px!important}
@@ -353,6 +360,8 @@
     .qr-auto-status{font-size:12px;color:#506070;max-width:300px;line-height:1.45}
     .pix-fallback{font-size:12px;color:#5b2e00;background:#fff7df;border:1px solid #f5d78a;border-radius:8px;padding:8px;margin-top:8px}
 
+  
+    /* V204 — QR ao lado, sem botão Abrir QR, badge de aprovados */
     .pay-method{max-width:100%!important}
     .pay-method-layout{display:grid;grid-template-columns:minmax(280px,1fr) 210px;gap:14px;align-items:start}
     .pay-method-info{min-width:0}
@@ -369,6 +378,8 @@
       .qr-auto-box{justify-content:flex-start}
     }
 
+  
+    /* V207 — cota integral/fracionada, QR automático ajustado e recorrência */
     .tipo-cota-box{border:1px solid #d7eadc;background:#f8fffa;border-radius:12px;padding:12px;margin-bottom:12px}
     .tipo-cota-grid{display:grid;grid-template-columns:1.2fr .8fr 1fr 1fr;gap:10px;align-items:end}
     .tipo-cota-ajuda{font-size:12px;color:#355;margin-top:8px;line-height:1.4}
@@ -386,6 +397,8 @@
       .qr-auto-box{align-items:flex-start}
     }
 
+  
+    /* V208 — alinhamento dos valores e parcelamento conforme bolão */
     .acq-box .acq-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;align-items:end!important}
     .acq-box .field{min-width:0!important}
     .acq-box .field label{display:flex!important;align-items:flex-end!important;min-height:30px!important;line-height:1.2!important;margin-bottom:5px!important}
@@ -401,6 +414,8 @@
       .acq-box .field label{min-height:auto!important}
     }
 
+  
+    /* V212 — link do canal Telegram visível para usuários logados */
     .telegram-canal-topo{
       border:1px solid rgba(45,160,255,.75)!important;
       background:rgba(45,160,255,.14)!important;
@@ -471,6 +486,8 @@
       .telegram-canal-topo{font-size:11px!important;padding:8px 10px!important}
     }
 
+  
+    /* V213 — letreiro público de últimos resultados */
     .resultados-publicos-panel{
       border-left-color:#ffb300!important;
       background:linear-gradient(135deg,#fffdf5,#ffffff)!important;
@@ -586,6 +603,8 @@
       .resultados-publicos-actions{align-items:flex-start;flex-direction:column}
     }
 
+  
+    /* V214 — corrigir letreiro vazio: texto visível imediatamente */
     .resultados-ticker{
       min-height:50px!important;
       padding:0!important;
@@ -614,6 +633,8 @@
       100%{transform:translateX(-50%)}
     }
 
+  
+    /* V215 — letreiro com cores oficiais por loteria e visual mais limpo */
     .resultados-publicos-panel{padding:14px 18px!important;}
     .resultados-publicos-head{margin-bottom:8px!important;}
     .resultados-publicos-head h2{font-size:17px!important;}
@@ -703,6 +724,8 @@
       .resultados-ticker-grupo{gap:12px!important}
     }
 
+  
+    /* V216 — campo de nome público para divulgação no Telegram */
     .nome-publico-help{
       margin-top:6px;
       font-size:12px;
@@ -724,6 +747,8 @@
       color:#0b6f28;
     }
 
+  
+    /* V217 — Nova Loteria com modelos da BASE_LOTERIAS pré-carregados */
     .nova-loteria-toolbar{
       display:flex;
       justify-content:space-between;
@@ -810,6 +835,8 @@
       background:#fffdf5!important;
     }
 
+  
+    /* V222 — Regulamento não bloqueia mais a tela no mobile */
     .reg-status-v222{
       margin-top:10px;
       padding:10px 12px;
@@ -833,6 +860,8 @@
       margin-top:12px;
     }
 
+  
+    /* V224 — desempenho sem mensagem de cache vazio */
     .home-note.v224-soft{
       border:1px solid #d7eadc;
       background:#f8fffa;
@@ -871,6 +900,8 @@
       75%,100%{content:'...'}
     }
 
+  
+    /* V225 — Especiais pré-configuradas e comprovante de terceiros */
     .v225-special-wrap{display:grid;gap:20px;margin-top:18px}
     .v225-special-section{background:#fff;border:1px solid #d8eadc;border-radius:16px;padding:18px;box-shadow:0 8px 22px rgba(0,0,0,.06)}
     .v225-special-section h3{margin:0 0 6px;color:var(--v900);font-size:18px}
@@ -897,144 +928,7 @@
     .v225-hidden{display:none!important}
     @media(max-width:1100px){.v225-special-grid{grid-template-columns:repeat(2,minmax(170px,1fr))}}
     @media(max-width:700px){.v225-special-grid,.v225-two-columns{grid-template-columns:1fr}.v225-lottery-card{min-height:120px}}
-    .v227-ajuda-fracao{
-      margin:8px 0 10px;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid #d7eadc;
-      background:#f7fff9;
-      color:#003b12;
-      font-size:12px;
-      font-weight:800;
-      line-height:1.45;
-    }
-    #nomesPartes input.v227-pagante{
-      border-color:#0b6f28!important;
-      background:#f4fff7!important;
-      font-weight:900!important;
-    }
-    #btnTelegramCanalTopo,
-    .telegram-canal-topo,
-    #badgeInscritosTopo,
-    .badge-inscritos-topo{
-      display:none!important;
-      visibility:hidden!important;
-      width:0!important;
-      min-width:0!important;
-      max-width:0!important;
-      padding:0!important;
-      margin:0!important;
-      border:0!important;
-      overflow:hidden!important;
-      pointer-events:none!important;
-    }
 
-    .v228-sistema-inscritos{
-      margin-top:16px;
-      border-top:1px solid rgba(255,255,255,.22);
-      padding-top:14px;
-    }
-    .v228-sistema-inscritos .label{
-      display:block;
-      color:rgba(255,255,255,.88);
-      font-size:13px;
-      font-weight:800;
-      line-height:1.35;
-      margin-bottom:5px;
-    }
-    .v228-sistema-inscritos button{
-      border:1px solid rgba(255,255,255,.28);
-      background:rgba(255,255,255,.12);
-      color:#fff;
-      border-radius:999px;
-      padding:9px 12px;
-      font-size:15px;
-      font-weight:1000;
-      cursor:pointer;
-    }
-    .v228-sistema-inscritos button:hover{
-      background:rgba(255,255,255,.2);
-    }
-    .v229-sistema-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:12px;
-    }
-    .v229-telegram-sistema{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      border:1px solid rgba(255,255,255,.36);
-      background:rgba(255,255,255,.14);
-      color:#fff!important;
-      border-radius:999px;
-      padding:9px 13px;
-      font-size:14px;
-      font-weight:1000;
-      text-decoration:none!important;
-      box-shadow:0 8px 18px rgba(0,0,0,.12);
-    }
-    .v229-telegram-sistema:hover{background:rgba(255,255,255,.23)}
-    .v229-inscritos-sistema{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      border:1px solid rgba(255,255,255,.32);
-      background:rgba(255,255,255,.12);
-      color:#fff;
-      border-radius:999px;
-      padding:9px 13px;
-      font-size:14px;
-      font-weight:1000;
-      cursor:pointer;
-    }
-    .v232-jogos-lista{display:grid;gap:10px;margin-top:14px}
-    .v232-jogos-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid #d7eadc;border-radius:12px;padding:12px 14px;box-shadow:0 5px 14px rgba(0,0,0,.05)}
-    .v232-jogos-row b{display:block;color:#003b12;font-size:15px}
-    .v232-jogos-row small{display:block;color:#5b6777;font-size:12px;margin-top:3px}
-    .v232-link-ver{border:1px solid #0b6f28;background:#fff;color:#0b6f28;border-radius:999px;padding:8px 14px;font-weight:1000;text-decoration:none;cursor:pointer;white-space:nowrap}
-    .v232-link-ver:hover{background:#0b6f28;color:#fff}
-    .v232-jogos-table{width:100%;border-collapse:separate;border-spacing:0 9px;margin-top:12px}
-    .v232-jogos-table th{text-align:left;font-size:11px;text-transform:uppercase;color:#536173;padding:0 10px}
-    .v232-jogos-table td{background:#fff;border-top:1px solid #d7eadc;border-bottom:1px solid #d7eadc;padding:12px 10px;font-size:13px;color:#152033;vertical-align:middle}
-    .v232-jogos-table td:first-child{border-left:1px solid #d7eadc;border-radius:12px 0 0 12px}
-    .v232-jogos-table td:last-child{border-right:1px solid #d7eadc;border-radius:0 12px 12px 0;text-align:right}
-    .v232-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
-    .v232-upload-box{border:1px solid #cbded0;border-radius:14px;padding:16px;background:#fbfffc;margin:14px 0}
-    .v232-upload-box h3{margin:0 0 10px;color:#003b12}
-    .v232-upload-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .v232-super-note{border:1px solid #cfe8ff;background:#f3faff;color:#083b67;border-radius:10px;padding:10px 12px;font-weight:800;font-size:12px;margin:10px 0}
-    @media(max-width:760px){
-      .v232-jogos-row{grid-template-columns:1fr}
-      .v232-jogos-row .v232-link-ver{width:100%;text-align:center}
-      .v232-upload-meta{grid-template-columns:1fr}
-      .v232-jogos-table,.v232-jogos-table tbody,.v232-jogos-table tr,.v232-jogos-table td{display:block;width:100%}
-      .v232-jogos-table thead{display:none}
-      .v232-jogos-table tr{margin-bottom:10px;border:1px solid #d7eadc;border-radius:12px;background:#fff;overflow:hidden}
-      .v232-jogos-table td{border:0!important;border-radius:0!important;text-align:left!important}
-      .v232-jogos-table td:before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;color:#536173;font-weight:900;margin-bottom:4px}
-    }
-    .v233-config-top{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin:10px 0 16px;
-    }
-    .v233-config-source{
-      border:1px solid #d7eadc;
-      background:#f8fffa;
-      color:#003b12;
-      border-radius:10px;
-      padding:9px 12px;
-      font-size:12px;
-      font-weight:900;
-    }
-    .v237-cache-chip{display:inline-flex;align-items:center;margin-left:8px;border-radius:999px;padding:3px 8px;background:#e3f7e9;color:#064f1e;font-size:10px;font-weight:1000;text-transform:uppercase;white-space:nowrap}
-    .v238-menu-guard-note{display:none!important}
   </style>
 
   <!-- Firebase V195: SDK compat com defer para não bloquear a home pública -->
@@ -1052,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V268_CONSOLIDADO_PERFORMANCE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V267_FIX_MENUS_DATAS_PALPITE_COMPROVANTE',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -1198,15 +1092,10 @@
     document.addEventListener('DOMContentLoaded',()=>{try{const pssParams=new URLSearchParams(location.search);if(pssParams.get('pss_bridge_return')==='1'){document.body.style.display='none';return}if(pssParams.get('limpar')==='1'){limparAcessoSalvo_({silent:true});}prepararFeedbackBotoes();atualizarRelogio();setInterval(atualizarRelogio,1000);document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.addEventListener('click',()=>navegar(b.dataset.view)));const s=carregarSessao();if(s&&s.email){ESTADO.email=String(s.email||'').trim().toLowerCase();}renderHomePublica()}catch(err){console.error(err);limparEstadoCorrompido_();renderHomePublica();}});
     let PSS_API_FILA=Promise.resolve();
 
-    // api() com fila serial - mantido para chamadas simples que precisam de ordenação
     function api(action,dados={},args=null){
       const executar=()=>apiHibridaComFallback_(action,dados,args);
       PSS_API_FILA=PSS_API_FILA.then(executar,executar);
       return PSS_API_FILA;
-    }
-    // apiDireto_ bypassa a fila serial — usado por apiMulti para paralelismo real
-    function apiDireto_(action,dados,args){
-      return apiHibridaComFallback_(action,dados||{},args||null);
     }
 
     function apiHibridaComFallback_(action,dados={},args=null){
@@ -1433,22 +1322,19 @@
       });
     }
 
-    // V268: apiMulti paralelo — dispara todas as rotas simultaneamente
-    // Retorna a que responder primeiro, evitando espera serial de timeouts
+    function apiDireto_(action,dados,args){return apiHibridaComFallback_(action,dados||{},args||null);}
     async function apiMulti(rotas){
       if(!rotas||!rotas.length) throw new Error('Nenhuma rota informada.');
-      // Dispara todas em paralelo; retorna a primeira que resolver
-      return Promise.any(rotas.map(function(x){
-        return apiDireto_(x.action, x.dados||{}, x.args||null);
-      }));
+      return Promise.any(rotas.map(function(x){return apiDireto_(x.action,x.dados||{},x.args||null);}));
     }
 
 
     function normalizarUsuarioSessao_(s){
       s=s&&typeof s==='object'?s:{};
       const email=String(s.email||s.EMAIL||'').trim().toLowerCase();
+      const _nomeFallback=(s.email||s.EMAIL||'').split('@')[0]||'Usuário';
       return {
-        nome:String(s.nome||s.NOME||s.usuario||s.USUARIO||s.name||'Usuário').trim()||'Usuário',
+        nome:String(s.nome||s.NOME||s.usuario||s.USUARIO||s.name||_nomeFallback).trim()||_nomeFallback,
         email:email,
         role:String(s.role||s.perfil||s.PERFIL||'usuario').toLowerCase(),
         perfil:s.perfil||s.role||s.PERFIL||'usuario'
@@ -1779,6 +1665,14 @@
       });
     }
 
+    // Stub de uploadFetchV226_ — será sobrescrita pelo patch V226 mais adiante
+    // Garante que L1667/1688 não deem ReferenceError antes do patch carregar
+    if(typeof uploadFetchV226_==='undefined'){
+      var uploadFetchV226_=async function(action,dados,args,tOut){
+        return apiHibridaComFallback_(action,dados||{},args||null);
+      };
+    }
+
     async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
       const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
       const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
@@ -2018,12 +1912,17 @@
       {action:'dashboard',args:[ESTADO.email]}
     ]).catch(()=>({}));
 
-    const lista=listaSegura_(await carregarBoloes());
+    // V269: usar bolões do JSON estático se disponíveis (instantâneo)
+    // caso contrário cair no GAS normalmente
+    var _jsonBoloes = window.ESTADO&&ESTADO.jsonEstatico&&Array.isArray(ESTADO.jsonEstatico.boloes)&&ESTADO.jsonEstatico.boloes.length?ESTADO.jsonEstatico.boloes:null;
+    var _listaBase = _jsonBoloes || (window.ESTADO&&Array.isArray(ESTADO.boloes)&&ESTADO.boloes.length?ESTADO.boloes:null) || await carregarBoloes();
+    const lista=listaSegura_(_listaBase);
     const ativos=lista
       .filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'))
       .sort((a,b)=>String(a.dataSorteio||'').localeCompare(String(b.dataSorteio||'')));
 
-    const cfg=await apiMulti([{action:'getConfigPublica',args:[]}]).catch(()=>({}));
+    // V269: config do JSON estático se disponível
+    const cfg=(window.ESTADO&&ESTADO.jsonEstatico&&ESTADO.jsonEstatico.configPublica)||await apiMulti([{action:'getConfigPublica',args:[]}]).catch(()=>({}));
     const telegramLink=(cfg&&cfg.telegramCanalLink)||dash.telegramCanalLink||'';
 
     const minhasCotas=ativos.reduce((s,b)=>s+num(b.cotasUsuario||b.minhasCotas||0),0);
@@ -2035,7 +1934,7 @@
         <div class="grid">
           <div class="col-8">
             <div class="panel no-left" style="margin:0;padding:24px;">
-              <h2 style="font-size:32px;">Olá, ${escapeHtml((ESTADO.usuario&&ESTADO.usuario.nome)||'Usuário')}</h2>
+              <h2 style="font-size:32px;">Olá, ${escapeHtml((ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.displayName||ESTADO.usuario.email&&ESTADO.usuario.email.split('@')[0]))||dash.nome||dash.nomeUsuario||'Usuário')}</h2>
               <p>Painel de acompanhamento dos bolões ativos, pagamentos, palpites, comprovantes, jogos realizados e atualizações oficiais.</p>
               <div class="actions">
                 <button class="btn" onclick="navegar('boloes')">Ver bolões</button>
@@ -2411,6 +2310,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
       try{
         const nums=ESTADO.numerosSelecionados.slice().sort((a,b)=>a-b);
         const payload={numeros:nums,email:ESTADO.email,jogo:1,loteria:ESTADO.bolaoSelecionado};
+        /* V257: rota única, leve e direta. Não usa window.name para salvar palpite. */
         let r;
         try{
           r=await apiJsonpDireto_('salvarPalpiteRapidoV257',payload,[nums,ESTADO.email,1,ESTADO.bolaoSelecionado],60000);
@@ -4191,6 +4091,7 @@ function selecionarBolao(nome,origem){
 }
 
 
+
 /* =====================================================================
  * V263 — CORREÇÃO FRONTEND TOP 10 PALPITES
  * Motivo:
@@ -5130,7 +5031,7 @@ function renderMetodoPagamento_(m,b,i){
 
     try{
       const dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email,participanteEmail:email},[{adminEmail:ESTADO.email,participanteEmail:email}]);
-      if(box)box.innerHTML=renderResultadoConsultaParticipanteAdmin_(dados);
+      if(box)box.innerHTML=(window.renderResultadoConsultaParticipanteAdmin_||window.v256RenderConsultaResumo_||function(d){return escapeHtml(JSON.stringify(d));})(dados);
     }catch(err){
       if(box)box.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
     }
@@ -5681,6 +5582,8 @@ function renderMetodoPagamento_(m,b,i){
 })();
 
 
+
+
 /* =====================================================================
  * PATCH V196 — ATALHO CONSULTA ADMIN GLOBAL
  * Corrige erro: inserirAtalhoConsultaInicio_ is not defined.
@@ -5903,6 +5806,351 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
+/* =====================================================================
+ * PATCH V198 — RESERVA DE COTAS + QR/PAGAMENTO SEM TRAVAR
+ * - Se houver reserva pendente, o card mostra botão "Cotas reservadas".
+ * - Aviso orienta enviar comprovante para dar baixa na reserva.
+ * - Modal de pagamento nunca fica preso aguardando QR/meios.
+ * - Pix copia e cola aparece antes do QR.
+ * ===================================================================== */
+(function(){
+  function pssV198_key(nome){
+    return String(normalizar(nome||'BOLAO')).replace(/[^A-Z0-9]+/g,'_');
+  }
+
+  function pssV198_temReserva(b){
+    b=b||{};
+    var s=normalizar([b.statusAquisicao,b.statusReserva,b.statusPagamento,b.status,b.aquisicaoStatus,b.reservaStatus].join(' '));
+    return !!(
+      b.aquisicaoPendente || b.preAquisicaoPendente || b.cotasPendentes || b.reservaPendente ||
+      num(b.cotasReservadasUsuario||b.minhasCotasReservadas||b.cotasReservadasPendentes||0)>0 ||
+      s.indexOf('RESERV')>=0 || s.indexOf('AGUARDANDO COMPROVANTE')>=0 || s.indexOf('PENDENTE')>=0
+    );
+  }
+
+  function pssV198_marcarReservaLocal(loteria,qtd){
+    var alvo=normalizar(loteria||'');
+    ESTADO.boloes=listaSegura_(ESTADO.boloes).map(function(b){
+      if(normalizar(b.loteria||b.nome||b.id)===alvo){
+        b.aquisicaoPendente=true;
+        b.reservaPendente=true;
+        b.cotasPendentes=num(b.cotasPendentes||0)+num(qtd||1);
+        b.cotasReservadasUsuario=num(b.cotasReservadasUsuario||0)+num(qtd||1);
+        b.statusReserva='Reservado - aguardando comprovante';
+      }
+      return b;
+    });
+    try{cacheSet_('boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'),ESTADO.boloes,CACHE_TTL.curto||300000);}catch(e){}
+  }
+
+  window.abrirAvisoCotasReservadas = function(loteria){
+    abrirModal('Cotas reservadas',`
+      <div class="notice warn">
+        <strong>Você possui cotas reservadas neste bolão.</strong><br><br>
+        Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        <button type="button" class="btn btn-light" onclick="fecharModal();abrirPagamentoBolao('${escapeAttr(loteria)}')">Ver dados de pagamento</button>
+      </div>
+    `);
+  };
+
+  window.renderCardsBoloes = renderCardsBoloes = function(lista,origem){
+    lista=listaSegura_(lista);
+    if(!lista.length)return `<div class="notice warn">Nenhum bolão localizado.</div>`;
+
+    return `<div class="cards-row">${lista.map(function(b){
+      var nome=b.nome||b.loteria||'Bolão';
+      var participa=usuarioParticipaBolaoUI_(b);
+      var reservado=pssV198_temReserva(b);
+      var disp=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||0);
+      var esgotado=disp<=0&&!participa&&!reservado&&!isHistorico(b);
+      var botao=reservado?'Cotas reservadas':(esgotado?'Sem cotas':labelBotaoPrincipalBolao_(b,origem));
+      var acao=reservado
+        ? `abrirAvisoCotasReservadas('${escapeAttr(b.loteria||b.nome||b.id)}')`
+        : `selecionarBolao('${escapeAttr(b.loteria||b.nome||b.id)}','${origem}')`;
+
+      return `
+        <div class="bolao-card">
+          <h3>🎯 ${escapeHtml(nome)}</h3>
+          ${origem==='boloes'?`<div class="status-pill ${participa?'':'locked'}">${participa?'Participante inscrito':'Não inscrito neste bolão'}</div><br>`:''}
+          ${reservado?`<div class="reserved-pill">Cotas reservadas</div>`:''}
+          ${disp<999999?`<div class="outline-pill ${esgotado?'danger':''}">Cotas disponíveis: ${escapeHtml(disp)}</div>`:''}
+          <div class="meta-grid">
+            <div class="meta-box"><b>Status</b><span>${escapeHtml(b.status||'ATIVO')}</span></div>
+            <div class="meta-box"><b>Sorteio</b><span>${escapeHtml(b.dataSorteio||'-')}</span></div>
+            <div class="meta-box"><b>Pagamento</b><span>${escapeHtml(b.inicioPagamento||'-')} a ${escapeHtml(b.fimPagamento||'-')}</span></div>
+            <div class="meta-box"><b>Palpites</b><span>${escapeHtml(b.inicioPalpite||'-')} a ${escapeHtml(b.fimPalpite||'-')}</span></div>
+          </div>
+          <button class="btn ${reservado?'btn-reserved':''} ${esgotado?'disabled':''}" ${esgotado?'disabled':''} onclick="${acao}">${escapeHtml(botao)}</button>
+        </div>
+      `;
+    }).join('')}</div>`;
+  };
+
+  window.qrUrl_ = function(text){
+    return 'https://quickchart.io/qr?size=220&text='+encodeURIComponent(text||'');
+  };
+
+  window.carregarQrPagamentoV198 = function(btn,id,payload){
+    var holder=document.getElementById('qrHolder_'+id);
+    if(!holder)return;
+    holder.innerHTML='<div class="notice info">Gerando QR Code...</div>';
+    var img=new Image();
+    var done=false;
+    var timer=setTimeout(function(){
+      if(done)return;
+      done=true;
+      holder.innerHTML=`
+        <div class="notice warn">
+          O QR Code demorou para carregar. Use o Pix Copia e Cola abaixo ou tente novamente.
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-light" onclick="carregarQrPagamentoV198(this,'${escapeAttr(id)}','${escapeAttr(payload)}')">Tentar QR novamente</button>
+          <a class="btn btn-light" target="_blank" href="${escapeAttr(qrUrl_(payload))}">Abrir QR em nova aba</a>
+        </div>
+      `;
+    },6500);
+    img.onload=function(){
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      holder.innerHTML='';
+      holder.appendChild(img);
+    };
+    img.onerror=function(){
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      holder.innerHTML=`
+        <div class="notice warn">Não foi possível carregar o QR Code automático. Use o Pix Copia e Cola.</div>
+        <div class="actions"><a class="btn btn-light" target="_blank" href="${escapeAttr(qrUrl_(payload))}">Abrir QR em nova aba</a></div>
+      `;
+    };
+    img.alt='QR Code Pix';
+    img.src=qrUrl_(payload);
+  };
+
+  window.renderMetodoPagamento_ = function(m,b,i){
+    const valor=getValorPagamentoAgora_?getValorPagamentoAgora_():(num(b.valorCota||0)*Math.max(1,num(b.cotasUsuario||b.minhasCotas||1)||1));
+    const isPix=normalizar(m.tipoRecebimento||'').includes('PIX')||m.chavePix;
+    const payload=isPix?gerarPixCopiaECola_(m,valor,b.loteria||b.nome):'';
+    const safeId='v198_'+i+'_'+Math.floor(Math.random()*100000);
+
+    return `
+      <div class="pay-method">
+        <h4>${escapeHtml(labelTipoRecebimento_(m.tipoRecebimento||'Recebimento'))}</h4>
+        <p><strong>Recebedor:</strong> ${escapeHtml(m.nomeCompleto||'-')}</p>
+        ${m.chavePix?`<p><strong>Pix:</strong> ${escapeHtml(m.tipoPix||'Chave')} — ${escapeHtml(m.chavePix)}</p>`:''}
+        ${m.banco?`<p><strong>Banco:</strong> ${escapeHtml(m.banco)} ${m.agencia?` • Agência: ${escapeHtml(m.agencia)}`:''} ${m.conta?` • Conta: ${escapeHtml(m.conta)}`:''}</p>`:''}
+        ${m.obs?`<p><strong>Obs.:</strong> ${escapeHtml(m.obs)}</p>`:''}
+
+        ${isPix?`
+          <div class="pay-copy" data-pix-payload="${i}">${escapeHtml(payload)}</div>
+          <div class="qr-actions">
+            <button type="button" class="btn" onclick="copiarTextoPagamento(this.closest('.pay-method').querySelector('.pay-copy').textContent)">Copiar Pix</button>
+            <button type="button" class="btn btn-light" onclick="carregarQrPagamentoV198(this,'${escapeAttr(safeId)}','${escapeAttr(payload)}')">Gerar QR Code</button>
+          </div>
+          <div class="qr-holder" id="qrHolder_${escapeAttr(safeId)}"></div>
+        `:''}
+      </div>
+    `;
+  };
+
+  function pssV198_renderMetodosPagamento(lista,b,nome,carregando){
+    lista=Array.isArray(lista)?lista:[];
+    if(lista.length){
+      return `<div class="pay-method-grid">${lista.map((m,i)=>renderMetodoPagamento_(m,b,i)).join('')}</div>`;
+    }
+    if(carregando){
+      return `
+        <div class="notice info">
+          Carregando meios de pagamento em segundo plano. Você já pode registrar a aquisição ou enviar o comprovante.
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-light" onclick="carregarMetodosPagamentoModalAsync_('${escapeAttr(nome)}',getBolaoByNome_('${escapeAttr(nome)}'),'PSS_BOLAO_METODOS_PAGAMENTO_${escapeAttr(pssV198_key(nome))}')">Tentar carregar agora</button>
+        </div>
+      `;
+    }
+    return '<div class="notice warn">Nenhum meio de pagamento ativo localizado para este bolão.</div>';
+  }
+
+  window.renderCorpoAdquirirCotas_ = function(b,nome,lista,carregando){
+    lista=Array.isArray(lista)?lista:[];
+    const valorCota=num(b.valorCota||0);
+    const parcelas=Math.max(1,num(b.qtdParcelas||b.parcelas||1)||1);
+    const disponiveis=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||0);
+    const qtdInicial=disponiveis<=0?0:1;
+
+    return `
+      <div class="notice">
+        <strong>${escapeHtml(nome)}</strong><br>
+        Valor da cota: <strong>${escapeHtml(moeda(valorCota))}</strong><br>
+        ${disponiveis<999999?`Cotas disponíveis agora: <strong id="pagCotasDisponiveisInfo">${escapeHtml(disponiveis)}</strong>`:''}
+      </div>
+
+      ${pssV198_temReserva(b)?`
+        <div class="notice warn">
+          Você possui cotas reservadas neste bolão. Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.
+        </div>
+      `:''}
+
+      <div class="acq-box">
+        <h4>Quantidade e valor</h4>
+        <div class="acq-row">
+          <div class="field"><label>Quantidade de cotas</label><input id="pagQtdCotas" value="${escapeAttr(qtdInicial)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+          <div class="field"><label>Valor da cota</label><input value="${escapeAttr(moeda(valorCota))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor total da aquisição</label><input id="pagValorTotal" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+          <div class="field"><label>Valor para pagamento agora</label><input id="pagValorAgora" value="${escapeAttr(moeda(valorCota*qtdInicial))}" readonly class="acq-value"></div>
+        </div>
+
+        ${parcelas>1?`
+          <div class="pag-recorrente-box">
+            <h4>Parcelamento/recorrência opcional</h4>
+            <label class="checkline"><input type="checkbox" id="pagRecorrente" onchange="togglePagamentoRecorrenteModal();atualizarValorPagamentoModal('${escapeAttr(nome)}')"><span>Quero dividir o valor da cota em parcelas mensais.</span></label>
+            <div id="pagRecorrenteCampos" class="pag-recorrente-inline hidden">
+              <div class="field"><label>Quantidade de parcelas</label><input id="pagRecMeses" value="${escapeAttr(parcelas)}" inputmode="numeric" oninput="atualizarValorPagamentoModal('${escapeAttr(nome)}')"></div>
+              <div class="field"><label>Valor mensal estimado</label><input id="pagValorParcela" readonly class="acq-value" value="${escapeAttr(moeda((valorCota*qtdInicial)/parcelas))}"></div>
+              <div class="field"><label>Dia preferencial</label><input id="pagRecDia" value="10" inputmode="numeric"></div>
+              <div class="field"><label>Observação</label><input id="pagRecObs" placeholder="Opcional"></div>
+            </div>
+          </div>
+        `:''}
+
+        <div class="actions" style="margin-top:12px;">
+          <button type="button" class="btn" id="btnRegistrarAquisicaoCota" ${disponiveis<=0?'disabled':''} onclick="registrarAquisicaoCotaModal('${escapeAttr(nome)}')">Registrar aquisição</button>
+          <button type="button" class="btn btn-light" onclick="fecharModal();navegar('comprovante')">Enviar comprovante</button>
+        </div>
+        <div id="pagReservaMsg"></div>
+      </div>
+
+      <h4 style="margin:16px 0 8px;color:#003b12;">Dados para pagamento</h4>
+      <div id="metodosPagamentoBox">
+        ${pssV198_renderMetodosPagamento(lista,b,nome,carregando)}
+      </div>
+    `;
+  };
+
+  window.abrirPagamentoBolao = function(loteria){
+    const b=getBolaoByNome_(loteria);
+    const nome=b.loteria||b.nome||loteria;
+    const cacheKey='PSS_BOLAO_METODOS_PAGAMENTO_'+pssV198_key(nome);
+    let listaCache=[];
+    try{
+      const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+      if(cached&&Array.isArray(cached.lista)&&Date.now()-Number(cached.ts||0)<10*60*1000)listaCache=cached.lista;
+    }catch(e){}
+
+    abrirModal('Adquirir cotas',renderCorpoAdquirirCotas_(b,nome,listaCache,listaCache.length===0));
+    setTimeout(()=>atualizarValorPagamentoModal(nome),80);
+
+    carregarMetodosPagamentoModalAsync_(nome,b,cacheKey);
+  };
+
+  window.carregarMetodosPagamentoModalAsync_ = async function(nome,b,cacheKey){
+    const box=document.getElementById('metodosPagamentoBox');
+    let finalizado=false;
+    const avisoTimer=setTimeout(function(){
+      if(finalizado||!box)return;
+      box.innerHTML=`
+        <div class="notice warn">
+          Os meios de pagamento ainda estão demorando para carregar. Você já pode reservar as cotas e enviar o comprovante pelo botão acima.
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-light" onclick="carregarMetodosPagamentoModalAsync_('${escapeAttr(nome)}',getBolaoByNome_('${escapeAttr(nome)}'),'${escapeAttr(cacheKey)}')">Tentar carregar novamente</button>
+        </div>
+      `;
+    },7000);
+
+    try{
+      const dados=await promiseTimeout_(
+        apiMulti([
+          {action:'getDadosRecebimento',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]},
+          {action:'listarDadosRecebimento',dados:{email:ESTADO.email,loteria:nome},args:[ESTADO.email,nome]}
+        ]),
+        10000,
+        'Tempo limite ao carregar meios de pagamento.'
+      );
+      finalizado=true;
+      clearTimeout(avisoTimer);
+      const lista=Array.isArray(dados)?dados:(dados.dados||[]);
+      try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),lista:lista}));}catch(e){}
+      if(box){
+        box.innerHTML=pssV198_renderMetodosPagamento(lista,b,nome,false);
+        setTimeout(()=>atualizarValorPagamentoModal(nome),50);
+      }
+    }catch(err){
+      finalizado=true;
+      clearTimeout(avisoTimer);
+      if(box){
+        box.innerHTML=`
+          <div class="notice warn">
+            Não foi possível carregar os meios de pagamento agora. Você pode reservar as cotas e enviar o comprovante normalmente.
+            <br>Detalhe: ${escapeHtml(err.message||err)}
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-light" onclick="carregarMetodosPagamentoModalAsync_('${escapeAttr(nome)}',getBolaoByNome_('${escapeAttr(nome)}'),'${escapeAttr(cacheKey)}')">Tentar novamente</button>
+          </div>
+        `;
+      }
+    }
+  };
+
+  window.registrarAquisicaoCotaModal = async function(loteria){
+    var b=getBolaoByNome_(loteria);
+    var max=(typeof disponibilidadeBolaoUI_==='function')?disponibilidadeBolaoUI_(b):num(b.cotasDisponiveis||999999);
+    var qtd=(typeof clampQtdCotasModal_==='function')?clampQtdCotasModal_(loteria,true):Math.max(1,num(document.getElementById('pagQtdCotas')?document.getElementById('pagQtdCotas').value:1));
+
+    if(max<=0){toast('Não há cotas disponíveis para este bolão no momento.','warn');return;}
+    if(max<999999 && qtd>max){toast('A quantidade solicitada ultrapassa as cotas disponíveis.','error');return;}
+
+    var btn=document.getElementById('btnRegistrarAquisicaoCota');
+    if(btn){btn.disabled=true;btn.textContent='Reservando cotas...';}
+
+    var valorTotal=document.getElementById('pagValorTotal')?document.getElementById('pagValorTotal').value:'';
+    var valorAgora=document.getElementById('pagValorAgora')?document.getElementById('pagValorAgora').value:'';
+    var rec=document.getElementById('pagRecorrente');
+    var recorrente=!!(rec&&rec.checked);
+    var parcelas=Math.max(1,num(document.getElementById('pagRecMeses')?document.getElementById('pagRecMeses').value:1));
+    var dia=Math.max(1,Math.min(31,num(document.getElementById('pagRecDia')?document.getElementById('pagRecDia').value:10)));
+    var obs=document.getElementById('pagRecObs')?document.getElementById('pagRecObs').value:'';
+
+    try{
+      var r=await api('registrarAquisicaoCotaBolao',{},[{email:ESTADO.email,loteria,qtdCotas:qtd,valorTotal,valorPagamentoAgora:valorAgora,parcelado:recorrente,qtdParcelas:parcelas,diaPreferencial:dia,obs}]);
+      pssV198_marcarReservaLocal(loteria,qtd);
+
+      if(typeof subtrairBolaoLocalDisponibilidade_==='function'){
+        subtrairBolaoLocalDisponibilidade_(loteria,qtd,r&&r.disponibilidadeRestante);
+      }else{
+        var alvo=normalizar(loteria||'');
+        ESTADO.boloes=listaSegura_(ESTADO.boloes).map(function(x){
+          if(normalizar(x.loteria||x.nome||x.id)===alvo)x.cotasDisponiveis=Math.max(0,num(x.cotasDisponiveis||0)-qtd);
+          return x;
+        });
+      }
+
+      cacheDel_('boloes_'+normalizar(ESTADO.email).replace(/[^A-Z0-9]+/g,'_'));
+
+      var msg=document.getElementById('pagReservaMsg');
+      if(msg){
+        msg.innerHTML='<div class="notice warn" style="margin-top:10px;"><strong>Cotas reservadas.</strong><br>Se já efetuou o pagamento, favor enviar o comprovante para dar baixa no sistema de reserva de cotas.</div>';
+      }
+
+      toast((r&&r.msg)||'Cota(s) reservada(s). Envie o comprovante após realizar o pagamento.');
+
+      if(btn){btn.disabled=false;btn.textContent='Cotas reservadas';btn.classList.add('btn-reserved');btn.onclick=function(){abrirAvisoCotasReservadas(loteria)};}
+      atualizarValorPagamentoModal(loteria);
+    }catch(err){
+      toast(err.message||err,'error');
+      if(btn){btn.disabled=false;btn.textContent='Registrar aquisição';}
+    }
+  };
+})();
+
+
+
 /* =====================================================================
  * PATCH V199 — QR CODE PIX AUTOMÁTICO
  * - Remove necessidade de clicar em "Gerar QR Code".
@@ -5975,6 +6223,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* =====================================================================
  * PATCH V200 — INSCRITO SOMENTE COM COTAS CONFIRMADAS
  * Correção:
@@ -6045,6 +6294,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }).join('')}</div>`;
   };
 })();
+
 
 
 /* =====================================================================
@@ -6210,6 +6460,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* =====================================================================
  * PATCH V204 — QR AO LADO + BADGE TOTAL DE APROVADOS NO SITE
  * Base segura: mantém V202 e corrige apenas o que quebrou na V203.
@@ -6322,6 +6573,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }
   };
 })();
+
 
 
 /* =====================================================================
@@ -6692,6 +6944,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* =====================================================================
  * PATCH V208 — ALINHAMENTO + PARCELAS FIXADAS PELA CONFIG DO BOLÃO
  * - Parcelamento recorrente usa o campo Qtd parcelas do bolão.
@@ -7040,6 +7293,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* =====================================================================
  * PATCH V209 — EXCLUIR BOLÃO NO MENU CONFIG CORRIGIDO
  * Motivo:
@@ -7161,6 +7415,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* =====================================================================
  * PATCH V210 — SOLICITAÇÕES CADASTRO: TELEGRAM + CAMPOS NÃO APLICÁVEIS
  * ===================================================================== */
@@ -7228,6 +7483,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     `;
   };
 })();
+
 
 
 /* =====================================================================
@@ -7413,6 +7669,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* =====================================================================
  * PATCH V212 — LINK DO CANAL TELEGRAM VISÍVEL PARA LOGADOS
  * - Aparece para usuários comuns e administradores.
@@ -7556,6 +7813,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     setTimeout(()=>carregarTelegramCanalLogadoV212(false),500);
   };
 })();
+
 
 
 /* =====================================================================
@@ -7738,6 +7996,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* =====================================================================
  * PATCH V214 — LETREIRO RESULTADOS VISÍVEL IMEDIATAMENTE
  * Correção:
@@ -7831,6 +8090,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     },800);
   };
 })();
+
 
 
 /* =====================================================================
@@ -8021,6 +8281,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     `);
   };
 })();
+
 
 
 /* =====================================================================
@@ -8310,6 +8571,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     `;
   };
 })();
+
 
 
 /* =====================================================================
@@ -8718,6 +8980,31 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
+/* =====================================================================
+ * PATCH V221 — RESTAURA LETREIRO ESTÁVEL DOS RESULTADOS
+ * - Mantém o modelo que estava funcionando.
+ * - Remove somente o cache local criado pela V220.
+ * - Não altera Telegram, pagamentos, bolões, cadastro ou Firebase.
+ * ===================================================================== */
+(function(){
+  try{localStorage.removeItem('PSS_RESULTADOS_PUBLICOS_V220');}catch(e){}
+  try{localStorage.removeItem('PSS_RESULTADOS_PUBLICOS_V220_ERRO');}catch(e){}
+  const renderHomePublicaBaseV221 = window.renderHomePublica || renderHomePublica;
+  window.renderHomePublica = renderHomePublica = function(){
+    renderHomePublicaBaseV221();
+    setTimeout(function(){
+      try{
+        if(typeof carregarLetreiroResultadosPublicosV213 === 'function'){
+          carregarLetreiroResultadosPublicosV213(true);
+        }
+      }catch(e){}
+    },450);
+  };
+})();
+
+
+
 /* =====================================================================
  * PATCH V222 — REGULAMENTO SEM TIMEOUT VISÍVEL NO MOBILE
  * Motivo:
@@ -8879,6 +9166,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     },500);
   };
 })();
+
 
 
 /* =====================================================================
@@ -9157,6 +9445,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     },1200);
   };
 })();
+
 
 
 /* =====================================================================
@@ -9845,6 +10134,18 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   var _renderInicioBase226 = window.renderInicio;
   window.renderInicio = renderInicio = async function(){
     if(typeof loading==='function') loading('Carregando início');
+    // V269: usar JSON estático imediatamente se disponível — sem esperar GAS
+    var _jsonDisp = window.ESTADO&&ESTADO.jsonEstatico&&Array.isArray(ESTADO.jsonEstatico.boloes)&&ESTADO.jsonEstatico.boloes.length;
+    if(_jsonDisp){
+      ESTADO.boloes = ESTADO.jsonEstatico.boloes;
+      ESTADO.configPublica = ESTADO.jsonEstatico.configPublica||{};
+      if(typeof _renderInicioBase226==='function' && _renderInicioBase226!==renderInicio){
+        try{ await _renderInicioBase226(); }catch(e){}
+      }
+      // Atualizar em segundo plano sem bloquear
+      carregarBoloes(true).then(function(l){if(l&&l.length)ESTADO.boloes=l;}).catch(function(){});
+      return;
+    }
     try{
       /* Disparo simultâneo: bolões + config pública */
       var [lista, cfg] = await Promise.all([
@@ -10011,7 +10312,25 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 /* FIM PATCH V226 — ULTRAVELOCIDADE */
   </script>
 
-  
+  <style>
+    /* V227 — comprovante de terceiro fracionado */
+    .v227-ajuda-fracao{
+      margin:8px 0 10px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid #d7eadc;
+      background:#f7fff9;
+      color:#003b12;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.45;
+    }
+    #nomesPartes input.v227-pagante{
+      border-color:#0b6f28!important;
+      background:#f4fff7!important;
+      font-weight:900!important;
+    }
+  </style>
 
 
   <script>
@@ -10217,7 +10536,51 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V228 — topo mais leve: remove botões extras do menu superior */
+    #btnTelegramCanalTopo,
+    .telegram-canal-topo,
+    #badgeInscritosTopo,
+    .badge-inscritos-topo{
+      display:none!important;
+      visibility:hidden!important;
+      width:0!important;
+      min-width:0!important;
+      max-width:0!important;
+      padding:0!important;
+      margin:0!important;
+      border:0!important;
+      overflow:hidden!important;
+      pointer-events:none!important;
+    }
+
+    .v228-sistema-inscritos{
+      margin-top:16px;
+      border-top:1px solid rgba(255,255,255,.22);
+      padding-top:14px;
+    }
+    .v228-sistema-inscritos .label{
+      display:block;
+      color:rgba(255,255,255,.88);
+      font-size:13px;
+      font-weight:800;
+      line-height:1.35;
+      margin-bottom:5px;
+    }
+    .v228-sistema-inscritos button{
+      border:1px solid rgba(255,255,255,.28);
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:15px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+    .v228-sistema-inscritos button:hover{
+      background:rgba(255,255,255,.2);
+    }
+  </style>
 
 
   <script>
@@ -10402,7 +10765,44 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V229 — canal no início e inscritos corretos */
+    .v229-sistema-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .v229-telegram-sistema{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      border:1px solid rgba(255,255,255,.36);
+      background:rgba(255,255,255,.14);
+      color:#fff!important;
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:14px;
+      font-weight:1000;
+      text-decoration:none!important;
+      box-shadow:0 8px 18px rgba(0,0,0,.12);
+    }
+    .v229-telegram-sistema:hover{background:rgba(255,255,255,.23)}
+    .v229-inscritos-sistema{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.32);
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:14px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+  </style>
 
 
   <script>
@@ -10542,7 +10942,36 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 <!-- V237: Patch V230 de submenus removido para restaurar o visual original de Comprovante/Pagamentos. -->
 
 
-  
+
+  <style>
+    /* V232 — Jogos realizados em modo link + super envio */
+    .v232-jogos-lista{display:grid;gap:10px;margin-top:14px}
+    .v232-jogos-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid #d7eadc;border-radius:12px;padding:12px 14px;box-shadow:0 5px 14px rgba(0,0,0,.05)}
+    .v232-jogos-row b{display:block;color:#003b12;font-size:15px}
+    .v232-jogos-row small{display:block;color:#5b6777;font-size:12px;margin-top:3px}
+    .v232-link-ver{border:1px solid #0b6f28;background:#fff;color:#0b6f28;border-radius:999px;padding:8px 14px;font-weight:1000;text-decoration:none;cursor:pointer;white-space:nowrap}
+    .v232-link-ver:hover{background:#0b6f28;color:#fff}
+    .v232-jogos-table{width:100%;border-collapse:separate;border-spacing:0 9px;margin-top:12px}
+    .v232-jogos-table th{text-align:left;font-size:11px;text-transform:uppercase;color:#536173;padding:0 10px}
+    .v232-jogos-table td{background:#fff;border-top:1px solid #d7eadc;border-bottom:1px solid #d7eadc;padding:12px 10px;font-size:13px;color:#152033;vertical-align:middle}
+    .v232-jogos-table td:first-child{border-left:1px solid #d7eadc;border-radius:12px 0 0 12px}
+    .v232-jogos-table td:last-child{border-right:1px solid #d7eadc;border-radius:0 12px 12px 0;text-align:right}
+    .v232-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+    .v232-upload-box{border:1px solid #cbded0;border-radius:14px;padding:16px;background:#fbfffc;margin:14px 0}
+    .v232-upload-box h3{margin:0 0 10px;color:#003b12}
+    .v232-upload-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .v232-super-note{border:1px solid #cfe8ff;background:#f3faff;color:#083b67;border-radius:10px;padding:10px 12px;font-weight:800;font-size:12px;margin:10px 0}
+    @media(max-width:760px){
+      .v232-jogos-row{grid-template-columns:1fr}
+      .v232-jogos-row .v232-link-ver{width:100%;text-align:center}
+      .v232-upload-meta{grid-template-columns:1fr}
+      .v232-jogos-table,.v232-jogos-table tbody,.v232-jogos-table tr,.v232-jogos-table td{display:block;width:100%}
+      .v232-jogos-table thead{display:none}
+      .v232-jogos-table tr{margin-bottom:10px;border:1px solid #d7eadc;border-radius:12px;background:#fff;overflow:hidden}
+      .v232-jogos-table td{border:0!important;border-radius:0!important;text-align:left!important}
+      .v232-jogos-table td:before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;color:#536173;font-weight:900;margin-bottom:4px}
+    }
+  </style>
 
 
   <script>
@@ -10579,13 +11008,15 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       if(!lista.length) lista = await carregarBoloes(true);
       if(!lista.length) lista = await carregarBoloes();
 
-      const ativos = (lista || []).filter(b => b && b.loteria && !isHistorico(b));
+      const todos = (lista || []).filter(b => b && b.loteria);
+      const ativos = todos.filter(b => !isHistorico(b));
+      const hist   = todos.filter(b => isHistorico(b));
       const box = document.getElementById('jogosListaV232');
       if(!box) return;
 
-      if(!ativos.length){
+      if(!todos.length){
         box.innerHTML = `
-          <div class="notice warn">Nenhum bolão ativo localizado para exibir jogos.</div>
+          <div class="notice warn">Nenhum bolão localizado para exibir jogos.</div>
           <div class="v232-actions">
             <button class="btn" onclick="renderJogosRealizados()">Atualizar</button>
           </div>
@@ -10593,17 +11024,27 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         return;
       }
 
+      function renderLinhaJogo(b){
+        return `
+          <div class="v232-jogos-row">
+            <div>
+              <b>${escapeHtml(b.loteria)}</b>
+              <small>${escapeHtml((b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+escapeHtml(b.dataSorteio):''}</small>
+            </div>
+            <button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${escapeAttr(encodeURIComponent(b.loteria))}')">Ver</button>
+          </div>
+        `;
+      }
+
       box.innerHTML = `
         <div class="v232-jogos-lista">
-          ${ativos.map(b=>`
-            <div class="v232-jogos-row">
-              <div>
-                <b>${escapeHtml(b.loteria)}</b>
-                <small>${escapeHtml((b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+escapeHtml(b.dataSorteio):''}</small>
-              </div>
-              <button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${escapeAttr(encodeURIComponent(b.loteria))}')">Ver</button>
+          ${ativos.length ? ativos.map(renderLinhaJogo).join('') : ''}
+          ${hist.length ? `
+            <div style="margin-top:16px;padding-top:12px;border-top:1px solid #e0e0e0;">
+              <p style="font-weight:700;margin:0 0 8px;color:#546070;">📋 Histórico / Encerrados</p>
+              ${hist.map(renderLinhaJogo).join('')}
             </div>
-          `).join('')}
+          ` : ''}
         </div>
       `;
     }catch(err){
@@ -10820,7 +11261,26 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V233 — Config sem tela de erro por timeout */
+    .v233-config-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin:10px 0 16px;
+    }
+    .v233-config-source{
+      border:1px solid #d7eadc;
+      background:#f8fffa;
+      color:#003b12;
+      border-radius:10px;
+      padding:9px 12px;
+      font-size:12px;
+      font-weight:900;
+    }
+  </style>
 
 
   <script>
@@ -11073,7 +11533,10 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 </script>
 
 
-  
+  <style>
+    /* V237 — cache sem alterar visual original */
+    .v237-cache-chip{display:inline-flex;align-items:center;margin-left:8px;border-radius:999px;padding:3px 8px;background:#e3f7e9;color:#064f1e;font-size:10px;font-weight:1000;text-transform:uppercase;white-space:nowrap}
+  </style>
 
 
   <script>
@@ -11311,7 +11774,10 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
-  
+  <style>
+    /* V238 — guarda de menu sem mexer no visual */
+    .v238-menu-guard-note{display:none!important}
+  </style>
 
 
   <script>
@@ -11420,7 +11886,17 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }catch(e){}
   }
 
-  // V268: wrap de navegar V238 removido — V267 já integra PSS_MENU_ATUAL nativo
+  const navegarOriginalV238 = window.navegar;
+  if(typeof navegarOriginalV238 === 'function' && !navegarOriginalV238.__v238Guard){
+    const navegarWrap = function(view){
+      marcarMenuV238_(view);
+      return navegarOriginalV238.apply(this, arguments);
+    };
+    navegarWrap.__v238Guard = true;
+    navegarWrap.__original = navegarOriginalV238;
+    window.navegar = navegarWrap;
+    try{ navegar = navegarWrap; }catch(e){}
+  }
 
   [
     ['renderInicio','inicio'],
@@ -11577,7 +12053,18 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 /* FIM PATCH V238-HTML */
 
 </script>
+
+
+
+  
+<!-- V242: patch antigo removido: PATCH V240 — CORREÇÃO DEFINITIVA DO UPLOAD LENTO/FALHANDO -->
+
+
+
+  
 <!-- V242: patch antigo removido: PATCH V241 — UPLOAD EM PARTES COM CONFIRMAÇÃO IMEDIATA -->
+
+
 
 
   <script>
@@ -11843,6 +12330,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
+
   <script>
 /* =====================================================================
  * V243 — UPLOAD EM CHUNKS JSONP
@@ -12084,6 +12572,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   </script>
 
 
+
   <script>
 /* =====================================================================
  * V246 — UPLOAD DE COMPROVANTE VIA ENVIO SEGURO
@@ -12241,6 +12730,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   };
 })();
   </script>
+
 
 
 <script>
@@ -12434,6 +12924,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   });
 })();
 </script>
+
 
 
 <script>
@@ -12977,6 +13468,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
 /* V252B — reforço do menu Palpite fora do fechamento da V250 */
 (function(){
   'use strict';
@@ -13065,6 +13557,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 </script>
 
 
+
 <script>
 /* =====================================================================
  * V254 — UI limpa no envio de comprovante
@@ -13142,6 +13635,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   },true);
 })();
 </script>
+
 
 
 <script>
@@ -13304,7 +13798,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     return escapeHtml(v===undefined||v===null||v===''?'-':v);
   }
 
-  window.renderResultadoConsultaParticipanteAdmin_=renderResultadoConsultaParticipanteAdmin_=v256RenderConsultaResumo_;
+  window.renderResultadoConsultaParticipanteAdmin_=window.v256RenderConsultaResumo_;
 
   window.executarConsultaParticipanteAdmin=async function(){
     var email=(document.getElementById('consultaAdminEmail')||{}).value||'';
@@ -13373,6 +13867,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 <script>
 (function(){
   try{localStorage.setItem('PSS_INDEX_VERSION','V263_FIX_TOP10_FUNCTIONS_PALPITE');}catch(e){}
+
+  /* V259: remove a busca de participante do menu Bolões. A consulta administrativa fica somente no menu Consulta. */
   if(typeof renderBoloes==='function'){
     window.renderBoloes=renderBoloes=async function(tipo){
       loading('Carregando bolões');
@@ -13388,6 +13884,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       }
     };
   }
+
+  /* V259: salvamento do palpite por rota única rápida, com retorno visual e recarregamento real. */
   window.salvarPalpite=salvarPalpite=async function(){
     var btn=document.getElementById('btnSalvarPalpite');
     if(!btn)return;
@@ -13410,6 +13908,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
       btn.textContent='Salvar alteração ('+nums.length+'/'+(ESTADO.qtdEscolha||0)+')';
     }
   };
+
+  /* V259: cadastro visual também normaliza nome antes do envio, sem substituir a validação do backend. */
   window.PSS_nomeProprioV259_=function(valor){
     var s=String(valor||'').trim().replace(/\s+/g,' ');
     if(!s)return '';
@@ -13433,6 +13933,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   try{if(ESTADO&&ESTADO.view==='boloes')setTimeout(function(){renderBoloes('ativos');},200);}catch(e){}
 })();
 </script>
+
 
 
 <script>
@@ -13561,6 +14062,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   });
 })();
 </script>
+
 
 
 <script>
@@ -13858,6 +14360,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 </script>
 
 
+
 <script>
 /* =====================================================================
  * V266 — RESTAURA CORES OFICIAIS NO LETREIRO DIGITAL
@@ -14077,8 +14580,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   if(window.PSS_V267_CORRECOES_CRITICAS_APLICADO) return;
   window.PSS_V267_CORRECOES_CRITICAS_APLICADO = true;
 
-  try{ if(window.CONFIG) CONFIG.versao = 'V268_CONSOLIDADO_PERFORMANCE'; }catch(e){}
-  try{ localStorage.setItem('PSS_INDEX_VERSION','V268_CONSOLIDADO_PERFORMANCE'); }catch(e){}
+  try{ if(window.CONFIG) CONFIG.versao = 'V267_FIX_MENUS_DATAS_PALPITE_COMPROVANTE'; }catch(e){}
+  try{ localStorage.setItem('PSS_INDEX_VERSION','V267_FIX_MENUS_DATAS_PALPITE_COMPROVANTE'); }catch(e){}
 
   function esc(v){
     if(typeof escapeHtml === 'function') return escapeHtml(v);
@@ -14438,7 +14941,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     if(s.indexOf('boxcomprovanteterceirov225')>=0 || s.indexOf('meus envios recentes')>=0 || s.indexOf('carregar comprovante')>=0 || s.indexOf('tipoenviocomprovante')>=0) return 'comprovante';
     if(s.indexOf('palpite-stage')>=0 || s.indexOf('palpites do participante')>=0 || s.indexOf('10 dezenas mais palpitadas')>=0) return 'palpite';
     if(s.indexOf('menu de bolões')>=0) return 'boloes';
-    if(s.indexOf('jogos realizados')>=0 || s.indexOf('jogos-gallery')>=0 || s.indexOf('uploadjogos')>=0) return 'jogos';
+    if(s.indexOf('jogos-gallery')>=0 || s.indexOf('uploadjogos')>=0 || s.indexOf('jogoslistav232')>=0 || s.indexOf('v232-jogos')>=0 || s.indexOf('🎟️')>=0) return 'jogos';
     if(s.indexOf('consulta administrativa de participante')>=0) return 'consulta';
     if(s.indexOf('pagamentos')>=0 && s.indexOf('pay-')>=0) return 'pagamentos';
     if(s.indexOf('base loterias')>=0 || s.indexOf('base_loterias')>=0) return 'baseLoterias';
@@ -14449,8 +14952,10 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     window.setView = setView = function(html){
       var atual=(window.PSS_MENU_ATUAL_V267 || (window.ESTADO&&ESTADO.view) || '').trim();
       var alvo=detectarViewHtmlV267(html);
-      if(alvo && atual && alvo!==atual){
-        try{ console.warn('PSS V267 bloqueou conteúdo atrasado de outro menu:',alvo,'atual:',atual); }catch(e){}
+      // V269: só bloqueia conteúdo substancial de menu diferente (>500 chars)
+      // Conteúdo pequeno/loading/skeleton sempre passa
+      if(alvo && atual && alvo!==atual && String(html||'').length > 500){
+        try{ console.warn('PSS bloqueou menu atrasado:',alvo,'atual:',atual); }catch(e){}
         return;
       }
       return setViewBaseV267.apply(this,arguments);
@@ -14496,5 +15001,185 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 </script>
 
+<script>
+/* =====================================================================
+ * PATCH V269 — JSON ESTÁTICO: LEITURA INSTANTÂNEA VIA GITHUB PAGES
+ * Dados públicos vêm do CDN do GitHub (~50ms) em vez do GAS (3-30s).
+ * Escritas continuam indo ao GAS normalmente.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V269_JSON_ESTATICO_APLICADO) return;
+  window.PSS_V269_JSON_ESTATICO_APLICADO = true;
+
+  var JSON_URL = 'https://portalsimonsports.github.io/boloes-loterias-especiais/dados-publicos.json';
+  var JSON_CACHE_KEY = 'PSS_JSON_ESTATICO_V269';
+  var JSON_TTL = 14 * 60 * 1000;      // 14 minutos (JSON atualiza a cada 15)
+  var JSON_STALE = 60 * 60 * 1000;    // aceita cache de até 1h enquanto atualiza
+
+  // ── Cache local do JSON ───────────────────────────────────────────
+  function lerJSONLocal_(aceitarStale) {
+    try {
+      var c = JSON.parse(localStorage.getItem(JSON_CACHE_KEY) || 'null');
+      if (!c || !c.ts || !c.dados) return null;
+      var idade = Date.now() - Number(c.ts || 0);
+      if (idade < JSON_TTL) return { dados: c.dados, fresco: true };
+      if (aceitarStale && idade < JSON_STALE) return { dados: c.dados, fresco: false };
+      return null;
+    } catch(e) { return null; }
+  }
+
+  function gravarJSONLocal_(dados) {
+    try { localStorage.setItem(JSON_CACHE_KEY, JSON.stringify({ ts: Date.now(), dados: dados })); } catch(e) {}
+  }
+
+  // ── Busca o JSON do GitHub (instantâneo via CDN) ──────────────────
+  function buscarJSONGitHub_() {
+    return fetch(JSON_URL + '?t=' + Date.now(), {
+      cache: 'no-store',
+      credentials: 'omit'
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(dados) {
+      gravarJSONLocal_(dados);
+      aplicarJSONNoEstado_(dados);
+      return dados;
+    });
+  }
+
+  // ── API pública: garante JSON disponível ─────────────────────────
+  window.PSS_garantirJSONV269_ = function(forcar) {
+    if (!forcar) {
+      var local = lerJSONLocal_(true);
+      if (local) {
+        aplicarJSONNoEstado_(local.dados);
+        if (!local.fresco) buscarJSONGitHub_().catch(function(){});
+        return Promise.resolve(local.dados);
+      }
+    }
+    return buscarJSONGitHub_().catch(function(e) {
+      var fb = lerJSONLocal_(true);
+      return fb ? fb.dados : null;
+    });
+  };
+
+  // ── Distribui os dados do JSON pelo ESTADO global ────────────────
+  function aplicarJSONNoEstado_(dados) {
+    if (!dados || typeof dados !== 'object') return;
+    try {
+      // Bolões → ESTADO e cache local para carregarBoloes/PSS_carregarBoloesCompletoV267_
+      if (Array.isArray(dados.boloes) && dados.boloes.length) {
+        window.ESTADO = window.ESTADO || {};
+        ESTADO.boloesJSON = dados.boloes;
+        // Grava no cache de bolões para as funções existentes lerem
+        var ck = 'PSS_BOLOES_COMPLETO_V267_publico';
+        try { localStorage.setItem(ck, JSON.stringify({ ts: Date.now(), lista: dados.boloes })); } catch(e) {}
+        var ck2 = 'boloes_publico';
+        try { localStorage.setItem(ck2, JSON.stringify({ data: dados.boloes, ts: Date.now(), ttl: 900000 })); } catch(e) {}
+      }
+      // Resultados → cache do letreiro
+      if (dados.resultadosPublicos && dados.resultadosPublicos.resultados) {
+        try {
+          localStorage.setItem('PSS_RESULTADOS_V224', JSON.stringify({
+            ts: Date.now(),
+            dados: {
+              resultadosPublicos: dados.resultadosPublicos,
+              atualizadoEm: dados.atualizadoEm || dados.geradoEm
+            }
+          }));
+        } catch(e) {}
+      }
+      // Config pública
+      if (dados.configPublica) {
+        ESTADO.configPublicaJSON = dados.configPublica;
+      }
+      // Regulamento
+      if (dados.regulamento) {
+        try { localStorage.setItem('PSS_REGULAMENTO_RAPIDO_V222_LOCAL', dados.regulamento); } catch(e) {}
+        ESTADO.regulamentoJSON = dados.regulamento;
+      }
+      ESTADO.jsonEstatico = dados;
+      ESTADO.jsonEstaticoTs = Date.now();
+    } catch(e) {}
+  }
+
+  // ── Interceptar carregarHomePublicaBoloes para usar JSON ─────────
+  var _chpbBase = window.carregarHomePublicaBoloes;
+  if (typeof _chpbBase === 'function') {
+    window.carregarHomePublicaBoloes = carregarHomePublicaBoloes = function(forcar) {
+      // Se não forçou e JSON está fresco, usar direto (instantâneo)
+      if (!forcar) {
+        var local = lerJSONLocal_(false);
+        if (local && local.fresco) {
+          aplicarJSONNoEstado_(local.dados);
+          // Chamar a função original — ela vai ler do cache local que acabamos de popular
+          return _chpbBase.call(this, false);
+        }
+      }
+      // Sem JSON fresco: buscar do GitHub primeiro, depois renderizar
+      window.PSS_garantirJSONV269_(!!forcar).then(function() {
+        _chpbBase.call(window, false);
+      }).catch(function() {
+        _chpbBase.call(window, forcar);
+      });
+    };
+  }
+
+  // ── Interceptar carregarLetreiroResultadosPublicosV213 ───────────
+  var _letreiroBase = window.carregarLetreiroResultadosPublicosV213;
+  if (typeof _letreiroBase === 'function') {
+    window.carregarLetreiroResultadosPublicosV213 = carregarLetreiroResultadosPublicosV213 = function(forcar) {
+      if (!forcar) {
+        var local = lerJSONLocal_(false);
+        if (local && local.fresco && local.dados.resultadosPublicos) {
+          aplicarJSONNoEstado_(local.dados);
+        }
+      }
+      return _letreiroBase.call(this, forcar);
+    };
+  }
+
+  // ── Interceptar renderRegulamento para usar JSON ─────────────────
+  var _regBase = window.renderRegulamento;
+  if (typeof _regBase === 'function') {
+    window.renderRegulamento = renderRegulamento = async function() {
+      var local = lerJSONLocal_(true);
+      if (local && local.dados && local.dados.regulamento) {
+        aplicarJSONNoEstado_(local.dados);
+      } else {
+        await window.PSS_garantirJSONV269_(false).catch(function(){});
+      }
+      return _regBase.apply(this, arguments);
+    };
+  }
+
+  // ── Carregar JSON assim que a página abre (antes do login) ───────
+  document.addEventListener('DOMContentLoaded', function() {
+    // Carregar imediatamente para ter dados prontos
+    window.PSS_garantirJSONV269_(false).catch(function(){});
+  });
+
+  // ── Atualizar JSON em segundo plano a cada 14 minutos ────────────
+  setInterval(function() {
+    buscarJSONGitHub_().catch(function(){});
+  }, 14 * 60 * 1000);
+
+  // ── Expor função de diagnóstico ──────────────────────────────────
+  window.PSS_diagnosticarJSON = function() {
+    var local = lerJSONLocal_(true);
+    console.log('[PSS_JSON]', {
+      temCache: !!local,
+      fresco: local ? local.fresco : false,
+      geradoEm: local ? (local.dados && local.dados.geradoEm) : null,
+      boloes: local ? (local.dados && local.dados.boloes ? local.dados.boloes.length : 0) : 0,
+      url: JSON_URL
+    });
+  };
+
+})();
+</script>
 </body>
 </html>
