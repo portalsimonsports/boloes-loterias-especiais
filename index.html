@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V257_PALPITE_FAST_SEM_WINDOWNAME_TIMEOUT',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V264_LETREIRO_CACHE_FRESH_LIMPEZA_SEGURA',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -5599,7 +5599,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Menus específicos continuam podendo carregar seus dados sob demanda.
  * ===================================================================== */
 (function(){
-  try{ CONFIG.versao='V257_PALPITE_FAST_SEM_WINDOWNAME_TIMEOUT'; }catch(e){}
+  try{ CONFIG.versao='V264_LETREIRO_CACHE_FRESH_LIMPEZA_SEGURA'; }catch(e){}
 
   const PSSV191_carregarBoloesBase = typeof carregarBoloes==='function' ? carregarBoloes : null;
   const PSSV191_preCarregarBase = typeof preCarregarDadosEstaticos==='function' ? preCarregarDadosEstaticos : null;
@@ -14156,3 +14156,164 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 </html>
 
 <!-- PATCH V257 — salvamento rápido de palpite sem window.name/time-out -->
+
+
+/* =====================================================================
+ * V264 — LETREIRO SEM CACHE ANTIGO NO NAVEGADOR
+ * Remove caches locais antigos de resultados e força leitura nova.
+ * ===================================================================== */
+(function(){
+  try{ if(window.CONFIG) CONFIG.versao='V264_LETREIRO_CACHE_FRESH_LIMPEZA_SEGURA'; }catch(e){}
+
+  function PSS_parseDataResultadoV264_(valor){
+    if(!valor)return null;
+    const s=String(valor||'').trim();
+    let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if(m){const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));return isNaN(d.getTime())?null:d;}
+    m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if(m){const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));return isNaN(d.getTime())?null:d;}
+    const d=new Date(s);return isNaN(d.getTime())?null:d;
+  }
+
+  function PSS_resultadoCacheAtualV264_(dados,maxHoras){
+    if(!dados||dados.fallbackEmergencial)return false;
+    if(!(dados.letreiroTexto||(Array.isArray(dados.resultados)&&dados.resultados.length)))return false;
+    maxHoras=Number(maxHoras||8);
+    const datas=[];
+    const dAtual=PSS_parseDataResultadoV264_(dados.atualizadoEm||dados.dataHora||'');
+    if(dAtual)datas.push(dAtual);
+    (Array.isArray(dados.resultados)?dados.resultados:[]).forEach(r=>{const d=PSS_parseDataResultadoV264_(r.atualizadoEm||'');if(d)datas.push(d);});
+    if(!datas.length)return true;
+    datas.sort((a,b)=>b-a);
+    return ((Date.now()-datas[0].getTime())/3600000)<=maxHoras;
+  }
+
+  function PSS_limparCachesResultadosLocaisV264_(){
+    try{
+      Object.keys(localStorage).forEach(function(k){
+        if(/PSS_RESULTADOS_PUBLICOS|ULTIMOS_RESULTADOS|RESULTADOS_PUBLICOS_V213|RESULTADOS_PUBLICOS_V260|RESULTADOS_PUBLICOS_V261/i.test(k)){
+          localStorage.removeItem(k);
+        }
+      });
+    }catch(e){}
+    try{
+      Object.keys(sessionStorage).forEach(function(k){
+        if(/PSS_RESULTADOS_PUBLICOS|ULTIMOS_RESULTADOS|RESULTADOS_PUBLICOS_V213|RESULTADOS_PUBLICOS_V260|RESULTADOS_PUBLICOS_V261/i.test(k)){
+          sessionStorage.removeItem(k);
+        }
+      });
+    }catch(e){}
+  }
+
+  function PSS_formatarNomeResultadoV264_(r){
+    return String((r&&r.nome)||(r&&r.tipoJogo)||(r&&r.slug)||'Loteria').replace(/_/g,' ').trim().toUpperCase();
+  }
+
+  function PSS_formatarDezenasResultadoV264_(dezenas){
+    return String(dezenas||'-').trim().replace(/\s*-\s*/g,' • ').replace(/\s*,\s*/g,' • ').replace(/\s{2,}/g,' ');
+  }
+
+  function PSS_montarTextoLetreiroV264_(dados){
+    if(dados&&dados.letreiroTexto&&String(dados.letreiroTexto).trim())return String(dados.letreiroTexto).trim();
+    const lista=Array.isArray(dados&&dados.resultados)?dados.resultados:[];
+    if(!lista.length)return '';
+    return '📢 Últimos resultados: '+lista.map(r=>{
+      const nome=PSS_formatarNomeResultadoV264_(r);
+      const concurso=r.concurso?(' '+r.concurso):'';
+      const data=r.dataApuracao?(' - '+formatarDataHoraPtBR(r.dataApuracao)):'';
+      return `${nome}${concurso}${data}: ${PSS_formatarDezenasResultadoV264_(r.dezenas)}`;
+    }).join(' | ');
+  }
+
+  function PSS_inserirEstruturaLetreiroV264_(){
+    if(document.getElementById('homeResultadosPublicosV213'))return;
+    const hero=document.querySelector('.home-hero');
+    const html=`
+      <section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">
+        <div class="resultados-publicos-head">
+          <div>
+            <h2>Últimos resultados das loterias</h2>
+            <small id="resultadosPublicosAtualizadoV213">Carregando informações...</small>
+          </div>
+          <button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button>
+        </div>
+        <div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div>
+        <div class="resultados-publicos-actions">
+          <span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span>
+          <button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213()">Ver todos os resultados</button>
+        </div>
+      </section>`;
+    if(hero)hero.insertAdjacentHTML('afterend',html);
+    else{const view=document.getElementById('view');if(view)view.insertAdjacentHTML('afterbegin',html);}
+  }
+
+  window.renderLetreiroResultadosPublicosV213=function(dados){
+    PSS_inserirEstruturaLetreiroV264_();
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atualizado=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(!box)return;
+    window.PSS_RESULTADOS_PUBLICOS_V213=dados||{resultados:[]};
+    if(atualizado){
+      atualizado.textContent=(dados&&dados.atualizadoEm)?('Atualizado em '+String(dados.atualizadoEm)):('Atualizado em '+dataHoraAtualCurta());
+    }
+    const texto=PSS_montarTextoLetreiroV264_(dados);
+    if(!texto){
+      box.innerHTML='<div class="home-note">Últimos resultados em atualização. O sistema não exibirá cache antigo como atual.</div>';
+      return;
+    }
+    const conteudo=escapeHtml(texto);
+    box.innerHTML=`<div class="resultados-ticker" title="Passe o mouse para pausar"><div class="resultados-ticker-track"><span class="resultados-ticker-text">${conteudo}</span><span>${conteudo}</span></div></div>`;
+  };
+
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    PSS_inserirEstruturaLetreiroV264_();
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    if(!box)return;
+    const cacheKey='PSS_RESULTADOS_PUBLICOS_V264';
+
+    if(!forcar){
+      try{
+        const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(c&&c.dados&&PSS_resultadoCacheAtualV264_(c.dados,8)){
+          renderLetreiroResultadosPublicosV213(c.dados);
+          return;
+        }
+      }catch(e){}
+    }else{
+      PSS_limparCachesResultadosLocaisV264_();
+    }
+
+    try{
+      box.innerHTML='<div class="notice info">Atualizando últimos resultados...</div>';
+      const dados=await promiseTimeout_(
+        apiMulti([
+          {action:'getResultadosLoteriasPublicos',args:[]},
+          {action:'ultimosResultadosPublicos',args:[]},
+          {action:'getConfigPublica',args:[]}
+        ]),
+        14000,
+        'Tempo limite ao carregar resultados.'
+      );
+      const finalDados=(dados&&dados.resultados)?dados:(dados&&dados.resultadosPublicos?dados.resultadosPublicos:dados);
+      if(finalDados&&PSS_resultadoCacheAtualV264_(finalDados,8)){
+        try{localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),dados:finalDados}));}catch(e){}
+      }
+      renderLetreiroResultadosPublicosV213(finalDados);
+    }catch(err){
+      let cached=null;
+      try{
+        const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(c&&c.dados&&PSS_resultadoCacheAtualV264_(c.dados,8))cached=c.dados;
+      }catch(e){}
+      if(cached)renderLetreiroResultadosPublicosV213(cached);
+      else box.innerHTML='<div class="home-note">Últimos resultados em atualização. Tente novamente em instantes.</div>';
+    }
+  };
+
+  window.PSS_LIMPAR_CACHE_LETREIRO_LOCAL_V264=PSS_limparCachesResultadosLocaisV264_;
+  PSS_limparCachesResultadosLocaisV264_();
+
+  setTimeout(function(){
+    if(document.getElementById('homeResultadosPublicosV213')) carregarLetreiroResultadosPublicosV213(true);
+  },600);
+})();
