@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V277_INSCRITO_SOMENTE_PAGAMENTO_EMAIL_LOTERIA',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -16184,6 +16184,280 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     setTimeout(esconderBotoesTopoV276,80);
     setTimeout(limparDuplicidadesSistemaV276,500);
   });
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V277 — INSCRITO SOMENTE COM PAGAMENTO CONFIRMADO POR E-MAIL + LOTERIA
+ * - Corrige Palpite/Bolões para nunca usar perfil ADMIN ou cadastro aprovado
+ *   como prova de participação.
+ * - Participante inscrito = pagamento confirmado para o e-mail logado e
+ *   para a loteria/bolão exibido.
+ * - Limpa cache local antigo que podia manter participanteInscrito=true.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V277_INSCRITO_SOMENTE_PAGAMENTO_EMAIL_LOTERIA';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function n(v){
+    if(typeof num==='function') return num(v);
+    var s=String(v==null?'':v).replace(/[R$\s]/g,'');
+    if(s.indexOf(',')>=0 && s.indexOf('.')>=0) s=s.replace(/\./g,'').replace(',','.');
+    else if(s.indexOf(',')>=0) s=s.replace(',','.');
+    var x=Number(s); return isNaN(x)?0:x;
+  }
+  function esc(v){return typeof escapeHtml==='function'?escapeHtml(v):String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function attr(v){return typeof escapeAttr==='function'?escapeAttr(v):esc(v);}
+  function norm(v){return String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function admin(){try{return typeof isAdmin==='function'&&isAdmin();}catch(e){return false;}}
+  function hist(b){
+    try{ if(typeof PSS_bolaoHistoricoRealV267_==='function') return PSS_bolaoHistoricoRealV267_(b); }catch(e){}
+    try{ if(typeof isHistorico==='function') return isHistorico(b); }catch(e){}
+    var st=norm((b||{}).status||(b||{}).STATUS||'');
+    return st.indexOf('HIST')>=0 || st.indexOf('ENCERR')>=0 || st.indexOf('FINAL')>=0 || st.indexOf('INAT')>=0;
+  }
+  function fmt(v){try{return typeof formatarDataHoraPtBR==='function'?formatarDataHoraPtBR(v):String(v||'-');}catch(e){return String(v||'-');}}
+  function listaSegura(v){return Array.isArray(v)?v:[];}
+  function baseKey(v){return norm(String(v||'').replace(/\s*\(?20\d{2}\)?\s*$/,'')).replace(/[^A-Z0-9]/g,'');}
+
+  function statusPagoV277(b){
+    var st=norm([
+      b&&b.statusPagamento,
+      b&&b.STATUS_PAGAMENTO,
+      b&&b.statusParticipacao,
+      b&&b.STATUS_PARTICIPACAO,
+      b&&b.statusCota,
+      b&&b.statusAquisicao,
+      b&&b.baixaCotasStatus,
+      b&&b.BAIXA_COTAS_STATUS
+    ].join(' '));
+    return st.indexOf('PAGO')>=0 || st.indexOf('CONFIRM')>=0 || st.indexOf('OCR_VALID')>=0 || st.indexOf('BAIXADO')>=0;
+  }
+
+  function cotasPagasReaisV277(b){
+    b=b||{};
+    var confirmados=['cotasConfirmadasUsuario','minhasCotasConfirmadas','cotasPagasUsuario','minhasCotasPagas','cotasPagas','cotasConfirmadas','COTAS_CONFIRMADAS_USUARIO','MINHAS_COTAS_CONFIRMADAS'];
+    for(var i=0;i<confirmados.length;i++){
+      if(b[confirmados[i]]!==undefined && b[confirmados[i]]!==null && b[confirmados[i]]!==''){
+        var v=n(b[confirmados[i]]); if(v>0) return Math.round(v*1000)/1000;
+      }
+    }
+    /* Só aceita cotasUsuario/minhasCotas quando a própria linha veio marcada como paga/confirmada. */
+    if(statusPagoV277(b)){
+      var campos=['cotasUsuario','minhasCotas','qtdCotasUsuario','qtdCotasParticipante','cotasDoUsuario','COTAS_USUARIO','MINHAS_COTAS'];
+      for(var j=0;j<campos.length;j++){
+        if(b[campos[j]]!==undefined && b[campos[j]]!==null && b[campos[j]]!==''){
+          var c=n(b[campos[j]]); if(c>0) return Math.round(c*1000)/1000;
+        }
+      }
+    }
+    return 0;
+  }
+
+  function normalizarBolaoV277(b){
+    b=b||{};
+    var nome=String(b.loteria||b.nome||b.NOME||b.LOTERIA||b.id||'').trim();
+    var total=n(b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||0);
+    var adq=n(b.cotasAdquiridas||b.cotasTotaisAdquiridas||b.COTAS_ADQUIRIDAS||0);
+    var disp=b.cotasDisponiveis;
+    if((disp===undefined||disp===null||disp==='') && total>0) disp=Math.max(0,Math.round((total-adq)*1000)/1000);
+    var minhas=cotasPagasReaisV277(b);
+    var x=Object.assign({},b,{
+      nome:nome,
+      loteria:nome,
+      status:hist(b)?'HISTÓRICO':(b.status||b.STATUS||'ATIVO'),
+      dataSorteio:b.dataSorteio||b.DATA_SORTEIO||b.sorteio||'',
+      inicioPagamento:b.inicioPagamento||b.INICIO_PAGAMENTO||b.iniBol||b.INI_BOL||'',
+      fimPagamento:b.fimPagamento||b.FIM_PAGAMENTO||b.fimBol||b.FIM_BOL||'',
+      inicioPalpite:b.inicioPalpite||b.INICIO_PALPITE||b.INICIO_PALPITES||b.iniPal||b.INI_PAL||'',
+      fimPalpite:b.fimPalpite||b.FIM_PALPITE||b.FIM_PALPITES||b.fimPal||b.FIM_PAL||'',
+      cotasDisponiveis:disp,
+      cotasUsuario:minhas,
+      minhasCotas:minhas,
+      cotasConfirmadasUsuario:minhas,
+      minhasCotasConfirmadas:minhas,
+      participanteInscrito:minhas>0,
+      statusParticipacao:minhas>0?'Pago/Confirmado':'',
+      statusPagamento:minhas>0?'Pago/Confirmado':''
+    });
+    return x;
+  }
+
+  function dedupeV277(lista){
+    var usados={};
+    return listaSegura(lista).filter(function(x){return x&&typeof x==='object';}).map(normalizarBolaoV277).filter(function(b){
+      var k=baseKey((b.id||'')+'|'+(b.loteria||b.nome||'')+'|'+(b.dataSorteio||'')+'|'+(b.fimPalpite||b.fimPagamento||''));
+      if(!k || usados[k]) return false;
+      usados[k]=true; return true;
+    });
+  }
+
+  function extrairListaV277(r){
+    if(Array.isArray(r)) return r;
+    r=r||{};
+    return r.lista||r.boloes||r.boloesAtivos||r.boloesPublicosAtivos||r.result||r.dados||[];
+  }
+
+  function limparCacheBoloesAntigoV277(){
+    try{
+      var versaoAnterior=localStorage.getItem('PSS_CACHE_LIMPO_PARTICIPACAO_V277');
+      if(versaoAnterior===V) return;
+      var apagar=[];
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i)||'';
+        if(k.indexOf('PSS_BOLOES_COMPLETO_V267_')===0 || k.indexOf('PSS_BOLOES_COMPLETO_V268_')===0 || k.indexOf('boloes_')===0 || k.indexOf('public_boloes')===0) apagar.push(k);
+      }
+      apagar.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
+      localStorage.setItem('PSS_CACHE_LIMPO_PARTICIPACAO_V277',V);
+    }catch(e){}
+  }
+  limparCacheBoloesAntigoV277();
+
+  async function carregarBoloesV277(forcar){
+    var lista=[];
+    if(!forcar){
+      try{ if(ESTADO&&Array.isArray(ESTADO.boloes)&&ESTADO.boloes.length) lista=ESTADO.boloes; }catch(e){}
+    }
+    if(!lista.length || forcar){
+      try{ if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar); }catch(e1){}
+    }
+    if(!lista.length || forcar){
+      try{ if(typeof PSS_carregarBoloesCompletoV267_==='function') lista=await PSS_carregarBoloesCompletoV267_(!!forcar); }catch(e2){}
+    }
+    if(!lista.length || forcar){
+      try{ lista=await api('listarBoloes',{email:(ESTADO&&ESTADO.email)||'',v:V,forcar:!!forcar},[(ESTADO&&ESTADO.email)||'']); lista=extrairListaV277(lista); }catch(e3){}
+    }
+    if(!lista.length){
+      try{ lista=await carregarBoloes(!!forcar); }catch(e4){}
+    }
+    lista=dedupeV277(lista);
+    try{ ESTADO.boloes=lista; ESTADO.boloesCompletoV267=lista; ESTADO.boloesCompletoV268=lista; ESTADO.boloesCompletoV277=lista; }catch(e){}
+    return lista;
+  }
+  window.PSS_carregarBoloesV277_=carregarBoloesV277;
+
+  window.cotasPagasReaisV277_=cotasPagasReaisV277;
+  window.usuarioParticipaBolaoUI_=usuarioParticipaBolaoUI_=function(b){ return cotasPagasReaisV277(b)>0; };
+
+  function cardsBoloesV277(lista,origem){
+    lista=dedupeV277(lista);
+    if(!lista.length) return '<div class="notice warn">Nenhum bolão localizado.</div>';
+    return '<div class="cards-row">'+lista.map(function(b){
+      var nome=b.loteria||b.nome||b.id||'Bolão';
+      var h=hist(b);
+      var minhas=cotasPagasReaisV277(b);
+      var participa=minhas>0;
+      var disp=(b.cotasDisponiveis!==undefined&&b.cotasDisponiveis!==null&&b.cotasDisponiveis!=='')?b.cotasDisponiveis:'-';
+      var badge=h?'Histórico':(participa?('Participante inscrito · '+String(minhas).replace('.',',')+' cota(s)'):'Não inscrito neste bolão');
+      var botao=origem==='palpite'?(participa?'Abrir palpite':'Adquirir cotas'):(h?'Abrir':(participa?'Ver opções':'Pagar'));
+      var acao="selecionarBolaoV277('"+attr(nome)+"','"+attr(origem||'boloes')+"')";
+      return '<div class="bolao-card">'+
+        '<h3>🎯 '+esc(nome)+'</h3>'+ 
+        '<div class="status-pill '+((h||!participa)?'locked':'')+'">'+esc(badge)+'</div><br>'+ 
+        (disp!=='-'?'<div class="outline-pill">Cotas disponíveis: '+esc(disp)+'</div>':'')+
+        '<div class="meta-grid">'+
+          '<div class="meta-box"><b>Status</b><span>'+esc(h?'HISTÓRICO':(b.status||'ATIVO'))+'</span></div>'+ 
+          '<div class="meta-box"><b>Sorteio</b><span>'+esc(fmt(b.dataSorteio||'-'))+'</span></div>'+ 
+          '<div class="meta-box"><b>Pagamento</b><span>'+esc(fmt(b.inicioPagamento||'-'))+' a '+esc(fmt(b.fimPagamento||'-'))+'</span></div>'+ 
+          '<div class="meta-box"><b>Palpites</b><span>'+esc(fmt(b.inicioPalpite||'-'))+' a '+esc(fmt(b.fimPalpite||'-'))+'</span></div>'+ 
+        '</div>'+ 
+        '<button class="btn" onclick="'+acao+'">'+esc(botao)+'</button>'+ 
+      '</div>';
+    }).join('')+'</div>';
+  }
+  window.renderCardsBoloes=renderCardsBoloes=cardsBoloesV277;
+
+  window.selecionarBolaoV277=function(nome,origem){
+    origem=origem||'boloes';
+    try{ESTADO.bolaoSelecionado=nome; localStorage.setItem('PSS_BOLAO_SELECIONADO',nome);}catch(e){}
+    var lista=dedupeV277((ESTADO&&ESTADO.boloes)||[]);
+    var b=lista.find(function(x){return baseKey(x.loteria||x.nome||x.id)===baseKey(nome);})||{loteria:nome,nome:nome};
+    var participa=cotasPagasReaisV277(b)>0;
+    if(origem==='palpite'){
+      if(participa) return renderPalpiteAberto(nome);
+      if(typeof abrirAdquirirCotasBolao==='function') return abrirAdquirirCotasBolao(nome);
+      return abrirModal('Palpite bloqueado','<div class="notice warn">Para constar como inscrito e liberar palpite, precisa existir pagamento confirmado para o e-mail logado e para este bolão.</div>');
+    }
+    if(!hist(b)&&!participa&&typeof abrirAdquirirCotasBolao==='function') return abrirAdquirirCotasBolao(nome);
+    if(typeof abrirModal==='function') return abrirModal('Bolão selecionado','<div class="notice">Bolão selecionado: <strong>'+esc(nome)+'</strong></div><div class="actions">'+(participa?'<button class="btn" onclick="fecharModal(); renderPalpiteAberto(\''+attr(nome)+'\')">Palpites</button>':'')+'<button class="btn btn-light" onclick="fecharModal(); navegar(\'comprovante\')">Comprovante</button></div>');
+  };
+
+  window.renderBoloes=renderBoloes=async function(tipo){
+    tipo=tipo||'ativos';
+    try{ESTADO.view='boloes'; window.PSS_MENU_ATUAL_V268='boloes'; window.PSS_MENU_ATUAL_V267='boloes';}catch(e){}
+    if(typeof mostrarTopoLogadoV275==='function') try{mostrarTopoLogadoV275();}catch(e){}
+    var lista=await carregarBoloesV277(false);
+    var dados=(tipo==='historico'?lista.filter(hist):lista.filter(function(b){return !hist(b);}));
+    setView('<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab '+(tipo==='ativos'?'active':'')+'" onclick="renderBoloes(\'ativos\')">Bolões ativos</button><button type="button" class="btn btn-tab '+(tipo==='historico'?'active':'')+'" onclick="renderBoloes(\'historico\')">Histórico</button></div>'+cardsBoloesV277(dados,'boloes')+'<div class="cache-hint warn">Verificando pagamentos confirmados...</div></div>');
+    try{
+      var nova=await carregarBoloesV277(true);
+      if((ESTADO&&ESTADO.view)==='boloes'){
+        var dados2=(tipo==='historico'?nova.filter(hist):nova.filter(function(b){return !hist(b);}));
+        setView('<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab '+(tipo==='ativos'?'active':'')+'" onclick="renderBoloes(\'ativos\')">Bolões ativos</button><button type="button" class="btn btn-tab '+(tipo==='historico'?'active':'')+'" onclick="renderBoloes(\'historico\')">Histórico</button></div>'+cardsBoloesV277(dados2,'boloes')+'</div>');
+      }
+    }catch(e2){}
+  };
+
+  window.renderPalpiteLista=renderPalpiteLista=async function(tipo){
+    tipo=tipo||'ativos';
+    try{ESTADO.view='palpite'; window.PSS_MENU_ATUAL_V268='palpite'; window.PSS_MENU_ATUAL_V267='palpite';}catch(e){}
+    if(typeof mostrarTopoLogadoV275==='function') try{mostrarTopoLogadoV275();}catch(e){}
+    function filtrar(lista){
+      lista=dedupeV277(lista);
+      lista=(tipo==='historico'?lista.filter(hist):lista.filter(function(b){return !hist(b);}));
+      return lista; /* Admin e usuário podem ver o card, mas só pagamento confirmado aparece como inscrito. */
+    }
+    var lista=await carregarBoloesV277(false);
+    setView('<div class="panel"><h2>🎯 Palpites do participante</h2><p>Para constar como inscrito, o sistema verifica pagamento confirmado pelo e-mail logado e pela loteria do bolão.</p><div class="actions"><button type="button" class="btn btn-tab '+(tipo==='ativos'?'active':'')+'" onclick="renderPalpiteLista(\'ativos\')">Ativos</button><button type="button" class="btn btn-tab '+(tipo==='historico'?'active':'')+'" onclick="renderPalpiteLista(\'historico\')">Encerrados</button></div>'+cardsBoloesV277(filtrar(lista),'palpite')+'<div class="cache-hint warn">Verificando pagamentos confirmados...</div></div>');
+    try{
+      var nova=await carregarBoloesV277(true);
+      if((ESTADO&&ESTADO.view)==='palpite') setView('<div class="panel"><h2>🎯 Palpites do participante</h2><p>Para constar como inscrito, o sistema verifica pagamento confirmado pelo e-mail logado e pela loteria do bolão.</p><div class="actions"><button type="button" class="btn btn-tab '+(tipo==='ativos'?'active':'')+'" onclick="renderPalpiteLista(\'ativos\')">Ativos</button><button type="button" class="btn btn-tab '+(tipo==='historico'?'active':'')+'" onclick="renderPalpiteLista(\'historico\')">Encerrados</button></div>'+cardsBoloesV277(filtrar(nova),'palpite')+'</div>');
+    }catch(e2){}
+  };
+
+  var baseRenderPalpiteAbertoV277=window.renderPalpiteAberto;
+  window.renderPalpiteAberto=renderPalpiteAberto=async function(nome){
+    var lista=dedupeV277((ESTADO&&ESTADO.boloes)||[]);
+    var b=lista.find(function(x){return baseKey(x.loteria||x.nome||x.id)===baseKey(nome);});
+    if(b && cotasPagasReaisV277(b)<=0){
+      return abrirModal('Palpite bloqueado','<div class="notice warn"><strong>Não há pagamento confirmado para este e-mail nesta loteria.</strong><br><br>Para aparecer como participante inscrito e liberar palpite, o pagamento precisa estar confirmado na aba PAGAMENTOS com o mesmo e-mail do perfil e a mesma loteria.</div><div class="actions"><button class="btn" onclick="fecharModal(); abrirAdquirirCotasBolao(\''+attr(nome)+'\')">Pagar / enviar comprovante</button></div>');
+    }
+    if(typeof baseRenderPalpiteAbertoV277==='function') return baseRenderPalpiteAbertoV277.apply(this,arguments);
+  };
+
+  function corrigirSistemaAtivoUnicoV277(){
+    var card=document.getElementById('sistemaAtivoCardV275');
+    if(!card) return;
+    var total=0, link='';
+    try{ var d=window.PSS_RESUMO_INSCRITOS_TOPO||{}; total=n(d.totalAprovadosSite||d.totalInscritosSite||d.totalInscritos||d.total||0); link=String(d.linkCanal||d.telegramCanalLink||d.linkTelegram||'').trim(); }catch(e){}
+    var agora=(typeof dataHoraAtualCurta==='function'?dataHoraAtualCurta():new Date().toLocaleString('pt-BR'));
+    card.innerHTML='<h2 style="color:#fff;font-size:32px;margin:0 0 10px;">Sistema ativo</h2><p style="color:#fff;font-weight:800;">Sessão logada e menus disponíveis.</p><div style="margin-top:18px;font-weight:900;">'+esc(agora)+'</div><div id="sistemaAtivoResumoV277" style="border-top:1px solid rgba(255,255,255,.25);margin-top:14px;padding-top:14px;"><div style="font-weight:900;color:#fff;margin-bottom:8px;">Participantes aprovados no cadastro</div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;"><button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{abrirResumoInscritosTopo()}catch(e){}">👥 Inscritos: '+esc(total)+'</button>'+(link?'<a class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;text-decoration:none;" href="'+attr(link)+'" target="_blank" rel="noopener">📣 Entrar no canal</a>':'')+'</div></div>';
+  }
+
+  var baseRenderInicioV277=window.renderInicio;
+  if(typeof baseRenderInicioV277==='function'){
+    window.renderInicio=renderInicio=async function(){
+      var r=await baseRenderInicioV277.apply(this,arguments);
+      setTimeout(corrigirSistemaAtivoUnicoV277,120);
+      setTimeout(corrigirSistemaAtivoUnicoV277,900);
+      return r;
+    };
+  }
+
+  var baseNavegarV277=window.navegar;
+  window.navegar=navegar=function(v){
+    v=String(v||'inicio');
+    try{ESTADO.view=v; window.PSS_MENU_ATUAL_V268=v; window.PSS_MENU_ATUAL_V267=v;}catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){try{b.classList.toggle('active',b.dataset.view===v);}catch(e){}});
+    if(v==='boloes') return renderBoloes('ativos');
+    if(v==='palpite') return renderPalpiteLista('ativos');
+    if(v==='inicio') return renderInicio();
+    if(typeof baseNavegarV277==='function') return baseNavegarV277.apply(this,arguments);
+  };
 })();
 </script>
 
