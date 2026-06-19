@@ -18106,6 +18106,288 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     }catch(err){toast(erroMsg(err),'error');}
   };
 })();
+/* =========================================================
+ * V292 — CADASTRO SEM FIREBASE PENDENTE + EXCLUIR REFLETE NO FIREBASE
+ * - Solicitação pública não cria Auth antes da aprovação manual.
+ * - E-mail existente abre login com aviso claro.
+ * - Excluir usuário chama exclusão completa no GS, remove Firestore e libera recadastro.
+ * - Inativar/ativar refletem status no Firestore.
+ * ========================================================= */
+(function(){
+  try{ if(typeof CONFIG==='object') CONFIG.versao='V292_EXCLUIR_USUARIO_FIREBASE_RECADASTRO'; }catch(e){}
+
+  function txt(v){return String(v==null?'':v).trim();}
+  function normEmail(v){return txt(v).toLowerCase();}
+  function esc(v){
+    if(typeof escapeHtml==='function') return escapeHtml(v);
+    return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function attr(v){
+    if(typeof escapeAttr==='function') return escapeAttr(v);
+    return esc(v).replace(/`/g,'&#96;');
+  }
+  function erroMsg(err){
+    var msg=(err&&err.message)?err.message:String(err||'Erro.');
+    try{ if(typeof firebaseMensagemErro_==='function') msg=firebaseMensagemErro_(err); }catch(e){}
+    return msg;
+  }
+  function isSelfEmail(email){
+    try{return normEmail(email)===normEmail(ESTADO&&ESTADO.email);}catch(e){return false;}
+  }
+  function setBtnCadastro(disabled,texto){
+    var btn=document.getElementById('btnEnviarCadastro');
+    if(btn){btn.disabled=!!disabled;btn.textContent=texto||'Enviar solicitação de acesso';}
+  }
+  function feedbackCadastro(tipo,msg,email,abrirLogin){
+    var form=document.getElementById('cadForm');
+    var box=document.getElementById('cadastroFeedbackV292') || document.getElementById('cadastroFeedbackV291') || document.getElementById('cadastroFeedbackV290') || document.getElementById('cadastroFeedbackV287') || document.getElementById('cadastroFeedbackV286');
+    if(!box){
+      box=document.createElement('div');
+      box.id='cadastroFeedbackV292';
+      if(form) form.insertBefore(box,form.firstChild);
+    }
+    box.className='notice '+(tipo||'info');
+    var extra='';
+    if((tipo==='error'||tipo==='warn') && email){
+      extra='<div class="actions" style="margin-top:10px;">'+
+        '<button type="button" class="btn" onclick="PSS_irLoginCadastroV292(\''+attr(email)+'\')">Ir para login</button>'+
+        '<button type="button" class="btn btn-light" onclick="PSS_irResetSenhaCadastroV292(\''+attr(email)+'\')">Recuperar senha</button>'+ 
+        '</div>';
+    }
+    box.innerHTML='<strong>'+esc(msg)+'</strong>'+extra;
+    if(abrirLogin && email){
+      setTimeout(function(){ window.PSS_irLoginCadastroV292(email,msg); },700);
+    }
+    return box;
+  }
+
+  window.PSS_irLoginCadastroV292=function(email,msg){
+    email=normEmail(email);
+    try{fecharModal();}catch(e){}
+    try{ESTADO.email=email;}catch(e2){}
+    renderLogin();
+    setTimeout(function(){
+      var el=document.getElementById('loginEmail');
+      if(el) el.value=email;
+      var box=document.getElementById('loginMsg');
+      if(box) box.innerHTML='<div class="notice warn">'+esc(msg||'Este e-mail já possui cadastro. Use a senha cadastrada ou a recuperação de senha.')+'</div>';
+      var s=document.getElementById('loginSenha');
+      if(s) s.focus();
+    },120);
+  };
+
+  window.PSS_irResetSenhaCadastroV292=function(email){
+    email=normEmail(email);
+    try{fecharModal();}catch(e){}
+    abrirResetSenha();
+    setTimeout(function(){var el=document.getElementById('resetEmail');if(el)el.value=email;},120);
+  };
+
+  async function verificarEmailCadastroPublico(email){
+    try{
+      return await apiMulti([
+        {action:'verificarEmailCadastroPublicoV290',dados:{email:email},args:[email]},
+        {action:'verificarCadastroEmailPublicoV290',dados:{email:email},args:[email]},
+        {action:'buscarCadastroEmailV290',dados:{email:email},args:[email]}
+      ]);
+    }catch(e){
+      return {existe:false, indisponivel:true, erro:e.message};
+    }
+  }
+
+  async function firebaseAuthExisteCadastroV292(email){
+    email=normEmail(email);
+    if(!email) return false;
+    try{
+      await inicializarFirebase_();
+      if(FIREBASE_AUTH && FIREBASE_AUTH.fetchSignInMethodsForEmail){
+        var metodos=await FIREBASE_AUTH.fetchSignInMethodsForEmail(email);
+        return Array.isArray(metodos) && metodos.length>0;
+      }
+    }catch(e){
+      return false;
+    }
+    return false;
+  }
+
+  async function enviarSolicitacaoCadastroApi(dados,args){
+    try{return await apiJsonpDireto_('registrarSolicitacaoCadastroV290',dados,args,16000);}catch(e1){
+      try{return await apiPostMessageBridge_('registrarSolicitacaoCadastroV290',dados,args,22000);}catch(e2){
+        return await apiMulti([
+          {action:'registrarSolicitacaoCadastroV290',dados:dados,args:args},
+          {action:'registrarSolicitacaoCadastroV284',dados:dados,args:args}
+        ]);
+      }
+    }
+  }
+
+  window.enviarCadastro = enviarCadastro = async function(ev){
+    ev.preventDefault();
+    var form=ev.target;
+    var email='';
+    try{
+      ['cadastroFeedbackV292','cadastroFeedbackV291','cadastroFeedbackV290','cadastroFeedbackV287','cadastroFeedbackV286'].forEach(function(id){var old=document.getElementById(id);if(old)old.remove();});
+
+      var nome=typeof textoLimpoV216_==='function'?textoLimpoV216_(document.getElementById('cadNome').value):txt(document.getElementById('cadNome').value);
+      var nomePublico=typeof nomePublicoSeguroV216_==='function'
+        ? nomePublicoSeguroV216_(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:'',nome)
+        : (txt(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:'')||nome.split(/\s+/)[0]||nome);
+      email=normEmail(document.getElementById('cadEmail').value);
+      var senha=txt(document.getElementById('cadSenha').value);
+      var senha2=txt(document.getElementById('cadSenha2').value);
+      var cpf=document.getElementById('cadCpf')?document.getElementById('cadCpf').value:'';
+      var telefone=document.getElementById('cadTelefone')?document.getElementById('cadTelefone').value:'';
+      var receberAvisoNovoBolao=document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked?'SIM':'NÃO';
+      var aceite=document.getElementById('cadAceite')&&document.getElementById('cadAceite').checked;
+      var cotas=0;
+      var loteria='';
+
+      if(!nome) throw new Error('Informe o nome completo.');
+      if(!nomePublico) throw new Error('Informe o nome para divulgação no Telegram.');
+      if(nomePublico.length>60) throw new Error('O nome para divulgação deve ter no máximo 60 caracteres.');
+      if(!email) throw new Error('Informe o e-mail.');
+      if(!senha || senha.length<6) throw new Error('Informe uma senha com pelo menos 6 caracteres.');
+      if(senha!==senha2){
+        var conf=document.getElementById('cadSenha2');
+        if(conf){conf.setCustomValidity('As senhas não conferem.');conf.reportValidity();conf.focus();}
+        throw new Error('As senhas não conferem. Digite a mesma senha nos dois campos.');
+      }
+      var confOk=document.getElementById('cadSenha2');
+      if(confOk) confOk.setCustomValidity('');
+      if(!aceite) throw new Error('É necessário aceitar o regulamento.');
+      if(form && form.reportValidity && !form.reportValidity()) return;
+
+      setBtnCadastro(true,'Verificando cadastro...');
+      feedbackCadastro('info','Verificando se o e-mail já possui cadastro...',email);
+      var ver=await verificarEmailCadastroPublico(email);
+      if(ver && ver.existe){
+        var msg=ver.msg || ver.mensagem || 'Este e-mail já possui cadastro ou solicitação no sistema.';
+        var st=String(ver.status||'').toUpperCase();
+        var origem=String(ver.origem||'').toUpperCase();
+        var abrirLogin=(origem.indexOf('USUARIO')>=0 || st.indexOf('APROV')>=0 || st.indexOf('ATIV')>=0);
+        feedbackCadastro('error',msg,email,abrirLogin);
+        setBtnCadastro(false,'Enviar solicitação de acesso');
+        return;
+      }
+
+      setBtnCadastro(true,'Verificando Firebase...');
+      feedbackCadastro('info','Verificando credencial Firebase...',email);
+      var authExiste=await firebaseAuthExisteCadastroV292(email);
+      if(authExiste){
+        feedbackCadastro('error','Este e-mail já possui credencial no Firebase. Use o login ou a recuperação de senha.',email,true);
+        setBtnCadastro(false,'Enviar solicitação de acesso');
+        return;
+      }
+
+      var versaoReg=(typeof obterVersaoRegulamentoAtualV289_==='function')?await obterVersaoRegulamentoAtualV289_():CONFIG.versaoRegulamento;
+      if(typeof CONFIG==='object') CONFIG.versaoRegulamento=versaoReg;
+
+      var dadosCadastro={
+        nome:nome,nomePublico:nomePublico,email:email,cotas:cotas,loteria:loteria,cpf:cpf,
+        telefone:telefone,telegram:telefone,receberAvisoNovoBolao:receberAvisoNovoBolao,
+        aceitouRegulamento:aceite,aceiteRegulamento:aceite,versaoRegulamento:versaoReg,
+        senha:senha,senhaCadastro:senha,senhaAcesso:senha,password:senha,
+        confirmarSenha:senha2,confirmacaoSenha:senha2,senhaConfirmacao:senha2,senha2:senha2,
+        status:'Pendente'
+      };
+      var argsCadastro=[nome,email,cotas,aceite,versaoReg,loteria,cpf,telefone,receberAvisoNovoBolao,nomePublico,senha,senha2];
+
+      setBtnCadastro(true,'Enviando solicitação...');
+      feedbackCadastro('info','Gravando solicitação para aprovação da administração...',email);
+      var r=await enviarSolicitacaoCadastroApi(dadosCadastro,argsCadastro);
+      if(r && (r.sucesso===false || r.jaCadastrado || r.duplicadoBloqueado)){
+        feedbackCadastro('error',r.msg || r.mensagem || 'Este e-mail já possui cadastro ou solicitação no sistema.',email,false);
+        setBtnCadastro(false,'Enviar solicitação de acesso');
+        return;
+      }
+
+      if(form && form.reset) form.reset();
+      var msgOk=(r&&r.msg)||'Solicitação de cadastro enviada com sucesso.';
+      document.getElementById('modalConteudo').innerHTML='<div class="notice"><strong>'+esc(msgOk)+'</strong><br><br>Seu cadastro foi recebido e ficará pendente até aprovação da administração.<br><br>Após a aprovação, acesse o sistema com o e-mail informado e a senha cadastrada.</div><div class="actions" style="justify-content:flex-end;"><button type="button" class="btn btn-light" onclick="fecharModal();renderHomePublica()">Voltar ao início</button><button type="button" class="btn" onclick="fecharModal();renderLogin()">Ir para login</button></div>';
+      toast('Solicitação enviada. Aguarde aprovação da administração.');
+    }catch(err){
+      feedbackCadastro('error',erroMsg(err),email,false);
+      toast(erroMsg(err),'error');
+    }finally{
+      setBtnCadastro(false,'Enviar solicitação de acesso');
+    }
+  };
+
+  async function deletarFirestoreUsuarioV292(email){
+    email=normEmail(email);
+    if(!email) return {ok:false,erro:'email vazio'};
+    try{
+      await inicializarFirebase_();
+      if(typeof firebaseUsuarioRef_==='function'){
+        await firebaseUsuarioRef_(email).delete();
+        return {ok:true,excluido:true};
+      }
+      if(FIREBASE_DB){
+        await FIREBASE_DB.collection('usuarios').doc(email).delete();
+        return {ok:true,excluido:true};
+      }
+      return {ok:false,erro:'Firestore não disponível'};
+    }catch(e){
+      return {ok:false,erro:erroMsg(e)};
+    }
+  }
+
+  window.confirmarAcaoUsuarioAdminV286 = function(tipo,linha,nome,email){
+    tipo=txt(tipo); linha=Number(linha||0); nome=txt(nome); email=normEmail(email);
+    if(!linha || linha<2) return toast('Linha inválida para ação do usuário.','error');
+    if((tipo==='inativar'||tipo==='excluir') && isSelfEmail(email)) return toast('Por segurança, não é permitido inativar ou excluir o próprio usuário logado.','error');
+    var titulo='Confirmar ação', texto='Confirma esta ação para o usuário selecionado?', classe='warn';
+    if(tipo==='email'){titulo='Enviar e-mail de acesso';texto='Enviar um e-mail para este usuário confirmando a senha atualmente gravada no cadastro?';classe='info';}
+    if(tipo==='sync'){titulo='Sincronizar Firebase';texto='Criar/validar credencial Firebase e marcar Firestore como aprovado para este usuário?';classe='info';}
+    if(tipo==='inativar'){titulo='Inativar usuário';texto='Inativar este usuário na planilha e marcar o Firestore como INATIVO. O Auth será preservado para eventual reativação.';classe='warn';}
+    if(tipo==='ativar'){titulo='Ativar usuário';texto='Ativar novamente este usuário e sincronizar o Firebase/Firestore como APROVADO.';classe='info';}
+    if(tipo==='excluir'){titulo='Excluir usuário';texto='Excluir este usuário da aba Usuarios, remover a credencial do Firebase Auth quando a senha gravada conferir, apagar o documento Firestore e liberar o e-mail para novo cadastro. A aba individual será preservada como histórico.';classe='warn';}
+    window.PSS_USUARIO_ACAO_V286={tipo:tipo,linha:linha,nome:nome,email:email};
+    abrirModal(titulo,'<div class="notice '+classe+'">'+esc(texto)+'</div><div class="usuarios-admin-info" style="grid-template-columns:1fr 1fr;margin-top:10px;"><div><b>Linha</b>'+esc(linha)+'</div><div><b>Usuário</b>'+esc(nome)+'</div><div style="grid-column:1/-1;"><b>E-mail</b>'+esc(email)+'</div></div><div class="actions" style="justify-content:flex-end;"><button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button><button type="button" class="btn '+(tipo==='excluir'?'btn-danger':'')+'" onclick="executarAcaoUsuarioAdminV286()">Confirmar</button></div>');
+  };
+
+  window.executarAcaoUsuarioAdminV286 = async function(){
+    var cfg=window.PSS_USUARIO_ACAO_V286||{}; window.PSS_USUARIO_ACAO_V286=null;
+    try{fecharModal();}catch(e){}
+    var tipo=cfg.tipo, linha=Number(cfg.linha||0), email=normEmail(cfg.email), nome=txt(cfg.nome);
+    if(!tipo||!linha) return toast('Ação inválida.','error');
+    if((tipo==='inativar'||tipo==='excluir') && isSelfEmail(email)) return toast('Por segurança, não é permitido alterar o próprio usuário logado.','error');
+    try{
+      toast('Processando usuário...','info');
+      var r=null;
+      if(tipo==='email'){
+        r=await apiMulti([{action:'enviarEmailConfirmacaoSenhaUsuarioV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]},{action:'enviarEmailSenhaUsuarioLinhaV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]}]);
+      }else if(tipo==='sync'){
+        r=await apiMulti([{action:'sincronizarFirebaseUsuarioLinhaV291',dados:{linha:linha},args:[linha]},{action:'sincronizarUsuarioFirebaseLinhaV291',dados:{linha:linha},args:[linha]}]);
+        var uSync=r&&r.usuarioFirebase?r.usuarioFirebase:{email:email,nome:nome,perfil:'USUARIO',status:'APROVADO',ativo:true};
+        if(typeof setFirestoreAprovadoV291==='function') await setFirestoreAprovadoV291(uSync);
+        else await firebaseSincronizarUsuarioAdmin_(uSync,'sincronizarFirebaseUsuarioLinhaV291');
+        if(r&&r.firebaseAuth&&r.firebaseAuth.jaExistia) toast('Firestore atualizado. O Firebase Auth já existia; se a senha não conferir, use Recuperar senha.','warn');
+      }else if(tipo==='inativar'){
+        r=await apiMulti([{action:'inativarUsuarioCompletoLinhaV292',dados:{linha:linha},args:[linha]},{action:'inativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+        var uIn=r&&r.usuarioFirebase?r.usuarioFirebase:{email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false};
+        try{await firebaseSincronizarUsuarioAdmin_(uIn,'inativarUsuarioCompletoLinhaV292');}catch(eSync){toast('Usuário inativado na planilha, mas o Firestore não confirmou: '+erroMsg(eSync),'warn');}
+      }else if(tipo==='ativar'){
+        r=await apiMulti([{action:'ativarUsuarioCompletoLinhaV292',dados:{linha:linha},args:[linha]},{action:'ativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+        var uAt=r&&r.usuarioFirebase?r.usuarioFirebase:{email:email,nome:nome,status:'APROVADO',perfil:'USUARIO',ativo:true};
+        if(typeof setFirestoreAprovadoV291==='function') await setFirestoreAprovadoV291(uAt);
+        else await firebaseSincronizarUsuarioAdmin_(uAt,'ativarUsuarioCompletoLinhaV292');
+      }else if(tipo==='excluir'){
+        r=await apiMulti([{action:'excluirUsuarioCompletoLinhaV292',dados:{linha:linha},args:[linha]},{action:'excluirUsuarioFirebaseLinhaV292',dados:{linha:linha},args:[linha]}]);
+        var delDoc=await deletarFirestoreUsuarioV292(email);
+        if(!delDoc.ok) toast('Usuário excluído na planilha, mas não consegui excluir o documento Firestore: '+(delDoc.erro||'verifique regras.'),'warn');
+        if(r&&r.firebaseAuthExclusao&&r.firebaseAuthExclusao.ok===false){
+          toast('A linha foi excluída, mas o Firebase Auth não foi confirmado: '+(r.firebaseAuthExclusao.erro||'verifique manualmente.'),'warn');
+        }
+      }
+      toast((r&&r.msg)||'Ação realizada com sucesso.');
+      await renderUsuariosAdmin();
+    }catch(err){
+      toast(erroMsg(err),'error');
+    }
+  };
+})();
+
 </script>
 
 </body>
