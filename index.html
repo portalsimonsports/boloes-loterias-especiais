@@ -19130,6 +19130,244 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 })();
 
 
+
+
+/* =========================================================
+ * PATCH V297 - RESET CENTRALIZADO + SISTEMA ATIVO UNICO
+ * Objetivo:
+ * - Fazer o sucesso da recuperação de senha aparecer em modal central,
+ *   com ação clara para voltar ao login.
+ * - Remover duplicidade visual do bloco "Participantes aprovados".
+ * - Exibir pendentes quando a aba SOLICITACOES_CADASTRO puder ser lida.
+ * ========================================================= */
+(function(){
+  'use strict';
+  var V='V297_RESET_MODAL_SISTEMA_ATIVO_UNICO';
+  try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
+
+  function txt(v){ return String(v==null?'':v).trim(); }
+  function emailNorm(v){ return txt(v).toLowerCase(); }
+  function esc(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v); }catch(e){}
+    return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function attr(v){
+    try{ if(typeof escapeAttr==='function') return escapeAttr(v); }catch(e){}
+    return esc(v);
+  }
+  function n(v){
+    var x=Number(String(v==null?'':v).replace(',','.').replace(/[^0-9.\-]/g,''));
+    return isFinite(x)?x:0;
+  }
+  function isAdminSeguro(){
+    try{ if(typeof isAdminLocal==='function' && isAdminLocal()) return true; }catch(e){}
+    try{ if(typeof isAdmin==='function' && isAdmin()) return true; }catch(e){}
+    try{ var p=String((window.ESTADO&&ESTADO.perfil)||localStorage.getItem('PSS_BOLAO_PERFIL')||'').toUpperCase(); return p.indexOf('ADMIN')>=0; }catch(e){}
+    return false;
+  }
+
+  function erroReset(err){
+    var raw=String((err&&(err.code||err.message||err.error||err))||'Erro desconhecido.');
+    var up=raw.toUpperCase();
+    if(up.indexOf('EMAIL_NOT_FOUND')>=0 || up.indexOf('USER_NOT_FOUND')>=0 || raw.indexOf('auth/user-not-found')>=0) return 'Este e-mail não foi localizado no Firebase. Confira o endereço informado ou solicite novo cadastro.';
+    if(up.indexOf('INVALID_EMAIL')>=0 || raw.indexOf('auth/invalid-email')>=0) return 'E-mail inválido. Confira o endereço informado.';
+    if(up.indexOf('TOO_MANY_ATTEMPTS')>=0 || raw.indexOf('auth/too-many-requests')>=0) return 'Muitas tentativas em sequência. Aguarde alguns minutos e tente novamente.';
+    if(up.indexOf('OPERATION_NOT_ALLOWED')>=0) return 'A recuperação de senha não está habilitada no Firebase para este projeto.';
+    if(raw.indexOf('auth/error-code:-26')>=0) return 'O Firebase retornou erro genérico no navegador. Tente novamente ou verifique se o domínio do site está autorizado no Firebase Authentication.';
+    try{ if(typeof firebaseMensagemErro_==='function') return firebaseMensagemErro_(err); }catch(e){}
+    try{ if(typeof erroMsg==='function') return erroMsg(err); }catch(e){}
+    return raw;
+  }
+
+  async function resetFirebaseREST(email){
+    if(!window.FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey) throw new Error('Configuração Firebase não localizada no index.');
+    var url='https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+encodeURIComponent(FIREBASE_CONFIG.apiKey);
+    var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestType:'PASSWORD_RESET',email:email})});
+    var json={};
+    try{ json=await res.json(); }catch(e){}
+    if(!res.ok){
+      var msg=(json&&json.error&&(json.error.message||json.error.status))?String(json.error.message||json.error.status):('HTTP '+res.status);
+      throw new Error(msg);
+    }
+    return json;
+  }
+
+  async function enviarResetFirebase(email){
+    var erro1=null;
+    try{
+      if(typeof inicializarFirebase_==='function') await inicializarFirebase_();
+      if(window.FIREBASE_AUTH && typeof FIREBASE_AUTH.sendPasswordResetEmail==='function'){
+        await FIREBASE_AUTH.sendPasswordResetEmail(email);
+        return {ok:true,via:'FIREBASE_AUTH'};
+      }
+      erro1=new Error('Firebase Auth não inicializado no navegador.');
+    }catch(e){ erro1=e; }
+    try{
+      await resetFirebaseREST(email);
+      return {ok:true,via:'REST_FALLBACK'};
+    }catch(e2){
+      if(erro1) e2.message=erroReset(e2)+' Primeiro erro: '+String(erro1.code||erro1.message||erro1)+'.';
+      throw e2;
+    }
+  }
+
+  function mostrarResetSucesso(email,via){
+    var html=''+
+      '<div class="notice"><strong>E-mail de redefinição enviado com sucesso.</strong><br><br>'+ 
+      'O Firebase enviou o link oficial de recuperação para:<br><b>'+esc(email)+'</b><br><br>'+ 
+      'Verifique a caixa de entrada, spam ou lixo eletrônico. Depois de alterar a senha, volte ao login e acesse normalmente.'+
+      (via==='REST_FALLBACK'?'<br><small>Envio realizado por rota alternativa Firebase.</small>':'')+
+      '</div>'+ 
+      '<div class="actions" style="justify-content:flex-end;">'+
+      '<button class="btn" type="button" onclick="fecharModal(); if(typeof renderLoginComEmailV296===\'function\') renderLoginComEmailV296(\''+attr(email)+'\'); else if(typeof renderLogin===\'function\') renderLogin();">OK, voltar ao login</button>'+ 
+      '</div>';
+    if(typeof abrirModal==='function') abrirModal('Redefinição enviada',html);
+    else alert('E-mail de redefinição enviado para '+email+'.');
+  }
+
+  window.abrirResetSenha=function(emailInicial){
+    var email=emailNorm(emailInicial||'');
+    if(!email){ try{ var le=document.getElementById('loginEmail'); if(le) email=emailNorm(le.value); }catch(e){} }
+    if(!email){ try{ email=emailNorm((window.ESTADO&&ESTADO.email)||localStorage.getItem('PSS_BOLAO_EMAIL')||''); }catch(e){} }
+    abrirModal('Recuperar senha',
+      '<div id="resetSenhaMsgV297" class="notice info"><strong>Redefinição pelo Firebase.</strong><br>Informe o e-mail cadastrado. O Firebase enviará o link oficial de recuperação. Verifique também spam/lixo eletrônico.</div>'+ 
+      '<form onsubmit="return resetarSenha(event)">'+
+      '<div class="field"><label>E-mail cadastrado</label><input id="resetEmail" type="email" required value="'+attr(email)+'" /></div>'+ 
+      '<button class="btn btn-block" id="btnReset" type="submit">Enviar redefinição de senha</button>'+ 
+      '</form>'
+    );
+    setTimeout(function(){try{var el=document.getElementById('resetEmail'); if(el) el.focus();}catch(e){}},80);
+  };
+
+  window.resetarSenha=async function(ev){
+    if(ev&&ev.preventDefault) ev.preventDefault();
+    var email=emailNorm((document.getElementById('resetEmail')||{}).value||'');
+    var btn=document.getElementById('btnReset');
+    var msg=document.getElementById('resetSenhaMsgV297')||document.getElementById('resetSenhaMsgV296');
+    if(!email){ if(msg){msg.className='notice error';msg.innerHTML='<strong>Informe o e-mail cadastrado.</strong>';} return false; }
+    if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+    if(msg){msg.className='notice info';msg.innerHTML='<strong>Enviando recuperação pelo Firebase...</strong><br>Aguarde alguns instantes.';}
+    try{
+      var r=await enviarResetFirebase(email);
+      mostrarResetSucesso(email,r&&r.via);
+    }catch(err){
+      if(msg){msg.className='notice error';msg.innerHTML='<strong>Não foi possível enviar a redefinição.</strong><br>'+esc(erroReset(err));}
+      else if(typeof abrirModal==='function') abrirModal('Erro na recuperação','<div class="notice error">'+esc(erroReset(err))+'</div>');
+      if(btn){btn.disabled=false;btn.textContent='Enviar redefinição de senha';}
+    }
+    return false;
+  };
+
+  function contarStatusSolicitacoes(resp){
+    var out={aprovados:null,pendentes:null};
+    if(!resp) return out;
+    var headers=Array.isArray(resp.headers)?resp.headers:[];
+    var rows=Array.isArray(resp.rows)?resp.rows:[];
+    if(!rows.length && Array.isArray(resp.dados)){
+      rows=resp.dados.map(function(o){return o;});
+    }
+    if(!rows.length) return out;
+    var idxStatus=-1;
+    headers.forEach(function(h,i){ if(String(h||'').trim().toUpperCase()==='STATUS') idxStatus=i; });
+    var ap=0, pe=0;
+    rows.forEach(function(row){
+      var st='';
+      if(Array.isArray(row)) st=String(row[idxStatus>=0?idxStatus:6]||'').trim().toUpperCase();
+      else st=String(row.STATUS||row.status||'').trim().toUpperCase();
+      if(st==='APROVADO' || st==='APROVADA' || st==='ATIVO') ap++;
+      if(st==='PENDENTE' || st==='EM ANALISE' || st==='EM ANÁLISE') pe++;
+    });
+    out.aprovados=ap; out.pendentes=pe;
+    return out;
+  }
+
+  async function buscarResumoSistemaAtivo(){
+    var dados={aprovados:0,pendentes:null,link:''};
+    try{
+      var r=await apiMulti([
+        {action:'getResumoInscritosBoloes',args:[(window.ESTADO&&ESTADO.email)||'']},
+        {action:'resumoInscritosBoloes',args:[(window.ESTADO&&ESTADO.email)||'']},
+        {action:'getEstatisticasAtivaUsuario',args:[(window.ESTADO&&ESTADO.email)||'']}
+      ]).catch(function(){return {};});
+      dados.aprovados=n(r.totalAprovadosSite||r.totalAprovados||r.totalInscritosSite||r.totalInscritos||r.inscritos||r.aprovados||r.total||0);
+      dados.link=String(r.linkCanal||r.telegramCanalLink||r.linkTelegram||r.urlTelegram||'').trim();
+      window.PSS_RESUMO_INSCRITOS_TOPO=r||{};
+    }catch(e){}
+    if(isAdminSeguro()){
+      try{
+        var adm=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'SOLICITACOES_CADASTRO'},args:['SOLICITACOES_CADASTRO']}]);
+        var c=contarStatusSolicitacoes(adm);
+        if(c.aprovados!==null) dados.aprovados=c.aprovados;
+        if(c.pendentes!==null) dados.pendentes=c.pendentes;
+      }catch(eAdm){}
+    }
+    if(!dados.link){
+      try{
+        var cfg=await apiMulti([{action:'getConfigPublica',args:[]},{action:'getTelegramCanalLink',args:[]}]).catch(function(){return {};});
+        dados.link=String(cfg.telegramCanalLink||cfg.linkCanal||cfg.linkTelegram||cfg.urlTelegram||cfg.link||'').trim();
+      }catch(e2){}
+    }
+    return dados;
+  }
+
+  function localizarCardSistema(){
+    var card=document.getElementById('sistemaAtivoCardV275');
+    if(card) return card;
+    var h2s=[].slice.call(document.querySelectorAll('#view h2'));
+    var h=h2s.find(function(x){return String(x.textContent||'').trim().toLowerCase()==='sistema ativo';});
+    return h ? (h.closest('.panel') || h.parentElement) : null;
+  }
+
+  function desenharSistemaAtivo(dados){
+    var card=localizarCardSistema();
+    if(!card) return;
+    var agora=(typeof dataHoraAtualCurta==='function'?dataHoraAtualCurta():new Date().toLocaleString('pt-BR'));
+    var aprov=n(dados&&dados.aprovados);
+    var pend=(dados&&dados.pendentes!==null&&dados.pendentes!==undefined)?n(dados.pendentes):null;
+    var link=String((dados&&dados.link)||'').trim();
+    card.id='sistemaAtivoCardV275';
+    card.innerHTML=''+
+      '<h2 style="color:#fff;font-size:32px;margin:0 0 10px;">Sistema ativo</h2>'+ 
+      '<p style="color:#fff;font-weight:800;">Sessão logada e menus disponíveis.</p>'+ 
+      '<div style="margin-top:18px;font-weight:900;">'+esc(agora)+'</div>'+ 
+      '<div id="sistemaAtivoResumoV297" style="border-top:1px solid rgba(255,255,255,.25);margin-top:14px;padding-top:14px;">'+
+        '<div style="font-weight:900;color:#fff;margin-bottom:8px;">Resumo do cadastro</div>'+ 
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'+
+          '<button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{abrirResumoInscritosTopo()}catch(e){}">👥 Aprovados: '+esc(aprov)+'</button>'+ 
+          (pend!==null?'<button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{navegar(\'solicitacoes\')}catch(e){}">⏳ Pendentes: '+esc(pend)+'</button>':'')+
+          (link?'<a class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;text-decoration:none;" href="'+attr(link)+'" target="_blank" rel="noopener">📣 Entrar no canal</a>':'')+
+        '</div>'+ 
+      '</div>';
+  }
+
+  async function atualizarSistemaAtivo(){
+    try{ desenharSistemaAtivo(await buscarResumoSistemaAtivo()); }
+    catch(e){ desenharSistemaAtivo({aprovados:0,pendentes:null,link:''}); }
+  }
+  window.PSS_atualizarSistemaAtivoV297=atualizarSistemaAtivo;
+
+  var renderInicioBase=window.renderInicio;
+  if(typeof renderInicioBase==='function'){
+    window.renderInicio=renderInicio=async function(){
+      var r=await renderInicioBase.apply(this,arguments);
+      setTimeout(atualizarSistemaAtivo,120);
+      setTimeout(atualizarSistemaAtivo,900);
+      return r;
+    };
+  }
+  var navBase=window.navegar;
+  if(typeof navBase==='function'){
+    window.navegar=navegar=function(v){
+      var r=navBase.apply(this,arguments);
+      if(String(v||'').toLowerCase()==='inicio') setTimeout(atualizarSistemaAtivo,250);
+      return r;
+    };
+  }
+  window.carregarBadgeInscritosTopo=function(){ return atualizarSistemaAtivo(); };
+  window.carregarTelegramCanalLogadoV212=function(){ atualizarSistemaAtivo(); return Promise.resolve({sucesso:true,canalNoInicio:true}); };
+  setTimeout(atualizarSistemaAtivo,1000);
+})();
+
 </script>
 
 </body>
