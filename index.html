@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V268 PERFORMANCE MENUS JOGOS ADMIN</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V286 USUARIOS_CARDS_LOGOUT_CADASTRO_SEGURO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V277_INSCRITO_SOMENTE_PAGAMENTO_EMAIL_LOTERIA',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V286_INDEX_USUARIOS_CARDS_LOGOUT_CADASTRO_SEGURO',versaoRegulamento:'2026.1'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -16458,6 +16458,513 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     if(v==='inicio') return renderInicio();
     if(typeof baseNavegarV277==='function') return baseNavegarV277.apply(this,arguments);
   };
+})();
+</script>
+
+<script>
+/* =========================================================
+ * V286 — USUÁRIOS EM CARDS + LOGOUT REAL + CADASTRO SEGURO
+ * - Menu Usuários deixa de parecer tabela incorporada.
+ * - Admin/Mestre ganha ações por card: e-mail/senha, ativar, inativar, excluir.
+ * - Sair limpa sessão e volta obrigatoriamente para a home pública.
+ * - Cadastro público envia SENHA ao GS, grava sempre como Pendente e limpa o formulário após sucesso.
+ * ========================================================= */
+(function(){
+  'use strict';
+
+  var CSS_V286 = `
+    .usuarios-admin-wrap{display:grid;gap:12px;margin-top:14px}
+    .usuarios-admin-card{border:1px solid #cbded0;background:#fff;border-radius:14px;padding:14px;box-shadow:0 5px 16px rgba(0,0,0,.05)}
+    .usuarios-admin-card.inativo{border-left:5px solid #b91c1c;background:#fffafa}
+    .usuarios-admin-card.ativo{border-left:5px solid #0b6f28}
+    .usuarios-admin-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+    .usuarios-admin-head h3{margin:0;color:#003b12;font-size:16px;line-height:1.25}
+    .usuarios-admin-head small{display:block;color:#5b6b7d;font-weight:800;margin-top:3px;word-break:break-word}
+    .usuarios-admin-pill{display:inline-flex;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:900;background:#d9f5df;color:#064d1a;border:1px solid #bce8c6}
+    .usuarios-admin-pill.inativo{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+    .usuarios-admin-pill.admin{background:#eaf2ff;color:#123c74;border-color:#bad3ff}
+    .usuarios-admin-info{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;margin:10px 0}
+    .usuarios-admin-info div{background:#f7fbf8;border:1px solid #e0ebe3;border-radius:10px;padding:8px;color:#263445;font-size:12px;word-break:break-word;min-height:54px}
+    .usuarios-admin-info b{display:block;color:#0b4b1d;font-size:10px;text-transform:uppercase;margin-bottom:4px}
+    .usuarios-admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .usuarios-admin-actions .btn{min-height:36px;padding:8px 12px;border-radius:10px;font-size:12px}
+    .usuarios-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+    .usuarios-toolbar .field{margin:0;min-width:260px}
+    .usuarios-toolbar .actions{margin:0}
+    .btn-outline-danger{background:#fff!important;color:#b91c1c!important;border:1px solid #f1b7b7!important}
+    .btn-outline-danger:hover{background:#b91c1c!important;color:#fff!important;border-color:#b91c1c!important}
+    .btn-muted{background:#e9eef2!important;color:#43556a!important;border-color:#d2d9df!important}
+    .btn-muted:hover{background:#dbe3e9!important;color:#1f2937!important;border-color:#c7d0d8!important}
+    .cadastro-sucesso-v286{border:1px solid #bfe7c9;background:#f4fff7;color:#064d1a;border-radius:14px;padding:16px;font-weight:800;line-height:1.45}
+    .cadastro-sucesso-v286 h3{margin:0 0 8px;color:#003b12}
+    @media(max-width:920px){
+      .usuarios-admin-info{grid-template-columns:1fr}
+      .usuarios-admin-actions .btn{width:100%}
+      .usuarios-toolbar{align-items:stretch}
+      .usuarios-toolbar .field{width:100%;min-width:0}
+    }
+  `;
+
+  try{
+    if(!document.getElementById('pss-v286-style')){
+      var st=document.createElement('style');
+      st.id='pss-v286-style';
+      st.textContent=CSS_V286;
+      document.head.appendChild(st);
+    }
+  }catch(e){}
+
+  function escV286(v){
+    try{ return typeof escapeHtml==='function' ? escapeHtml(v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    catch(e){ return String(v==null?'':v); }
+  }
+  function attrV286(v){
+    try{ return typeof escapeAttr==='function' ? escapeAttr(v) : escV286(v); }
+    catch(e){ return escV286(v); }
+  }
+  function normV286(v){
+    try{ return typeof normalizar==='function' ? normalizar(v) : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+    catch(e){ return String(v||'').toUpperCase().trim(); }
+  }
+  function fmtV286(v){
+    try{ return typeof formatarDataHoraPtBR==='function' ? formatarDataHoraPtBR(v) : String(v||'-'); }
+    catch(e){ return String(v||'-'); }
+  }
+  function txtV286(v){
+    return String(v==null?'':v).trim();
+  }
+  function getV286(headers,row,aliases){
+    headers=headers||[]; row=row||[];
+    var al=(aliases||[]).map(normV286);
+    for(var i=0;i<headers.length;i++){
+      if(al.indexOf(normV286(headers[i]))>=0) return row[i]===undefined||row[i]===null?'':row[i];
+    }
+    return '';
+  }
+  function firstNameV286(nome,email){
+    nome=txtV286(nome);
+    if(nome) return nome.split(/\s+/)[0] || nome;
+    email=txtV286(email);
+    return email ? email.split('@')[0] : 'Usuário';
+  }
+  function isSelfV286(email){
+    return normV286(email) && normV286(email)===normV286((window.ESTADO&&ESTADO.email)||'');
+  }
+  window.isAdminMestreV286_ = function(){
+    try{
+      if(typeof isAdmin==='function' && !isAdmin()) return false;
+      var u=(window.ESTADO&&ESTADO.usuario)||{};
+      var s=normV286((ESTADO&&ESTADO.role)||'')+' '+normV286(u.perfil||'')+' '+normV286(u.role||'')+' '+normV286(u.email||ESTADO.email||'');
+      return s.indexOf('MESTRE')>=0 || s.indexOf('ADMIN')>=0 || s.indexOf('PORTALSIMONSPORTS@GMAIL.COM')>=0;
+    }catch(e){
+      return false;
+    }
+  };
+
+  // Logout forte: impede renderizações antigas assíncronas de deixarem o usuário preso na tela administrativa.
+  window.logout = logout = async function(){
+    try{ window.PSS_LOGOUT_EM_ANDAMENTO_V286=true; }catch(e){}
+    try{
+      if(window.ESTADO){
+        ESTADO.usuario=null;
+        ESTADO.role='';
+        ESTADO.email='';
+        ESTADO.view='publico';
+        ESTADO.bolaoSelecionado='';
+      }
+    }catch(e){}
+    try{ localStorage.removeItem('PSS_BOLAO_SESSAO'); }catch(e){}
+    try{ sessionStorage.removeItem('PSS_BOLAO_SESSAO'); }catch(e){}
+    try{ localStorage.removeItem('PSS_BOLAO_EMAIL'); }catch(e){}
+    try{ localStorage.removeItem('PSS_BOLAO_SELECIONADO'); }catch(e){}
+    try{
+      if(window.FIREBASE_AUTH && FIREBASE_AUTH.signOut) await FIREBASE_AUTH.signOut();
+      else if(typeof inicializarFirebase_==='function'){
+        await inicializarFirebase_();
+        if(window.FIREBASE_AUTH && FIREBASE_AUTH.signOut) await FIREBASE_AUTH.signOut();
+      }
+    }catch(e){}
+
+    try{
+      document.body.classList.remove('app-logado','pss-logado','pss-admin','pss-admin-mestre');
+      var appHeader=document.getElementById('appHeader');
+      var pub=document.getElementById('publicHeader');
+      if(appHeader) appHeader.classList.add('hidden');
+      if(pub) pub.classList.add('hidden');
+    }catch(e){}
+
+    // Recarrega a página pública para cancelar qualquer requisição admin pendente.
+    var base=location.origin+location.pathname;
+    location.replace(base+'?logout='+Date.now());
+  };
+
+  window.renderUsuariosAdmin = renderUsuariosAdmin = async function(){
+    if(typeof isAdmin==='function' && !isAdmin()){
+      setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');
+      return;
+    }
+
+    if(typeof loading==='function') loading('Carregando usuários');
+
+    try{
+      var r=await adminDados('Usuarios');
+      var headers=r.headers||[];
+      var rows=r.rows||[];
+
+      window.PSS_USUARIOS_CACHE_V286={headers:headers,rows:rows,filtro:'TODOS',termo:''};
+
+      setView(`
+        <div class="panel">
+          <h2>Usuários</h2>
+          <p>Gerencie usuários cadastrados, status de acesso e reenvio manual de senha. A tela abaixo usa cards administrativos, não tabela incorporada.</p>
+
+          <div class="usuarios-toolbar">
+            <div class="actions">
+              <button class="btn" onclick="renderUsuariosAdmin()">Atualizar</button>
+              <button class="btn btn-light" onclick="filtrarUsuariosAdminV286('TODOS')">Todos</button>
+              <button class="btn btn-light" onclick="filtrarUsuariosAdminV286('ATIVO')">Ativos</button>
+              <button class="btn btn-light" onclick="filtrarUsuariosAdminV286('INATIVO')">Inativos</button>
+              <button class="btn btn-light" onclick="filtrarUsuariosAdminV286('ADMIN')">Admins</button>
+            </div>
+            <div class="field">
+              <input id="buscaUsuariosAdminV286" placeholder="Buscar por nome, e-mail, status, perfil, telefone..." oninput="filtrarUsuariosAdminV286()">
+            </div>
+          </div>
+
+          <div id="usuariosAdminBoxV286">
+            ${renderUsuariosCardsV286_(headers,rows,'TODOS','')}
+          </div>
+        </div>
+      `);
+    }catch(err){
+      setView('<div class="panel"><div class="notice error">'+escV286(err&&err.message?err.message:err)+'</div></div>');
+    }
+  };
+
+  window.filtrarUsuariosAdminV286 = function(filtro){
+    var cache=window.PSS_USUARIOS_CACHE_V286||{headers:[],rows:[],filtro:'TODOS',termo:''};
+    if(filtro) cache.filtro=filtro;
+    var el=document.getElementById('buscaUsuariosAdminV286');
+    cache.termo=el?el.value:'';
+    window.PSS_USUARIOS_CACHE_V286=cache;
+    var box=document.getElementById('usuariosAdminBoxV286');
+    if(box) box.innerHTML=renderUsuariosCardsV286_(cache.headers,cache.rows,cache.filtro,cache.termo);
+  };
+
+  window.renderUsuariosCardsV286_ = function(headers,rows,filtro,termo){
+    headers=headers||[];
+    rows=rows||[];
+    if(!headers.length) return '<div class="notice warn">Nenhum usuário localizado.</div>';
+
+    var f=normV286(filtro||'TODOS');
+    var t=normV286(termo||'');
+
+    var lista=rows.map(function(row,idx){return {row:row,linha:idx+2};}).filter(function(item){
+      var row=item.row||[];
+      var status=normV286(getV286(headers,row,['STATUS','ATIVO','SITUACAO','SITUAÇÃO']));
+      var perfil=normV286(getV286(headers,row,['PERFIL','ROLE','PERFIL_ACESSO']));
+      var texto=normV286(row.join(' | '));
+
+      if(f==='ATIVO' && (status.indexOf('INATIVO')>=0 || status.indexOf('BLOQUEADO')>=0 || status.indexOf('FALSE')>=0 || status.indexOf('NAO')>=0 || status.indexOf('NÃO')>=0)) return false;
+      if(f==='INATIVO' && !(status.indexOf('INATIVO')>=0 || status.indexOf('BLOQUEADO')>=0 || status.indexOf('FALSE')>=0 || status.indexOf('NAO')>=0 || status.indexOf('NÃO')>=0)) return false;
+      if(f==='ADMIN' && perfil.indexOf('ADMIN')<0 && perfil.indexOf('MESTRE')<0) return false;
+      if(t && texto.indexOf(t)<0) return false;
+      return true;
+    });
+
+    if(!lista.length) return '<div class="notice warn">Nenhum usuário encontrado para o filtro aplicado.</div>';
+
+    return '<div class="usuarios-admin-wrap">'+lista.map(function(item){return renderUsuarioCardV286_(headers,item.row,item.linha);}).join('')+'</div>';
+  };
+
+  window.renderUsuarioCardV286_ = function(headers,row,linha){
+    var id=getV286(headers,row,['ID','CODIGO','CÓDIGO'])||'-';
+    var nome=getV286(headers,row,['NOME','USUARIO','USUÁRIO','NOME_COMPLETO'])||'Usuário';
+    var nomePublico=getV286(headers,row,['NOME_PUBLICO','NOME PÚBLICO','NOME_PUBLICO_TELEGRAM','NOME PARA TELEGRAM'])||firstNameV286(nome,'');
+    var email=getV286(headers,row,['EMAIL','E-MAIL'])||'-';
+    var senha=getV286(headers,row,['SENHA','PASSWORD']);
+    var telegram=getV286(headers,row,['TELEGRAM','USUARIO_TELEGRAM','USERNAME_TELEGRAM'])||'-';
+    var celular=getV286(headers,row,['CELULAR','TELEFONE','WHATSAPP'])||'-';
+    var status=getV286(headers,row,['STATUS','ATIVO','SITUACAO','SITUAÇÃO'])||'Ativo';
+    var cotas=getV286(headers,row,['COTAS','QTD_COTAS','QUANTIDADE_COTAS'])||'0';
+    var abaId=getV286(headers,row,['ABA_ID','ABA ID'])||'-';
+    var perfil=getV286(headers,row,['PERFIL','ROLE','PERFIL_ACESSO'])||'USUARIO';
+    var emailEnv=getV286(headers,row,['EMAIL_ACESSO_ENVIADO_EM','EMAIL ACESSO ENVIADO EM'])||'-';
+    var erroEmail=getV286(headers,row,['ERRO_ENVIO_EMAIL','ERRO ENVIO EMAIL'])||'-';
+    var aviso=getV286(headers,row,['RECEBER_AVISO_NOVO_BOLAO','RECEBER AVISO NOVO BOLAO'])||'-';
+
+    var st=normV286(status);
+    var inativo=st.indexOf('INATIVO')>=0 || st.indexOf('BLOQUEADO')>=0 || st.indexOf('FALSE')>=0 || st.indexOf('NAO')>=0 || st.indexOf('NÃO')>=0;
+    var admin=normV286(perfil).indexOf('ADMIN')>=0 || normV286(perfil).indexOf('MESTRE')>=0;
+    var self=isSelfV286(email);
+    var podeMestre=window.isAdminMestreV286_();
+
+    var senhaLabel=txtV286(senha)?'Cadastrada':'Não informada';
+
+    return `
+      <article class="usuarios-admin-card ${inativo?'inativo':'ativo'}" id="usuario-card-${linha}">
+        <div class="usuarios-admin-head">
+          <div>
+            <h3>${escV286(nome)}</h3>
+            <small>${escV286(email)}</small>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+            <span class="usuarios-admin-pill ${inativo?'inativo':''}">${escV286(status)}</span>
+            ${admin?'<span class="usuarios-admin-pill admin">ADMIN</span>':''}
+          </div>
+        </div>
+
+        <div class="usuarios-admin-info">
+          <div><b>Linha</b>${escV286(linha)}</div>
+          <div><b>ID</b>${escV286(id)}</div>
+          <div><b>Nome público</b>${escV286(nomePublico)}</div>
+          <div><b>Perfil</b>${escV286(perfil)}</div>
+          <div><b>Senha</b>${escV286(senhaLabel)}</div>
+          <div><b>Telegram</b>${escV286(telegram)}</div>
+          <div><b>Celular</b>${escV286(celular)}</div>
+          <div><b>Cotas</b>${escV286(cotas)}</div>
+          <div><b>Aba individual</b>${escV286(abaId)}</div>
+          <div><b>E-mail de acesso enviado</b>${escV286(fmtV286(emailEnv))}</div>
+          <div><b>Erro envio e-mail</b>${escV286(erroEmail)}</div>
+          <div><b>Aviso novo bolão</b>${escV286(aviso)}</div>
+        </div>
+
+        <div class="usuarios-admin-actions">
+          ${podeMestre?`<button class="btn btn-blue" onclick="confirmarAcaoUsuarioAdminV286('email',${linha},'${attrV286(nome)}','${attrV286(email)}')">📧 Enviar e-mail/senha</button>`:''}
+          ${!inativo?`<button class="btn btn-light" ${self?'disabled title="Não é permitido inativar o próprio usuário logado."':''} onclick="confirmarAcaoUsuarioAdminV286('inativar',${linha},'${attrV286(nome)}','${attrV286(email)}')">🚫 Inativar</button>`:`<button class="btn" ${self?'disabled title="Não é necessário ativar o próprio usuário logado."':''} onclick="confirmarAcaoUsuarioAdminV286('ativar',${linha},'${attrV286(nome)}','${attrV286(email)}')">✅ Ativar</button>`}
+          ${podeMestre?`<button class="btn btn-outline-danger" ${self?'disabled title="Não é permitido excluir o próprio usuário logado."':''} onclick="confirmarAcaoUsuarioAdminV286('excluir',${linha},'${attrV286(nome)}','${attrV286(email)}')">🗑️ Excluir</button>`:''}
+        </div>
+      </article>
+    `;
+  };
+
+  window.confirmarAcaoUsuarioAdminV286 = function(tipo,linha,nome,email){
+    tipo=String(tipo||'');
+    linha=Number(linha||0);
+    nome=txtV286(nome);
+    email=txtV286(email);
+
+    if(!linha || linha<2) return toast('Linha inválida para ação do usuário.','error');
+    if((tipo==='inativar'||tipo==='excluir') && isSelfV286(email)){
+      return toast('Por segurança, não é permitido inativar ou excluir o próprio usuário logado.','error');
+    }
+
+    var titulo='Confirmar ação';
+    var texto='Confirma esta ação para o usuário selecionado?';
+    var classe='warn';
+
+    if(tipo==='email'){
+      titulo='Enviar e-mail de acesso';
+      texto='Enviar um e-mail para este usuário confirmando a senha atualmente gravada no cadastro?';
+      classe='info';
+    }else if(tipo==='inativar'){
+      titulo='Inativar usuário';
+      texto='Inativar este usuário? Ele deverá perder acesso após a sincronização do status.';
+    }else if(tipo==='ativar'){
+      titulo='Ativar usuário';
+      texto='Ativar novamente este usuário?';
+      classe='info';
+    }else if(tipo==='excluir'){
+      titulo='Excluir usuário';
+      texto='Excluir definitivamente esta linha da aba Usuarios? Use somente quando tiver certeza de que o cadastro é excedente ou inválido.';
+      classe='warn';
+    }
+
+    window.PSS_USUARIO_ACAO_V286={tipo:tipo,linha:linha,nome:nome,email:email};
+
+    abrirModal(titulo,`
+      <div class="notice ${classe}">${escV286(texto)}</div>
+      <div class="usuarios-admin-info" style="grid-template-columns:1fr 1fr;margin-top:10px;">
+        <div><b>Linha</b>${escV286(linha)}</div>
+        <div><b>Usuário</b>${escV286(nome)}</div>
+        <div style="grid-column:1/-1;"><b>E-mail</b>${escV286(email)}</div>
+      </div>
+      <div class="actions" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+        <button type="button" class="btn ${tipo==='excluir'?'btn-danger':''}" onclick="executarAcaoUsuarioAdminV286()">Confirmar</button>
+      </div>
+    `);
+  };
+
+  window.executarAcaoUsuarioAdminV286 = async function(){
+    var cfg=window.PSS_USUARIO_ACAO_V286||{};
+    window.PSS_USUARIO_ACAO_V286=null;
+    try{fecharModal();}catch(e){}
+
+    var tipo=cfg.tipo, linha=Number(cfg.linha||0), email=txtV286(cfg.email), nome=txtV286(cfg.nome);
+    if(!tipo||!linha) return toast('Ação inválida.','error');
+
+    if((tipo==='inativar'||tipo==='excluir') && isSelfV286(email)){
+      return toast('Por segurança, não é permitido alterar o próprio usuário logado.','error');
+    }
+
+    try{
+      toast('Processando usuário...','info');
+
+      var r=null;
+      if(tipo==='email'){
+        r=await apiMulti([
+          {action:'enviarEmailConfirmacaoSenhaUsuarioV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]},
+          {action:'enviarEmailSenhaUsuarioLinhaV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]}
+        ]);
+      }else if(tipo==='inativar'){
+        r=await apiMulti([{action:'inativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+        try{ await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false},'inativarUsuarioLinha'); }catch(eSync){}
+      }else if(tipo==='ativar'){
+        r=await apiMulti([{action:'ativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+        try{ await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'APROVADO',perfil:'USUARIO',ativo:true},'ativarUsuarioLinha'); }catch(eSync2){}
+      }else if(tipo==='excluir'){
+        r=await apiMulti([{action:'excluirUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+        try{ await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false},'excluirUsuarioLinha'); }catch(eSync3){}
+      }
+
+      toast((r&&r.msg)||'Ação realizada com sucesso.');
+      await renderUsuariosAdmin();
+    }catch(err){
+      toast((err&&err.message)||String(err||'Erro ao processar usuário.'),'error');
+    }
+  };
+
+  async function enviarSolicitacaoCadastroApiV286_(dados,args){
+    // Usa rota direta da V284/V285. Evita cadeia longa de actions antigas quando possível.
+    try{
+      return await apiJsonpDireto_('registrarSolicitacaoCadastroV284',dados,args,16000);
+    }catch(e1){
+      try{
+        return await apiPostMessageBridge_('registrarSolicitacaoCadastroV284',dados,args,22000);
+      }catch(e2){
+        return await apiMulti([
+          {action:'registrarSolicitacaoCadastroV284',dados:dados,args:args},
+          {action:'registrarSolicitacao',dados:dados,args:args}
+        ]);
+      }
+    }
+  }
+
+  window.enviarCadastro = enviarCadastro = async function(ev){
+    ev.preventDefault();
+
+    var form=ev.target;
+    var btn=document.getElementById('btnEnviarCadastro');
+    var msgId='cadastroFeedbackV286';
+
+    try{
+      if(form && form.reportValidity && !form.reportValidity()) return;
+
+      var nome=typeof textoLimpoV216_==='function'?textoLimpoV216_(document.getElementById('cadNome').value):txtV286(document.getElementById('cadNome').value);
+      var nomePublico=typeof nomePublicoSeguroV216_==='function'
+        ? nomePublicoSeguroV216_(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:'',nome)
+        : firstNameV286(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:nome,'');
+      var email=txtV286(document.getElementById('cadEmail').value).toLowerCase();
+      var senha=txtV286(document.getElementById('cadSenha').value);
+      var senha2=txtV286(document.getElementById('cadSenha2').value);
+      var cpf=document.getElementById('cadCpf')?document.getElementById('cadCpf').value:'';
+      var telefone=document.getElementById('cadTelefone')?document.getElementById('cadTelefone').value:'';
+      var receberAvisoNovoBolao=document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked?'SIM':'NÃO';
+      var aceite=document.getElementById('cadAceite')&&document.getElementById('cadAceite').checked;
+      var cotas=0;
+      var loteria='';
+
+      var antigo=document.getElementById(msgId);
+      if(antigo) antigo.remove();
+
+      if(!nome) return toast('Informe o nome completo.','error');
+      if(!nomePublico) return toast('Informe o nome para divulgação no Telegram.','error');
+      if(!email) return toast('Informe o e-mail.','error');
+      if(!senha || senha.length<6) return toast('Informe uma senha com pelo menos 6 caracteres.','error');
+      if(senha!==senha2) return toast('As senhas não conferem.','error');
+      if(!aceite) return toast('É necessário aceitar o regulamento.','error');
+
+      if(btn){
+        btn.disabled=true;
+        btn.textContent='Enviando solicitação...';
+      }
+
+      var feedback=document.createElement('div');
+      feedback.id=msgId;
+      feedback.className='notice info';
+      feedback.innerHTML='<span class="loading-fast">Enviando solicitação. Aguarde a confirmação...</span>';
+      if(form) form.insertBefore(feedback, form.firstChild);
+
+      var dadosCadastro={
+        nome:nome,
+        nomePublico:nomePublico,
+        email:email,
+        cotas:cotas,
+        loteria:loteria,
+        cpf:cpf,
+        telefone:telefone,
+        telegram:telefone,
+        receberAvisoNovoBolao:receberAvisoNovoBolao,
+        aceitouRegulamento:aceite,
+        aceiteRegulamento:aceite,
+        versaoRegulamento:CONFIG.versaoRegulamento,
+        senha:senha,
+        senhaCadastro:senha,
+        senhaAcesso:senha,
+        password:senha,
+        confirmarSenha:senha2,
+        confirmacaoSenha:senha2,
+        senhaConfirmacao:senha2,
+        senha2:senha2,
+        status:'Pendente'
+      };
+      var argsCadastro=[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,telefone,receberAvisoNovoBolao,nomePublico,senha,senha2];
+
+      // Firebase cria apenas credencial pendente. Não aprova usuário.
+      try{
+        await inicializarFirebase_();
+        try{
+          var cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);
+          try{ await cred.user.updateProfile({displayName:nome}); }catch(eProf){}
+        }catch(authErr){
+          if(String(authErr&&authErr.code||'')!=='auth/email-already-in-use') throw authErr;
+        }
+        try{
+          await firebaseCriarUsuarioPendente_({nome:nome,nomePublico:nomePublico,email:email,cpf:cpf,telefone:telefone,cotas:cotas,loteria:loteria,receberAvisoNovoBolao:receberAvisoNovoBolao,aceiteRegulamento:aceite,versaoRegulamento:CONFIG.versaoRegulamento});
+        }catch(eFireDoc){}
+        try{ if(FIREBASE_AUTH) await FIREBASE_AUTH.signOut(); }catch(eOut){}
+      }catch(errFirebase){
+        throw new Error(firebaseMensagemErro_(errFirebase));
+      }
+
+      var r=await enviarSolicitacaoCadastroApiV286_(dadosCadastro,argsCadastro);
+      if(r && r.sucesso===false) throw new Error(r.msg||'Não foi possível enviar a solicitação.');
+
+      if(form && form.reset) form.reset();
+      try{ if(typeof atualizarPreviewNomePublicoV216==='function') atualizarPreviewNomePublicoV216(); }catch(ePrev){}
+
+      var conteudo=document.getElementById('modalConteudo');
+      if(conteudo){
+        conteudo.innerHTML=`
+          <div class="cadastro-sucesso-v286">
+            <h3>Solicitação de cadastro enviada com sucesso.</h3>
+            <p>Seu cadastro foi recebido e ficará pendente até aprovação da administração.</p>
+            <p>Após a aprovação, acesse o sistema com o e-mail informado e a senha cadastrada.</p>
+          </div>
+          <div class="actions" style="justify-content:flex-end;margin-top:14px;">
+            <button type="button" class="btn btn-light" onclick="fecharModal(); renderHomePublica();">Voltar ao início</button>
+            <button type="button" class="btn" onclick="fecharModal(); renderLogin();">Ir para login</button>
+          </div>
+        `;
+      }
+
+      toast((r&&r.msg)||'Solicitação de cadastro enviada com sucesso. Aguarde aprovação da administração.');
+    }catch(err){
+      var form2=ev.target;
+      var old=document.getElementById(msgId);
+      if(old){
+        old.className='notice error';
+        old.textContent=(err&&err.message)||String(err||'Erro ao enviar solicitação.');
+      }
+      toast((err&&err.message)||String(err||'Erro ao enviar solicitação.'),'error');
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='Enviar solicitação de acesso';
+      }
+    }
+  };
+
 })();
 </script>
 
