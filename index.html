@@ -16079,7 +16079,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     var total=n(dados.totalAprovadosSite||dados.totalInscritosSite||dados.totalInscritos||dados.total||dados.aprovados||0);
 
     /* Fallback administrativo: lê a própria aba quando o resumo antigo vier zerado. */
-    if(total===0 && isAdminLocal()){
+    if(false && total===0 && isAdminLocal()){ /* V300: fallback administrativo pesado desativado no carregamento inicial */
       try{
         var adm=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'SOLICITACOES_CADASTRO'},args:['SOLICITACOES_CADASTRO']}]);
         total=contarAprovadosAdminV276_(adm);
@@ -16153,9 +16153,9 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     var baseRenderInicioV276=window.renderInicio;
     window.renderInicio=renderInicio=async function(){
       var r=await baseRenderInicioV276.apply(this,arguments);
-      setTimeout(atualizarSistemaAtivoUnicoV276,120);
-      setTimeout(atualizarSistemaAtivoUnicoV276,900);
-      setTimeout(limparDuplicidadesSistemaV276,1800);
+      /* V300: evita chamadas duplicadas ao Apps Script no primeiro carregamento. */
+      setTimeout(atualizarSistemaAtivoUnicoV276,1600);
+      setTimeout(limparDuplicidadesSistemaV276,2200);
       return r;
     };
   }
@@ -19143,7 +19143,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * ========================================================= */
 (function(){
   'use strict';
-  var V='V299_RESET_FIREBASE_AUTH_LEXICAL_OK';
+  var V='V300_HOME_LEVE_SEM_API_PESADA_INICIAL';
   try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
 
   function txt(v){ return String(v==null?'':v).trim(); }
@@ -19292,10 +19292,11 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
         {action:'getEstatisticasAtivaUsuario',args:[(window.ESTADO&&ESTADO.email)||'']}
       ]).catch(function(){return {};});
       dados.aprovados=n(r.totalAprovadosSite||r.totalAprovados||r.totalInscritosSite||r.totalInscritos||r.inscritos||r.aprovados||r.total||0);
+      if(r.totalPendentesCadastro!==undefined || r.pendentesCadastro!==undefined || r.totalPendentes!==undefined || r.pendentes!==undefined){ dados.pendentes=n(r.totalPendentesCadastro||r.pendentesCadastro||r.totalPendentes||r.pendentes||0); }
       dados.link=String(r.linkCanal||r.telegramCanalLink||r.linkTelegram||r.urlTelegram||'').trim();
       window.PSS_RESUMO_INSCRITOS_TOPO=r||{};
     }catch(e){}
-    if(isAdminSeguro()){
+    if(false && isAdminSeguro()){ /* V300: leitura pesada de SOLICITACOES_CADASTRO removida do carregamento inicial */
       try{
         var adm=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'SOLICITACOES_CADASTRO'},args:['SOLICITACOES_CADASTRO']}]);
         var c=contarStatusSolicitacoes(adm);
@@ -19352,8 +19353,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   if(typeof renderInicioBase==='function'){
     window.renderInicio=renderInicio=async function(){
       var r=await renderInicioBase.apply(this,arguments);
-      setTimeout(atualizarSistemaAtivo,120);
-      setTimeout(atualizarSistemaAtivo,900);
+      /* V300: uma única atualização tardia para não travar a abertura. */
+      setTimeout(atualizarSistemaAtivo,1800);
       return r;
     };
   }
@@ -19367,7 +19368,8 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   }
   window.carregarBadgeInscritosTopo=function(){ return atualizarSistemaAtivo(); };
   window.carregarTelegramCanalLogadoV212=function(){ atualizarSistemaAtivo(); return Promise.resolve({sucesso:true,canalNoInicio:true}); };
-  setTimeout(atualizarSistemaAtivo,1000);
+  /* V300: não competir com o primeiro render da página. */
+  setTimeout(atualizarSistemaAtivo,2600);
 })();
 
 </script>
@@ -19591,6 +19593,15 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     if(document.getElementById('homeResultadosPublicosV213')) window.carregarLetreiroResultadosPublicosV213(true);
   },500);
 })();
+
+
+/* =========================================================
+ * PATCH V300 - ABERTURA MAIS LEVE
+ * - Remove leitura pesada da aba SOLICITACOES_CADASTRO no carregamento inicial.
+ * - Evita chamadas duplicadas de resumo do Sistema ativo.
+ * - Mantém listas detalhadas apenas sob demanda, quando o usuário clicar.
+ * ========================================================= */
+try{ window.PSS_INDEX_PERFORMANCE_PATCH='V300_HOME_LEVE_SEM_API_PESADA_INICIAL'; }catch(e){}
 </script>
 
 </body>
