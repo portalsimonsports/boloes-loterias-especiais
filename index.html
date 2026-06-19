@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V287_USUARIOS_SEM_ABA_SENHA_CONFERIDA_ADMIN_MESTRE',versaoRegulamento:'2026.1'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V289_REGULAMENTO_VERSAO_AUTOMATICA',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -3651,7 +3651,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
             <div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div>
             <div class="field"><label>Telegram</label><input id="cadTelefone" placeholder="Opcional" /></div>
           </div>
-          <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div>
+          <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div><div class="nome-publico-help">A versão vigente será identificada automaticamente pelo sistema.</div></div>
           <label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label>
           <label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento, incluindo regras de cadastro, acesso, cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label>
           <button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação de acesso</button>
@@ -8323,7 +8323,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
           <div class="field"><label>Telegram</label><input id="cadTelefone" placeholder="@usuario ou telefone vinculado ao Telegram" /></div>
         </div>
 
-        <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div>
+        <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div><div class="nome-publico-help">A versão vigente será identificada automaticamente pelo sistema.</div></div>
 
         <label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label>
         <label class="checkline"><input type="checkbox" id="cadAceite" onchange="document.getElementById('btnEnviarCadastro').disabled=!this.checked;"><span>Li e aceito o regulamento, incluindo regras de cadastro, acesso, cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label>
@@ -17088,7 +17088,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
           <div class="field"><label>Telegram</label><input id="cadTelefone" placeholder="@usuario ou telefone vinculado ao Telegram" /></div>
         </div>
 
-        <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div></div>
+        <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div><div class="nome-publico-help">A versão vigente será identificada automaticamente pelo sistema.</div></div>
 
         <label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label>
         <label class="checkline"><input type="checkbox" id="cadAceite" onchange="validarCadastroBotaoV287()"><span>Li e aceito o regulamento, incluindo regras de cadastro, acesso, cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label>
@@ -17241,6 +17241,125 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     document.head.appendChild(style);
   }catch(e){}
 })();
+
+/* =========================================================
+ * V289 — VERSÃO DO REGULAMENTO AUTOMÁTICA
+ * Não usa número fixo no index. A versão é lida do JSON/API
+ * e, se necessário, extraída do próprio texto do regulamento.
+ * ========================================================= */
+(function(){
+  try{
+    if(typeof CONFIG==='object'){
+      CONFIG.versao='V289_REGULAMENTO_VERSAO_AUTOMATICA';
+      if(!CONFIG.versaoRegulamento || CONFIG.versaoRegulamento==='2026.1' || CONFIG.versaoRegulamento==='2026.2'){
+        CONFIG.versaoRegulamento='AUTO';
+      }
+    }
+  }catch(e){}
+
+  function pssTxtV289(v){return String(v==null?'':v).trim();}
+
+  window.PSS_extrairVersaoRegulamentoV289_ = function(texto){
+    var t=pssTxtV289(texto);
+    if(!t)return '';
+    var m=t.match(/VERS[ÃA]O\s*(?:DO\s+REGULAMENTO)?\s*[:\-–—]?\s*(\d{4}\s*[\.,]\s*\d+)/i);
+    if(!m)m=t.match(/REGULAMENTO[\s\S]{0,120}?VERS[ÃA]O\s*[:\-–—]?\s*(\d{4}\s*[\.,]\s*\d+)/i);
+    if(!m)m=t.match(/\b(20\d{2}\s*[\.,]\s*\d+)\b/);
+    return m?String(m[1]).replace(/\s+/g,'').replace(',','.'):'';
+  };
+
+  window.PSS_aplicarVersaoRegulamentoTelaV289_ = function(versao){
+    versao=pssTxtV289(versao);
+    if(versao && versao!=='AUTO' && typeof CONFIG==='object') CONFIG.versaoRegulamento=versao;
+    var label=document.querySelector('label[for="cadRegulamento"]') || (document.getElementById('cadRegulamento') ? document.getElementById('cadRegulamento').closest('.field')?.querySelector('label') : null);
+    if(label) label.textContent='Regulamento do sistema' + (versao && versao!=='AUTO' ? ' — versão ' + versao : '');
+    var box=document.getElementById('cadVersaoRegulamentoInfoV289');
+    if(!box && document.getElementById('cadRegulamento')){
+      var field=document.getElementById('cadRegulamento').closest('.field');
+      if(field){
+        var div=document.createElement('div');
+        div.id='cadVersaoRegulamentoInfoV289';
+        div.className='nome-publico-help';
+        field.appendChild(div);
+        box=div;
+      }
+    }
+    if(box){
+      box.textContent=versao && versao!=='AUTO'
+        ? 'O aceite será registrado automaticamente como versão ' + versao + '.'
+        : 'A versão vigente será identificada automaticamente pelo sistema.';
+    }
+  };
+
+  window.obterVersaoRegulamentoAtualV289_ = async function(){
+    var versao='';
+    var texto='';
+
+    try{
+      var r=await apiMulti([
+        {action:'getVersaoRegulamentoAtualV287',args:[]},
+        {action:'getRegulamentoJsonPublicoV287',args:[]},
+        {action:'getRegulamentoJsonPublicoV286',args:[]},
+        {action:'getRegulamentoJson',args:[]}
+      ]);
+      if(r){
+        versao=pssTxtV289(r.versaoRegulamento||r.versao||r.VERSAO_REGULAMENTO||'');
+        texto=pssTxtV289(r.texto||r.regulamento||r.REGULAMENTO||'');
+      }
+    }catch(eJson){}
+
+    if(!versao && texto) versao=PSS_extrairVersaoRegulamentoV289_(texto);
+
+    if(!versao){
+      try{
+        var reg=await apiMulti([{action:'getRegulamento',args:[]},{action:'obterRegulamento',args:[]}]);
+        texto=typeof reg==='string'?reg:pssTxtV289((reg&&reg.texto)||(reg&&reg.regulamento)||(reg&&reg.REGULAMENTO)||'');
+        versao=PSS_extrairVersaoRegulamentoV289_(texto);
+      }catch(eReg){}
+    }
+
+    if(!versao){
+      var box=document.getElementById('cadRegulamento');
+      if(box) versao=PSS_extrairVersaoRegulamentoV289_(box.textContent||box.innerText||'');
+    }
+
+    if(!versao && typeof CONFIG==='object' && CONFIG.versaoRegulamento && CONFIG.versaoRegulamento!=='AUTO'){
+      versao=CONFIG.versaoRegulamento;
+    }
+    if(!versao) versao='vigente';
+
+    if(typeof CONFIG==='object') CONFIG.versaoRegulamento=versao;
+    PSS_aplicarVersaoRegulamentoTelaV289_(versao);
+    return versao;
+  };
+
+  var abrirBaseV289=window.abrirCadastro;
+  if(typeof abrirBaseV289==='function'){
+    window.abrirCadastro = abrirCadastro = async function(){
+      var ret=await abrirBaseV289.apply(this,arguments);
+      try{
+        var box=document.getElementById('cadRegulamento');
+        var v='';
+        if(box) v=PSS_extrairVersaoRegulamentoV289_(box.textContent||box.innerText||'');
+        if(!v) v=await obterVersaoRegulamentoAtualV289_();
+        PSS_aplicarVersaoRegulamentoTelaV289_(v);
+      }catch(e){}
+      return ret;
+    };
+  }
+
+  var enviarBaseV289=window.enviarCadastro;
+  if(typeof enviarBaseV289==='function'){
+    window.enviarCadastro = enviarCadastro = async function(ev){
+      try{
+        var v=await obterVersaoRegulamentoAtualV289_();
+        if(typeof CONFIG==='object') CONFIG.versaoRegulamento=v;
+      }catch(e){}
+      return enviarBaseV289.call(this,ev);
+    };
+  }
+})();
+
 </script>
 
 </body>
