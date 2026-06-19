@@ -19143,7 +19143,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * ========================================================= */
 (function(){
   'use strict';
-  var V='V300_HOME_LEVE_SEM_API_PESADA_INICIAL';
+  var V='V301_LETREIRO_LEITURA_ATUALIZADA';
   try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
 
   function txt(v){ return String(v==null?'':v).trim(); }
@@ -19378,16 +19378,16 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
 <script>
 /* =====================================================================
- * V298 — LETREIRO RESULTADOS SEM CACHE VELHO
+ * V301 — LETREIRO RESULTADOS COM CARIMBO DE LEITURA ATUAL
  * - Remove cache local de resultados/home pública que travava o letreiro.
  * - Botão Atualizar resultados força leitura fresca da API.
  * - Não reaproveita JSON antigo como se fosse atual.
  * ===================================================================== */
 (function(){
   'use strict';
-  if(window.PSS_V298_LETREIRO_FRESH_APLICADO) return;
-  window.PSS_V298_LETREIRO_FRESH_APLICADO = true;
-  try{ if(window.CONFIG) CONFIG.versao='V298_LETREIRO_RESULTADOS_SEM_CACHE_VELHO'; }catch(e){}
+  if(window.PSS_V301_LETREIRO_LEITURA_ATUAL_APLICADO) return;
+  window.PSS_V301_LETREIRO_LEITURA_ATUAL_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V301_LETREIRO_LEITURA_ATUALIZADA'; }catch(e){}
 
   const CACHE_KEYS_V298 = [
     'PSS_RESULTADOS_PUBLICOS_V213',
@@ -19538,8 +19538,11 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     const box=document.getElementById('resultadosPublicosTickerV213');
     const atual=document.getElementById('resultadosPublicosAtualizadoV213');
     if(atual){
-      const carimbo=String(d.atualizadoEm||d.dataHora||dataHoraAtualCurta());
-      atual.textContent='Atualizado em '+carimbo+(fonte?(' • '+fonte):'');
+      const leitura=String(d.leituraEm||d.geradoEm||d.dataConsulta||d.dataHoraLeitura||d.atualizadoEm||d.dataHora||dataHoraAtualCurta()).trim();
+      const fonteDados=String(d.atualizadoFonteEm||d.resultadosAtualizadoEm||d.atualizadoNaFonte||'').trim();
+      atual.textContent='Atualizado em '+leitura+(fonte?(' • '+fonte):'');
+      if(fonteDados && fonteDados!==leitura) atual.title='Resultado original da fonte/base: '+fonteDados;
+      else atual.removeAttribute('title');
     }
     if(!box) return;
     if(!lista.length){
@@ -19552,6 +19555,16 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 
   async function buscarFreshV298(){
     const stamp=Date.now();
+    // Primeiro tenta o JSON público publicado no GitHub, sempre com cache-bust.
+    try{
+      const res=await fetch('dados-publicos.json?cacheBust='+stamp,{cache:'no-store'});
+      if(res && res.ok){
+        let j=await res.json();
+        j=unwrapV298(j);
+        if(listaV298(j).length) return j;
+      }
+    }catch(eJsonPublico){}
+
     const tentativas=[
       ['getResultadosLoteriasPublicos',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
       ['ultimosResultadosPublicos',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
@@ -19601,7 +19614,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * - Evita chamadas duplicadas de resumo do Sistema ativo.
  * - Mantém listas detalhadas apenas sob demanda, quando o usuário clicar.
  * ========================================================= */
-try{ window.PSS_INDEX_PERFORMANCE_PATCH='V300_HOME_LEVE_SEM_API_PESADA_INICIAL'; }catch(e){}
+try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }catch(e){}
 </script>
 
 </body>
