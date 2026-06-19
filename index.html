@@ -19033,10 +19033,11 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   }
 
   async function _enviarResetFirebaseRESTV296(email){
-    if(!window.FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey){
+    var cfg=(typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey)?FIREBASE_CONFIG:(window.FIREBASE_CONFIG||null);
+    if(!cfg || !cfg.apiKey){
       throw new Error('Configuração Firebase não localizada no index.');
     }
-    var url='https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+encodeURIComponent(FIREBASE_CONFIG.apiKey);
+    var url='https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+encodeURIComponent(cfg.apiKey);
     var res=await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -19055,7 +19056,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     var erroPrincipal=null;
     try{
       if(typeof inicializarFirebase_==='function') await inicializarFirebase_();
-      if(window.FIREBASE_AUTH && typeof FIREBASE_AUTH.sendPasswordResetEmail==='function'){
+      if(typeof FIREBASE_AUTH!=='undefined' && FIREBASE_AUTH && typeof FIREBASE_AUTH.sendPasswordResetEmail==='function'){
         await FIREBASE_AUTH.sendPasswordResetEmail(email);
         return {ok:true,via:'FIREBASE_AUTH'};
       }
@@ -19142,7 +19143,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
  * ========================================================= */
 (function(){
   'use strict';
-  var V='V297_RESET_MODAL_SISTEMA_ATIVO_UNICO';
+  var V='V299_RESET_FIREBASE_AUTH_LEXICAL_OK';
   try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
 
   function txt(v){ return String(v==null?'':v).trim(); }
@@ -19180,8 +19181,9 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   }
 
   async function resetFirebaseREST(email){
-    if(!window.FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey) throw new Error('Configuração Firebase não localizada no index.');
-    var url='https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+encodeURIComponent(FIREBASE_CONFIG.apiKey);
+    var cfg=(typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey)?FIREBASE_CONFIG:(window.FIREBASE_CONFIG||null);
+    if(!cfg || !cfg.apiKey) throw new Error('Configuração Firebase não localizada no index.');
+    var url='https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+encodeURIComponent(cfg.apiKey);
     var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestType:'PASSWORD_RESET',email:email})});
     var json={};
     try{ json=await res.json(); }catch(e){}
@@ -19196,7 +19198,7 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
     var erro1=null;
     try{
       if(typeof inicializarFirebase_==='function') await inicializarFirebase_();
-      if(window.FIREBASE_AUTH && typeof FIREBASE_AUTH.sendPasswordResetEmail==='function'){
+      if(typeof FIREBASE_AUTH!=='undefined' && FIREBASE_AUTH && typeof FIREBASE_AUTH.sendPasswordResetEmail==='function'){
         await FIREBASE_AUTH.sendPasswordResetEmail(email);
         return {ok:true,via:'FIREBASE_AUTH'};
       }
@@ -19368,6 +19370,227 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   setTimeout(atualizarSistemaAtivo,1000);
 })();
 
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V298 — LETREIRO RESULTADOS SEM CACHE VELHO
+ * - Remove cache local de resultados/home pública que travava o letreiro.
+ * - Botão Atualizar resultados força leitura fresca da API.
+ * - Não reaproveita JSON antigo como se fosse atual.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V298_LETREIRO_FRESH_APLICADO) return;
+  window.PSS_V298_LETREIRO_FRESH_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V298_LETREIRO_RESULTADOS_SEM_CACHE_VELHO'; }catch(e){}
+
+  const CACHE_KEYS_V298 = [
+    'PSS_RESULTADOS_PUBLICOS_V213',
+    'PSS_RESULTADOS_PUBLICOS_V260',
+    'PSS_RESULTADOS_PUBLICOS_V261',
+    'PSS_RESULTADOS_PUBLICOS_V264',
+    'PSS_V237_RESULTADOS',
+    'PSS_HOME_ULTRA_V237',
+    'PSS_HOME_PUBLICA_SNAPSHOT_V224'
+  ];
+
+  function escV298(v){
+    return String(v===undefined||v===null?'':v)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function normV298(v){
+    return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  }
+
+  function corV298(nome){
+    const k=normV298(nome);
+    if(k.includes('maismilionaria')||k.includes('milionaria')) return '#2e3078';
+    if(k.includes('megasena')||k.includes('mega')) return '#209869';
+    if(k.includes('lotofacil')||k.includes('facil')) return '#930089';
+    if(k.includes('quina')) return '#260085';
+    if(k.includes('duplasena')||k.includes('dupla')) return '#a61324';
+    if(k.includes('federal')) return '#103099';
+    if(k.includes('diadesorte')||k.includes('sorte')) return '#cb852b';
+    if(k.includes('supersete')||k.includes('super')) return '#a8cf45';
+    if(k.includes('loteca')) return '#f78100';
+    if(k.includes('lotomania')) return '#f78100';
+    if(k.includes('timemania')) return '#00a651';
+    return '#0b6f28';
+  }
+
+  function nomeV298(r){
+    const bruto=String((r&&r.nome)||(r&&r.loteria)||(r&&r.tipoJogo)||(r&&r.slug)||'Loteria').replace(/_/g,' ').replace(/-/g,' ').trim();
+    const k=normV298(bruto);
+    if(k.includes('maismilionaria')) return '+MILIONÁRIA';
+    if(k.includes('megasena')) return 'MEGA-SENA';
+    if(k.includes('lotofacil')) return 'LOTOFÁCIL';
+    if(k.includes('duplasena')) return 'DUPLA SENA';
+    if(k.includes('loteriafederal')||k==='federal') return 'FEDERAL';
+    if(k.includes('diadesorte')) return 'DIA DE SORTE';
+    if(k.includes('supersete')) return 'SUPER SETE';
+    if(k.includes('loteca')) return 'LOTECA';
+    if(k.includes('lotomania')) return 'LOTOMANIA';
+    if(k.includes('timemania')) return 'TIMEMANIA';
+    if(k.includes('quina')) return 'QUINA';
+    return bruto.toUpperCase() || 'LOTERIA';
+  }
+
+  function fmtDezenasV298(v){
+    return String(v||'').trim()
+      .replace(/\s*[,-]\s*/g,' • ')
+      .replace(/\s{2,}/g,' ')
+      .replace(/(?:\s*•\s*)+/g,' • ') || '-';
+  }
+
+  function fmtDataV298(v){
+    const s=String(v||'').trim();
+    if(!s) return '';
+    try{ if(typeof formatarDataHoraPtBR==='function') return formatarDataHoraPtBR(s); }catch(e){}
+    return s.replace(/^(\d{4})-(\d{2})-(\d{2}).*$/,'$3/$2/$1');
+  }
+
+  function unwrapV298(raw){
+    let d=raw||{};
+    if(d.dados!==undefined) d=d.dados;
+    if(d.result!==undefined) d=d.result;
+    if(d.dados!==undefined) d=d.dados;
+    if(d.resultadosPublicos) d=d.resultadosPublicos;
+    if(d.resultados_publicos) d=d.resultados_publicos;
+    if(d.ultimosResultados && !d.resultados) d.resultados=d.ultimosResultados;
+    return d||{};
+  }
+
+  function listaV298(raw){
+    const d=unwrapV298(raw);
+    let lista=[];
+    if(Array.isArray(d.resultados)) lista=d.resultados;
+    else if(Array.isArray(d.ultimosResultados)) lista=d.ultimosResultados;
+    return lista.filter(r=>r&&(r.dezenas||r.numeros||r.resultado)).map(r=>({
+      nome:(r.nome||r.loteria||r.tipoJogo||r.slug||'Loteria'),
+      concurso:(r.concurso||r.numeroConcurso||r.numero||''),
+      dataApuracao:(r.dataApuracao||r.data||r.dataSorteio||''),
+      dezenas:(r.dezenas||r.numeros||r.resultado||'')
+    }));
+  }
+
+  function limparCachesV298(){
+    try{
+      CACHE_KEYS_V298.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+      for(let i=localStorage.length-1;i>=0;i--){
+        const k=localStorage.key(i)||'';
+        if(/RESULTADOS_PUBLICOS|ULTIMOS_RESULTADOS|LETR[EÉ]IRO|HOME_PUBLICA|HOME_ULTRA/i.test(k)){
+          try{ localStorage.removeItem(k); }catch(e){}
+        }
+      }
+    }catch(e){}
+  }
+
+  function inserirEstruturaV298(){
+    if(document.getElementById('homeResultadosPublicosV213')) return;
+    const hero=document.querySelector('.home-hero');
+    const html=`
+      <section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">
+        <div class="resultados-publicos-head">
+          <div>
+            <h2>Últimos resultados das loterias</h2>
+            <small id="resultadosPublicosAtualizadoV213">Carregando informações...</small>
+          </div>
+          <button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button>
+        </div>
+        <div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div>
+        <div class="resultados-publicos-actions">
+          <span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span>
+          <button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213&&abrirModalResultadosPublicosV213()">Ver todos os resultados</button>
+        </div>
+      </section>`;
+    if(hero) hero.insertAdjacentHTML('afterend',html);
+    else{ const view=document.getElementById('view'); if(view) view.insertAdjacentHTML('afterbegin',html); }
+  }
+
+  function itemV298(r){
+    const n=nomeV298(r);
+    const concurso=String(r.concurso||'').trim();
+    const data=fmtDataV298(r.dataApuracao||'');
+    const dezenas=fmtDezenasV298(r.dezenas||'');
+    return `<span class="resultado-letreiro-item resultado-letreiro-item-v266">
+      <span class="resultado-letreiro-badge" style="background:${corV298(n)}">${escV298(n)}</span>
+      <span class="resultado-letreiro-info">
+        ${concurso?`<span class="resultado-letreiro-concurso">${escV298(concurso)}</span>`:''}
+        ${data?`<span class="resultado-letreiro-data">${escV298(data)}</span>`:''}
+        <span class="resultado-letreiro-sep">:</span>
+        <span class="resultado-letreiro-dezenas">${escV298(dezenas)}</span>
+      </span>
+    </span>`;
+  }
+
+  function renderV298(raw, fonte){
+    inserirEstruturaV298();
+    const d=unwrapV298(raw);
+    const lista=listaV298(d);
+    window.PSS_RESULTADOS_PUBLICOS_V213=Object.assign({},d,{resultados:lista});
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    const atual=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(atual){
+      const carimbo=String(d.atualizadoEm||d.dataHora||dataHoraAtualCurta());
+      atual.textContent='Atualizado em '+carimbo+(fonte?(' • '+fonte):'');
+    }
+    if(!box) return;
+    if(!lista.length){
+      box.innerHTML='<div class="home-note">Últimos resultados em atualização. Nenhum cache antigo será exibido como atual.</div>';
+      return;
+    }
+    const grupo=`<span class="resultados-ticker-grupo resultados-ticker-grupo-v266"><span class="resultados-ticker-prefixo">📢 Últimos resultados</span>${lista.slice(0,10).map(itemV298).join('<span class="resultado-letreiro-sep">|</span>')}</span>`;
+    box.innerHTML=`<div class="resultados-ticker resultados-ticker-v215 resultados-ticker-v266" title="Passe o mouse para pausar"><div class="resultados-ticker-track">${grupo}${grupo}</div></div>`;
+  }
+
+  async function buscarFreshV298(){
+    const stamp=Date.now();
+    const tentativas=[
+      ['getResultadosLoteriasPublicos',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
+      ['ultimosResultadosPublicos',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
+      ['getConfigPublica',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]]
+    ];
+    let ultimo=null;
+    for(const t of tentativas){
+      try{
+        let r;
+        if(typeof apiJsonpDireto_==='function') r=await apiJsonpDireto_(t[0],t[1],t[2],20000);
+        else if(typeof apiMulti==='function') r=await apiMulti([{action:t[0],dados:t[1],args:t[2]}]);
+        else if(typeof api==='function') r=await api(t[0],t[1],t[2]);
+        r=unwrapV298(r);
+        if(listaV298(r).length) return r;
+      }catch(e){ ultimo=e; }
+    }
+    throw ultimo||new Error('Resultados indisponíveis.');
+  }
+
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    inserirEstruturaV298();
+    limparCachesV298();
+    const box=document.getElementById('resultadosPublicosTickerV213');
+    if(box) box.innerHTML='<div class="notice info">Atualizando últimos resultados diretamente da base...</div>';
+    try{
+      const r=await buscarFreshV298();
+      renderV298(r,'leitura nova');
+    }catch(e){
+      if(box) box.innerHTML='<div class="home-note">Não foi possível atualizar os últimos resultados agora. Tente novamente em instantes.</div>';
+      const atual=document.getElementById('resultadosPublicosAtualizadoV213');
+      if(atual) atual.textContent='Falha ao atualizar em '+dataHoraAtualCurta();
+    }
+  };
+
+  window.renderLetreiroResultadosPublicosV213=function(dados){ renderV298(dados,'leitura nova'); };
+  window.PSS_LIMPAR_CACHE_LETREIRO_LOCAL_V298=limparCachesV298;
+  limparCachesV298();
+  setTimeout(function(){
+    if(document.getElementById('homeResultadosPublicosV213')) window.carregarLetreiroResultadosPublicosV213(true);
+  },500);
+})();
 </script>
 
 </body>
