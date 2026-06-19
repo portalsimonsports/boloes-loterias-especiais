@@ -18983,6 +18983,153 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
   };
 })();
 
+
+
+/* =========================================================
+ * PATCH V296 - RESTAURAR RECUPERACAO DE SENHA FIREBASE
+ * Objetivo:
+ * - Manter o fluxo atual de cadastro/login.
+ * - Corrigir o botão "Esqueci a senha" para voltar a enviar
+ *   o e-mail de redefinição pelo Firebase.
+ * - Usar Firebase Auth compat como caminho principal e REST
+ *   Identity Toolkit como fallback quando o compat retornar
+ *   erro genérico como auth/error-code:-26.
+ * ========================================================= */
+(function(){
+  var V='V296_RECUPERAR_SENHA_FIREBASE_RESTAURADO';
+  try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
+
+  function _txtV296(v){ return String(v==null?'':v).trim(); }
+  function _emailV296(v){ return _txtV296(v).toLowerCase(); }
+  function _escV296(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v); }catch(e){}
+    return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function _attrV296(v){
+    try{ if(typeof escapeAttr==='function') return escapeAttr(v); }catch(e){}
+    return _escV296(v);
+  }
+  function _erroFirebaseResetV296(err){
+    var raw=(err&&(err.code||err.message||err.error||err))?String(err.code||err.message||err.error||err):'Erro desconhecido.';
+    var up=raw.toUpperCase();
+    if(up.indexOf('EMAIL_NOT_FOUND')>=0 || up.indexOf('USER_NOT_FOUND')>=0 || raw.indexOf('auth/user-not-found')>=0){
+      return 'Este e-mail não foi localizado no Firebase. Confira o endereço informado ou solicite novo cadastro.';
+    }
+    if(up.indexOf('INVALID_EMAIL')>=0 || raw.indexOf('auth/invalid-email')>=0){
+      return 'E-mail inválido. Confira o endereço informado.';
+    }
+    if(up.indexOf('TOO_MANY_ATTEMPTS')>=0 || raw.indexOf('auth/too-many-requests')>=0){
+      return 'Muitas tentativas em sequência. Aguarde alguns minutos e tente novamente.';
+    }
+    if(up.indexOf('OPERATION_NOT_ALLOWED')>=0){
+      return 'A recuperação de senha não está habilitada no Firebase para este projeto.';
+    }
+    if(raw.indexOf('auth/error-code:-26')>=0){
+      return 'O Firebase retornou erro genérico no navegador. O sistema tentou o envio alternativo; se persistir, verifique se o domínio do site está autorizado no Firebase Authentication.';
+    }
+    try{ if(typeof firebaseMensagemErro_==='function') return firebaseMensagemErro_(err); }catch(e){}
+    try{ if(typeof erroMsg==='function') return erroMsg(err); }catch(e){}
+    return raw;
+  }
+
+  async function _enviarResetFirebaseRESTV296(email){
+    if(!window.FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey){
+      throw new Error('Configuração Firebase não localizada no index.');
+    }
+    var url='https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+encodeURIComponent(FIREBASE_CONFIG.apiKey);
+    var res=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({requestType:'PASSWORD_RESET',email:email})
+    });
+    var json={};
+    try{ json=await res.json(); }catch(e){}
+    if(!res.ok){
+      var msg=(json&&json.error&&(json.error.message||json.error.status))?String(json.error.message||json.error.status):('HTTP '+res.status);
+      throw new Error(msg);
+    }
+    return json;
+  }
+
+  async function _enviarResetFirebaseV296(email){
+    var erroPrincipal=null;
+    try{
+      if(typeof inicializarFirebase_==='function') await inicializarFirebase_();
+      if(window.FIREBASE_AUTH && typeof FIREBASE_AUTH.sendPasswordResetEmail==='function'){
+        await FIREBASE_AUTH.sendPasswordResetEmail(email);
+        return {ok:true,via:'FIREBASE_AUTH'};
+      }
+      erroPrincipal=new Error('Firebase Auth não inicializado no navegador.');
+    }catch(e1){
+      erroPrincipal=e1;
+    }
+    try{
+      await _enviarResetFirebaseRESTV296(email);
+      return {ok:true,via:'REST_FALLBACK',erroPrincipal:String((erroPrincipal&&(erroPrincipal.code||erroPrincipal.message))||'')};
+    }catch(e2){
+      var detalhe='';
+      if(erroPrincipal) detalhe=' Primeiro erro: '+String(erroPrincipal.code||erroPrincipal.message||erroPrincipal)+'.';
+      e2.message=_erroFirebaseResetV296(e2)+detalhe;
+      throw e2;
+    }
+  }
+
+  window.abrirResetSenha = abrirResetSenha = function(emailInicial){
+    var email=_emailV296(emailInicial||'');
+    if(!email){
+      try{ var le=document.getElementById('loginEmail'); if(le) email=_emailV296(le.value); }catch(e){}
+    }
+    if(!email){
+      try{ email=_emailV296((window.ESTADO&&ESTADO.email)||localStorage.getItem('PSS_BOLAO_EMAIL')||''); }catch(e){}
+    }
+    abrirModal('Recuperar senha',
+      '<div id="resetSenhaMsgV296" class="notice info"><strong>Redefinição pelo Firebase.</strong><br>Informe o e-mail cadastrado. O Firebase enviará o link oficial de recuperação para a caixa de entrada. Verifique também spam/lixo eletrônico.</div>'+ 
+      '<form onsubmit="resetarSenha(event)">'+
+        '<div class="field"><label>E-mail cadastrado</label><input id="resetEmail" type="email" required value="'+_attrV296(email)+'" /></div>'+ 
+        '<button class="btn btn-block" id="btnReset" type="submit">Enviar redefinição de senha</button>'+ 
+      '</form>'
+    );
+    setTimeout(function(){try{var el=document.getElementById('resetEmail'); if(el) el.focus();}catch(e){}},80);
+  };
+
+  window.resetarSenha = resetarSenha = async function(ev){
+    if(ev&&ev.preventDefault) ev.preventDefault();
+    var email=_emailV296((document.getElementById('resetEmail')||{}).value||'');
+    var btn=document.getElementById('btnReset');
+    var msg=document.getElementById('resetSenhaMsgV296');
+    if(!email){
+      if(msg) msg.className='notice error', msg.innerHTML='<strong>Informe o e-mail cadastrado.</strong>';
+      return false;
+    }
+    if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+    if(msg){msg.className='notice info';msg.innerHTML='<strong>Enviando recuperação pelo Firebase...</strong><br>Aguarde alguns instantes.';}
+    try{
+      var r=await _enviarResetFirebaseV296(email);
+      var html='<div class="notice"><strong>E-mail de redefinição enviado.</strong><br><br>'+ 
+        'O Firebase enviou o link de recuperação para:<br><b>'+_escV296(email)+'</b><br><br>'+ 
+        'Verifique a caixa de entrada, spam ou lixo eletrônico. Depois de alterar a senha, volte ao login e acesse normalmente.'+ 
+        (r&&r.via==='REST_FALLBACK'?'<br><small>Envio realizado por rota alternativa Firebase.</small>':'')+ 
+        '</div><div class="actions" style="justify-content:flex-end;"><button class="btn" type="button" onclick="fecharModal();renderLoginComEmailV296(\''+_attrV296(email)+'\')">OK, voltar ao login</button></div>';
+      var mc=document.getElementById('modalConteudo');
+      if(mc) mc.innerHTML=html;
+      else { try{toast('E-mail de redefinição enviado pelo Firebase.');}catch(e){} }
+    }catch(err){
+      if(msg){msg.className='notice error';msg.innerHTML='<strong>Não foi possível enviar a redefinição.</strong><br>'+_escV296(_erroFirebaseResetV296(err));}
+      else { try{toast(_erroFirebaseResetV296(err),'error');}catch(e){} }
+      if(btn){btn.disabled=false;btn.textContent='Enviar redefinição de senha';}
+    }
+    return false;
+  };
+
+  window.renderLoginComEmailV296=function(email){
+    try{ if(window.ESTADO) ESTADO.email=_emailV296(email); }catch(e){}
+    try{ localStorage.setItem('PSS_BOLAO_EMAIL',_emailV296(email)); }catch(e){}
+    if(typeof renderLogin==='function') renderLogin();
+    setTimeout(function(){try{var le=document.getElementById('loginEmail'); if(le) le.value=_emailV296(email); var ls=document.getElementById('loginSenha'); if(ls) ls.focus();}catch(e){}},80);
+  };
+})();
+
+
 </script>
 
 </body>
