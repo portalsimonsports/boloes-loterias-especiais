@@ -19617,5 +19617,181 @@ window.inserirAtalhoConsultaInicio_ = window.inserirAtalhoConsultaInicio_ || fun
 try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }catch(e){}
 </script>
 
+<script>
+/* =====================================================================
+ * PATCH V302 — CADASTRO FIREBASE SOMENTE NA APROVAÇÃO ADMINISTRATIVA
+ * Arquivo completo gerado mantendo todo o index original.
+ * Correção principal:
+ * - O cadastro público NÃO cria Firebase Auth e NÃO grava usuário pendente no Firebase.
+ * - A solicitação envia a senha para o Code_API.gs e fica pendente.
+ * - A criação do Firebase Auth ocorre somente quando o administrador aprova.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V302_CADASTRO_FIREBASE_SOMENTE_APROVACAO';
+  try{
+    if(window.CONFIG) CONFIG.versao=V;
+    localStorage.setItem('PSS_INDEX_VERSION',V);
+  }catch(e){}
+
+  function txtV302(v){return String(v===undefined||v===null?'':v).trim();}
+  function escV302(v){
+    if(typeof escapeHtml==='function') return escapeHtml(v);
+    return String(v===undefined||v===null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function nomePublicoV302(nomePublico,nome){
+    try{
+      if(typeof nomePublicoSeguroV216_==='function') return nomePublicoSeguroV216_(nomePublico,nome);
+    }catch(e){}
+    nomePublico=txtV302(nomePublico);
+    if(nomePublico) return nomePublico;
+    nome=txtV302(nome);
+    return nome?nome.split(/\s+/)[0]:'';
+  }
+  function nomeLimpoV302(v){
+    try{
+      if(typeof textoLimpoV216_==='function') return textoLimpoV216_(v);
+    }catch(e){}
+    return txtV302(v).replace(/\s+/g,' ');
+  }
+  function toastV302(msg,tipo){
+    try{ if(typeof toast==='function') return toast(msg,tipo); }catch(e){}
+    alert(msg);
+  }
+  async function enviarSolicitacaoCadastroApiV302_(dados,args){
+    if(typeof apiJsonpDireto_==='function'){
+      try{return await apiJsonpDireto_('registrarSolicitacaoCadastroV302',dados,args,18000);}catch(e1){}
+      try{return await apiJsonpDireto_('registrarSolicitacaoCadastroV290',dados,args,18000);}catch(e2){}
+      try{return await apiJsonpDireto_('registrarSolicitacaoCadastroV284',dados,args,18000);}catch(e3){}
+    }
+    if(typeof apiPostMessageBridge_==='function'){
+      try{return await apiPostMessageBridge_('registrarSolicitacaoCadastroV302',dados,args,24000);}catch(e4){}
+      try{return await apiPostMessageBridge_('registrarSolicitacaoCadastroV284',dados,args,24000);}catch(e5){}
+    }
+    if(typeof apiMulti==='function'){
+      return await apiMulti([
+        {action:'registrarSolicitacaoCadastroV302',dados:dados,args:args},
+        {action:'registrarSolicitacaoCadastroV290',dados:dados,args:args},
+        {action:'registrarSolicitacaoCadastroV284',dados:dados,args:args},
+        {action:'registrarSolicitacao',dados:dados,args:args}
+      ]);
+    }
+    if(typeof api==='function') return await api('registrarSolicitacaoCadastroV302',dados,args);
+    throw new Error('API não inicializada no navegador.');
+  }
+
+  window.enviarCadastro = enviarCadastro = async function(ev){
+    if(ev&&ev.preventDefault) ev.preventDefault();
+
+    var form=ev&&ev.target?ev.target:null;
+    var btn=document.getElementById('btnEnviarCadastro');
+    var msgId='cadastroFeedbackV302';
+
+    if(window.PSS_CADASTRO_ENVIANDO_V302){
+      toastV302('Cadastro já está sendo enviado. Aguarde a confirmação.','warn');
+      return false;
+    }
+
+    try{
+      if(form && form.reportValidity && !form.reportValidity()) return false;
+      window.PSS_CADASTRO_ENVIANDO_V302=true;
+
+      var nome=nomeLimpoV302((document.getElementById('cadNome')||{}).value);
+      var nomePublico=nomePublicoV302((document.getElementById('cadNomePublico')||{}).value,nome);
+      var email=txtV302((document.getElementById('cadEmail')||{}).value).toLowerCase();
+      var senha=txtV302((document.getElementById('cadSenha')||{}).value);
+      var senha2=txtV302((document.getElementById('cadSenha2')||{}).value);
+      var cpf=txtV302((document.getElementById('cadCpf')||{}).value);
+      var telefone=txtV302((document.getElementById('cadTelefone')||{}).value);
+      var receberAvisoNovoBolao=(document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked)?'SIM':'NÃO';
+      var aceite=!!(document.getElementById('cadAceite')&&document.getElementById('cadAceite').checked);
+      var cotas=0;
+      var loteria='';
+
+      var antigo=document.getElementById(msgId);
+      if(antigo) antigo.remove();
+
+      if(!nome) throw new Error('Informe o nome completo.');
+      if(!nomePublico) throw new Error('Informe o nome para divulgação no Telegram.');
+      if(!email || email.indexOf('@')<0) throw new Error('Informe um e-mail válido.');
+      if(!senha || senha.length<6) throw new Error('Informe uma senha com pelo menos 6 caracteres.');
+      if(senha!==senha2) throw new Error('As senhas não conferem.');
+      if(!aceite) throw new Error('É necessário aceitar o regulamento.');
+
+      if(btn){btn.disabled=true;btn.textContent='Enviando solicitação...';}
+
+      var feedback=document.createElement('div');
+      feedback.id=msgId;
+      feedback.className='notice info';
+      feedback.innerHTML='<span class="loading-fast">Enviando solicitação. Aguarde a confirmação...</span>';
+      if(form) form.insertBefore(feedback, form.firstChild);
+
+      var dadosCadastro={
+        nome:nome,
+        nomePublico:nomePublico,
+        nomeDivulgacao:nomePublico,
+        nomeExibicao:nomePublico,
+        email:email,
+        cotas:cotas,
+        loteria:loteria,
+        cpf:cpf,
+        telefone:telefone,
+        telegram:telefone,
+        receberAvisoNovoBolao:receberAvisoNovoBolao,
+        aceitouRegulamento:aceite,
+        aceiteRegulamento:aceite,
+        versaoRegulamento:(window.CONFIG&&CONFIG.versaoRegulamento)||'AUTO',
+        senha:senha,
+        senhaCadastro:senha,
+        senhaAcesso:senha,
+        password:senha,
+        confirmarSenha:senha2,
+        confirmacaoSenha:senha2,
+        senhaConfirmacao:senha2,
+        senha2:senha2,
+        status:'Pendente',
+        origem:'SITE_PUBLICO_SEM_FIREBASE_AUTH_V302'
+      };
+      var argsCadastro=[nome,email,cotas,aceite,dadosCadastro.versaoRegulamento,loteria,cpf,telefone,receberAvisoNovoBolao,nomePublico,senha,senha2];
+
+      /* V302: intencionalmente não chama createUserWithEmailAndPassword aqui.
+       * A credencial Firebase Auth será criada pelo Code_API.gs na aprovação do administrador. */
+      var r=await enviarSolicitacaoCadastroApiV302_(dadosCadastro,argsCadastro);
+      if(r && r.sucesso===false) throw new Error(r.msg||r.erro||'Não foi possível enviar a solicitação.');
+      if(r && r.ok===false) throw new Error(r.msg||r.erro||'Não foi possível enviar a solicitação.');
+
+      if(form && form.reset) form.reset();
+      try{ if(typeof atualizarPreviewNomePublicoV216==='function') atualizarPreviewNomePublicoV216(); }catch(ePrev){}
+
+      var conteudo=document.getElementById('modalConteudo');
+      if(conteudo){
+        conteudo.innerHTML=
+          '<div class="cadastro-sucesso-v286">'+
+            '<h3>Solicitação de cadastro enviada com sucesso.</h3>'+
+            '<p>Seu cadastro foi recebido e ficará pendente até aprovação da administração.</p>'+
+            '<p>Após a aprovação, acesse o sistema com o e-mail informado e a senha cadastrada.</p>'+
+          '</div>'+
+          '<div class="actions" style="justify-content:flex-end;margin-top:14px;">'+
+            '<button type="button" class="btn btn-light" onclick="fecharModal(); renderHomePublica();">Voltar ao início</button>'+
+            '<button type="button" class="btn" onclick="fecharModal(); renderLogin();">Ir para login</button>'+
+          '</div>';
+      }
+
+      toastV302((r&&r.msg)||'Solicitação de cadastro enviada com sucesso. Aguarde aprovação da administração.');
+      return false;
+    }catch(err){
+      var msg=(err&&err.message)||String(err||'Erro ao enviar solicitação.');
+      var old=document.getElementById(msgId);
+      if(old){old.className='notice error';old.textContent=msg;}
+      toastV302(msg,'error');
+      if(btn){btn.disabled=false;btn.textContent='Enviar solicitação de acesso';}
+      return false;
+    }finally{
+      setTimeout(function(){window.PSS_CADASTRO_ENVIANDO_V302=false;},900);
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
