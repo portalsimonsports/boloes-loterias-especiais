@@ -20304,5 +20304,503 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V308 — ADMIN MESTRE RESTAURADO + CADASTRO SEM FIREBASE PRÉVIO
+ * Projeto: Portal SimonSports — Bolões Loterias Especiais
+ *
+ * Correções aplicadas:
+ * 1) portalsimonsports@gmail.com volta a ser reconhecido como ADMIN_MESTRE
+ *    independentemente de perfil incompleto no Firestore/localStorage.
+ * 2) Menu "PARTICIPANTES BOLÃO" fica liberado somente ao admin mestre real.
+ * 3) Solicitação pública de cadastro NÃO cria Firebase Auth e NÃO grava
+ *    documento pendente no Firestore.
+ * 4) Firebase/Firestore passam a ser sincronizados apenas após aprovação
+ *    administrativa.
+ * 5) Aprovação deixa de tentar criar Firebase Auth duas vezes pelo navegador.
+ *    O Code_API cria Auth na aprovação; o index apenas confirma o documento
+ *    Firestore aprovado.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var VERSAO_V308 = 'V308_ADMIN_MESTRE_CADASTRO_FIREBASE_APROVACAO_RAPIDA';
+  var ADMIN_MESTRE_EMAIL_V308 = 'portalsimonsports@gmail.com';
+
+  try{
+    if(typeof CONFIG === 'object') CONFIG.versao = VERSAO_V308;
+    localStorage.setItem('PSS_INDEX_VERSION', VERSAO_V308);
+  }catch(e){}
+
+  function txtV308(v){
+    return String(v === undefined || v === null ? '' : v).trim();
+  }
+
+  function emailNormV308(v){
+    return txtV308(v).toLowerCase();
+  }
+
+  function normV308(v){
+    var s = txtV308(v);
+    try{s = s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){}
+    return s.toUpperCase();
+  }
+
+  function escV308(v){
+    try{
+      if(typeof escapeHtml === 'function') return escapeHtml(v);
+    }catch(e){}
+    return txtV308(v).replace(/[&<>"']/g,function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function emailAtualV308(){
+    try{
+      var u = (window.ESTADO && ESTADO.usuario) || {};
+      return emailNormV308(u.email || (window.ESTADO && ESTADO.email) || localStorage.getItem('PSS_BOLAO_EMAIL') || '');
+    }catch(e){
+      return '';
+    }
+  }
+
+  function perfilAtualV308(){
+    try{
+      var u = (window.ESTADO && ESTADO.usuario) || {};
+      return normV308((window.ESTADO && ESTADO.role) || '') + ' ' + normV308(u.perfil || '') + ' ' + normV308(u.role || '');
+    }catch(e){
+      return '';
+    }
+  }
+
+  window.PSS_isAdminMestreV308 = function(){
+    var email = emailAtualV308();
+    if(email && email === ADMIN_MESTRE_EMAIL_V308) return true;
+
+    var perfil = perfilAtualV308();
+    return perfil.indexOf('ADMIN_MESTRE') >= 0 ||
+           perfil.indexOf('ADMIN MESTRE') >= 0 ||
+           perfil.indexOf('MESTRE') >= 0 ||
+           perfil.indexOf('MASTER') >= 0;
+  };
+
+  window.isAdminMestreV286_ = window.PSS_isAdminMestreV308;
+  window.isAdminMestreV287_ = window.PSS_isAdminMestreV308;
+  window.isAdminMestreV308_ = window.PSS_isAdminMestreV308;
+
+  var isAdminBaseV308 = window.isAdmin;
+  window.isAdmin = isAdmin = function(){
+    if(window.PSS_isAdminMestreV308()) return true;
+    try{
+      if(typeof isAdminBaseV308 === 'function' && isAdminBaseV308()) return true;
+    }catch(e){}
+    var perfil = perfilAtualV308();
+    return perfil.indexOf('ADMIN') >= 0 || perfil.indexOf('MESTRE') >= 0;
+  };
+
+  function reforcarAdminMestreSessaoV308(){
+    try{
+      if(!window.ESTADO) return false;
+      var email = emailAtualV308();
+      if(email !== ADMIN_MESTRE_EMAIL_V308) return false;
+
+      if(!ESTADO.usuario) ESTADO.usuario = {};
+      ESTADO.usuario.email = ADMIN_MESTRE_EMAIL_V308;
+      ESTADO.usuario.nome = ESTADO.usuario.nome || 'Portal SimonSports';
+      ESTADO.usuario.perfil = 'ADMIN_MESTRE';
+      ESTADO.usuario.role = 'admin';
+      ESTADO.role = 'admin';
+      ESTADO.email = ADMIN_MESTRE_EMAIL_V308;
+
+      try{
+        localStorage.setItem('PSS_BOLAO_EMAIL', ADMIN_MESTRE_EMAIL_V308);
+        if(typeof salvarSessao === 'function') salvarSessao(ESTADO.usuario);
+      }catch(eSave){}
+
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  var normalizarSessaoBaseV308 = window.normalizarUsuarioSessao_;
+  if(typeof normalizarSessaoBaseV308 === 'function'){
+    window.normalizarUsuarioSessao_ = normalizarUsuarioSessao_ = function(s){
+      var u = normalizarSessaoBaseV308(s || {});
+      if(emailNormV308(u && u.email) === ADMIN_MESTRE_EMAIL_V308){
+        u.nome = u.nome || 'Portal SimonSports';
+        u.email = ADMIN_MESTRE_EMAIL_V308;
+        u.perfil = 'ADMIN_MESTRE';
+        u.role = 'admin';
+      }
+      return u;
+    };
+  }
+
+  var firebasePerfilBaseV308 = window.firebaseNormalizarPerfil_;
+  if(typeof firebasePerfilBaseV308 === 'function'){
+    window.firebaseNormalizarPerfil_ = firebaseNormalizarPerfil_ = function(snap,emailPadrao){
+      var u = firebasePerfilBaseV308(snap,emailPadrao);
+      var email = emailNormV308((u && u.email) || emailPadrao);
+      if(email === ADMIN_MESTRE_EMAIL_V308){
+        u.nome = u.nome || 'Portal SimonSports';
+        u.email = ADMIN_MESTRE_EMAIL_V308;
+        u.perfil = 'ADMIN_MESTRE';
+        u.role = 'admin';
+        u.status = 'APROVADO';
+        u.ativo = true;
+        return u;
+      }
+
+      try{
+        var d = snap && snap.exists && snap.data ? (snap.data() || {}) : {};
+        if(d.aceiteRegulamento === false || String(d.aceiteRegulamento || '').toUpperCase() === 'NÃO' || String(d.aceiteRegulamento || '').toUpperCase() === 'NAO'){
+          throw new Error('Acesso ainda não liberado: aceite do regulamento não localizado.');
+        }
+      }catch(eAceite){
+        if(String(eAceite && eAceite.message || '').indexOf('regulamento') >= 0) throw eAceite;
+      }
+
+      return u;
+    };
+  }
+
+  var aplicarLayoutBaseV308 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    reforcarAdminMestreSessaoV308();
+
+    if(typeof aplicarLayoutBaseV308 === 'function'){
+      aplicarLayoutBaseV308.apply(this, arguments);
+    }
+
+    try{
+      var admin = isAdmin();
+      var mestre = window.PSS_isAdminMestreV308();
+
+      document.querySelectorAll('.admin-only').forEach(function(el){
+        el.classList.toggle('hidden', !admin);
+        if(admin) el.removeAttribute('aria-hidden');
+        else el.setAttribute('aria-hidden','true');
+      });
+
+      document.querySelectorAll('.admin-mestre-only,[data-view="participantes"]').forEach(function(el){
+        el.classList.toggle('hidden', !mestre);
+        if(mestre) el.removeAttribute('aria-hidden');
+        else el.setAttribute('aria-hidden','true');
+      });
+
+      document.body.classList.toggle('pss-admin', admin);
+      document.body.classList.toggle('pss-admin-mestre', mestre);
+
+      var user = document.getElementById('userDisplay');
+      if(user && window.ESTADO && ESTADO.usuario){
+        user.textContent = (ESTADO.usuario.nome || 'Usuário') + (ESTADO.email ? ' • ' + ESTADO.email : '');
+      }
+    }catch(eLayout){}
+  };
+
+  var navegarBaseV308 = window.navegar;
+  window.navegar = navegar = function(v){
+    reforcarAdminMestreSessaoV308();
+
+    if(v === 'participantes' && !window.PSS_isAdminMestreV308()){
+      if(typeof setView === 'function'){
+        setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador mestre.</div></div>');
+      }
+      return;
+    }
+
+    if(typeof navegarBaseV308 === 'function') return navegarBaseV308.apply(this, arguments);
+  };
+
+  var renderParticipantesBaseV308 = window.renderParticipantesBolaoAdmin;
+  if(typeof renderParticipantesBaseV308 === 'function'){
+    window.renderParticipantesBolaoAdmin = renderParticipantesBolaoAdmin = async function(){
+      reforcarAdminMestreSessaoV308();
+
+      if(!window.PSS_isAdminMestreV308()){
+        if(typeof setView === 'function'){
+          setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador mestre.</div></div>');
+        }
+        return;
+      }
+
+      return await renderParticipantesBaseV308.apply(this, arguments);
+    };
+  }
+
+  async function enviarSolicitacaoCadastroApiV308_(dados,args){
+    if(typeof apiJsonpDireto_ === 'function'){
+      try{return await apiJsonpDireto_('registrarSolicitacaoCadastroV302',dados,args,18000);}catch(e1){}
+      try{return await apiJsonpDireto_('registrarSolicitacaoCadastroV290',dados,args,18000);}catch(e2){}
+      try{return await apiJsonpDireto_('registrarSolicitacaoCadastroV284',dados,args,18000);}catch(e3){}
+    }
+
+    if(typeof apiPostMessageBridge_ === 'function'){
+      try{return await apiPostMessageBridge_('registrarSolicitacaoCadastroV302',dados,args,24000);}catch(e4){}
+      try{return await apiPostMessageBridge_('registrarSolicitacaoCadastroV290',dados,args,24000);}catch(e5){}
+    }
+
+    if(typeof apiMulti === 'function'){
+      return await apiMulti([
+        {action:'registrarSolicitacaoCadastroV302',dados:dados,args:args},
+        {action:'registrarSolicitacaoCadastroV290',dados:dados,args:args},
+        {action:'registrarSolicitacaoCadastroV284',dados:dados,args:args},
+        {action:'registrarSolicitacao',dados:dados,args:args}
+      ]);
+    }
+
+    throw new Error('API não inicializada para registrar a solicitação.');
+  }
+
+  function pegarCampoV308(id){
+    var el = document.getElementById(id);
+    return el ? txtV308(el.value) : '';
+  }
+
+  function nomePublicoV308(nomePublico,nome){
+    try{
+      if(typeof nomePublicoSeguroV216_ === 'function') return nomePublicoSeguroV216_(nomePublico,nome);
+    }catch(e){}
+    nomePublico = txtV308(nomePublico);
+    if(nomePublico) return nomePublico;
+    nome = txtV308(nome);
+    return nome ? nome.split(/\s+/)[0] : '';
+  }
+
+  window.enviarCadastro = enviarCadastro = async function(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+
+    if(window.PSS_CADASTRO_ENVIANDO_V308){
+      if(typeof toast === 'function') toast('Cadastro já está sendo enviado. Aguarde a confirmação.','warn');
+      return false;
+    }
+
+    var form = ev && ev.target ? ev.target : document.querySelector('form[onsubmit*="enviarCadastro"]');
+    var btn = document.getElementById('btnEnviarCadastro');
+    var msgId = 'cadastroFeedbackV308';
+
+    try{
+      if(form && form.reportValidity && !form.reportValidity()) return false;
+      window.PSS_CADASTRO_ENVIANDO_V308 = true;
+
+      var nome = pegarCampoV308('cadNome').replace(/\s+/g,' ');
+      try{ if(typeof textoLimpoV216_ === 'function') nome = textoLimpoV216_(nome); }catch(eNome){}
+
+      var nomePublico = nomePublicoV308(pegarCampoV308('cadNomePublico'), nome);
+      var email = emailNormV308(pegarCampoV308('cadEmail'));
+      var senha = pegarCampoV308('cadSenha');
+      var senha2 = pegarCampoV308('cadSenha2');
+      var cpf = pegarCampoV308('cadCpf');
+      var telefone = pegarCampoV308('cadTelefone');
+      var receberAvisoNovoBolao = (document.getElementById('cadAvisoNovoBolao') && document.getElementById('cadAvisoNovoBolao').checked) ? 'SIM' : 'NÃO';
+      var aceite = !!(document.getElementById('cadAceite') && document.getElementById('cadAceite').checked);
+      var loteria = '';
+      var cotas = 0;
+
+      var old = document.getElementById(msgId);
+      if(old) old.remove();
+
+      if(!nome) throw new Error('Informe o nome completo.');
+      if(!nomePublico) throw new Error('Informe o nome para divulgação no Telegram.');
+      if(!email || email.indexOf('@') < 0) throw new Error('Informe um e-mail válido.');
+      if(!senha || senha.length < 6) throw new Error('Informe uma senha com pelo menos 6 caracteres.');
+      if(senha !== senha2) throw new Error('As senhas não conferem.');
+      if(!aceite) throw new Error('É necessário aceitar o regulamento.');
+
+      if(btn){btn.disabled = true; btn.textContent = 'Enviando solicitação...';}
+
+      var feedback = document.createElement('div');
+      feedback.id = msgId;
+      feedback.className = 'notice info';
+      feedback.innerHTML = '<span class="loading-fast">Registrando solicitação. Nenhum dado será enviado ao Firebase antes da aprovação.</span>';
+      if(form) form.insertBefore(feedback, form.firstChild);
+
+      var versaoReg = (window.CONFIG && CONFIG.versaoRegulamento) || 'AUTO';
+      try{
+        if(typeof obterVersaoRegulamentoAtualV289_ === 'function') versaoReg = await obterVersaoRegulamentoAtualV289_();
+      }catch(eVersao){}
+      if(typeof CONFIG === 'object') CONFIG.versaoRegulamento = versaoReg;
+
+      var dadosCadastro = {
+        nome:nome,
+        nomePublico:nomePublico,
+        nomeDivulgacao:nomePublico,
+        nomeExibicao:nomePublico,
+        email:email,
+        cotas:cotas,
+        loteria:loteria,
+        cpf:cpf,
+        telefone:telefone,
+        telegram:telefone,
+        receberAvisoNovoBolao:receberAvisoNovoBolao,
+        aceitouRegulamento:aceite,
+        aceiteRegulamento:aceite,
+        versaoRegulamento:versaoReg,
+        senha:senha,
+        senhaCadastro:senha,
+        senhaAcesso:senha,
+        password:senha,
+        confirmarSenha:senha2,
+        confirmacaoSenha:senha2,
+        senhaConfirmacao:senha2,
+        senha2:senha2,
+        status:'Pendente',
+        origem:'SITE_PUBLICO_SEM_FIREBASE_PREVIO_V308'
+      };
+      var argsCadastro = [nome,email,cotas,aceite,versaoReg,loteria,cpf,telefone,receberAvisoNovoBolao,nomePublico,senha,senha2];
+
+      /*
+       * Regra V308:
+       * Não chamar createUserWithEmailAndPassword.
+       * Não chamar firebaseCriarUsuarioPendente_.
+       * O Firebase só é sincronizado depois da aprovação administrativa.
+       */
+      var r = await enviarSolicitacaoCadastroApiV308_(dadosCadastro,argsCadastro);
+      if(r && (r.sucesso === false || r.ok === false)){
+        throw new Error(r.msg || r.erro || 'Não foi possível enviar a solicitação.');
+      }
+
+      if(form && form.reset) form.reset();
+      try{ if(typeof atualizarPreviewNomePublicoV216 === 'function') atualizarPreviewNomePublicoV216(); }catch(ePrev){}
+
+      var conteudo = document.getElementById('modalConteudo');
+      if(conteudo){
+        conteudo.innerHTML =
+          '<div class="cadastro-sucesso-v286">' +
+            '<h3>Solicitação de cadastro enviada com sucesso.</h3>' +
+            '<p>Seu cadastro foi recebido e ficará pendente até aprovação da administração.</p>' +
+            '<p>Após a aprovação, o e-mail e a senha informados serão sincronizados com o Firebase e o acesso será liberado conforme o aceite do regulamento.</p>' +
+          '</div>' +
+          '<div class="actions" style="justify-content:flex-end;margin-top:14px;">' +
+            '<button type="button" class="btn btn-light" onclick="fecharModal(); renderHomePublica();">Voltar ao início</button>' +
+            '<button type="button" class="btn" onclick="fecharModal(); renderLogin();">Ir para login</button>' +
+          '</div>';
+      }
+
+      if(typeof toast === 'function') toast((r && r.msg) || 'Solicitação enviada. Aguarde aprovação da administração.');
+      return false;
+    }catch(err){
+      var msg = (err && err.message) || String(err || 'Erro ao enviar solicitação.');
+      var box = document.getElementById(msgId);
+      if(!box && form){
+        box = document.createElement('div');
+        box.id = msgId;
+        form.insertBefore(box, form.firstChild);
+      }
+      if(box){
+        box.className = 'notice error';
+        box.textContent = msg;
+      }
+      if(typeof toast === 'function') toast(msg,'error');
+      if(btn){btn.disabled = false; btn.textContent = 'Enviar solicitação de acesso';}
+      return false;
+    }finally{
+      setTimeout(function(){window.PSS_CADASTRO_ENVIANDO_V308 = false;},900);
+    }
+  };
+
+  async function sincronizarFirestoreAprovacaoV308_(dados){
+    dados = dados || {};
+    var email = emailNormV308(dados.email || dados.EMAIL || '');
+    if(!email) return false;
+
+    await inicializarFirebase_();
+
+    var nome = txtV308(dados.nome || dados.NOME || email);
+    var nomePublico = txtV308(dados.nomePublico || dados.nomeDivulgacao || dados.nomeExibicao || dados.NOME_PUBLICO || nome);
+    var perfil = txtV308(dados.perfil || dados.role || 'USUARIO').toUpperCase();
+    var aceite = dados.aceiteRegulamento;
+
+    if(aceite === undefined || aceite === null || aceite === '') aceite = true;
+    if(String(aceite).toUpperCase() === 'SIM') aceite = true;
+    if(String(aceite).toUpperCase() === 'NÃO' || String(aceite).toUpperCase() === 'NAO') aceite = false;
+
+    await firebaseUsuarioRef_(email).set({
+      email:email,
+      nome:nome,
+      nomePublico:nomePublico,
+      nomeDivulgacao:nomePublico,
+      nomeExibicao:nomePublico,
+      telefone:txtV308(dados.telefone || dados.telegram || ''),
+      cpf:txtV308(dados.cpf || ''),
+      status:'APROVADO',
+      perfil:perfil,
+      ativo:true,
+      aceiteRegulamento:!!aceite,
+      dataAceiteRegulamento:txtV308(dados.dataAceiteRegulamento || ''),
+      versaoRegulamento:txtV308(dados.versaoRegulamento || (window.CONFIG && CONFIG.versaoRegulamento) || 'AUTO'),
+      receberAvisoNovoBolao:dados.receberAvisoNovoBolao === false ? false : true,
+      origem:'APROVACAO_ADMIN_SITE_V308',
+      atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+
+    return true;
+  }
+
+  window.executarAcaoSolicitacaoAdmin = async function(){
+    var cfg = window.PSS_SOLICITACAO_ACAO || {};
+    window.PSS_SOLICITACAO_ACAO = null;
+    try{ if(typeof fecharModal === 'function') fecharModal(); }catch(e){}
+
+    if(!cfg.action || !cfg.linha) return;
+
+    try{
+      if(typeof toast === 'function') toast('Processando solicitação...','info');
+
+      var dadosAntes = {};
+      try{
+        if(typeof getSolicitacaoCachePorLinhaV290_ === 'function') dadosAntes = getSolicitacaoCachePorLinhaV290_(cfg.linha) || {};
+      }catch(eAntes){}
+
+      var r = await apiMulti([{action:cfg.action,dados:{linha:cfg.linha},args:[cfg.linha]}]);
+
+      if(String(cfg.action || '').toLowerCase().indexOf('aprovar') >= 0){
+        var uf = (r && r.usuarioFirebase) || {};
+        var syncDados = Object.assign({}, dadosAntes, uf, {
+          email: uf.email || r.email || dadosAntes.email,
+          nome: uf.nome || r.nome || dadosAntes.nome,
+          nomePublico: uf.nomePublico || r.nomePublico || dadosAntes.nomePublico,
+          perfil: uf.perfil || 'USUARIO'
+        });
+
+        if(syncDados.email){
+          try{
+            await sincronizarFirestoreAprovacaoV308_(syncDados);
+            if(typeof toast === 'function') toast('Cadastro aprovado e Firestore sincronizado. Firebase Auth foi tratado pelo Code_API.');
+          }catch(eSync){
+            if(typeof toast === 'function') toast('A aprovação foi gravada na planilha, mas a sincronização Firestore falhou: ' + ((eSync && eSync.message) || eSync),'error');
+          }
+        }
+      }else if(String(cfg.action || '').toLowerCase().indexOf('recusar') >= 0){
+        var rec = dadosAntes || {};
+        if(rec.email){
+          try{
+            await firebaseSincronizarUsuarioAdmin_({email:rec.email,nome:rec.nome,status:'RECUSADO',perfil:'USUARIO',ativo:false});
+          }catch(eRec){}
+        }
+      }
+
+      if(typeof toast === 'function') toast((r && r.msg) || 'Ação realizada com sucesso.');
+      if(typeof renderSolicitacoesAdmin === 'function') await renderSolicitacoesAdmin();
+      try{ if(typeof carregarBadgeInscritosTopo === 'function') await carregarBadgeInscritosTopo(); }catch(eBadge){}
+    }catch(err){
+      if(typeof toast === 'function') toast((err && err.message) || String(err || 'Erro ao processar solicitação.'),'error');
+    }
+  };
+
+  setTimeout(function(){
+    try{
+      reforcarAdminMestreSessaoV308();
+      if(window.ESTADO && ESTADO.usuario && typeof aplicarLayoutLogado === 'function') aplicarLayoutLogado();
+    }catch(e){}
+  },250);
+})();
+</script>
+
+
 </body>
 </html>
