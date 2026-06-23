@@ -21420,5 +21420,406 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+<script>
+/* =====================================================================
+ * PATCH V313 — APROVAÇÃO ULTRA RÁPIDA
+ * - Backend não cria Firebase Auth via UrlFetchApp antes de responder.
+ * - Backend aprova planilha/Usuarios e retorna em poucos segundos.
+ * - O navegador cria o Firebase Auth via REST e sincroniza Firestore após retorno.
+ * - E-mail de aprovação é disparado em chamada separada, sem travar a aprovação.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var V='V313_APROVACAO_ULTRA_RAPIDA';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+  var processando={};
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function emailAtual(){
+    try{if(window.ESTADO&&ESTADO.email)return String(ESTADO.email).trim().toLowerCase();}catch(e){}
+    try{if(window.ESTADO&&ESTADO.usuario&&ESTADO.usuario.email)return String(ESTADO.usuario.email).trim().toLowerCase();}catch(e){}
+    try{return String(localStorage.getItem('PSS_BOLAO_EMAIL')||'').trim().toLowerCase();}catch(e){}
+    return '';
+  }
+  function getCacheSolicitacao(linha){
+    try{if(typeof getSolicitacaoCachePorLinhaV290_==='function')return getSolicitacaoCachePorLinhaV290_(linha)||{};}catch(e){}
+    return {};
+  }
+
+  async function apiJsonpV313(action,dados,args,timeoutMs){
+    if(typeof apiJsonpDireto_==='function')return await apiJsonpDireto_(action,dados||{},args||[],timeoutMs||30000);
+    return await api(action,dados||{},args||[]);
+  }
+
+  async function aprovarRapidoV313(action,linha){
+    var acao=String(action||'');
+    var args=[linha];
+    var dados={linha:linha,linhaPlanilha:linha,row:linha,email:emailAtual(),origem:'INDEX_V313'};
+    if(acao.toLowerCase().indexOf('aprovar')>=0)acao='aprovarSolicitacaoCadastroV313';
+    else if(acao.toLowerCase().indexOf('recusar')>=0)acao='recusarSolicitacaoCadastro';
+    else if(acao.toLowerCase().indexOf('tornar')>=0||acao.toLowerCase().indexOf('promover')>=0)acao='tornarUsuarioAdministradorLinha';
+    return await apiJsonpV313(acao,dados,args,30000);
+  }
+
+  async function criarFirebaseAuthClienteV313(info){
+    info=info||{};
+    var email=txt(info.email).toLowerCase();
+    var senha=txt(info.senhaAcesso||info.senha||info.password);
+    var nome=txt(info.nome||info.nomePublico||email);
+    if(!email||!senha)return {ok:false,ignorado:true,motivo:'sem_email_ou_senha'};
+    var key='';
+    try{key=(window.FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey)||'';}catch(e){}
+    if(!key)return {ok:false,ignorado:true,motivo:'api_key_firebase_nao_localizada'};
+    var url='https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+encodeURIComponent(key);
+    var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:senha,displayName:nome,returnSecureToken:false})});
+    var obj={};
+    try{obj=await res.json();}catch(eJson){}
+    if(res.ok)return {ok:true,criado:true};
+    var msg=obj&&obj.error&&obj.error.message?String(obj.error.message):('HTTP '+res.status);
+    if(msg.indexOf('EMAIL_EXISTS')>=0)return {ok:true,jaExistia:true};
+    return {ok:false,erro:msg,httpCode:res.status};
+  }
+
+  function enviarEmailAprovacaoSeparadoV313(email){
+    email=txt(email).toLowerCase();
+    if(!email)return;
+    setTimeout(function(){
+      try{apiJsonpV313('enviarEmailAprovacaoV313',{email:email},[email],20000).catch(function(e){console.warn('E-mail aprovação V313 não enviado agora:',e);});}catch(eCall){}
+    },500);
+  }
+
+  window.executarAcaoSolicitacaoAdmin=executarAcaoSolicitacaoAdmin=async function(){
+    var cfg=window.PSS_SOLICITACAO_ACAO||{};
+    window.PSS_SOLICITACAO_ACAO=null;
+    try{if(typeof fecharModal==='function')fecharModal();}catch(e){}
+    if(!cfg.action||!cfg.linha)return;
+
+    var chave=String(cfg.action)+'_'+String(cfg.linha);
+    if(processando[chave]){
+      try{if(typeof toast==='function')toast('Esta solicitação já está sendo processada nesta tela. Aguarde a conclusão.','warn');}catch(e){}
+      return;
+    }
+    processando[chave]=true;
+
+    var card=document.getElementById('sol-card-'+cfg.linha);
+    var aviso=null;
+    try{
+      if(card){
+        card.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+        aviso=document.getElementById('sol-processando-v313-'+cfg.linha);
+        if(!aviso){
+          aviso=document.createElement('div');
+          aviso.className='notice info';
+          aviso.id='sol-processando-v313-'+cfg.linha;
+          card.appendChild(aviso);
+        }
+        aviso.innerHTML='<span class="loading-fast">Aprovando no servidor. Não clique novamente...</span>';
+      }
+    }catch(eCard){}
+
+    try{
+      if(typeof toast==='function')toast('Aprovando solicitação...','info');
+      var antes=getCacheSolicitacao(cfg.linha);
+      var r=await aprovarRapidoV313(cfg.action,cfg.linha);
+
+      if(aviso){aviso.className='notice info';aviso.innerHTML='<span class="loading-fast">Aprovação gravada. Criando acesso Firebase...</span>';}
+
+      if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
+        var uf=(r&&r.usuarioFirebase)||{};
+        var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
+
+        var authRes={ok:false,ignorado:true};
+        try{authRes=await criarFirebaseAuthClienteV313(syncDados);}catch(eAuth){authRes={ok:false,erro:(eAuth&&eAuth.message)||String(eAuth)};}
+        if(!authRes.ok&&typeof toast==='function')toast('Aprovação gravada, mas Firebase Auth retornou: '+(authRes.erro||authRes.motivo||'erro desconhecido'),'warn');
+
+        if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
+          try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+        }
+        enviarEmailAprovacaoSeparadoV313(syncDados.email||r.email);
+      }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
+        var rec=antes||{};
+        if(rec.email&&typeof firebaseSincronizarUsuarioAdmin_==='function'){
+          try{await firebaseSincronizarUsuarioAdmin_({email:rec.email,nome:rec.nome,status:'RECUSADO',perfil:'USUARIO',ativo:false});}catch(eRec){}
+        }
+      }
+
+      if(aviso){aviso.className='notice';aviso.innerHTML=esc((r&&r.msg)||'Ação realizada com sucesso.');}
+      if(typeof toast==='function')toast((r&&r.msg)||'Ação realizada com sucesso.');
+      setTimeout(function(){try{if(typeof renderSolicitacoesAdmin==='function')renderSolicitacoesAdmin();}catch(e){}},600);
+      setTimeout(function(){try{if(typeof carregarBadgeInscritosTopo==='function')carregarBadgeInscritosTopo();}catch(e){}},1000);
+    }catch(err){
+      var msg=(err&&err.message)||String(err||'Erro ao processar solicitação.');
+      try{if(card)card.querySelectorAll('button').forEach(function(b){b.disabled=false;});}catch(eBtn){}
+      if(aviso){aviso.className='notice error';aviso.innerHTML=esc(msg);}
+      if(typeof toast==='function')toast(msg,'error');
+    }finally{
+      delete processando[chave];
+    }
+  };
+})();
+</script>
+
+
+<script>
+/* =====================================================================
+ * PATCH V314 — FIRESTORE OBRIGATÓRIO NA APROVAÇÃO + REPARO NO LOGIN
+ * Problema corrigido:
+ * - Firebase Authentication era criado, mas o documento Firestore /usuarios/{email}
+ *   podia não ser gravado porque a função de sync anterior estava encapsulada.
+ * - Login com Auth existente falhava em "Cadastro não localizado no Firebase".
+ *
+ * Regra V314:
+ * - Após aprovar, grava Firestore diretamente no cliente.
+ * - Se o Auth existir mas o Firestore faltar, o login valida a aba Usuarios e repara.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V314_FIRESTORE_REPARO_LOGIN';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  var processandoV314={};
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function emailNorm(v){return txt(v).toLowerCase();}
+  function esc(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v); }catch(e){}
+    return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function getId(id){return document.getElementById(id);}
+  function emailAtual(){
+    try{ if(window.ESTADO&&ESTADO.email) return emailNorm(ESTADO.email); }catch(e){}
+    try{ if(window.ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) return emailNorm(ESTADO.usuario.email); }catch(e){}
+    try{ return emailNorm(localStorage.getItem('PSS_BOLAO_EMAIL')||''); }catch(e){}
+    return '';
+  }
+  function getCacheSolicitacao(linha){
+    try{ if(typeof getSolicitacaoCachePorLinhaV290_==='function') return getSolicitacaoCachePorLinhaV290_(linha)||{}; }catch(e){}
+    return {};
+  }
+  function senhaFrom(d){
+    d=d||{};
+    return txt(d.senhaAcesso||d.senhaCadastro||d.senha||d.password||d.pass||d.SENHA||'');
+  }
+  function normalizarPerfil(d){
+    var p=txt((d&& (d.perfil||d.role||d.PERFIL)) || 'USUARIO').toUpperCase();
+    return p||'USUARIO';
+  }
+
+  async function apiJsonpV314(action,dados,args,timeoutMs){
+    if(typeof apiJsonpDireto_==='function') return await apiJsonpDireto_(action,dados||{},args||[],timeoutMs||45000);
+    return await api(action,dados||{},args||[]);
+  }
+
+  async function firestoreSetAprovadoV314(dados,origem){
+    dados=dados||{};
+    var email=emailNorm(dados.email||dados.EMAIL||'');
+    if(!email) throw new Error('Firestore: e-mail não informado para sincronização.');
+    await inicializarFirebase_();
+
+    var nome=txt(dados.nome||dados.NOME||dados.nomeCompleto||email) || email;
+    var nomePublico=txt(dados.nomePublico||dados.nomeDivulgacao||dados.nomeExibicao||dados.NOME_PUBLICO||nome) || nome;
+    var aceite=dados.aceiteRegulamento;
+    if(aceite===undefined||aceite===null||aceite==='') aceite=true;
+    if(String(aceite).toUpperCase()==='SIM') aceite=true;
+    if(String(aceite).toUpperCase()==='NÃO'||String(aceite).toUpperCase()==='NAO') aceite=false;
+
+    await firebaseUsuarioRef_(email).set({
+      email:email,
+      nome:nome,
+      nomePublico:nomePublico,
+      nomeDivulgacao:nomePublico,
+      nomeExibicao:nomePublico,
+      telefone:txt(dados.telefone||dados.telegram||dados.TELEFONE||dados.TELEGRAM||''),
+      cpf:txt(dados.cpf||dados.CPF||''),
+      status:'APROVADO',
+      perfil:normalizarPerfil(dados),
+      role:normalizarPerfil(dados).indexOf('ADMIN')>=0?'admin':'usuario',
+      ativo:true,
+      aceiteRegulamento:!!aceite,
+      dataAceiteRegulamento:txt(dados.dataAceiteRegulamento||dados.dataAceite||''),
+      versaoRegulamento:txt(dados.versaoRegulamento||(window.CONFIG&&CONFIG.versaoRegulamento)||'2026.2'),
+      receberAvisoNovoBolao:dados.receberAvisoNovoBolao===false?false:true,
+      origem:origem||'APROVACAO_ADMIN_SITE_V314',
+      atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+
+    return {ok:true,email:email};
+  }
+  window.firestoreSetAprovadoV314=firestoreSetAprovadoV314;
+
+  async function criarFirebaseAuthClienteV314(info){
+    info=info||{};
+    var email=emailNorm(info.email||'');
+    var senha=senhaFrom(info);
+    var nome=txt(info.nome||info.nomePublico||email);
+    if(!email||!senha) return {ok:false,ignorado:true,motivo:'sem_email_ou_senha'};
+    var key='';
+    try{ key=(window.FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey)||FIREBASE_CONFIG.apiKey||''; }catch(e){}
+    if(!key) return {ok:false,ignorado:true,motivo:'api_key_firebase_nao_localizada'};
+    var url='https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+encodeURIComponent(key);
+    var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:senha,displayName:nome,returnSecureToken:false})});
+    var obj={};
+    try{ obj=await res.json(); }catch(eJson){}
+    if(res.ok) return {ok:true,criado:true};
+    var msg=obj&&obj.error&&obj.error.message?String(obj.error.message):('HTTP '+res.status);
+    if(msg.indexOf('EMAIL_EXISTS')>=0) return {ok:true,jaExistia:true};
+    return {ok:false,erro:msg,httpCode:res.status};
+  }
+
+  async function aprovarRapidoV314(action,linha){
+    var acao=String(action||'');
+    if(acao.toLowerCase().indexOf('aprovar')>=0) acao='aprovarSolicitacaoCadastroV313';
+    else if(acao.toLowerCase().indexOf('recusar')>=0) acao='recusarSolicitacaoCadastro';
+    else if(acao.toLowerCase().indexOf('tornar')>=0||acao.toLowerCase().indexOf('promover')>=0) acao='tornarUsuarioAdministradorLinha';
+    return await apiJsonpV314(acao,{linha:linha,linhaPlanilha:linha,row:linha,email:emailAtual(),origem:'INDEX_V314'},[linha],45000);
+  }
+
+  function enviarEmailAprovacaoSeparadoV314(email){
+    email=emailNorm(email||'');
+    if(!email)return;
+    setTimeout(function(){
+      try{ apiJsonpV314('enviarEmailAprovacaoV313',{email:email},[email],20000).catch(function(e){console.warn('E-mail aprovação V314 não enviado agora:',e);}); }catch(eCall){}
+    },700);
+  }
+
+  window.executarAcaoSolicitacaoAdmin=executarAcaoSolicitacaoAdmin=async function(){
+    var cfg=window.PSS_SOLICITACAO_ACAO||{};
+    window.PSS_SOLICITACAO_ACAO=null;
+    try{ if(typeof fecharModal==='function') fecharModal(); }catch(e){}
+    if(!cfg.action||!cfg.linha) return;
+
+    var chave=String(cfg.action)+'_'+String(cfg.linha);
+    if(processandoV314[chave]){
+      try{ if(typeof toast==='function') toast('Esta solicitação já está sendo processada nesta tela. Aguarde a conclusão.','warn'); }catch(e){}
+      return;
+    }
+    processandoV314[chave]=true;
+
+    var card=document.getElementById('sol-card-'+cfg.linha);
+    var aviso=null;
+    try{
+      if(card){
+        card.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+        aviso=document.getElementById('sol-processando-v314-'+cfg.linha)||document.getElementById('sol-processando-v313-'+cfg.linha);
+        if(!aviso){aviso=document.createElement('div');aviso.id='sol-processando-v314-'+cfg.linha;card.appendChild(aviso);}
+        aviso.className='notice info';
+        aviso.innerHTML='<span class="loading-fast">Aprovando e sincronizando Firebase...</span>';
+      }
+    }catch(eCard){}
+
+    try{
+      if(typeof toast==='function') toast('Aprovando solicitação...','info');
+      var antes=getCacheSolicitacao(cfg.linha);
+      var r=await aprovarRapidoV314(cfg.action,cfg.linha);
+
+      if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
+        var uf=(r&&r.usuarioFirebase)||{};
+        var syncDados=Object.assign({},antes,uf,{
+          email:uf.email||r.email||antes.email,
+          nome:uf.nome||r.nome||antes.nome,
+          nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,
+          perfil:uf.perfil||'USUARIO',
+          senhaAcesso:uf.senhaAcesso||r.senhaAcesso||antes.senhaAcesso||antes.senha
+        });
+
+        if(aviso) aviso.innerHTML='<span class="loading-fast">Criando/confirmando Firebase Authentication...</span>';
+        var authRes={ok:false,ignorado:true};
+        try{ authRes=await criarFirebaseAuthClienteV314(syncDados); }catch(eAuth){ authRes={ok:false,erro:(eAuth&&eAuth.message)||String(eAuth)}; }
+        if(!authRes.ok&&typeof toast==='function') toast('Aprovação gravada, mas Firebase Auth retornou: '+(authRes.erro||authRes.motivo||'erro desconhecido'),'warn');
+
+        if(aviso) aviso.innerHTML='<span class="loading-fast">Gravando liberação no Firestore...</span>';
+        await firestoreSetAprovadoV314(syncDados,'APROVACAO_ADMIN_SITE_V314');
+
+        enviarEmailAprovacaoSeparadoV314(syncDados.email||r.email);
+      }
+
+      if(aviso){aviso.className='notice';aviso.innerHTML=esc((r&&r.msg)||'Ação realizada e Firebase sincronizado.');}
+      if(typeof toast==='function') toast((r&&r.msg)||'Ação realizada e Firebase sincronizado.');
+      setTimeout(function(){try{if(typeof renderSolicitacoesAdmin==='function')renderSolicitacoesAdmin();}catch(e){}},700);
+      setTimeout(function(){try{if(typeof carregarBadgeInscritosTopo==='function')carregarBadgeInscritosTopo();}catch(e){}},1200);
+    }catch(err){
+      var msg=(err&&err.message)||String(err||'Erro ao processar solicitação.');
+      try{if(card)card.querySelectorAll('button').forEach(function(b){b.disabled=false;});}catch(eBtn){}
+      if(aviso){aviso.className='notice error';aviso.innerHTML=esc(msg);}
+      if(typeof toast==='function')toast(msg,'error');
+    }finally{
+      delete processandoV314[chave];
+    }
+  };
+
+  async function validarPlanilhaERepararFirestoreLoginV314(email,senha,msgBox){
+    email=emailNorm(email);
+    senha=txt(senha);
+    if(msgBox) msgBox.innerHTML='<div class="notice info">Cadastro aprovado localizado no Authentication. Reparando Firestore...</div>';
+    var val=await apiJsonpV314('validarLoginUsuarioPlanilhaV291',{email:email,senha:senha},[email,senha],30000);
+    if(!val || val.ok===false || val.sucesso===false) throw new Error((val&&val.msg)||'Não foi possível validar o usuário aprovado na planilha.');
+    var u=(val.usuarioFirebase||{});
+    u.email=u.email||email;
+    u.nome=u.nome||email;
+    u.perfil=u.perfil||'USUARIO';
+    await firestoreSetAprovadoV314(u,'REPARO_LOGIN_FIRESTORE_V314');
+    return u;
+  }
+
+  window.fazerLogin=fazerLogin=async function(ev){
+    ev.preventDefault();
+    var email=emailNorm(getId('loginEmail')?getId('loginEmail').value:'');
+    var senha=txt(getId('loginSenha')?getId('loginSenha').value:'');
+    var btn=getId('btnLogin');
+    var msg=getId('loginMsg');
+    if(msg) msg.innerHTML='<div class="notice info">Autenticando no Firebase...</div>';
+    if(btn){btn.disabled=true;btn.textContent='Entrando...';}
+    try{
+      await inicializarFirebase_();
+      try{
+        await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);
+      }catch(loginErr){
+        var code=String(loginErr&&loginErr.code||'');
+        if(code==='auth/user-not-found'||code==='auth/invalid-credential'||code==='auth/wrong-password'){
+          var val=await apiJsonpV314('validarLoginUsuarioPlanilhaV291',{email:email,senha:senha},[email,senha],30000);
+          var uPlan=(val&&val.usuarioFirebase)||{email:email,nome:email,perfil:'USUARIO'};
+          uPlan.senhaAcesso=senha;
+          await criarFirebaseAuthClienteV314(uPlan);
+          await firestoreSetAprovadoV314(uPlan,'REPARO_AUTH_LOGIN_V314');
+          await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);
+        }else{
+          throw loginErr;
+        }
+      }
+
+      if(msg) msg.innerHTML='<div class="notice info">Verificando aprovação do cadastro...</div>';
+      var u;
+      try{
+        u=await firebaseValidarUsuarioAprovado_(email);
+      }catch(docErr){
+        var m=String((docErr&&docErr.message)||docErr||'');
+        if(m.indexOf('Cadastro não localizado')>=0 || m.indexOf('não localizado')>=0){
+          await validarPlanilhaERepararFirestoreLoginV314(email,senha,msg);
+          u=await firebaseValidarUsuarioAprovado_(email);
+        }else{
+          throw docErr;
+        }
+      }
+
+      ESTADO.usuario=normalizarUsuarioSessao_(u);
+      ESTADO.email=ESTADO.usuario.email;
+      ESTADO.role=ESTADO.usuario.role;
+      if(getId('lembrarEmail')&&getId('lembrarEmail').checked)localStorage.setItem('PSS_BOLAO_EMAIL',ESTADO.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');
+      salvarSessao(ESTADO.usuario);
+      aplicarLayoutLogado();
+      navegar('inicio');
+    }catch(err){
+      try{if(FIREBASE_AUTH) await FIREBASE_AUTH.signOut();}catch(e){}
+      if(msg) msg.innerHTML='<div class="notice error">'+esc(typeof firebaseMensagemErro_==='function'?firebaseMensagemErro_(err):((err&&err.message)||err))+'</div>';
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Entrar no sistema';}
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
