@@ -21104,5 +21104,211 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+<script>
+/* =====================================================================
+ * PATCH V311 — ADMIN MESTRE DEFINITIVO + APROVAÇÃO RÁPIDA SEM WINDOWNAME
+ * Projeto: Portal SimonSports — Bolões Loterias Especiais
+ *
+ * Correções:
+ * 1) O menu Participantes Bolão não passa mais pelos wrappers antigos V287/V308.
+ *    Ao clicar, o V311 chama a tela diretamente quando o e-mail logado é
+ *    portalsimonsports@gmail.com.
+ * 2) A aprovação de solicitação usa rota rápida V311 por JSONP direto com
+ *    timeout maior, sem cair no fallback window.name que gerava "time limit".
+ * 3) A tela mostra retorno imediato e atualiza a lista em segundo plano.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var V='V311_ADMIN_MESTRE_E_APROVACAO_RAPIDA';
+  var ADMIN='portalsimonsports@gmail.com';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function emailNorm(v){return txt(v).toLowerCase();}
+  function norm(v){var s=txt(v);try{s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){}return s.toUpperCase();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function attr(v){try{if(typeof escapeAttr==='function')return escapeAttr(v);}catch(e){}return esc(v);}
+
+  function emailAtual(){
+    var candidatos=[];
+    try{candidatos.push(window.ESTADO&&ESTADO.email);}catch(e){}
+    try{candidatos.push(window.ESTADO&&ESTADO.usuario&&ESTADO.usuario.email);}catch(e){}
+    try{candidatos.push(localStorage.getItem('PSS_BOLAO_EMAIL'));}catch(e){}
+    try{candidatos.push((JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'{}')||{}).email);}catch(e){}
+    try{candidatos.push((JSON.parse(sessionStorage.getItem('PSS_BOLAO_SESSAO')||'{}')||{}).email);}catch(e){}
+    try{
+      var ud=document.getElementById('userDisplay');
+      var m=ud&&ud.textContent?ud.textContent.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i):null;
+      if(m)candidatos.push(m[0]);
+    }catch(e){}
+    for(var i=0;i<candidatos.length;i++){
+      var em=emailNorm(candidatos[i]);
+      if(em)return em;
+    }
+    return '';
+  }
+
+  function perfilAtual(){
+    try{
+      var u=(window.ESTADO&&ESTADO.usuario)||{};
+      return norm((window.ESTADO&&ESTADO.role)||'')+' '+norm(u.perfil||'')+' '+norm(u.role||'');
+    }catch(e){return '';}
+  }
+
+  function isMestre(){
+    var em=emailAtual();
+    if(em===ADMIN)return true;
+    var p=perfilAtual();
+    return p.indexOf('ADMIN_MESTRE')>=0||p.indexOf('ADMIN MESTRE')>=0||p.indexOf('MESTRE')>=0||p.indexOf('MASTER')>=0;
+  }
+
+  function reforcarSessao(){
+    try{
+      if(emailAtual()!==ADMIN)return false;
+      if(!window.ESTADO)return false;
+      if(!ESTADO.usuario)ESTADO.usuario={};
+      ESTADO.email=ADMIN;
+      ESTADO.role='admin';
+      ESTADO.usuario.email=ADMIN;
+      ESTADO.usuario.nome=ESTADO.usuario.nome||'Portal SimonSports';
+      ESTADO.usuario.perfil='ADMIN_MESTRE';
+      ESTADO.usuario.role='admin';
+      try{localStorage.setItem('PSS_BOLAO_EMAIL',ADMIN);}catch(e){}
+      try{localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(ESTADO.usuario));}catch(e){}
+      return true;
+    }catch(e){return false;}
+  }
+
+  window.PSS_isAdminMestreV311=window.PSS_isAdminMestreV308=window.isAdminMestreV308_=window.isAdminMestreV287_=window.isAdminMestreV286_=function(){reforcarSessao();return isMestre();};
+
+  var isAdminAnterior=window.isAdmin;
+  window.isAdmin=isAdmin=function(){
+    reforcarSessao();
+    if(isMestre())return true;
+    try{if(typeof isAdminAnterior==='function'&&isAdminAnterior())return true;}catch(e){}
+    var p=perfilAtual();
+    return p.indexOf('ADMIN')>=0||p.indexOf('MESTRE')>=0;
+  };
+
+  var aplicarAnterior=window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado=aplicarLayoutLogado=function(){
+    reforcarSessao();
+    if(typeof aplicarAnterior==='function')aplicarAnterior.apply(this,arguments);
+    try{
+      var admin=window.isAdmin();
+      var mestre=isMestre();
+      document.querySelectorAll('.admin-only').forEach(function(el){el.classList.toggle('hidden',!admin);});
+      document.querySelectorAll('.admin-mestre-only,[data-view="participantes"]').forEach(function(el){el.classList.toggle('hidden',!mestre);});
+      var user=document.getElementById('userDisplay');
+      if(user&&window.ESTADO&&ESTADO.usuario)user.textContent=(ESTADO.usuario.nome||'Portal SimonSports')+' • '+(ESTADO.email||ADMIN);
+    }catch(e){}
+  };
+
+  function ativarMenu(v){
+    try{document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===v);});}catch(e){}
+    try{if(window.ESTADO)ESTADO.view=v;}catch(e){}
+  }
+
+  async function renderParticipantesV311(){
+    reforcarSessao();
+    if(!isMestre()){
+      if(typeof setView==='function')setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador mestre.</div></div>');
+      return;
+    }
+    ativarMenu('participantes');
+    if(typeof loading==='function')loading('Carregando Participantes Bolão');
+    try{
+      var r=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES_BOLAO'},args:['PARTICIPANTES_BOLAO']},{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES'},args:['PARTICIPANTES']}]);
+      var headers=r.headers||[];
+      var rows=r.rows||[];
+      if(typeof setView==='function')setView('<div class="panel"><h2>Participantes Bolão</h2><p>Participantes vinculados aos bolões cadastrados.</p><div class="actions"><button class="btn" onclick="sincronizarAbasParticipantesAdmin()">Sincronizar abas individuais</button><button class="btn btn-light" onclick="renderParticipantesBolaoAdmin()">Atualizar lista</button></div><div id="syncAbasParticipantesResultado"></div>'+(headers.length?'<div class="table-wrap"><table><thead><tr>'+headers.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(c){return '<td>'+(typeof formatarCelula==='function'?formatarCelula(c):esc(c))+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>':'<div class="notice warn">Nenhum dado localizado na aba PARTICIPANTES_BOLAO.</div>')+'</div>');
+    }catch(err){
+      if(typeof setView==='function')setView('<div class="panel"><div class="notice error">'+esc((err&&err.message)||err)+'</div></div>');
+    }
+  }
+
+  window.renderParticipantesBolaoAdmin=renderParticipantesBolaoAdmin=renderParticipantesV311;
+
+  var navegarAnterior=window.navegar;
+  window.navegar=navegar=function(v){
+    reforcarSessao();
+    if(v==='participantes')return renderParticipantesV311();
+    if(typeof navegarAnterior==='function')return navegarAnterior.apply(this,arguments);
+  };
+
+  function getCacheSolicitacao(linha){
+    try{if(typeof getSolicitacaoCachePorLinhaV290_==='function')return getSolicitacaoCachePorLinhaV290_(linha)||{};}catch(e){}
+    return {};
+  }
+
+  async function chamarAprovacaoRapida(action,linha){
+    var acao=String(action||'');
+    var args=[linha];
+    var dados={linha:linha,linhaPlanilha:linha,row:linha,email:emailAtual()};
+    if(acao.toLowerCase().indexOf('aprovar')>=0)acao='aprovarSolicitacaoCadastroV311';
+    if(typeof apiJsonpDireto_==='function'){
+      return await apiJsonpDireto_(acao,dados,args,65000);
+    }
+    return await api(acao,dados,args);
+  }
+
+  window.executarAcaoSolicitacaoAdmin=executarAcaoSolicitacaoAdmin=async function(){
+    var cfg=window.PSS_SOLICITACAO_ACAO||{};
+    window.PSS_SOLICITACAO_ACAO=null;
+    try{if(typeof fecharModal==='function')fecharModal();}catch(e){}
+    if(!cfg.action||!cfg.linha)return;
+
+    var card=document.getElementById('sol-card-'+cfg.linha);
+    try{
+      if(card){
+        card.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+        var box=document.createElement('div');
+        box.className='notice info';
+        box.id='sol-processando-v311-'+cfg.linha;
+        box.innerHTML='<span class="loading-fast">Processando aprovação. Aguarde sem clicar novamente...</span>';
+        card.appendChild(box);
+      }
+    }catch(eCard){}
+
+    try{
+      if(typeof toast==='function')toast('Processando solicitação...','info');
+      var antes=getCacheSolicitacao(cfg.linha);
+      var r=await chamarAprovacaoRapida(cfg.action,cfg.linha);
+
+      if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
+        var uf=(r&&r.usuarioFirebase)||{};
+        var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
+        if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
+          try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+        }
+      }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
+        var rec=antes||{};
+        if(rec.email&&typeof firebaseSincronizarUsuarioAdmin_==='function'){
+          try{await firebaseSincronizarUsuarioAdmin_({email:rec.email,nome:rec.nome,status:'RECUSADO',perfil:'USUARIO',ativo:false});}catch(eRec){}
+        }
+      }
+
+      if(card){
+        var p=document.getElementById('sol-processando-v311-'+cfg.linha);
+        if(p){p.className='notice';p.innerHTML=esc((r&&r.msg)||'Ação realizada com sucesso.');}
+      }
+      if(typeof toast==='function')toast((r&&r.msg)||'Ação realizada com sucesso.');
+      setTimeout(function(){try{if(typeof renderSolicitacoesAdmin==='function')renderSolicitacoesAdmin();}catch(e){}},500);
+      setTimeout(function(){try{if(typeof carregarBadgeInscritosTopo==='function')carregarBadgeInscritosTopo();}catch(e){}},900);
+    }catch(err){
+      try{if(card)card.querySelectorAll('button').forEach(function(b){b.disabled=false;});}catch(eBtn){}
+      var msg=(err&&err.message)||String(err||'Erro ao processar solicitação.');
+      if(typeof toast==='function')toast(msg,'error');
+      var p2=document.getElementById('sol-processando-v311-'+cfg.linha);
+      if(p2){p2.className='notice error';p2.innerHTML=esc(msg);}
+    }
+  };
+
+  setTimeout(function(){try{reforcarSessao();if(window.ESTADO&&ESTADO.usuario&&typeof aplicarLayoutLogado==='function')aplicarLayoutLogado();}catch(e){}},150);
+})();
+</script>
+
 </body>
 </html>
