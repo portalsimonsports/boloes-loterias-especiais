@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V303 LETREIRO_DIGITAL_CACHE_PERMANENTE_FIREBASE_APROVACAO</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V309 LETREIRO_JSON_INSTANTANEO_ADMIN_FIREBASE_APROVACAO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -20801,6 +20801,308 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * PATCH V309 — LETREIRO JSON INSTANTÂNEO / API APENAS FALLBACK
+ * Projeto: Portal SimonSports — Bolões Loterias Especiais
+ *
+ * Correção:
+ * 1) O letreiro público volta a priorizar dados-publicos.json do GitHub.
+ * 2) O último resultado válido salvo no navegador é renderizado imediatamente.
+ * 3) O botão Atualizar não apaga o letreiro atual; apenas atualiza em segundo plano.
+ * 4) A API Apps Script fica como fallback, evitando lentidão e consumo de UrlFetch.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var V='V309_LETREIRO_JSON_INSTANTANEO';
+  try{
+    if(window.CONFIG) CONFIG.versao=V;
+    localStorage.setItem('PSS_INDEX_VERSION',V);
+  }catch(e){}
+
+  var CACHE_KEYS=[
+    'PSS_RESULTADOS_PUBLICOS_V309',
+    'PSS_RESULTADOS_PUBLICOS_V304',
+    'PSS_RESULTADOS_PUBLICOS_V303',
+    'PSS_RESULTADOS_PUBLICOS_V213',
+    'PSS_ULTIMOS_RESULTADOS_PUBLICOS',
+    'PSS_HOME_RESULTADOS_PUBLICOS'
+  ];
+
+  function esc(v){
+    if(typeof escapeHtml==='function')return escapeHtml(v);
+    return String(v===undefined||v===null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+
+  function norm(v){
+    v=String(v===undefined||v===null?'':v).toLowerCase();
+    try{v=v.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){}
+    return v.replace(/\s+/g,' ').trim();
+  }
+
+  function dataCurta(){
+    try{return new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});}catch(e){return new Date().toLocaleString('pt-BR');}
+  }
+
+  function unwrap(d){
+    if(!d)return {};
+    if(d.dados!==undefined)return unwrap(d.dados);
+    if(d.result!==undefined && !(d.resultados||d.letreiroTexto||d.resultadosPublicos||d.ultimosResultados))return unwrap(d.result);
+    if(d.resultadosPublicos)return unwrap(d.resultadosPublicos);
+    if(d.configPublica&&d.configPublica.resultadosPublicos)return unwrap(d.configPublica.resultadosPublicos);
+    if(d.ultimosResultados&&!d.resultados)d.resultados=d.ultimosResultados;
+    return d;
+  }
+
+  function placeholder(d){
+    d=unwrap(d);
+    var texto=norm([d.letreiroTexto,d.msg,d.erro,d.aviso,d.observacaoCache,d.origemRetorno].join(' '));
+    if(!texto)return false;
+    return texto.indexOf('aguardando leitura')>=0 ||
+      texto.indexOf('aguardando base')>=0 ||
+      texto.indexOf('temporariamente indispon')>=0 ||
+      texto.indexOf('nenhum resultado atualizado')>=0 ||
+      texto.indexOf('sem cache')>=0 ||
+      texto.indexOf('resultados indispon')>=0 ||
+      texto.indexOf('nao localizado')>=0 ||
+      texto.indexOf('não localizado')>=0;
+  }
+
+  function lista(d){
+    d=unwrap(d);
+    var arr=[];
+    if(Array.isArray(d.resultados))arr=d.resultados;
+    else if(Array.isArray(d.ultimosResultados))arr=d.ultimosResultados;
+    return arr.filter(function(r){
+      if(!r)return false;
+      var dez=String(r.dezenas||r.numeros||r.listaDezenas||'').trim();
+      if(!dez || !/\d/.test(dez))return false;
+      if(placeholder({letreiroTexto:dez}))return false;
+      return true;
+    }).slice(0,12).map(function(r){
+      var x={};
+      Object.keys(r||{}).forEach(function(k){x[k]=r[k];});
+      if(!x.dezenas&&(x.numeros||x.listaDezenas))x.dezenas=x.numeros||x.listaDezenas;
+      if(!x.nome)x.nome=String(x.loteria||x.tipoJogo||x.slug||'Loteria').replace(/_/g,' ').trim();
+      return x;
+    });
+  }
+
+  function texto(d){
+    d=unwrap(d);
+    if(placeholder(d))return '';
+    var l=lista(d);
+    if(l.length){
+      return '📢 Últimos resultados: '+l.slice(0,10).map(function(r){
+        var nome=String(r.nome||r.loteria||r.tipoJogo||r.slug||'Loteria').replace(/_/g,' ').trim();
+        var conc=String(r.concurso||'').trim();
+        var data=String(r.dataApuracao||r.data||'').trim();
+        var dez=String(r.dezenas||r.numeros||'').replace(/[,;|]+/g,' • ').replace(/\s*-\s*/g,' • ').replace(/\s+/g,' ').trim();
+        return nome+(conc?' '+conc:'')+(data?' - '+data:'')+': '+dez;
+      }).join(' | ');
+    }
+    var t=String(d.letreiroTexto||'').trim();
+    if(t && /\d/.test(t) && !placeholder({letreiroTexto:t}))return t;
+    return '';
+  }
+
+  function valido(d){return !!(lista(d).length || texto(d));}
+
+  function cor(nome){
+    var k=norm(nome).replace(/[^a-z0-9]+/g,'');
+    if(k.indexOf('mega')>=0)return '#209869';
+    if(k.indexOf('facil')>=0)return '#930089';
+    if(k.indexOf('quina')>=0)return '#260085';
+    if(k.indexOf('dupla')>=0)return '#a61324';
+    if(k.indexOf('federal')>=0)return '#103099';
+    if(k.indexOf('sorte')>=0)return '#cb852b';
+    if(k.indexOf('super')>=0)return '#a8cf45';
+    if(k.indexOf('loteca')>=0||k.indexOf('lotomania')>=0)return '#f78100';
+    if(k.indexOf('timemania')>=0)return '#00a651';
+    if(k.indexOf('milionaria')>=0)return '#2e3078';
+    return '#0b6f28';
+  }
+
+  function lerCache(){
+    for(var i=0;i<CACHE_KEYS.length;i++){
+      try{
+        var raw=localStorage.getItem(CACHE_KEYS[i]);
+        if(!raw)continue;
+        var obj=JSON.parse(raw);
+        var d=unwrap(obj&&obj.dados?obj.dados:obj);
+        if(valido(d)&&!placeholder(d)){
+          d.cacheLocal=true;
+          d.salvoEm=d.salvoEm||dataCurta();
+          d._cacheKey=CACHE_KEYS[i];
+          return d;
+        }
+      }catch(e){}
+    }
+    return null;
+  }
+
+  function salvarCache(d){
+    d=unwrap(d);
+    if(!valido(d)||placeholder(d))return;
+    var payload={ts:Date.now(),dados:Object.assign({},d,{salvoEm:dataCurta()})};
+    for(var i=0;i<CACHE_KEYS.length;i++){
+      try{localStorage.setItem(CACHE_KEYS[i],JSON.stringify(payload));}catch(e){}
+    }
+  }
+
+  function inserir(){
+    if(document.getElementById('homeResultadosPublicosV213'))return;
+    var hero=document.querySelector('.home-hero');
+    var html='<section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">'+
+      '<div class="resultados-publicos-head"><div><h2>Últimos resultados das loterias</h2><small id="resultadosPublicosAtualizadoV213">Carregando informações...</small></div>'+
+      '<button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button></div>'+
+      '<div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div>'+
+      '<div class="resultados-publicos-actions"><span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span><button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213()">Ver todos os resultados</button></div>'+
+      '</section>';
+    if(hero)hero.insertAdjacentHTML('afterend',html);
+    else{var view=document.getElementById('view');if(view)view.insertAdjacentHTML('afterbegin',html);}
+  }
+
+  function item(r){
+    var nome=String(r.nome||r.loteria||r.tipoJogo||r.slug||'Loteria').replace(/_/g,' ').trim()||'Loteria';
+    var conc=String(r.concurso||'').trim();
+    var data=String(r.dataApuracao||r.data||'').trim();
+    var dez=String(r.dezenas||r.numeros||'').replace(/[,;|]+/g,' • ').replace(/\s*-\s*/g,' • ').replace(/\s+/g,' ').trim();
+    return '<span class="resultado-letreiro-item"><span class="resultado-letreiro-badge" style="background:'+cor(nome)+'">'+esc(nome.toUpperCase())+'</span><span class="resultado-letreiro-info">'+(conc?'<span class="resultado-letreiro-concurso">'+esc(conc)+'</span>':'')+(data?'<span class="resultado-letreiro-data">'+esc(data)+'</span>':'')+'<span class="resultado-letreiro-sep">:</span><span class="resultado-letreiro-dezenas">'+esc(dez)+'</span></span></span>';
+  }
+
+  function render(d,fonte){
+    inserir();
+    d=unwrap(d);
+    var box=document.getElementById('resultadosPublicosTickerV213');
+    var atual=document.getElementById('resultadosPublicosAtualizadoV213');
+    var l=lista(d);
+    window.PSS_RESULTADOS_PUBLICOS_V213=Object.assign({},d,{resultados:l});
+    if(atual){
+      var dt=String(d.leituraEm||d.geradoEm||d.atualizadoEm||d.dataHora||d.salvoEm||dataCurta()).trim();
+      atual.textContent=(d.cacheLocal?'Último resultado salvo em ':'Atualizado em ')+dt+(fonte?' • '+fonte:'');
+    }
+    if(!box)return;
+    if(l.length){
+      var grupo='<span class="resultados-ticker-grupo"><span class="resultados-ticker-prefixo">📢 Últimos resultados</span>'+l.slice(0,10).map(item).join('<span class="resultado-letreiro-sep">|</span>')+'</span>';
+      box.innerHTML='<div class="resultados-ticker resultados-ticker-v309" title="Passe o mouse para pausar"><div class="resultados-ticker-track">'+grupo+grupo+'</div></div>';
+      return;
+    }
+    var t=texto(d);
+    if(t){
+      var c=esc(t);
+      box.innerHTML='<div class="resultados-ticker resultados-ticker-v309" title="Passe o mouse para pausar"><div class="resultados-ticker-track"><span class="resultados-ticker-text">'+c+'</span><span>'+c+'</span></div></div>';
+      return;
+    }
+    box.innerHTML='<div class="notice warn">Últimos resultados temporariamente indisponíveis.</div>';
+  }
+
+  async function buscarJsonPublico(){
+    var stamp=Date.now();
+    var urls=['dados-publicos.json','./dados-publicos.json','resultados-publicos.json','data/resultados-publicos.json','data/resultados_loterias_publicos.json'];
+    var ultimo=null;
+    for(var i=0;i<urls.length;i++){
+      try{
+        var res=await fetch(urls[i]+'?cacheBust='+stamp,{cache:'no-store'});
+        if(res&&res.ok){
+          var j=await res.json();
+          var d=unwrap(j);
+          if(valido(d)&&!placeholder(d))return d;
+        }
+      }catch(e){ultimo=e;}
+    }
+    throw ultimo||new Error('JSON público não retornou resultados válidos.');
+  }
+
+  async function buscarApiFallback(forcar){
+    var stamp=Date.now();
+    var tentativas=[
+      ['getResultadosLoteriasPublicos',{forcar:!!forcar,cacheBust:stamp},[!!forcar,stamp]],
+      ['ultimosResultadosPublicos',{forcar:!!forcar,cacheBust:stamp},[!!forcar,stamp]],
+      ['getConfigPublica',{forcar:!!forcar,cacheBust:stamp},[!!forcar,stamp]]
+    ];
+    var ultimo=null;
+    for(var i=0;i<tentativas.length;i++){
+      try{
+        var t=tentativas[i], r;
+        if(typeof apiJsonpDireto_==='function')r=await apiJsonpDireto_(t[0],t[1],t[2],12000);
+        else if(typeof apiMulti==='function')r=await apiMulti([{action:t[0],dados:t[1],args:t[2]}]);
+        else if(typeof api==='function')r=await api(t[0],t[1],t[2]);
+        r=unwrap(r);
+        if(valido(r)&&!placeholder(r))return r;
+      }catch(e){ultimo=e;}
+    }
+    throw ultimo||new Error('API não retornou resultados válidos.');
+  }
+
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    inserir();
+    var box=document.getElementById('resultadosPublicosTickerV213');
+    var cache=lerCache();
+    var renderizou=false;
+
+    if(cache){
+      render(cache, forcar?'cache preservado':'cache local');
+      renderizou=true;
+    }else if(box){
+      box.innerHTML='<div class="notice info"><span class="loading-fast">Carregando JSON público dos resultados...</span></div>';
+    }
+
+    try{
+      var json=await buscarJsonPublico();
+      salvarCache(json);
+      render(json,'JSON público');
+      return;
+    }catch(eJson){
+      if(renderizou)return;
+      try{
+        var apiRes=await buscarApiFallback(!!forcar);
+        salvarCache(apiRes);
+        render(apiRes,'API fallback');
+      }catch(eApi){
+        var c=lerCache();
+        if(c)render(c,'cache preservado');
+        else if(box)box.innerHTML='<div class="notice warn">Não foi possível carregar o letreiro agora. O JSON público e a API não retornaram resultado válido.</div>';
+        var atual=document.getElementById('resultadosPublicosAtualizadoV213');
+        if(atual)atual.title='JSON: '+((eJson&&eJson.message)||eJson)+' | API: '+((eApi&&eApi.message)||eApi);
+      }
+    }
+  };
+
+  window.renderLetreiroResultadosPublicosV213=function(dados){
+    if(valido(dados)&&!placeholder(dados))salvarCache(dados);
+    render(dados,'leitura nova');
+  };
+
+  window.PSS_LIMPAR_CACHE_LETREIRO_LOCAL_V309=function(){
+    CACHE_KEYS.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
+    return true;
+  };
+
+  window.abrirModalResultadosPublicosV213=function(){
+    var d=unwrap(window.PSS_RESULTADOS_PUBLICOS_V213||lerCache()||{});
+    var l=lista(d);
+    if(!l.length){
+      if(typeof abrirModal==='function')abrirModal('Últimos resultados','<div class="notice info">Carregando últimos resultados...</div>');
+      window.carregarLetreiroResultadosPublicosV213(false).then(function(){window.abrirModalResultadosPublicosV213();});
+      return;
+    }
+    if(typeof abrirModal==='function')abrirModal('Últimos resultados das loterias','<div class="resultados-modal-grid">'+l.map(function(r){
+      var nome=String(r.nome||r.loteria||r.tipoJogo||r.slug||'Loteria').replace(/_/g,' ').trim();
+      return '<article class="resultado-modal-card"><span class="loteria-badge-modal" style="background:'+cor(nome)+'">'+esc(nome.toUpperCase())+'</span><h4>'+(r.concurso?'Concurso '+esc(r.concurso):'Resultado')+'</h4><div class="meta"><strong>Data:</strong> '+esc(r.dataApuracao||r.data||'-')+'</div><div class="nums">'+esc(String(r.dezenas||r.numeros||'').replace(/[,;|]+/g,' • ').replace(/\s*-\s*/g,' • '))+'</div>'+(r.valorEstimadoProxConcurso?'<div class="meta"><strong>Próximo prêmio:</strong> '+esc(typeof moeda==='function'?moeda(r.valorEstimadoProxConcurso):r.valorEstimadoProxConcurso)+'</div>':'')+'</article>';
+    }).join('')+'</div>');
+  };
+
+  setTimeout(function(){
+    try{
+      if(document.querySelector('.home-hero'))window.carregarLetreiroResultadosPublicosV213(false);
+    }catch(e){}
+  },120);
+})();
+</script>
 
 </body>
 </html>
