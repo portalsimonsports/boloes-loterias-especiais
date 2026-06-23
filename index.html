@@ -21310,5 +21310,115 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * PATCH V312 — APROVAÇÃO SEM CONFLITO COM PUBLICADOR JSON
+ * Projeto: Portal SimonSports — Bolões Loterias Especiais
+ *
+ * Motivo:
+ * A V311 ainda podia receber "Outra aprovação está em andamento" porque
+ * o Code_API usava LockService.getScriptLock(), o mesmo lock global usado
+ * por outras rotinas do projeto, inclusive publicador JSON/cache.
+ *
+ * Correção:
+ * - Aprovação usa rota V312.
+ * - Botão fica protegido apenas na tela atual.
+ * - API não usa mais ScriptLock global para aprovação.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var V='V312_APROVACAO_SEM_LOCK_GLOBAL';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+  var processando={};
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function emailAtual(){
+    try{if(window.ESTADO&&ESTADO.email)return String(ESTADO.email).trim().toLowerCase();}catch(e){}
+    try{if(window.ESTADO&&ESTADO.usuario&&ESTADO.usuario.email)return String(ESTADO.usuario.email).trim().toLowerCase();}catch(e){}
+    try{return String(localStorage.getItem('PSS_BOLAO_EMAIL')||'').trim().toLowerCase();}catch(e){}
+    return '';
+  }
+  function getCacheSolicitacao(linha){
+    try{if(typeof getSolicitacaoCachePorLinhaV290_==='function')return getSolicitacaoCachePorLinhaV290_(linha)||{};}catch(e){}
+    return {};
+  }
+  async function aprovarRapidoV312(action,linha){
+    var acao=String(action||'');
+    var args=[linha];
+    var dados={linha:linha,linhaPlanilha:linha,row:linha,email:emailAtual(),origem:'INDEX_V312'};
+    if(acao.toLowerCase().indexOf('aprovar')>=0)acao='aprovarSolicitacaoCadastroV312';
+    else if(acao.toLowerCase().indexOf('recusar')>=0)acao='recusarSolicitacaoCadastro';
+    else if(acao.toLowerCase().indexOf('tornar')>=0||acao.toLowerCase().indexOf('promover')>=0)acao='tornarUsuarioAdministradorLinha';
+    if(typeof apiJsonpDireto_==='function')return await apiJsonpDireto_(acao,dados,args,90000);
+    return await api(acao,dados,args);
+  }
+
+  window.executarAcaoSolicitacaoAdmin=executarAcaoSolicitacaoAdmin=async function(){
+    var cfg=window.PSS_SOLICITACAO_ACAO||{};
+    window.PSS_SOLICITACAO_ACAO=null;
+    try{if(typeof fecharModal==='function')fecharModal();}catch(e){}
+    if(!cfg.action||!cfg.linha)return;
+
+    var chave=String(cfg.action)+'_'+String(cfg.linha);
+    if(processando[chave]){
+      try{if(typeof toast==='function')toast('Esta solicitação já está sendo processada nesta tela. Aguarde a conclusão.','warn');}catch(e){}
+      return;
+    }
+    processando[chave]=true;
+
+    var card=document.getElementById('sol-card-'+cfg.linha);
+    var aviso=null;
+    try{
+      if(card){
+        card.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+        aviso=document.getElementById('sol-processando-v312-'+cfg.linha);
+        if(!aviso){
+          aviso=document.createElement('div');
+          aviso.className='notice info';
+          aviso.id='sol-processando-v312-'+cfg.linha;
+          card.appendChild(aviso);
+        }
+        aviso.innerHTML='<span class="loading-fast">Processando solicitação. Aguarde sem clicar novamente...</span>';
+      }
+    }catch(eCard){}
+
+    try{
+      if(typeof toast==='function')toast('Processando solicitação...','info');
+      var antes=getCacheSolicitacao(cfg.linha);
+      var r=await aprovarRapidoV312(cfg.action,cfg.linha);
+
+      if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
+        var uf=(r&&r.usuarioFirebase)||{};
+        var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
+        if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
+          try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+        }
+      }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
+        var rec=antes||{};
+        if(rec.email&&typeof firebaseSincronizarUsuarioAdmin_==='function'){
+          try{await firebaseSincronizarUsuarioAdmin_({email:rec.email,nome:rec.nome,status:'RECUSADO',perfil:'USUARIO',ativo:false});}catch(eRec){}
+        }
+      }
+
+      if(aviso){aviso.className='notice';aviso.innerHTML=esc((r&&r.msg)||'Ação realizada com sucesso.');}
+      if(typeof toast==='function')toast((r&&r.msg)||'Ação realizada com sucesso.');
+      setTimeout(function(){try{if(typeof renderSolicitacoesAdmin==='function')renderSolicitacoesAdmin();}catch(e){}},450);
+      setTimeout(function(){try{if(typeof carregarBadgeInscritosTopo==='function')carregarBadgeInscritosTopo();}catch(e){}},900);
+    }catch(err){
+      var msg=(err&&err.message)||String(err||'Erro ao processar solicitação.');
+      try{if(card)card.querySelectorAll('button').forEach(function(b){b.disabled=false;});}catch(eBtn){}
+      if(aviso){aviso.className='notice error';aviso.innerHTML=esc(msg);}
+      if(typeof toast==='function')toast(msg,'error');
+    }finally{
+      delete processando[chave];
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
