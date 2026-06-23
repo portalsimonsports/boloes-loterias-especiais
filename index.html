@@ -20232,7 +20232,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     window.PSS_RESULTADOS_PUBLICOS_V213=Object.assign({},d,{resultados:l});
     if(atual){
       var dt=String(d.atualizadoEm||d.leituraEm||d.geradoEm||d.salvoEm||dataCurta()).trim();
-      atual.textContent=(d.cacheLocal?'Último resultado salvo em ':'Atualizado em ')+dt+(fonte?' • '+fonte:'');
+      atual.textContent=(d.cacheLocal?'Último resultado salvo em ':'Atualizado em ')+dt;
     }
     if(!box)return;
     if(l.length){
@@ -20817,7 +20817,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 (function(){
   'use strict';
 
-  var V='V309_LETREIRO_JSON_INSTANTANEO';
+  var V='V310_LETREIRO_SEM_FONTE_VISIVEL';
   try{
     if(window.CONFIG) CONFIG.versao=V;
     localStorage.setItem('PSS_INDEX_VERSION',V);
@@ -20983,7 +20983,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     window.PSS_RESULTADOS_PUBLICOS_V213=Object.assign({},d,{resultados:l});
     if(atual){
       var dt=String(d.leituraEm||d.geradoEm||d.atualizadoEm||d.dataHora||d.salvoEm||dataCurta()).trim();
-      atual.textContent=(d.cacheLocal?'Último resultado salvo em ':'Atualizado em ')+dt+(fonte?' • '+fonte:'');
+      atual.textContent=(d.cacheLocal?'Último resultado salvo em ':'Atualizado em ')+dt;
     }
     if(!box)return;
     if(l.length){
@@ -21048,13 +21048,13 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       render(cache, forcar?'cache preservado':'cache local');
       renderizou=true;
     }else if(box){
-      box.innerHTML='<div class="notice info"><span class="loading-fast">Carregando JSON público dos resultados...</span></div>';
+      box.innerHTML='<div class="notice info"><span class="loading-fast">Atualizando últimos resultados...</span></div>';
     }
 
     try{
       var json=await buscarJsonPublico();
       salvarCache(json);
-      render(json,'JSON público');
+      render(json,'');
       return;
     }catch(eJson){
       if(renderizou)return;
@@ -21065,9 +21065,9 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       }catch(eApi){
         var c=lerCache();
         if(c)render(c,'cache preservado');
-        else if(box)box.innerHTML='<div class="notice warn">Não foi possível carregar o letreiro agora. O JSON público e a API não retornaram resultado válido.</div>';
+        else if(box)box.innerHTML='<div class="notice warn">Não foi possível carregar o letreiro agora. As fontes de resultados não retornaram dado válido.</div>';
         var atual=document.getElementById('resultadosPublicosAtualizadoV213');
-        if(atual)atual.title='JSON: '+((eJson&&eJson.message)||eJson)+' | API: '+((eApi&&eApi.message)||eApi);
+        if(atual)atual.title='Fonte principal: '+((eJson&&eJson.message)||eJson)+' | API: '+((eApi&&eApi.message)||eApi);
       }
     }
   };
