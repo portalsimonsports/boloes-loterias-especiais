@@ -20741,6 +20741,11 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     return true;
   }
 
+  /* V316: expõe a sincronização Firestore fora da IIFE V308.
+   * Patches posteriores precisam chamar window.sincronizarFirestoreAprovacaoV308_.
+   */
+  try { window.sincronizarFirestoreAprovacaoV308_ = sincronizarFirestoreAprovacaoV308_; } catch(eExposeFirestoreV316) {}
+
   window.executarAcaoSolicitacaoAdmin = async function(){
     var cfg = window.PSS_SOLICITACAO_ACAO || {};
     window.PSS_SOLICITACAO_ACAO = null;
@@ -20769,7 +20774,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
         if(syncDados.email){
           try{
-            await sincronizarFirestoreAprovacaoV308_(syncDados);
+            await window.sincronizarFirestoreAprovacaoV308_(syncDados);
             if(typeof toast === 'function') toast('Cadastro aprovado e Firestore sincronizado. Firebase Auth foi tratado pelo Code_API.');
           }catch(eSync){
             if(typeof toast === 'function') toast('A aprovação foi gravada na planilha, mas a sincronização Firestore falhou: ' + ((eSync && eSync.message) || eSync),'error');
@@ -21280,8 +21285,8 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
         var uf=(r&&r.usuarioFirebase)||{};
         var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
-        if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
-          try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+        if(syncDados.email&&typeof window.sincronizarFirestoreAprovacaoV308_==='function'){
+          try{await window.sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
         }
       }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
         var rec=antes||{};
@@ -21394,8 +21399,8 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
         var uf=(r&&r.usuarioFirebase)||{};
         var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
-        if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
-          try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+        if(syncDados.email&&typeof window.sincronizarFirestoreAprovacaoV308_==='function'){
+          try{await window.sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
         }
       }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
         var rec=antes||{};
@@ -21535,8 +21540,8 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
         try{authRes=await criarFirebaseAuthClienteV313(syncDados);}catch(eAuth){authRes={ok:false,erro:(eAuth&&eAuth.message)||String(eAuth)};}
         if(!authRes.ok&&typeof toast==='function')toast('Aprovação gravada, mas Firebase Auth retornou: '+(authRes.erro||authRes.motivo||'erro desconhecido'),'warn');
 
-        if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
-          try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+        if(syncDados.email&&typeof window.sincronizarFirestoreAprovacaoV308_==='function'){
+          try{await window.sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
         }
         enviarEmailAprovacaoSeparadoV313(syncDados.email||r.email);
       }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
@@ -21818,6 +21823,195 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       if(btn){btn.disabled=false;btn.textContent='Entrar no sistema';}
     }
   };
+})();
+</script>
+
+<script>
+/* =====================================================================
+ * PATCH V315 — LOGIN SEM FIRESTORE OBRIGATÓRIO
+ * Motivo:
+ * - Firestore pode retornar "Missing or insufficient permissions".
+ * - O login não deve falhar quando Firebase Authentication existe e a aba
+ *   Usuarios confirma que o cadastro está aprovado e a senha confere.
+ * Regra:
+ * - Authentication confirma identidade.
+ * - Planilha Usuarios confirma aprovação/perfil/status.
+ * - Firestore é sincronização auxiliar; se a regra bloquear, o sistema entra
+ *   mesmo assim com base na aprovação da planilha.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V315_LOGIN_SEM_FIRESTORE_OBRIGATORIO';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function emailNorm(v){return txt(v).toLowerCase();}
+  function getId(id){return document.getElementById(id);}
+  function esc(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v); }catch(e){}
+    return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function msgPermissaoFirestore_(err){
+    var code=String((err&&err.code)||'').toLowerCase();
+    var msg=String((err&&err.message)||err||'').toLowerCase();
+    return code.indexOf('permission')>=0 || msg.indexOf('missing or insufficient permissions')>=0 || msg.indexOf('permiss')>=0;
+  }
+  async function apiV315(action,dados,args,timeoutMs){
+    if(typeof apiJsonpDireto_==='function') return await apiJsonpDireto_(action,dados||{},args||[],timeoutMs||35000);
+    return await api(action,dados||{},args||[]);
+  }
+  async function validarUsuarioAprovadoPlanilhaV315(email,senha){
+    email=emailNorm(email); senha=txt(senha);
+    var val=await apiV315('validarLoginUsuarioPlanilhaV291',{email:email,senha:senha},[email,senha],35000);
+    if(!val || val.ok===false || val.sucesso===false){
+      throw new Error((val&&(val.msg||val.erro))||'Cadastro aprovado não localizado na planilha Usuarios.');
+    }
+    var u=(val.usuarioFirebase||val.usuario||{});
+    u.email=emailNorm(u.email||email);
+    u.nome=txt(u.nome||u.nomePublico||email)||email;
+    u.perfil=txt(u.perfil||u.role||'USUARIO').toUpperCase()||'USUARIO';
+    u.role=u.perfil.indexOf('ADMIN')>=0?'admin':'usuario';
+    u.status='APROVADO';
+    u.ativo=true;
+    return u;
+  }
+  async function tentarCriarAuthV315(email,senha,u){
+    email=emailNorm(email); senha=txt(senha); u=u||{};
+    if(!email||!senha) return {ok:false,ignorado:true};
+    try{ await inicializarFirebase_(); }catch(eInit){ return {ok:false,erro:eInit.message}; }
+    try{
+      var cred=await FIREBASE_AUTH.createUserWithEmailAndPassword(email,senha);
+      try{ if(cred&&cred.user&&cred.user.updateProfile) await cred.user.updateProfile({displayName:txt(u.nome||email)}); }catch(eProfile){}
+      return {ok:true,criado:true};
+    }catch(e){
+      var code=String(e&&e.code||'');
+      if(code==='auth/email-already-in-use') return {ok:true,jaExistia:true};
+      return {ok:false,erro:(e&&e.message)||String(e)};
+    }
+  }
+  async function tentarSincronizarFirestoreOpcionalV315(u,origem){
+    try{
+      if(!u||!u.email) return {ok:false,ignorado:true};
+      await inicializarFirebase_();
+      if(typeof firebaseUsuarioRef_!=='function') return {ok:false,ignorado:true};
+      await firebaseUsuarioRef_(u.email).set({
+        email:u.email,
+        nome:txt(u.nome||u.nomePublico||u.email)||u.email,
+        nomePublico:txt(u.nomePublico||u.nome||u.email)||u.email,
+        nomeDivulgacao:txt(u.nomePublico||u.nome||u.email)||u.email,
+        nomeExibicao:txt(u.nomePublico||u.nome||u.email)||u.email,
+        telefone:txt(u.telefone||u.telegram||''),
+        status:'APROVADO',
+        perfil:txt(u.perfil||'USUARIO').toUpperCase(),
+        role:txt(u.role||'usuario'),
+        ativo:true,
+        origem:origem||'LOGIN_PLANILHA_V315',
+        atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+      return {ok:true};
+    }catch(e){
+      console.warn('Firestore opcional bloqueado/indisponível. Login seguirá pela planilha:',e);
+      return {ok:false,erro:(e&&e.message)||String(e)};
+    }
+  }
+  function aplicarLoginAprovadoV315(u,email){
+    var usuario={
+      nome:txt(u&&u.nome)||email,
+      email:emailNorm((u&&u.email)||email),
+      perfil:txt((u&&u.perfil)||'USUARIO').toUpperCase(),
+      role:txt((u&&u.role)||'').toLowerCase()||((txt((u&&u.perfil)||'').toUpperCase().indexOf('ADMIN')>=0)?'admin':'usuario'),
+      status:'APROVADO',
+      ativo:true
+    };
+    try{ if(typeof normalizarUsuarioSessao_==='function') usuario=normalizarUsuarioSessao_(usuario); }catch(e){}
+    ESTADO.usuario=usuario;
+    ESTADO.email=usuario.email;
+    ESTADO.role=usuario.role;
+    try{
+      var lembrar=getId('lembrarEmail');
+      if(lembrar&&lembrar.checked)localStorage.setItem('PSS_BOLAO_EMAIL',usuario.email);else localStorage.removeItem('PSS_BOLAO_EMAIL');
+    }catch(e){}
+    try{ salvarSessao(usuario); }catch(e){}
+    aplicarLayoutLogado();
+    navegar('inicio');
+  }
+
+  window.fazerLogin=fazerLogin=async function(ev){
+    ev.preventDefault();
+    var email=emailNorm(getId('loginEmail')?getId('loginEmail').value:'');
+    var senha=txt(getId('loginSenha')?getId('loginSenha').value:'');
+    var btn=getId('btnLogin');
+    var msg=getId('loginMsg');
+    if(msg) msg.innerHTML='<div class="notice info">Validando acesso aprovado...</div>';
+    if(btn){btn.disabled=true;btn.textContent='Entrando...';}
+    try{
+      if(!email) throw new Error('Informe o e-mail.');
+      if(!senha) throw new Error('Informe a senha.');
+
+      var usuarioPlanilha=null;
+      var authOk=false;
+
+      try{
+        await inicializarFirebase_();
+        await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);
+        authOk=true;
+      }catch(authErr){
+        var code=String(authErr&&authErr.code||'');
+        if(code==='auth/user-not-found'||code==='auth/invalid-credential'||code==='auth/wrong-password'){
+          if(msg) msg.innerHTML='<div class="notice info">Conferindo aprovação na planilha...</div>';
+          usuarioPlanilha=await validarUsuarioAprovadoPlanilhaV315(email,senha);
+          var criar=await tentarCriarAuthV315(email,senha,usuarioPlanilha);
+          if(!criar.ok&&!criar.jaExistia) throw new Error('Firebase Auth não confirmou o usuário: '+(criar.erro||'erro desconhecido'));
+          await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);
+          authOk=true;
+        }else{
+          throw authErr;
+        }
+      }
+
+      if(!usuarioPlanilha){
+        try{
+          if(msg) msg.innerHTML='<div class="notice info">Verificando liberação no Firebase...</div>';
+          var snap=await firebaseUsuarioRef_(email).get({source:'default'});
+          if(snap&&snap.exists&&typeof firebaseNormalizarPerfil_==='function'){
+            usuarioPlanilha=firebaseNormalizarPerfil_(snap,email);
+          }
+        }catch(fsErr){
+          if(!msgPermissaoFirestore_(fsErr)) console.warn('Firestore não validou login. Usando planilha como autoridade:',fsErr);
+        }
+      }
+
+      if(!usuarioPlanilha){
+        if(msg) msg.innerHTML='<div class="notice info">Firestore bloqueado ou ausente. Validando aprovação na planilha...</div>';
+        usuarioPlanilha=await validarUsuarioAprovadoPlanilhaV315(email,senha);
+      }
+
+      if(authOk){
+        tentarSincronizarFirestoreOpcionalV315(usuarioPlanilha,'LOGIN_REPARO_OPCIONAL_V315');
+      }
+
+      aplicarLoginAprovadoV315(usuarioPlanilha,email);
+    }catch(err){
+      try{ if(FIREBASE_AUTH) await FIREBASE_AUTH.signOut(); }catch(e){}
+      var m=(typeof firebaseMensagemErro_==='function')?firebaseMensagemErro_(err):((err&&err.message)||String(err));
+      if(msg) msg.innerHTML='<div class="notice error">'+esc(m)+'</div>';
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Entrar no sistema';}
+    }
+  };
+})();
+</script>
+
+
+<script>
+/* =====================================================================
+ * PATCH V316 — FIRESTORE APROVAÇÃO GLOBAL VISÍVEL
+ * Corrige função privada da IIFE V308 para os patches posteriores.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V316_FIRESTORE_FUNCAO_GLOBAL';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
 })();
 </script>
 
