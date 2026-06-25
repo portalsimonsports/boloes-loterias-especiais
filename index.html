@@ -22217,7 +22217,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     var concurso = document.getElementById('jogoConcurso') ? txtV319_(document.getElementById('jogoConcurso').value) : '';
     var dataJogo = dataJogoV319_();
     var obs = document.getElementById('jogoObs') ? txtV319_(document.getElementById('jogoObs').value) : '';
-    var email = (window.ESTADO && ESTADO.email) ? ESTADO.email : '';
+    var email = resolverEmailAdminV321_();
 
     if(!loteria) return toast('Selecione a loteria/bolão.','error');
     if(!files.length) return toast('Selecione ao menos um arquivo dos jogos.','error');
@@ -22469,6 +22469,48 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     });
   }
 
+  function extrairEmailV321_(texto){
+    var m = String(texto || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    return m ? String(m[0]).trim().toLowerCase() : '';
+  }
+  function resolverEmailAdminV321_(){
+    var candidatos = [];
+    try{ candidatos.push(window.ESTADO && ESTADO.email); }catch(e){}
+    try{ candidatos.push(window.ESTADO && ESTADO.usuario && ESTADO.usuario.email); }catch(e){}
+    try{ candidatos.push(window.ESTADO && ESTADO.usuario && ESTADO.usuario.EMAIL); }catch(e){}
+    try{ candidatos.push(window.ESTADO && ESTADO.usuario && ESTADO.usuario.eMail); }catch(e){}
+    try{ candidatos.push(localStorage.getItem('PSS_BOLAO_EMAIL')); }catch(e){}
+    try{ candidatos.push(sessionStorage.getItem('PSS_BOLAO_EMAIL')); }catch(e){}
+    try{
+      var ls = JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO') || 'null');
+      if(ls){ candidatos.push(ls.email, ls.EMAIL, ls.usuarioEmail, ls.login); }
+    }catch(e){}
+    try{
+      var ss = JSON.parse(sessionStorage.getItem('PSS_BOLAO_SESSAO') || 'null');
+      if(ss){ candidatos.push(ss.email, ss.EMAIL, ss.usuarioEmail, ss.login); }
+    }catch(e){}
+    try{
+      var userDisplay = document.getElementById('userDisplay');
+      if(userDisplay) candidatos.push(extrairEmailV321_(userDisplay.textContent || ''));
+    }catch(e){}
+    try{
+      document.querySelectorAll('.top-clock .user,#userDisplay,[data-user-email]').forEach(function(el){
+        candidatos.push(el && el.getAttribute ? el.getAttribute('data-user-email') : '');
+        candidatos.push(el ? extrairEmailV321_(el.textContent || '') : '');
+      });
+    }catch(e){}
+
+    for(var i=0;i<candidatos.length;i++){
+      var email = extrairEmailV321_(candidatos[i]) || String(candidatos[i] || '').trim().toLowerCase();
+      if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+        try{ if(window.ESTADO) ESTADO.email = email; }catch(e){}
+        try{ localStorage.setItem('PSS_BOLAO_EMAIL', email); }catch(e){}
+        return email;
+      }
+    }
+    return '';
+  }
+
   async function enviarLoteJogosV320_(arquivos,email,loteria,concurso,dataJogo,obs){
     var dados = {
       email: email,
@@ -22495,7 +22537,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     var concurso = document.getElementById('jogoConcurso') ? txtV320_(document.getElementById('jogoConcurso').value) : '';
     var dataJogo = dataJogoV320_();
     var obs = document.getElementById('jogoObs') ? txtV320_(document.getElementById('jogoObs').value) : '';
-    var email = (window.ESTADO && ESTADO.email) ? ESTADO.email : '';
+    var email = resolverEmailAdminV321_();
 
     if(!loteria) return toast('Selecione a loteria/bolão.','error');
     if(!files.length) return toast('Selecione ao menos um arquivo dos jogos.','error');
@@ -22508,7 +22550,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       progressoV320_(0.03,'Preparando envio rápido',files.length + ' arquivo(s) selecionado(s).','run');
       var arquivos = await prepararArquivosV320_(files);
       var totalKb = Math.max(1, Math.round(arquivos.reduce(function(s,a){ return s + (Number(a.tamanhoPreparado)||0); },0)/1024));
-      progressoV320_(0.68,'Enviando ao servidor','POST window.name: ' + arquivos.length + ' arquivo(s), aproximadamente ' + totalKb + ' KB.', 'run');
+      progressoV320_(0.68,'Enviando ao servidor','Enviando ' + arquivos.length + ' arquivo(s), aproximadamente ' + totalKb + ' KB após preparação.', 'run');
       var r = await enviarLoteJogosV320_(arquivos,email,loteria,concurso,dataJogo,obs);
       var enviados = (r && (r.totalEnviados || (Array.isArray(r.enviados) ? r.enviados.length : 0))) || arquivos.length;
       var segundos = Math.max(1,Math.round((Date.now()-inicio)/1000));
@@ -22525,12 +22567,12 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     }
   };
 
-  window.diagnosticarJogosRealizadosIndexV320 = function(){
+  window.diagnosticarJogosRealizadosIndexV321 = window.diagnosticarJogosRealizadosIndexV320 = function(){
     return {
-      versao:'V320_UPLOAD_JOGOS_RAW_POST_WINDOWNAME',
+      versao:'V321_CORRIGE_EMAIL_SESSAO_UPLOAD_JOGOS',
       loteriaResolvida:resolverLoteriaV320_(null),
       tituloDetectado:tituloBolaoV320_(),
-      email:(window.ESTADO && ESTADO.email) || '',
+      email:resolverEmailAdminV321_(),
       modoEnvio:'uploadJogosRealizadosLoteBolao via POST window.name; GS V320 lê e.postData.contents bruto; sem chunks e sem multipart'
     };
   };
