@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V319_JOGOS_LOTE_COMPACTADO_SEM_TRAVAR',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V322_CORRIGE_APIURL_UPLOAD_JOGOS',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -22254,7 +22254,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.diagnosticarJogosRealizadosIndexV319 = function(){
     return {
       ok:true,
-      versao:'V319_JOGOS_LOTE_COMPACTADO_SEM_TRAVAR',
+      versao:'V322_CORRIGE_APIURL_UPLOAD_JOGOS',
       loteriaResolvida:resolverLoteriaV319_(null),
       jogosBolao:valCampoV319_('jogosBolao'),
       jogosBolaoV232:valCampoV319_('jogosBolaoV232'),
@@ -22279,7 +22279,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 (function(){
   if(window.PSS_JOGOS_V320_APLICADO) return;
   window.PSS_JOGOS_V320_APLICADO = true;
-  try{ if(window.CONFIG) CONFIG.versao = 'V320_UPLOAD_JOGOS_RAW_POST_WINDOWNAME'; }catch(e){}
+  try{ if(typeof CONFIG!=='undefined') CONFIG.versao = 'V322_CORRIGE_APIURL_UPLOAD_JOGOS'; }catch(e){}
 
   function txtV320_(v){ return String(v == null ? '' : v).replace(/\s+/g,' ').trim(); }
   function normalizarTituloV320_(v){
@@ -22410,13 +22410,25 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     if(h) h.value = loteria;
   }
 
+  function resolverApiUrlV322_(){
+    var url = '';
+    try{ if(typeof CONFIG !== 'undefined' && CONFIG && CONFIG.apiUrl) url = CONFIG.apiUrl; }catch(e){}
+    try{ if(!url && window.CONFIG && window.CONFIG.apiUrl) url = window.CONFIG.apiUrl; }catch(e){}
+    try{ if(!url && window.PSS_API_URL) url = window.PSS_API_URL; }catch(e){}
+    if(!url){
+      url = 'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec';
+    }
+    try{ window.PSS_API_URL = url; }catch(e){}
+    return String(url || '').trim();
+  }
+
   function postWindowNameV320_(action,dados,args,timeoutMs){
     return new Promise(function(resolve,reject){
-      var apiUrl = (window.CONFIG && CONFIG.apiUrl) ? CONFIG.apiUrl : '';
+      var apiUrl = (typeof resolverApiUrlV322_ === 'function') ? resolverApiUrlV322_() : ((typeof CONFIG !== 'undefined' && CONFIG && CONFIG.apiUrl) ? CONFIG.apiUrl : '');
       if(!apiUrl) return reject(new Error('apiUrl não configurada.'));
       var token = 'PSSPOSTWN_' + Date.now() + '_' + Math.floor(Math.random()*1e9);
       var payload = (typeof montarPayloadApi_ === 'function') ? montarPayloadApi_(action,dados||{},args||null) : Object.assign({},dados||{},{action:action,args:args||[]});
-      var returnUrl = location.origin + location.pathname + '?pss_bridge_return=1&v=V320&t=' + Date.now();
+      var returnUrl = location.origin + location.pathname + '?pss_bridge_return=1&v=V322&t=' + Date.now();
 
       var iframe = document.createElement('iframe');
       iframe.name = 'pss_post_windowname_' + token;
@@ -22567,9 +22579,9 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     }
   };
 
-  window.diagnosticarJogosRealizadosIndexV321 = window.diagnosticarJogosRealizadosIndexV320 = function(){
+  window.diagnosticarJogosRealizadosIndexV322 = window.diagnosticarJogosRealizadosIndexV321 = window.diagnosticarJogosRealizadosIndexV320 = function(){
     return {
-      versao:'V321_CORRIGE_EMAIL_SESSAO_UPLOAD_JOGOS',
+      versao:'V322_CORRIGE_APIURL_UPLOAD_JOGOS',
       loteriaResolvida:resolverLoteriaV320_(null),
       tituloDetectado:tituloBolaoV320_(),
       email:resolverEmailAdminV321_(),
