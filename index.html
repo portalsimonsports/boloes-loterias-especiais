@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V322_CORRIGE_APIURL_UPLOAD_JOGOS',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V323_CONFIRMA_UPLOAD_JOGOS_POR_LISTAGEM',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -22254,7 +22254,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.diagnosticarJogosRealizadosIndexV319 = function(){
     return {
       ok:true,
-      versao:'V322_CORRIGE_APIURL_UPLOAD_JOGOS',
+      versao:'V323_CONFIRMA_UPLOAD_JOGOS_POR_LISTAGEM',
       loteriaResolvida:resolverLoteriaV319_(null),
       jogosBolao:valCampoV319_('jogosBolao'),
       jogosBolaoV232:valCampoV319_('jogosBolaoV232'),
@@ -22279,7 +22279,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 (function(){
   if(window.PSS_JOGOS_V320_APLICADO) return;
   window.PSS_JOGOS_V320_APLICADO = true;
-  try{ if(typeof CONFIG!=='undefined') CONFIG.versao = 'V322_CORRIGE_APIURL_UPLOAD_JOGOS'; }catch(e){}
+  try{ if(typeof CONFIG!=='undefined') CONFIG.versao = 'V323_CONFIRMA_UPLOAD_JOGOS_POR_LISTAGEM'; }catch(e){}
 
   function txtV320_(v){ return String(v == null ? '' : v).replace(/\s+/g,' ').trim(); }
   function normalizarTituloV320_(v){
@@ -22581,7 +22581,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
   window.diagnosticarJogosRealizadosIndexV322 = window.diagnosticarJogosRealizadosIndexV321 = window.diagnosticarJogosRealizadosIndexV320 = function(){
     return {
-      versao:'V322_CORRIGE_APIURL_UPLOAD_JOGOS',
+      versao:'V323_CONFIRMA_UPLOAD_JOGOS_POR_LISTAGEM',
       loteriaResolvida:resolverLoteriaV320_(null),
       tituloDetectado:tituloBolaoV320_(),
       email:resolverEmailAdminV321_(),
@@ -22591,5 +22591,348 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =========================================================
+ * V323 — JOGOS REALIZADOS: CONFIRMAÇÃO POR LISTAGEM
+ * Objetivo:
+ * - Não mexe no GS V320.
+ * - Mantém upload em lote compactado.
+ * - Corrige travamento visual em 68% quando o Drive grava os arquivos,
+ *   mas o iframe/window.name não devolve confirmação ao navegador.
+ * - Após enviar, consulta a lista de jogos do bolão; se os arquivos aparecem,
+ *   conclui a tela em 100% e atualiza a lista.
+ * ========================================================= */
+(function(){
+  if(window.PSS_JOGOS_V323_APLICADO) return;
+  window.PSS_JOGOS_V323_APLICADO = true;
+  try{ if(typeof CONFIG !== 'undefined') CONFIG.versao = 'V323_CONFIRMA_UPLOAD_JOGOS_POR_LISTAGEM'; }catch(e){}
+
+  function txtV323_(v){ return String(v == null ? '' : v).replace(/\s+/g,' ').trim(); }
+  function normTituloV323_(v){
+    v = txtV323_(v).replace(/^[🎟️🎫📎🧾⚡\s]+/g,'').trim();
+    try{ var d = decodeURIComponent(v); if(d && d !== v) v = txtV323_(d); }catch(e){}
+    return v;
+  }
+  function campoV323_(id){
+    var el = document.getElementById(id);
+    return el ? normTituloV323_(el.value || el.getAttribute('value') || '') : '';
+  }
+  function tituloBolaoV323_(){
+    var nodes = document.querySelectorAll('h1,h2,h3,.panel h2,.panel h3');
+    for(var i=0;i<nodes.length;i++){
+      var t = normTituloV323_(nodes[i].textContent || '');
+      var m = t.match(/Jogos\s+realizados\s*[—-]\s*(.+)$/i);
+      if(m && m[1]) return normTituloV323_(m[1]);
+    }
+    return '';
+  }
+  function datasetBolaoV323_(ev){
+    var el = ev && ev.target ? ev.target : null;
+    while(el){
+      var ds = el.dataset || {};
+      var v = ds.loteria || ds.bolao || ds.nomeBolao || ds.jogosBolao || '';
+      if(v) return normTituloV323_(v);
+      el = el.parentElement;
+    }
+    return '';
+  }
+  function resolverLoteriaV323_(ev){
+    var candidatos = [
+      campoV323_('jogosBolaoV232'),
+      campoV323_('jogosBolao'),
+      campoV323_('loteria'),
+      datasetBolaoV323_(ev),
+      (window.ESTADO ? normTituloV323_(ESTADO.bolaoSelecionado || '') : ''),
+      normTituloV323_(localStorage.getItem('PSS_BOLAO_SELECIONADO') || ''),
+      tituloBolaoV323_()
+    ];
+    for(var i=0;i<candidatos.length;i++){
+      var v = normTituloV323_(candidatos[i]);
+      if(v && v !== '-' && !/^selecione/i.test(v)) return v;
+    }
+    return '';
+  }
+  function dataJogoV323_(){
+    var el = document.getElementById('jogoData');
+    var v = el ? String(el.value || '') : '';
+    if(!v) return '';
+    var p = v.split('-');
+    return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : v;
+  }
+  function progressoV323_(pct,titulo,detalhe,tipo){
+    if(typeof atualizarProgressoUploadJogos_ === 'function') atualizarProgressoUploadJogos_(pct,1,titulo,detalhe,tipo || 'run');
+  }
+  function extrairEmailV323_(texto){
+    var m = String(texto || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    return m ? String(m[0]).trim().toLowerCase() : '';
+  }
+  function resolverEmailAdminV323_(){
+    var candidatos = [];
+    try{ candidatos.push(window.ESTADO && ESTADO.email); }catch(e){}
+    try{ candidatos.push(window.ESTADO && ESTADO.usuario && ESTADO.usuario.email); }catch(e){}
+    try{ candidatos.push(localStorage.getItem('PSS_BOLAO_EMAIL')); }catch(e){}
+    try{ candidatos.push(sessionStorage.getItem('PSS_BOLAO_EMAIL')); }catch(e){}
+    try{
+      var ls = JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO') || 'null');
+      if(ls){ candidatos.push(ls.email, ls.EMAIL, ls.usuarioEmail, ls.login); }
+    }catch(e){}
+    try{
+      var ss = JSON.parse(sessionStorage.getItem('PSS_BOLAO_SESSAO') || 'null');
+      if(ss){ candidatos.push(ss.email, ss.EMAIL, ss.usuarioEmail, ss.login); }
+    }catch(e){}
+    try{
+      var userDisplay = document.getElementById('userDisplay');
+      if(userDisplay) candidatos.push(extrairEmailV323_(userDisplay.textContent || ''));
+    }catch(e){}
+    try{
+      document.querySelectorAll('.top-clock .user,#userDisplay,[data-user-email]').forEach(function(el){
+        candidatos.push(el && el.getAttribute ? el.getAttribute('data-user-email') : '');
+        candidatos.push(el ? extrairEmailV323_(el.textContent || '') : '');
+      });
+    }catch(e){}
+    for(var i=0;i<candidatos.length;i++){
+      var email = extrairEmailV323_(candidatos[i]) || String(candidatos[i] || '').trim().toLowerCase();
+      if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+        try{ if(window.ESTADO) ESTADO.email = email; }catch(e){}
+        try{ localStorage.setItem('PSS_BOLAO_EMAIL', email); }catch(e){}
+        return email;
+      }
+    }
+    return '';
+  }
+  function apiUrlV323_(){
+    var url = '';
+    try{ if(typeof CONFIG !== 'undefined' && CONFIG && CONFIG.apiUrl) url = CONFIG.apiUrl; }catch(e){}
+    try{ if(!url && window.CONFIG && window.CONFIG.apiUrl) url = window.CONFIG.apiUrl; }catch(e){}
+    try{ if(!url && window.PSS_API_URL) url = window.PSS_API_URL; }catch(e){}
+    if(!url) url = 'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec';
+    try{ window.PSS_API_URL = url; }catch(e){}
+    return String(url || '').trim();
+  }
+  function prepararEstadoBolaoV323_(loteria){
+    try{ ESTADO.bolaoSelecionado = loteria; }catch(e){}
+    try{ localStorage.setItem('PSS_BOLAO_SELECIONADO', loteria); }catch(e){}
+    var h = document.getElementById('jogosBolaoV232');
+    if(!h){
+      h = document.createElement('input');
+      h.type = 'hidden'; h.id = 'jogosBolaoV232'; h.name = 'jogosBolaoV232';
+      var form = document.querySelector('form[onsubmit*="enviarJogoRealizado"]') || document.querySelector('form');
+      if(form) form.appendChild(h);
+    }
+    if(h) h.value = loteria;
+  }
+  function fileReaderV323_(file){
+    return new Promise(function(resolve,reject){
+      var fr = new FileReader();
+      fr.onload = function(){ resolve(String(fr.result || '')); };
+      fr.onerror = function(){ reject(new Error('Falha ao ler arquivo: ' + (file && file.name ? file.name : 'arquivo'))); };
+      fr.readAsDataURL(file);
+    });
+  }
+  function carregarImagemV323_(file){
+    return new Promise(function(resolve,reject){
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){ try{URL.revokeObjectURL(url);}catch(e){} resolve(img); };
+      img.onerror = function(){ try{URL.revokeObjectURL(url);}catch(e){} reject(new Error('Imagem inválida: ' + file.name)); };
+      img.src = url;
+    });
+  }
+  async function compactarImagemV323_(file){
+    var img = await carregarImagemV323_(file);
+    var maxLado = 1400;
+    var w = img.naturalWidth || img.width || 0;
+    var h = img.naturalHeight || img.height || 0;
+    if(!w || !h) return await fileReaderV323_(file);
+    var escala = Math.min(1, maxLado / Math.max(w,h));
+    var nw = Math.max(1, Math.round(w * escala));
+    var nh = Math.max(1, Math.round(h * escala));
+    var canvas = document.createElement('canvas');
+    canvas.width = nw; canvas.height = nh;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img,0,0,nw,nh);
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+    if(dataUrl && dataUrl.length < Math.max(1000, file.size * 1.37)) return dataUrl;
+    return await fileReaderV323_(file);
+  }
+  async function prepararArquivoV323_(file,idx,total){
+    var nome = file && file.name ? file.name : ('jogo_' + (idx+1));
+    progressoV323_(0.05 + (idx/Math.max(1,total))*0.42, 'Preparando arquivo ' + (idx+1) + '/' + total, nome, 'run');
+    var isImg = /^image\//i.test(file.type || '') || /\.(png|jpe?g|webp)$/i.test(nome);
+    var dataUrl = isImg ? await compactarImagemV323_(file) : await fileReaderV323_(file);
+    return {
+      fileData: dataUrl,
+      fileName: nome.replace(/[\\/:*?"<>|]+/g,'_'),
+      mimeType: isImg ? 'image/jpeg' : (file.type || 'application/octet-stream'),
+      tamanhoOriginal: file.size || 0,
+      tamanhoPreparado: Math.round((dataUrl.length || 0) * 0.75)
+    };
+  }
+  async function prepararArquivosV323_(files){
+    var out = [];
+    for(var i=0;i<files.length;i++){
+      out.push(await prepararArquivoV323_(files[i],i,files.length));
+      progressoV323_(0.10 + ((i+1)/Math.max(1,files.length))*0.45, 'Arquivos preparados ' + (i+1) + '/' + files.length, 'Preparação concluída para envio em lote.', 'run');
+      await new Promise(function(r){ setTimeout(r, 20); });
+    }
+    return out;
+  }
+  function extrairListaV323_(r){
+    if(Array.isArray(r)) return r;
+    if(!r || typeof r !== 'object') return [];
+    if(Array.isArray(r.jogos)) return r.jogos;
+    if(Array.isArray(r.rows)) return r.rows;
+    if(Array.isArray(r.lista)) return r.lista;
+    if(Array.isArray(r.dados)) return r.dados;
+    if(r.dados && Array.isArray(r.dados.jogos)) return r.dados.jogos;
+    if(r.result && Array.isArray(r.result.jogos)) return r.result.jogos;
+    return [];
+  }
+  function countDomJogosV323_(){
+    try{ return document.querySelectorAll('.jogo-card').length || 0; }catch(e){ return 0; }
+  }
+  function apiJsonpV323_(action,dados,args,timeoutMs){
+    if(typeof apiJsonpDireto_ === 'function') return apiJsonpDireto_(action,dados,args,timeoutMs || 18000);
+    return Promise.reject(new Error('apiJsonpDireto_ indisponível.'));
+  }
+  async function listarJogosServidorV323_(email,loteria){
+    var tentativas = [
+      {action:'getJogosRealizadosBolao',dados:{email:email,loteria:loteria},args:[email,loteria]},
+      {action:'listarJogosRealizadosBolao',dados:{email:email,loteria:loteria},args:[email,loteria]},
+      {action:'getJogosBolao',dados:{email:email,loteria:loteria},args:[email,loteria]}
+    ];
+    var ultimo = null;
+    for(var i=0;i<tentativas.length;i++){
+      try{
+        var t = tentativas[i];
+        var r = await apiJsonpV323_(t.action,t.dados,t.args,16000);
+        var lista = extrairListaV323_(r);
+        if(lista.length || i === tentativas.length-1) return lista;
+      }catch(e){ ultimo = e; }
+    }
+    if(ultimo) throw ultimo;
+    return [];
+  }
+  function postWindowNameV323_(action,dados,args,timeoutMs){
+    return new Promise(function(resolve,reject){
+      var apiUrl = apiUrlV323_();
+      if(!apiUrl) return reject(new Error('apiUrl não configurada.'));
+      var token = 'PSSPOSTWN_' + Date.now() + '_' + Math.floor(Math.random()*1e9);
+      var payload = (typeof montarPayloadApi_ === 'function') ? montarPayloadApi_(action,dados||{},args||null) : Object.assign({},dados||{},{action:action,args:args||[]});
+      var returnUrl = location.origin + location.pathname + '?pss_bridge_return=1&v=V323&t=' + Date.now();
+
+      var iframe = document.createElement('iframe');
+      iframe.name = 'pss_post_windowname_' + token;
+      iframe.style.position='fixed'; iframe.style.left='-9999px'; iframe.style.top='-9999px';
+      iframe.style.width='1px'; iframe.style.height='1px'; iframe.style.opacity='0'; iframe.style.pointerEvents='none';
+      iframe.setAttribute('aria-hidden','true');
+
+      var form = document.createElement('form');
+      form.method = 'POST'; form.action = apiUrl; form.target = iframe.name;
+      form.acceptCharset = 'UTF-8'; form.enctype = 'application/x-www-form-urlencoded'; form.style.display = 'none';
+      function add(name,value){ var input = document.createElement('input'); input.type='hidden'; input.name=name; input.value=value == null ? '' : String(value); form.appendChild(input); }
+      add('mode','post_windowname'); add('action',action); add('fn',action); add('fnName',action);
+      add('callback','callback'); add('token',token); add('returnUrl',returnUrl);
+      add('email',(window.ESTADO && ESTADO.email) || (dados && dados.email) || '');
+      add('payload',JSON.stringify(payload)); add('_',String(Date.now()));
+
+      var finalizado = false;
+      function limpar(){ try{ if(form.parentNode) form.parentNode.removeChild(form); }catch(e){} try{ if(iframe.parentNode) iframe.parentNode.removeChild(iframe); }catch(e){} }
+      function ok(resposta){ if(finalizado) return; finalizado = true; clearTimeout(timer); limpar(); try{ resolve(typeof tratarRespostaApi_ === 'function' ? tratarRespostaApi_(resposta) : resposta); }catch(e){ reject(e); } }
+      function fail(err){ if(finalizado) return; finalizado = true; clearTimeout(timer); limpar(); reject(err instanceof Error ? err : new Error(String(err || 'Falha no envio.'))); }
+      function tentarLer(){
+        if(finalizado) return;
+        try{
+          var raw = iframe.contentWindow && iframe.contentWindow.name ? iframe.contentWindow.name : '';
+          if(raw){ var msg = JSON.parse(raw); if(msg && msg.pssBoloesApi === true && msg.token === token){ ok(msg.response); return; } }
+        }catch(e){}
+        setTimeout(tentarLer,300);
+      }
+      var timer = setTimeout(function(){ fail(new Error('Servidor gravou ou está processando, mas não devolveu confirmação ao navegador.')); }, timeoutMs || 90000);
+      iframe.onload = function(){ setTimeout(tentarLer,80); };
+      document.body.appendChild(iframe); document.body.appendChild(form);
+      try{ form.submit(); setTimeout(tentarLer,500); }catch(e){ fail(e); }
+    });
+  }
+  function primeiroSucessoV323_(promises){
+    return new Promise(function(resolve,reject){
+      var erros = [];
+      promises.forEach(function(p){
+        Promise.resolve(p).then(resolve).catch(function(e){ erros.push(e); if(erros.length === promises.length) reject(erros[0]); });
+      });
+    });
+  }
+  async function confirmarPorListagemV323_(email,loteria,antes,qtdEsperada,maxMs){
+    var inicio = Date.now();
+    var minNovo = Math.max(1, Number(qtdEsperada || 1));
+    await new Promise(function(r){ setTimeout(r, 12000); });
+    while(Date.now() - inicio < (maxMs || 90000)){
+      try{
+        progressoV323_(0.82,'Verificando gravação','Arquivos enviados ao Drive; conferindo a listagem do bolão.', 'run');
+        try{ if(typeof cacheDel_ === 'function' && typeof cacheKeyLoteria_ === 'function') cacheDel_(cacheKeyLoteria_('jogos',loteria)); }catch(eCache){}
+        var lista = await listarJogosServidorV323_(email,loteria);
+        if(lista.length >= antes + minNovo || lista.length >= minNovo){
+          return {sucesso:true, confirmadoPor:'LISTAGEM_JOGOS_V323', totalEnviados:Math.max(minNovo, lista.length - antes), jogos:lista, msg:'Jogos gravados no Drive e confirmados pela listagem.'};
+        }
+      }catch(e){}
+      await new Promise(function(r){ setTimeout(r, 9000); });
+    }
+    throw new Error('Arquivos enviados, mas a listagem ainda não confirmou a gravação. Atualize jogos em instantes.');
+  }
+  async function enviarLoteJogosV323_(arquivos,email,loteria,concurso,dataJogo,obs,antes){
+    var dados = {email:email,loteria:loteria,bolao:loteria,jogosBolao:loteria,concurso:concurso,dataJogo:dataJogo,obs:obs,arquivos:arquivos,totalArquivos:arquivos.length,uploadVersao:'V323_CONFIRMA_UPLOAD_JOGOS_POR_LISTAGEM'};
+    var args = [arquivos,email,loteria,concurso,dataJogo,obs];
+    var post = postWindowNameV323_('uploadJogosRealizadosLoteBolao',dados,args,90000);
+    var conf = confirmarPorListagemV323_(email,loteria,antes,arquivos.length,90000);
+    return await primeiroSucessoV323_([post,conf]);
+  }
+
+  window.enviarJogoRealizadoBolaoV232 = window.enviarJogoRealizadoBolao = async function(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+    var input = document.getElementById('arquivoJogoRealizado');
+    var btn = document.getElementById('btnEnviarJogoRealizado');
+    var files = input && input.files ? Array.from(input.files) : [];
+    var loteria = resolverLoteriaV323_(ev);
+    var concurso = document.getElementById('jogoConcurso') ? txtV323_(document.getElementById('jogoConcurso').value) : '';
+    var dataJogo = dataJogoV323_();
+    var obs = document.getElementById('jogoObs') ? txtV323_(document.getElementById('jogoObs').value) : '';
+    var email = resolverEmailAdminV323_();
+    var antes = countDomJogosV323_();
+
+    if(!loteria) return toast('Selecione a loteria/bolão.','error');
+    if(!files.length) return toast('Selecione ao menos um arquivo dos jogos.','error');
+    if(!email) return toast('E-mail do administrador não localizado na sessão. Faça login novamente.','error');
+
+    prepararEstadoBolaoV323_(loteria);
+    if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+    var inicio = Date.now();
+    try{
+      progressoV323_(0.03,'Preparando envio rápido',files.length + ' arquivo(s) selecionado(s).','run');
+      var arquivos = await prepararArquivosV323_(files);
+      var totalKb = Math.max(1, Math.round(arquivos.reduce(function(s,a){ return s + (Number(a.tamanhoPreparado)||0); },0)/1024));
+      progressoV323_(0.68,'Enviando ao servidor','Enviando ' + arquivos.length + ' arquivo(s), aproximadamente ' + totalKb + ' KB após preparação.', 'run');
+      var r = await enviarLoteJogosV323_(arquivos,email,loteria,concurso,dataJogo,obs,antes);
+      var enviados = (r && (r.totalEnviados || (Array.isArray(r.enviados) ? r.enviados.length : 0))) || arquivos.length;
+      var segundos = Math.max(1,Math.round((Date.now()-inicio)/1000));
+      progressoV323_(1,'Envio concluído',enviados + ' arquivo(s) gravado(s) em ' + segundos + 's.','ok');
+      toast((r && r.msg) || 'Jogos realizados enviados com sucesso.');
+      try{ if(typeof cacheDel_ === 'function' && typeof cacheKeyLoteria_ === 'function') cacheDel_(cacheKeyLoteria_('jogos',loteria)); }catch(e){}
+      if(input) input.value='';
+      setTimeout(function(){ try{ carregarJogosRealizadosBolao(); }catch(e){} },700);
+    }catch(err){
+      progressoV323_(0.01,'Falha no envio',(err && err.message) || String(err || 'Erro no envio.'),'error');
+      toast((err && err.message) || 'Erro no envio.','error');
+    }finally{
+      if(btn){ btn.disabled=false; btn.textContent='Enviar jogos realizados'; }
+    }
+  };
+
+  window.diagnosticarJogosRealizadosIndexV323 = function(){
+    return {versao:'V323_CONFIRMA_UPLOAD_JOGOS_POR_LISTAGEM',loteriaResolvida:resolverLoteriaV323_(null),tituloDetectado:tituloBolaoV323_(),email:resolverEmailAdminV323_(),apiUrl:apiUrlV323_(),modoEnvio:'POST window.name + confirmação por listagem; GS V320 mantido'};
+  };
+})();
+</script>
 </body>
 </html>
