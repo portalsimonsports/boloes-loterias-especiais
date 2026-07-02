@@ -23289,5 +23289,178 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * PATCH V333 — JOGOS REALIZADOS SOMENTE PARA PARTICIPANTE COM COTA
+ * Base: index V332. Não altera pagamentos, comprovantes, OCR, upload,
+ * Telegram, cadastro, Firebase ou GS.
+ * Regra: usuário comum só vê bolão no menu JOGOS se possuir cota > 0.
+ * Administrador continua vendo todos.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V333_JOGOS_SOMENTE_COM_COTAS_CONFIRMADAS_BASE_V332';
+  try{
+    if(window.CONFIG) CONFIG.versao=V;
+    localStorage.setItem('PSS_INDEX_VERSION',V);
+  }catch(e){}
+
+  function esc333(v){
+    try{return typeof escapeHtml==='function'?escapeHtml(v):String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+    catch(e){return String(v==null?'':v);}
+  }
+  function attr333(v){
+    try{return typeof escapeAttr==='function'?escapeAttr(v):esc333(v);}
+    catch(e){return esc333(v);}
+  }
+  function norm333(v){
+    return String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function key333(v){
+    return norm333(String(v||'').replace(/\s*\(?20\d{2}\)?\s*$/,'')).replace(/[^A-Z0-9]/g,'');
+  }
+  function num333(v){
+    try{ if(typeof num==='function') return num(v); }catch(e){}
+    var s=String(v==null?'':v).trim().replace(/[R$\s]/g,'');
+    if(s.indexOf(',')>=0 && s.indexOf('.')>=0) s=s.replace(/\./g,'').replace(',','.');
+    else if(s.indexOf(',')>=0) s=s.replace(',','.');
+    var x=Number(s);
+    return isNaN(x)?0:x;
+  }
+  function fmt333(v){
+    try{return typeof formatarDataHoraPtBR==='function'?formatarDataHoraPtBR(v||'-'):String(v||'-');}
+    catch(e){return String(v||'-');}
+  }
+  function admin333(){
+    try{return typeof isAdmin==='function' && isAdmin();}
+    catch(e){return false;}
+  }
+  function hist333(b){
+    try{ if(typeof PSS_bolaoHistoricoRealV267_==='function') return PSS_bolaoHistoricoRealV267_(b); }catch(e){}
+    try{ if(typeof isHistorico==='function') return isHistorico(b); }catch(e){}
+    var st=norm333((b||{}).status||(b||{}).STATUS||'');
+    return st.indexOf('HIST')>=0 || st.indexOf('ENCERR')>=0 || st.indexOf('FINAL')>=0 || st.indexOf('INAT')>=0;
+  }
+  function cotasConfirmadasJogos333(b){
+    b=b||{};
+    var campos=[
+      'cotasConfirmadasUsuario','minhasCotasConfirmadas','cotasPagasUsuario','minhasCotasPagas',
+      'cotasUsuario','minhasCotas','COTAS_CONFIRMADAS_USUARIO','MINHAS_COTAS_CONFIRMADAS',
+      'COTAS_PAGAS_USUARIO','MINHAS_COTAS_PAGAS','COTAS_USUARIO','MINHAS_COTAS'
+    ];
+    for(var i=0;i<campos.length;i++){
+      if(b[campos[i]]!==undefined && b[campos[i]]!==null && b[campos[i]]!==''){
+        var v=num333(b[campos[i]]);
+        if(v>0) return Math.round(v*1000)/1000;
+      }
+    }
+    try{
+      var det=b.cotasPagasDetalhe||b.pagamentoDetalhe||{};
+      if(det){
+        var d=num333(det.cotas||det.cotasConfirmadas||det.minhasCotas||det.totalCotas||0);
+        if(d>0) return Math.round(d*1000)/1000;
+      }
+    }catch(e){}
+    return 0;
+  }
+  function dedupeJogos333(lista){
+    lista=Array.isArray(lista)?lista:[];
+    var usados={},out=[];
+    lista.forEach(function(b){
+      if(!b || typeof b!=='object') return;
+      var nome=b.loteria||b.LOTERIA||b.nome||b.NOME||b.id||b.ID||'';
+      var k=key333(nome);
+      if(!k || usados[k]) return;
+      usados[k]=1;
+      out.push(b);
+    });
+    return out;
+  }
+  function filtrarJogos333(lista){
+    lista=dedupeJogos333(lista);
+    if(admin333()) return lista;
+    return lista.filter(function(b){ return cotasConfirmadasJogos333(b)>0; });
+  }
+  function cacheLocalJogos333(){
+    var out=[];
+    try{ if(window.ESTADO && Array.isArray(ESTADO.boloes)) out=out.concat(ESTADO.boloes); }catch(e){}
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i)||'';
+        if(k.indexOf('PSS_BOLAO_CACHE_')!==0 || k.toLowerCase().indexOf('boloes')<0) continue;
+        var raw=localStorage.getItem(k);
+        if(!raw) continue;
+        var obj=JSON.parse(raw);
+        var d=obj && obj.dados!==undefined ? obj.dados : obj;
+        if(Array.isArray(d)) out=out.concat(d);
+        else if(d && Array.isArray(d.boloes)) out=out.concat(d.boloes);
+        else if(d && Array.isArray(d.ativas)) out=out.concat(d.ativas);
+      }
+    }catch(e){}
+    return dedupeJogos333(out);
+  }
+  async function carregarBoloesJogos333(forcar){
+    var lista=[];
+    try{ if(typeof PSS_carregarBoloesV277_==='function') lista=await PSS_carregarBoloesV277_(!!forcar); }catch(e1){}
+    if(!Array.isArray(lista) || !lista.length){
+      try{ if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar); }catch(e2){}
+    }
+    if(!Array.isArray(lista) || !lista.length){
+      try{ if(typeof carregarBoloes==='function') lista=await carregarBoloes(!!forcar); }catch(e3){}
+    }
+    if(!Array.isArray(lista) || !lista.length) lista=cacheLocalJogos333();
+    try{ if(window.ESTADO) ESTADO.boloes=dedupeJogos333(lista); }catch(e){}
+    return dedupeJogos333(lista);
+  }
+  function htmlJogos333(lista,atualizando){
+    var visiveis=filtrarJogos333(lista);
+    var textoAdmin='Administrador: todas as loterias cadastradas ficam disponíveis aqui.';
+    var textoUser='Usuário: aparecem somente bolões com cota confirmada. Clique em Ver para carregar os arquivos daquele bolão.';
+    return '<div class="panel"><h2>🎟️ Jogos realizados do bolão</h2>'+
+      '<p>'+(admin333()?textoAdmin:textoUser)+'</p>'+
+      '<div id="jogosListaV333">'+
+      (visiveis.length?'<div class="v232-jogos-lista">'+visiveis.map(function(b){
+        var nome=b.loteria||b.LOTERIA||b.nome||b.NOME||b.id||b.ID||'';
+        var cotas=cotasConfirmadasJogos333(b);
+        var meta=(hist333(b)?'HISTÓRICO':(b.status||b.STATUS||'ATIVO'));
+        if(b.dataSorteio||b.DATA_SORTEIO) meta+=' • Sorteio: '+fmt333(b.dataSorteio||b.DATA_SORTEIO);
+        if(!admin333()) meta+=' • Cotas confirmadas: '+String(cotas).replace('.',',');
+        return '<div class="v232-jogos-row"><div><b>'+esc333(nome)+'</b><small>'+esc333(meta)+'</small></div><button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232(\''+attr333(encodeURIComponent(nome))+'\')">Ver</button></div>';
+      }).join('')+'</div>':'<div class="notice warn">Nenhum bolão com cota confirmada localizado para exibir jogos realizados.</div>')+
+      '</div>'+(atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':'')+'</div>';
+  }
+
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    try{ if(window.ESTADO) ESTADO.view='jogos'; window.PSS_MENU_ATUAL_V268='jogos'; window.PSS_MENU_ATUAL_V267='jogos'; }catch(e){}
+    try{
+      if(typeof mostrarTopoLogadoV275==='function') mostrarTopoLogadoV275();
+      else if(typeof mostrarCabecalhoLogadoV272==='function') mostrarCabecalhoLogadoV272();
+    }catch(e){}
+    var cache=cacheLocalJogos333();
+    try{ if(typeof setView==='function') setView(htmlJogos333(cache,true)); else document.getElementById('view').innerHTML=htmlJogos333(cache,true); }catch(e){}
+    try{
+      var lista=await carregarBoloesJogos333(true);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos'){
+        if(typeof setView==='function') setView(htmlJogos333(lista,false));
+        else document.getElementById('view').innerHTML=htmlJogos333(lista,false);
+      }
+    }catch(err){
+      if(!cache.length){
+        var msg='<div class="panel"><div class="notice warn">Não foi possível carregar os bolões com cotas confirmadas agora. Tente novamente.</div><div class="actions"><button class="btn" onclick="renderJogosRealizados()">Atualizar</button></div></div>';
+        try{ if(typeof setView==='function') setView(msg); else document.getElementById('view').innerHTML=msg; }catch(e){}
+      }
+    }
+  };
+
+  window.diagnosticarJogosParticipanteV333=function(){
+    var cache=cacheLocalJogos333();
+    var filtrados=filtrarJogos333(cache);
+    return {versao:V,admin:admin333(),boloesCache:cache.length,boloesComCotaConfirmada:filtrados.length,regra:'usuario comum vê jogos somente se cotas confirmadas > 0'};
+  };
+})();
+</script>
+
 </body>
 </html>
