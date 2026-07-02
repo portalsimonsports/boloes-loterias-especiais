@@ -22942,7 +22942,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  * ===================================================================== */
 (function(){
   'use strict';
-  var V='V326_DETALHAMENTO_COMPROVANTES_COTAS_MES';
+  var V='V331_CORRIGE_DETALHAMENTO_COTAS_PAGAMENTOS_INDEX';
   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
   function esc(v){return typeof escapeHtml==='function'?escapeHtml(v):String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function attr(v){return typeof escapeAttr==='function'?escapeAttr(v):esc(v);}
@@ -23058,6 +23058,214 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     };
   }
   window.diagnosticarIndexV326=function(){return {versao:V,renderHistorico:typeof renderHistoricoComprovantes,renderBoloes:typeof renderBoloes,detalhamentoPagamentos:!!baseRenderPagamentosEfetuadosV326};};
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH INDEX V331 — CORRIGE DETALHAMENTO DE COTAS EM PAGAMENTOS
+ * Base preservada: index V326
+ * Correção pontual:
+ * - O bloco "Detalhamento por mês, ano e loteria" calculava cotas por PARTES/COTAS.
+ * - Agora calcula por VALOR PAGO / VALOR DA COTA DO BOLÃO.
+ * - Não altera upload, comprovante, jogos, cadastro, Telegram ou GS.
+ * ===================================================================== */
+(function(){
+  var PSS_INDEX_V331 = 'V331_CORRIGE_DETALHAMENTO_COTAS_PAGAMENTOS_INDEX';
+
+  function norm331(v){
+    return String(v || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function baseKey331(v){
+    return norm331(String(v || '').replace(/\s*\(?20\d{2}\)?\s*$/,''))
+      .replace(/[^A-Z0-9]/g,'');
+  }
+  function num331(v){
+    if(typeof num === 'function'){
+      try { return Number(num(v) || 0); } catch(e) {}
+    }
+    if(typeof v === 'number') return isNaN(v) ? 0 : v;
+    var s = String(v || '').replace(/[R$\s]/g,'').trim();
+    if(s.indexOf(',') >= 0 && s.indexOf('.') >= 0) s = s.replace(/\./g,'').replace(',','.');
+    else if(s.indexOf(',') >= 0) s = s.replace(',','.');
+    s = s.replace(/[^0-9.\-]/g,'');
+    var n = Number(s);
+    return isNaN(n) ? 0 : n;
+  }
+  function round331(v, casas){
+    var f = Math.pow(10, casas || 3);
+    return Math.round(num331(v) * f) / f;
+  }
+  function esc331(v){
+    try { if(typeof escapeHtml === 'function') return escapeHtml(v); } catch(e) {}
+    return String(v === undefined || v === null ? '' : v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function moeda331(v){
+    try { if(typeof moeda === 'function') return moeda(v); } catch(e) {}
+    try { return Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); } catch(e2) { return 'R$ '+Number(v||0).toFixed(2).replace('.',','); }
+  }
+  function cotasTexto331(v){
+    var x = round331(v, 3);
+    if(!x) return '0';
+    var s = String(x).replace('.',',');
+    return s.replace(/,000$/,'').replace(/,00$/,'').replace(/,0$/,'');
+  }
+  function rowObj331(headers,row){
+    var o = {};
+    headers = headers || [];
+    row = row || [];
+    for(var i=0;i<headers.length;i++) o[norm331(headers[i])] = row[i];
+    return o;
+  }
+  function cell331(o, aliases){
+    o = o || {};
+    aliases = aliases || [];
+    for(var i=0;i<aliases.length;i++){
+      var k = norm331(aliases[i]);
+      if(Object.prototype.hasOwnProperty.call(o,k)) return o[k];
+    }
+    return '';
+  }
+  function statusPago331(s){
+    var st = norm331(s);
+    return st.indexOf('PAGO') >= 0 || st.indexOf('APROV') >= 0 || st.indexOf('CONFIRM') >= 0 || st.indexOf('OCR_VALID') >= 0 || st.indexOf('BAIXADO') >= 0;
+  }
+  function mesAno331(v){
+    var s = String(v || '').trim();
+    var m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if(m) return String(m[2]).padStart(2,'0') + '/' + m[3];
+    m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) return String(m[2]).padStart(2,'0') + '/' + m[1];
+    m = s.match(/^(\d{1,2})\/(\d{4})$/);
+    if(m) return String(m[1]).padStart(2,'0') + '/' + m[2];
+    return s || '-';
+  }
+  function listaBoloes331(){
+    var out = [];
+    try { if(window.ESTADO && Array.isArray(ESTADO.boloes)) out = out.concat(ESTADO.boloes); } catch(e) {}
+    try { if(window.ESTADO && Array.isArray(ESTADO.boloesAtivos)) out = out.concat(ESTADO.boloesAtivos); } catch(e2) {}
+    try { if(window.ESTADO && ESTADO.dashboard && Array.isArray(ESTADO.dashboard.boloes)) out = out.concat(ESTADO.dashboard.boloes); } catch(e3) {}
+    try { if(window.ESTADO && ESTADO.home && Array.isArray(ESTADO.home.boloes)) out = out.concat(ESTADO.home.boloes); } catch(e4) {}
+    try { if(window.PSS_BOLOES_CACHE && Array.isArray(window.PSS_BOLOES_CACHE)) out = out.concat(window.PSS_BOLOES_CACHE); } catch(e5) {}
+    return out;
+  }
+  function valorCotaBolao331(loteria){
+    var alvo = baseKey331(loteria);
+    if(!alvo) return 0;
+    var lista = listaBoloes331();
+    for(var i=0;i<lista.length;i++){
+      var b = lista[i] || {};
+      var nome = b.loteria || b.nome || b.id || b.NOME || b.LOTERIA || b.BOLAO || '';
+      if(baseKey331(nome) !== alvo) continue;
+      var valor = num331(b.valorCota || b.VALOR_COTA || b.valorDaCota || b.VALOR_DA_COTA || b['VALOR DA COTA'] || b.valorMensal || b.VALOR_MENSAL || 0);
+      if(valor > 0) return valor;
+    }
+    return 0;
+  }
+  function cotasPagamentoRow331(o, loteria){
+    var valor = num331(cell331(o, ['VALOR_PAGO','VALOR PAGO','VALOR_TRANSFERIDO','VALOR TRANSFERIDO','VALOR_DEPOSITADO','VALOR DEPOSITADO','VALOR_IDENTIFICADO','VALOR IDENTIFICADO','VALOR_OCR','VALOR OCR','VALOR','VALOR_ESPERADO','VALOR_PAGAMENTO_AGORA']));
+    var valorCota = valorCotaBolao331(loteria);
+    if(valor > 0 && valorCota > 0) return round331(valor / valorCota, 3);
+
+    var ce = num331(cell331(o, ['COTAS_CALCULADAS','COTAS EQUIVALENTES','COTAS_EQUIVALENTES','COTA_EQUIVALENTE']));
+    if(ce > 0) return round331(ce, 3);
+
+    var c = num331(cell331(o, ['QTD_COTAS','QTD COTAS','COTAS','QUANTIDADE_COTAS']));
+    var fr = num331(cell331(o, ['FRACAO_COTA','FRACAO COTA','FRAÇÃO_COTA']));
+    if(c > 0 && fr > 1) return round331(c / fr, 3);
+    if(c > 0) return round331(c, 3);
+
+    var partes = String(cell331(o, ['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','PARTES']) || '');
+    var m = partes.match(/(\d+(?:[\.,]\d+)?)\s*\/\s*(\d+(?:[\.,]\d+)?)/);
+    if(m){
+      var a = num331(m[1]);
+      var b = num331(m[2]);
+      if(a > 0 && b > 0) return round331(a / b, 3);
+    }
+
+    var tipo = norm331(cell331(o, ['TIPO_COTA','TIPO COTA']));
+    if(tipo.indexOf('UNICA') >= 0 || tipo.indexOf('INTEGRAL') >= 0) return 1;
+    return 0;
+  }
+  function detalhePagamentosMesBolao331(headers,rows){
+    headers = headers || [];
+    rows = rows || [];
+    var grupos = {};
+
+    rows.forEach(function(row){
+      var o = rowObj331(headers,row);
+      var st = cell331(o, ['STATUS','STATUS_PAGAMENTO']);
+      if(!statusPago331(st)) return;
+
+      var lot = cell331(o, ['LOTERIA','BOLAO','BOLÃO']) || 'Sem loteria';
+      var data = cell331(o, ['DATA_TRANSFERENCIA','DATA TRANSFERENCIA','DATA_PAGAMENTO','DATA PAGAMENTO','DATA','DATA_HORA']);
+      var mes = cell331(o, ['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA','MÊS REFERÊNCIA']) || mesAno331(data);
+      var valor = num331(cell331(o, ['VALOR_PAGO','VALOR PAGO','VALOR_TRANSFERIDO','VALOR TRANSFERIDO','VALOR','VALOR_ESPERADO','VALOR_PAGAMENTO_AGORA']));
+      var cotas = cotasPagamentoRow331(o, lot);
+      var k = mes + '|' + baseKey331(lot);
+
+      if(!grupos[k]) grupos[k] = { mes: mes, loteria: lot, valor: 0, cotas: 0, qtd: 0 };
+      grupos[k].valor += valor;
+      grupos[k].cotas += cotas;
+      grupos[k].qtd++;
+    });
+
+    var lista = Object.keys(grupos).sort().map(function(k){
+      var g = grupos[k];
+      g.valor = round331(g.valor, 2);
+      g.cotas = round331(g.cotas, 3);
+      return g;
+    });
+
+    if(!lista.length) return '<div class="notice warn">Nenhum pagamento confirmado para detalhar por mês/loteria.</div>';
+
+    return '<div class="pay-summary-grid">' + lista.map(function(g){
+      return '<div class="pay-summary-card"><b>' + esc331(g.mes) + ' · ' + esc331(g.loteria) + '</b><strong>' + esc331(moeda331(g.valor)) + '</strong><div class="pay-admin-sub">' + esc331(g.qtd) + ' comprovante(s) · ' + esc331(cotasTexto331(g.cotas)) + ' cota(s)</div></div>';
+    }).join('') + '</div>';
+  }
+
+  var carregarBasePagamentos331 = (typeof carregarDadosPagamentosAdmin_ === 'function') ? carregarDadosPagamentosAdmin_ : null;
+  if(carregarBasePagamentos331){
+    window.carregarDadosPagamentosAdmin_ = carregarDadosPagamentosAdmin_ = async function(){
+      var dados = await carregarBasePagamentos331();
+      try{
+        var jaTem = window.ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length;
+        if(!jaTem){
+          if(typeof PSS_carregarBoloesV277_ === 'function') ESTADO.boloes = await PSS_carregarBoloesV277_(true);
+          else if(typeof carregarBoloes === 'function') ESTADO.boloes = await carregarBoloes(true);
+        }
+      }catch(e){}
+      return dados;
+    };
+  }
+
+  window.renderPagamentosEfetuadosAdmin_ = renderPagamentosEfetuadosAdmin_ = function(headers,rows){
+    headers = headers || [];
+    rows = rows || [];
+    if(!headers.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+    return '<h3 style="margin-top:4px;">📊 Detalhamento por mês, ano e loteria</h3>' +
+      detalhePagamentosMesBolao331(headers,rows) +
+      (typeof renderResumoPagamentosAdmin_ === 'function' ? renderResumoPagamentosAdmin_(headers,rows) : '') +
+      '<div class="pay-filterbar">' +
+        '<div class="field"><label>Buscar</label><input id="payBuscaAdmin" placeholder="Buscar por e-mail, loteria, pagador, ID..." oninput="filtrarPagamentosAdmin()"></div>' +
+        '<div class="field"><label>Status</label><select id="payStatusAdmin" onchange="filtrarPagamentosAdmin()"><option value="TODOS">Todos</option><option value="PAGO">Pago</option><option value="ANALISE">Em análise</option><option value="PENDENTE">Pendente</option><option value="ERRO">Erro/Duplicado</option></select></div>' +
+        '<div class="field"><label>Mês</label><input id="payMesAdmin" placeholder="MM/AAAA" oninput="filtrarPagamentosAdmin()"></div>' +
+        '<button class="btn btn-light" onclick="limparFiltrosPagamentosAdmin()">Limpar</button>' +
+      '</div>' +
+      '<div id="pagamentosCardsAdminBox">' +
+        (typeof renderListaPagamentosCardsAdmin_ === 'function' ? renderListaPagamentosCardsAdmin_(headers,rows) : '') +
+      '</div>';
+  };
+
+  window.diagnosticarIndexV331 = function(){
+    return {
+      versao: PSS_INDEX_V331,
+      boloesCarregados: listaBoloes331().length,
+      exemploValoresCota: listaBoloes331().slice(0,5).map(function(b){return {loteria:b.loteria||b.nome||b.id||'', valorCota:b.valorCota||b.VALOR_COTA||b.valorDaCota||''};})
+    };
+  };
 })();
 </script>
 
