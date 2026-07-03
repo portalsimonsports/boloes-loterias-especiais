@@ -23473,7 +23473,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   'use strict';
   if(window.PSS_V335_DIVISAO_COMPROVANTE_APLICADO) return;
   window.PSS_V335_DIVISAO_COMPROVANTE_APLICADO = true;
-  try{ if(window.CONFIG) CONFIG.versao='V340_CORRIGE_UPLOAD_COMPROVANTE_DIRETO_SEM_HTTP0'; }catch(e){}
+  try{ if(window.CONFIG) CONFIG.versao='V341_RESTAURA_CONFIG_LETREIRO_NUMEROS_SORTEADOS'; }catch(e){}
 
   function byId(id){return document.getElementById(id);}  
   function esc(v){return (typeof escapeHtml==='function')?escapeHtml(v==null?'':v):String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -23742,7 +23742,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   'use strict';
   if(window.PSS_V340_UPLOAD_COMPROVANTE_DIRETO_APLICADO) return;
   window.PSS_V340_UPLOAD_COMPROVANTE_DIRETO_APLICADO = true;
-  try{ if(window.CONFIG) CONFIG.versao='V340_CORRIGE_UPLOAD_COMPROVANTE_DIRETO_SEM_HTTP0'; }catch(e){}
+  try{ if(window.CONFIG) CONFIG.versao='V341_RESTAURA_CONFIG_LETREIRO_NUMEROS_SORTEADOS'; }catch(e){}
 
   function byId(id){ return document.getElementById(id); }
   function txt(v){ return String(v === undefined || v === null ? '' : v).trim(); }
@@ -23948,6 +23948,338 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.diagnosticarUploadComprovanteIndexV340=function(){
     return {versao:'V340_CORRIGE_UPLOAD_COMPROVANTE_DIRETO_SEM_HTTP0', apiUrl:!!(window.CONFIG&&CONFIG.apiUrl), regra:'Upload pelo index via POST multipart direto, sem google.script.run dentro de iframe.'};
   };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V341 — RESTAURA CONFIG, LETREIRO FRESH E NÚMEROS SORTEADOS
+ * Correção isolada sobre o index V340.
+ * Mantém o upload de comprovante V340 intacto.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V341_RESTAURA_CONFIG_LETREIRO_NUMEROS_SORTEADOS';
+  try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
+
+  function esc(v){
+    try{ if(typeof escapeHtml==='function')return escapeHtml(v); }catch(e){}
+    return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function attr(v){
+    try{ if(typeof escapeAttr==='function')return escapeAttr(v); }catch(e){}
+    return esc(v);
+  }
+  function txt(v){ return String(v==null?'':v).trim(); }
+  function norm(v){
+    try{ if(typeof normalizar==='function')return normalizar(v); }catch(e){}
+    return txt(v).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function listaSegura(v){
+    try{ if(typeof listaSegura_==='function')return listaSegura_(v); }catch(e){}
+    return Array.isArray(v)?v:[];
+  }
+  function dataCurta(){
+    try{ if(typeof dataHoraAtualCurta==='function')return dataHoraAtualCurta(); }catch(e){}
+    return new Date().toLocaleString('pt-BR');
+  }
+  function numCampo(v,def){
+    try{ if(typeof valorNumeroConfig==='function')return valorNumeroConfig(v,def||''); }catch(e){}
+    return txt(v||def||'');
+  }
+  function moedaCampo(v){
+    try{ if(typeof formatarMoedaCampoConfig==='function')return formatarMoedaCampoConfig(v); }catch(e){}
+    return txt(v);
+  }
+  function moedaSalvar(v){
+    try{ if(typeof valorMoedaSalvarConfig==='function')return valorMoedaSalvarConfig(v); }catch(e){}
+    var n=parseFloat(String(v||'').replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,''));
+    if(!isFinite(n))n=0;
+    return String(Math.round(n*100)/100).replace('.',',');
+  }
+  function dataSalvar(v){
+    try{ if(typeof normalizarDataPtBRParaSalvar==='function')return normalizarDataPtBRParaSalvar(v); }catch(e){}
+    return txt(v);
+  }
+  function dataCampo(v){
+    try{ if(typeof formatarDataHoraPtBR==='function')return formatarDataHoraPtBR(v); }catch(e){}
+    return txt(v);
+  }
+  function calcPremio(v,c){
+    try{ if(typeof calcularPremioPorCotaValor==='function')return calcularPremioPorCotaValor(v,c); }catch(e){}
+    return '';
+  }
+  function isHistoricoLocal(b){
+    try{ if(typeof isHistorico==='function')return isHistorico(b); }catch(e){}
+    var s=norm((b&&b.status)||'');
+    return s.indexOf('HISTORICO')>=0||s.indexOf('FINALIZ')>=0;
+  }
+
+  function unwrapApi(r){
+    var d=r;
+    if(d&&d.dados!==undefined)d=d.dados;
+    if(d&&d.result!==undefined&&(!d.lista&&!d.boloes&&!d.resultados&&!d.resultadosPublicos))d=d.result;
+    return d||{};
+  }
+
+  function normalizarConfigListaV341(dados){
+    dados=unwrapApi(dados);
+    var lista=Array.isArray(dados)?dados:(dados.lista||dados.boloes||dados.ativas||dados.dados||[]);
+    return listaSegura(lista).filter(function(b){return b&&(b.loteria||b.nome||b.NOME||b.LOTERIA);}).map(function(b){
+      return {
+        id:b.id||b.ID||b.idBolao||b.ID_BOLAO||b.loteria||b.nome||b.NOME||b.LOTERIA||'',
+        nome:b.nome||b.NOME||b.loteria||b.LOTERIA||'',
+        loteria:b.loteria||b.LOTERIA||b.nome||b.NOME||'',
+        status:b.status||b.STATUS||'ATIVO',
+        dataSorteio:b.dataSorteio||b.DATA_SORTEIO||b.sorteio||'',
+        inicioPagamento:b.inicioPagamento||b.INICIO_PAGAMENTO||b.iniBol||b.INI_BOL||'',
+        fimPagamento:b.fimPagamento||b.FIM_PAGAMENTO||b.fimBol||b.FIM_BOL||b.PRAZO_PAGAMENTO||'',
+        inicioPalpite:b.inicioPalpite||b.INICIO_PALPITE||b.INICIO_PALPITES||b.iniPal||b.INI_PAL||'',
+        fimPalpite:b.fimPalpite||b.FIM_PALPITE||b.FIM_PALPITES||b.fimPal||b.FIM_PAL||b.PRAZO_PALPITES||'',
+        valorCota:b.valorCota||b.VALOR_COTA||'',
+        totalCotas:b.totalCotas||b.cotasTotal||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
+        cotasTotal:b.cotasTotal||b.totalCotas||b.TOTAL_COTAS||b.COTAS_TOTAL||'',
+        cotasAdquiridas:b.cotasAdquiridas||b.cotasTotaisAdquiridas||b.COTAS_TOTAIS_ADQUIRIDAS||b.COTAS_ADQUIRIDAS||0,
+        qtdParcelas:b.qtdParcelas||b.QTD_PARCELAS||'1',
+        premiacao:b.premiacao||b.PREMIACAO||b['PREMIAÇÃO']||b.premio||'',
+        premioPorCota:b.premioPorCota||b.PREMIO_POR_COTA||b.PREMIACAO_POR_COTA||'',
+        range:b.range||b.RANGE||'',
+        qtdMin:b.qtdMin||b.QTD_MIN||'',
+        qtdMax:b.qtdMax||b.QTD_MAX||'',
+        qtdPalpite:b.qtdPalpite||b.QTD_PALPITE||'',
+        numerosSorteados:b.numerosSorteados||b.NUMEROS_SORTEADOS||b.resultadoSorteio||b.RESULTADO_SORTEIO||b.resultado||b.RESULTADO||''
+      };
+    }).sort(function(a,b){
+      var ah=isHistoricoLocal(a)?1:0, bh=isHistoricoLocal(b)?1:0;
+      if(ah!==bh)return ah-bh;
+      return txt(a.loteria||a.nome).localeCompare(txt(b.loteria||b.nome),'pt-BR');
+    });
+  }
+
+  async function carregarConfigV341(){
+    var stamp=Date.now();
+    var tentativas=[
+      {action:'getConfigBoloesRapidoV233',dados:{email:(window.ESTADO&&ESTADO.email)||'',forcar:true,cacheBust:stamp},args:[(window.ESTADO&&ESTADO.email)||'',true,stamp]},
+      {action:'listarConfigBoloesRapidoV233',dados:{email:(window.ESTADO&&ESTADO.email)||'',forcar:true,cacheBust:stamp},args:[(window.ESTADO&&ESTADO.email)||'',true,stamp]},
+      {action:'listarBoloes',dados:{email:(window.ESTADO&&ESTADO.email)||'',forcar:true,cacheBust:stamp},args:[(window.ESTADO&&ESTADO.email)||'',true,stamp]}
+    ];
+    var ultimo=null;
+    for(var i=0;i<tentativas.length;i++){
+      try{
+        var t=tentativas[i], r;
+        if(typeof apiJsonpDireto_==='function')r=await apiJsonpDireto_(t.action,t.dados,t.args,18000);
+        else if(typeof apiMulti==='function')r=await apiMulti([t]);
+        else if(typeof api==='function')r=await api(t.action,t.dados,t.args);
+        var lista=normalizarConfigListaV341(r);
+        if(lista.length)return {origem:'base direta V341',lista:lista};
+      }catch(e){ultimo=e;}
+    }
+    throw ultimo||new Error('Nenhuma loteria/bolão retornou da base de configuração.');
+  }
+
+  function renderConfigCardV341(b,i){
+    var ano=txt(b.ano||b.ANO||'2026');
+    return '<div class="config-card">'+
+      '<h3>'+esc(b.nome||b.loteria)+' ('+esc(ano)+')</h3>'+ 
+      '<div class="config-grid">'+
+        '<div class="field"><label>Status</label><select id="cfg_status_'+i+'"><option '+(norm(b.status).indexOf('ATIVO')>=0&&!isHistoricoLocal(b)?'selected':'')+'>ATIVO</option><option '+(norm(b.status).indexOf('INATIVO')>=0?'selected':'')+'>INATIVO</option><option '+(isHistoricoLocal(b)?'selected':'')+'>HISTÓRICO</option></select></div>'+
+        '<div class="field"><label>Valor da cota</label><input id="cfg_valor_'+i+'" value="'+attr(moedaCampo(b.valorCota))+'" onfocus="limparMoedaCampoConfig&&limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig&&formatarMoedaInputConfig(this)"></div>'+
+        '<div class="field"><label>Total de cotas</label><input id="cfg_total_'+i+'" value="'+attr(numCampo(b.totalCotas||b.cotasTotal,''))+'"></div>'+
+        '<div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_'+i+'" value="'+attr(numCampo(b.cotasAdquiridas,'0'))+'" oninput="atualizarPremioPorCotaConfig&&atualizarPremioPorCotaConfig('+i+')"></div>'+
+        '<div class="field"><label>Qtd parcelas</label><input id="cfg_parc_'+i+'" value="'+attr(numCampo(b.qtdParcelas,'1'))+'"></div>'+
+        '<div class="field"><label>Premiação</label><input id="cfg_premio_'+i+'" value="'+attr(moedaCampo(b.premiacao))+'" onfocus="limparMoedaCampoConfig&&limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig&&formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig&&atualizarPremioPorCotaConfig('+i+')" oninput="atualizarPremioPorCotaConfig&&atualizarPremioPorCotaConfig('+i+')"></div>'+
+        '<div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_'+i+'" value="'+attr(calcPremio(b.premiacao,b.cotasAdquiridas)||moedaCampo(b.premioPorCota))+'" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div>'+
+        '<div class="field"><label>Data sorteio</label><input id="cfg_sorteio_'+i+'" value="'+attr(dataCampo(b.dataSorteio||''))+'"></div>'+
+        '<div class="field"><label>Início pagamento</label><input id="cfg_iniBol_'+i+'" value="'+attr(dataCampo(b.inicioPagamento||''))+'"></div>'+
+        '<div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_'+i+'" value="'+attr(dataCampo(b.fimPagamento||''))+'"></div>'+
+        '<div class="field"><label>Início palpites</label><input id="cfg_iniPal_'+i+'" value="'+attr(dataCampo(b.inicioPalpite||''))+'"></div>'+
+        '<div class="field"><label>Fim palpites</label><input id="cfg_fimPal_'+i+'" value="'+attr(dataCampo(b.fimPalpite||''))+'"></div>'+
+        '<div class="field"><label>Range</label><input id="cfg_range_'+i+'" value="'+attr(numCampo(b.range,''))+'"></div>'+
+        '<div class="field"><label>Qtd mínima</label><input id="cfg_min_'+i+'" value="'+attr(numCampo(b.qtdMin,''))+'"></div>'+
+        '<div class="field"><label>Qtd máxima</label><input id="cfg_max_'+i+'" value="'+attr(numCampo(b.qtdMax,''))+'"></div>'+
+        '<div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_'+i+'" value="'+attr(numCampo(b.qtdPalpite,''))+'"></div>'+
+        '<div class="field" style="grid-column:1/-1"><label>Números sorteados / resultado</label><input id="cfg_numerosSorteados_'+i+'" value="'+attr(b.numerosSorteados||'')+'" placeholder="Ex.: 01 - 03 - 05 - 09 - 13 - 18"></div>'+ 
+      '</div>'+
+      '<div class="actions" style="margin-top:14px;">'+
+        '<button class="btn" onclick="salvarConfigBolaoGit('+i+')">Salvar este bolão</button>'+ 
+        '<button class="btn btn-light" onclick="inativarBolaoGit('+i+')">Inativar</button>'+ 
+        '<button class="btn btn-danger" onclick="excluirBolaoGit('+i+')">Excluir</button>'+ 
+      '</div>'+ 
+    '</div>';
+  }
+
+  window.renderConfigBoloesAdmin=renderConfigBoloesAdmin=async function(){
+    if(typeof isAdmin==='function'&&!isAdmin()){
+      setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');
+      return;
+    }
+    setView('<div class="panel"><h2>⚙️ Configurações das loterias/bolões criados</h2><div class="notice info">Carregando diretamente da base...</div></div>');
+    try{
+      var r=await carregarConfigV341();
+      var lista=normalizarConfigListaV341(r.lista);
+      window.PSS_CONFIG_BOLOES_LISTA=lista;
+      if(window.ESTADO)ESTADO.boloes=lista;
+      setView('<div class="panel"><h2>⚙️ Configurações das loterias/bolões criados</h2>'+ 
+        '<p>Gerencie valores, prazos, cotas, regras de palpites e números sorteados. Esta tela lista bolões ativos e históricos, sem esconder os criados.</p>'+ 
+        '<div class="v233-config-top"><div class="v233-config-source">Origem dos dados: '+esc(r.origem||'base direta')+'</div><button class="btn btn-light" onclick="renderConfigBoloesAdmin(true)">Atualizar configurações</button></div>'+ 
+        (lista.length?lista.map(renderConfigCardV341).join(''):'<div class="notice warn">Nenhuma loteria/bolão criado localizado.</div>')+ 
+        '</div>');
+    }catch(err){
+      setView('<div class="panel"><h2>⚙️ Configurações das loterias/bolões criados</h2><div class="notice error">'+esc((err&&err.message)||err)+'</div><div class="actions"><button class="btn" onclick="renderConfigBoloesAdmin(true)">Tentar novamente</button></div></div>');
+    }
+  };
+
+  window.salvarConfigBolaoGit=async function(i){
+    var lista=window.PSS_CONFIG_BOLOES_LISTA||((window.ESTADO&&ESTADO.boloes)||[]);
+    var b=lista[i];
+    if(!b){ if(typeof toast==='function')toast('Bolão não localizado na tela. Atualize configurações.','error'); return; }
+    try{ if(typeof atualizarPremioPorCotaConfig==='function')atualizarPremioPorCotaConfig(i); }catch(e){}
+    var d={
+      nome:b.nome||b.loteria,
+      loteria:b.loteria||b.nome,
+      status:(document.getElementById('cfg_status_'+i)||{}).value||b.status||'ATIVO',
+      valorCota:moedaSalvar((document.getElementById('cfg_valor_'+i)||{}).value),
+      totalCotas:numCampo((document.getElementById('cfg_total_'+i)||{}).value,''),
+      cotasTotaisAdquiridas:numCampo((document.getElementById('cfg_cotas_'+i)||{}).value,'0'),
+      qtdParcelas:numCampo((document.getElementById('cfg_parc_'+i)||{}).value,'1'),
+      premiacao:moedaSalvar((document.getElementById('cfg_premio_'+i)||{}).value),
+      premioPorCota:moedaSalvar((document.getElementById('cfg_premioCota_'+i)||{}).value),
+      premiacaoPorCota:moedaSalvar((document.getElementById('cfg_premioCota_'+i)||{}).value),
+      dataSorteio:dataSalvar((document.getElementById('cfg_sorteio_'+i)||{}).value),
+      iniBol:dataSalvar((document.getElementById('cfg_iniBol_'+i)||{}).value),
+      fimBol:dataSalvar((document.getElementById('cfg_fimBol_'+i)||{}).value),
+      iniPal:dataSalvar((document.getElementById('cfg_iniPal_'+i)||{}).value),
+      fimPal:dataSalvar((document.getElementById('cfg_fimPal_'+i)||{}).value),
+      range:numCampo((document.getElementById('cfg_range_'+i)||{}).value,''),
+      qtdMin:numCampo((document.getElementById('cfg_min_'+i)||{}).value,''),
+      qtdMax:numCampo((document.getElementById('cfg_max_'+i)||{}).value,''),
+      qtdPalpite:numCampo((document.getElementById('cfg_qtdPal_'+i)||{}).value,''),
+      numerosSorteados:txt((document.getElementById('cfg_numerosSorteados_'+i)||{}).value)
+    };
+    if(typeof chamarAcaoAdmin==='function'){
+      await chamarAcaoAdmin('salvarConfigBolaoAtivoAdmin',[d],'Bolão salvo.');
+      setTimeout(function(){try{renderConfigBoloesAdmin(true);}catch(e){}},600);
+    }else if(typeof apiMulti==='function'){
+      await apiMulti([{action:'salvarConfigBolaoAtivoAdmin',dados:d,args:[d]}]);
+      if(typeof toast==='function')toast('Bolão salvo.','success');
+      setTimeout(function(){try{renderConfigBoloesAdmin(true);}catch(e){}},600);
+    }
+  };
+
+  /* Letreiro: usa API fresh antes de aceitar cache antigo. */
+  function unwrapRes(r){
+    var d=r;
+    if(d&&d.dados!==undefined)d=d.dados;
+    if(d&&d.result!==undefined&&(!d.resultados&&!d.letreiroTexto&&!d.resultadosPublicos))d=d.result;
+    if(d&&d.resultadosPublicos)d=d.resultadosPublicos;
+    return d||{};
+  }
+  function listaRes(d){
+    d=unwrapRes(d);
+    var l=d.resultados||d.lista||d.dados||[];
+    return Array.isArray(l)?l:[];
+  }
+  function validoRes(d){
+    d=unwrapRes(d);
+    return listaRes(d).length>0||!!txt(d.letreiroTexto);
+  }
+  var CACHE_RES=['PSS_RESULTADOS_PUBLICOS_V341','PSS_RESULTADOS_PUBLICOS_V304','PSS_RESULTADOS_PUBLICOS_V237','PSS_RESULTADOS_PUBLICOS_V213'];
+  function salvarRes(d){
+    d=unwrapRes(d); if(!validoRes(d))return;
+    var p={ts:Date.now(),dados:Object.assign({},d,{salvoEm:dataCurta()})};
+    CACHE_RES.forEach(function(k){try{localStorage.setItem(k,JSON.stringify(p));}catch(e){}});
+  }
+  function lerRes(){
+    for(var i=0;i<CACHE_RES.length;i++){
+      try{var raw=localStorage.getItem(CACHE_RES[i]); if(!raw)continue; var o=JSON.parse(raw); var d=unwrapRes(o.dados||o); if(validoRes(d)){d.cacheLocal=true;return d;}}catch(e){}
+    }
+    return null;
+  }
+  function inserirRes(){
+    if(document.getElementById('homeResultadosPublicosV213'))return;
+    var hero=document.querySelector('.home-hero');
+    var html='<section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213"><div class="resultados-publicos-head"><div><h2>Últimos resultados das loterias</h2><small id="resultadosPublicosAtualizadoV213">Carregando informações...</small></div><button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button></div><div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div><div class="resultados-publicos-actions"><span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span><button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213&&abrirModalResultadosPublicosV213()">Ver todos os resultados</button></div></section>';
+    if(hero)hero.insertAdjacentHTML('afterend',html); else{var v=document.getElementById('view'); if(v)v.insertAdjacentHTML('afterbegin',html);}
+  }
+  function corLoteria(n){
+    try{ if(typeof corOficialLoteriaV215_==='function')return corOficialLoteriaV215_(n); }catch(e){}
+    return '#0b6f28';
+  }
+  function itemRes(r){
+    var nome=txt(r.nome||r.loteria||r.tipoJogo||r.slug||'Loteria').replace(/_/g,' ')||'Loteria';
+    var conc=txt(r.concurso||r.numero||'');
+    var data=txt(r.dataApuracao||r.data||r.dataResultado||'');
+    var dez=txt(r.dezenas||r.numeros||r.resultado||'').replace(/[,;|]+/g,' • ').replace(/\s*-\s*/g,' • ').replace(/\s+/g,' ');
+    return '<span class="resultado-letreiro-item"><span class="resultado-letreiro-badge" style="background:'+attr(corLoteria(nome))+'">'+esc(nome.toUpperCase())+'</span><span class="resultado-letreiro-info">'+(conc?'<span class="resultado-letreiro-concurso">'+esc(conc)+'</span>':'')+(data?'<span class="resultado-letreiro-data">'+esc(data)+'</span>':'')+'<span class="resultado-letreiro-sep">:</span><span class="resultado-letreiro-dezenas">'+esc(dez)+'</span></span></span>';
+  }
+  function renderRes(d,fonte){
+    inserirRes(); d=unwrapRes(d); var l=listaRes(d);
+    window.PSS_RESULTADOS_PUBLICOS_V213=Object.assign({},d,{resultados:l});
+    var box=document.getElementById('resultadosPublicosTickerV213');
+    var atual=document.getElementById('resultadosPublicosAtualizadoV213');
+    if(atual){
+      var dt=txt(d.leituraEm||d.geradoEm||d.atualizadoEm||d.dataHora||d.salvoEm||dataCurta());
+      atual.textContent=(d.cacheLocal?'Último resultado salvo em ':'Atualizado em ')+dt+(fonte?'':'');
+    }
+    if(!box)return;
+    if(l.length){
+      var g='<span class="resultados-ticker-grupo"><span class="resultados-ticker-prefixo">📢 Últimos resultados</span>'+l.slice(0,10).map(itemRes).join('<span class="resultado-letreiro-sep">|</span>')+'</span>';
+      box.innerHTML='<div class="resultados-ticker resultados-ticker-v341" title="Passe o mouse para pausar"><div class="resultados-ticker-track">'+g+g+'</div></div>';
+      return;
+    }
+    if(txt(d.letreiroTexto)){
+      var c=esc(d.letreiroTexto);
+      box.innerHTML='<div class="resultados-ticker resultados-ticker-v341"><div class="resultados-ticker-track"><span class="resultados-ticker-text">'+c+'</span><span>'+c+'</span></div></div>';
+      return;
+    }
+    box.innerHTML='<div class="notice warn">Últimos resultados temporariamente indisponíveis.</div>';
+  }
+  async function buscarFreshRes(forcar){
+    var stamp=Date.now();
+    var tentativas=[
+      ['PSSAPI_RESULTADOS_LOTERIAS_PUBLICOS_FRESH_V305',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
+      ['PSSAPI_RESULTADOS_LOTERIAS_PUBLICOS_FRESH_V304',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
+      ['getResultadosLoteriasPublicos',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
+      ['ultimosResultadosPublicos',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]],
+      ['getConfigPublica',{forcar:true,semCache:true,cacheBust:stamp},[true,stamp]]
+    ];
+    var ultimo=null;
+    for(var i=0;i<tentativas.length;i++){
+      try{
+        var t=tentativas[i],r;
+        if(typeof apiJsonpDireto_==='function')r=await apiJsonpDireto_(t[0],t[1],t[2],18000);
+        else if(typeof apiMulti==='function')r=await apiMulti([{action:t[0],dados:t[1],args:t[2]}]);
+        else if(typeof api==='function')r=await api(t[0],t[1],t[2]);
+        r=unwrapRes(r);
+        if(validoRes(r))return r;
+      }catch(e){ultimo=e;}
+    }
+    throw ultimo||new Error('API de resultados não retornou dado válido.');
+  }
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    inserirRes();
+    var box=document.getElementById('resultadosPublicosTickerV213');
+    var cache=lerRes();
+    if(cache&&!forcar)renderRes(cache,'cache local');
+    else if(box)box.innerHTML='<div class="notice info"><span class="loading-fast">Atualizando últimos resultados...</span></div>';
+    try{
+      var fresh=await buscarFreshRes(!!forcar);
+      salvarRes(fresh);
+      renderRes(fresh,'leitura direta');
+    }catch(e){
+      var c=lerRes();
+      if(c)renderRes(c,'cache preservado');
+      else if(box)box.innerHTML='<div class="notice warn">Não foi possível carregar os últimos resultados agora.</div>';
+      var atual=document.getElementById('resultadosPublicosAtualizadoV213');
+      if(atual)atual.title='Falha V341: '+((e&&e.message)||String(e));
+    }
+  };
+  window.PSS_LIMPAR_CACHE_LETREIRO_LOCAL_V341=function(){CACHE_RES.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return true;};
+  window.diagnosticarIndexV341=function(){return {versao:V, apiUrl:!!(window.CONFIG&&CONFIG.apiUrl), configLista:(window.PSS_CONFIG_BOLOES_LISTA||[]).length, regra:'Config direta, letreiro fresh por API e números sorteados em cada bolão.'};};
+
+  setTimeout(function(){try{if(document.querySelector('.home-hero'))window.carregarLetreiroResultadosPublicosV213(true);}catch(e){}},300);
 })();
 </script>
 
