@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V332_CORRIGE_COTAS_PAGAMENTOS_BASE_V326_DIRETO</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V335_DIVISAO_COTAS_TELEGRAM_PERFIL_SEGURO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V332_CORRIGE_COTAS_PAGAMENTOS_BASE_V326_DIRETO',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V335_DIVISAO_COTAS_TELEGRAM_PERFIL_SEGURO',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -23458,6 +23458,274 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     var cache=cacheLocalJogos333();
     var filtrados=filtrarJogos333(cache);
     return {versao:V,admin:admin333(),boloesCache:cache.length,boloesComCotaConfirmada:filtrados.length,regra:'usuario comum vê jogos somente se cotas confirmadas > 0'};
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V335 — COMPROVANTE COM QUANTIDADE DE COTAS E DIVISÃO SEGURA
+ * Base preservada: index V333. Não altera pagamentos, jogos, bolões ou home.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V335_DIVISAO_COMPROVANTE_APLICADO) return;
+  window.PSS_V335_DIVISAO_COMPROVANTE_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V335_DIVISAO_COTAS_TELEGRAM_PERFIL_SEGURO'; }catch(e){}
+
+  function byId(id){return document.getElementById(id);}  
+  function esc(v){return (typeof escapeHtml==='function')?escapeHtml(v==null?'':v):String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function attr(v){return (typeof escapeAttr==='function')?escapeAttr(v==null?'':v):esc(v);}  
+  function norm(v){return (typeof normalizar==='function')?normalizar(v||''):String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9@.]+/g,' ').trim();}
+  function num(v){return (typeof window.num==='function')?window.num(v):(Number(String(v||0).replace(',','.'))||0);}
+  function toast2(m,t){try{ if(typeof toast==='function') return toast(m,t||'info'); }catch(e){} console.log(m);}
+
+  function estiloV335(){
+    if(byId('pss-v335-style')) return;
+    var st=document.createElement('style');
+    st.id='pss-v335-style';
+    st.textContent='.v335-qtd-box{margin:10px 0 14px}.v335-qtd-box small{display:block;color:#546173;font-weight:800;margin-top:6px}.v335-parte-row{margin-bottom:10px}.v335-parte-status{font-size:11px;font-weight:800;margin-top:4px;color:#64748b}.v335-parte-status.ok{color:#087a2d}.v335-parte-status.warn{color:#9a6700}.v335-resumo-extra{font-size:12px;color:#415166;font-weight:800;display:block;margin-top:3px}.pss-upload-v245-backdrop.open{display:flex!important}';
+    document.head.appendChild(st);
+  }
+
+  function getBoloesLocal(){
+    try{ if(Array.isArray(ESTADO.boloes)) return ESTADO.boloes; }catch(e){}
+    return [];
+  }
+  function bolaoAtual(){
+    var lot=(byId('uploadBolao')&&byId('uploadBolao').value)||((window.ESTADO&&ESTADO.bolaoSelecionado)||'');
+    var alvo=norm(lot);
+    var lista=getBoloesLocal();
+    for(var i=0;i<lista.length;i++){
+      var b=lista[i]||{};
+      if(norm(b.loteria||b.nome||b.id||'')===alvo) return b;
+    }
+    return {};
+  }
+  function valorCotaAtual(){
+    var b=bolaoAtual();
+    return num(b.valorCota||b.VALOR_COTA||b.valorMensal||b.VALOR_MENSAL||0);
+  }
+
+  function injetarQtdCotasV335(){
+    estiloV335();
+    if(byId('qtdCotasComprovanteV335')) return;
+    var tipoCota=byId('tipoCota');
+    if(!tipoCota) return;
+    var ref=tipoCota.closest('.wide-control') || tipoCota.parentNode;
+    var div=document.createElement('div');
+    div.id='boxQtdCotasComprovanteV335';
+    div.className='wide-control v335-qtd-box';
+    div.innerHTML='<label>Quantidade de cotas referentes a este comprovante:</label><input id="qtdCotasComprovanteV335" type="number" min="1" step="0.5" value="1" inputmode="decimal" oninput="montarResumoEnvioComprovanteV335&&montarResumoEnvioComprovanteV335()"><small>Use a quantidade de cotas que este comprovante pretende pagar. Ex.: 3 cotas de R$ 100,00 = pagamento integral esperado de R$ 300,00.</small>';
+    if(ref && ref.parentNode) ref.parentNode.insertBefore(div, ref.nextSibling);
+  }
+
+  function prepararInputsPartesV335(){
+    var box=byId('nomesPartes');
+    if(!box) return;
+    var inputs=box.querySelectorAll('input');
+    inputs.forEach(function(inp,idx){
+      if(inp.dataset.v335Preparado==='1') return;
+      inp.dataset.v335Preparado='1';
+      inp.dataset.emailV335=inp.dataset.emailV335||'';
+      inp.placeholder='Nome ou e-mail do participante '+(idx+1);
+      inp.setAttribute('autocomplete','off');
+      var status=document.createElement('div');
+      status.className='v335-parte-status';
+      status.textContent='Sem vínculo cadastral confirmado.';
+      inp.parentNode.insertBefore(status, inp.nextSibling);
+      var timer=null;
+      inp.addEventListener('input',function(){
+        inp.dataset.emailV335='';
+        status.className='v335-parte-status warn';
+        status.textContent='Aguardando localização do cadastro...';
+        clearTimeout(timer);
+        timer=setTimeout(function(){resolverParteV335(inp,status);},650);
+        try{montarResumoEnvioComprovanteV335();}catch(e){}
+      });
+      inp.addEventListener('blur',function(){resolverParteV335(inp,status);});
+    });
+  }
+
+  async function resolverParteV335(inp,status){
+    var q=(inp&&inp.value||'').trim();
+    if(!q){ if(status){status.className='v335-parte-status';status.textContent='Sem vínculo cadastral confirmado.';} return; }
+    var emailMatch=q.match(/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i);
+    if(emailMatch){
+      inp.dataset.emailV335=emailMatch[0].toLowerCase();
+      if(status){status.className='v335-parte-status ok';status.textContent='Vínculo por e-mail informado: '+inp.dataset.emailV335;}
+      try{montarResumoEnvioComprovanteV335();}catch(e){}
+      return;
+    }
+    try{
+      var r=await api('buscarParticipantesComprovanteTerceiroV225',{query:q,adminEmail:(ESTADO&&ESTADO.email)||''},[q,(ESTADO&&ESTADO.email)||'']);
+      var lista=Array.isArray(r)?r:(r&&r.lista)||r&&r.participantes||[];
+      lista=Array.isArray(lista)?lista:[];
+      var alvo=norm(q);
+      var exatos=lista.filter(function(p){return norm((p.nome||p.NOME||p.nomeCompleto||p.PARTICIPANTE||''))===alvo || norm((p.email||p.EMAIL||''))===alvo;});
+      var escolhido=exatos.length===1?exatos[0]:(lista.length===1 && q.length>=5?lista[0]:null);
+      if(escolhido && (escolhido.email||escolhido.EMAIL)){
+        var em=String(escolhido.email||escolhido.EMAIL||'').trim().toLowerCase();
+        inp.dataset.emailV335=em;
+        if(status){status.className='v335-parte-status ok';status.textContent='Cadastro localizado: '+em;}
+      }else{
+        inp.dataset.emailV335='';
+        if(status){status.className='v335-parte-status warn';status.textContent='Nome sem vínculo único localizado. Será apenas informativo.';}
+      }
+    }catch(e){
+      inp.dataset.emailV335='';
+      if(status){status.className='v335-parte-status warn';status.textContent='Não foi possível confirmar vínculo. Será apenas informativo.';}
+    }
+    try{montarResumoEnvioComprovanteV335();}catch(e2){}
+  }
+
+  function participantesDivisaoV335(){
+    var arr=[];
+    document.querySelectorAll('#nomesPartes input').forEach(function(inp){
+      var nome=(inp.value||'').trim();
+      if(!nome) return;
+      arr.push({nome:nome,email:(inp.dataset.emailV335||'').trim().toLowerCase()});
+    });
+    return arr;
+  }
+  function nomesPartesV335(){return participantesDivisaoV335().map(function(x){return x.nome;});}
+  function marcadorV335(nome,obj){
+    try{return '[PSSV335_'+nome+']'+encodeURIComponent(JSON.stringify(obj||[]))+'[/PSSV335_'+nome+']';}catch(e){return '';}
+  }
+  function obsAdminComMarcadorV335(){
+    var obs=(byId('obsComprovanteTerceiroV225')&&byId('obsComprovanteTerceiroV225').value)||'';
+    obs=String(obs||'').replace(/\[PSSV335_[A-Z0-9_]+\][\s\S]*?\[\/PSSV335_[A-Z0-9_]+\]/g,'').trim();
+    var arr=participantesDivisaoV335();
+    return (obs?obs+' ':'')+marcadorV335('DIVISAO_RESOLVIDOS',arr);
+  }
+
+  function montarResumoEnvioComprovanteV335(){
+    try{ if(typeof window.montarResumoEnvioComprovanteV272==='function') window.montarResumoEnvioComprovanteV272(); }catch(e){}
+    var box=byId('resumoEnvioComprovanteV247');
+    if(!box) return;
+    var qtd=num((byId('qtdCotasComprovanteV335')&&byId('qtdCotasComprovanteV335').value)||1)||1;
+    var vCota=valorCotaAtual();
+    var esperado=vCota*qtd;
+    var resolvidos=participantesDivisaoV335().filter(function(x){return x.email;}).length;
+    var total=participantesDivisaoV335().length;
+    var html='<div class="pay-admin-info"><b>Cotas do comprovante</b><span>'+esc(String(qtd).replace('.',','))+(vCota?' · esperado '+(typeof moeda==='function'?moeda(esperado):('R$ '+esperado.toFixed(2).replace('.',','))):'')+'</span></div>';
+    if(total) html+='<div class="pay-admin-info full"><b>Vínculo seguro da divisão</b><span>'+esc(resolvidos+' de '+total+' participante(s) com e-mail/cadastro confirmado. Sem e-mail: apenas informativo.')+'</span></div>';
+    var grid=box.querySelector('.pay-admin-grid');
+    if(grid && !byId('v335ResumoExtra')){
+      var wrap=document.createElement('div');wrap.id='v335ResumoExtra';wrap.innerHTML=html;grid.appendChild(wrap);
+    }else if(byId('v335ResumoExtra')) byId('v335ResumoExtra').innerHTML=html;
+  }
+  window.montarResumoEnvioComprovanteV335=montarResumoEnvioComprovanteV335;
+
+  var renderCamposBaseV335=window.renderCamposPartes;
+  window.renderCamposPartes=renderCamposPartes=function(){
+    if(typeof renderCamposBaseV335==='function') renderCamposBaseV335.apply(this,arguments);
+    setTimeout(function(){injetarQtdCotasV335();prepararInputsPartesV335();montarResumoEnvioComprovanteV335();},80);
+  };
+  var renderNomesBaseV335=window.renderNomesPartes;
+  window.renderNomesPartes=renderNomesPartes=function(){
+    if(typeof renderNomesBaseV335==='function') renderNomesBaseV335.apply(this,arguments);
+    setTimeout(function(){prepararInputsPartesV335();montarResumoEnvioComprovanteV335();},80);
+  };
+  var renderCompBaseV335=window.renderComprovante;
+  window.renderComprovante=renderComprovante=async function(){
+    var r=await renderCompBaseV335.apply(this,arguments);
+    setTimeout(function(){injetarQtdCotasV335();prepararInputsPartesV335();montarResumoEnvioComprovanteV335();},160);
+    return r;
+  };
+
+  function ensureModalV335(){
+    var modal=byId('pss-upload-v245-modal');
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.id='pss-upload-v245-modal';
+    modal.className='pss-upload-v245-backdrop';
+    modal.innerHTML='<div class="pss-upload-v245-box"><div class="pss-upload-v245-head"><b>Enviar comprovante</b><button type="button" class="pss-upload-v245-close" aria-label="Fechar">×</button></div><iframe id="pss-upload-v245-iframe" class="pss-upload-v245-frame" allow="clipboard-read; clipboard-write"></iframe></div>';
+    document.body.appendChild(modal);
+    var close=modal.querySelector('.pss-upload-v245-close');
+    if(close) close.addEventListener('click',function(){var fr=byId('pss-upload-v245-iframe');if(fr)fr.src='about:blank';modal.classList.remove('open');});
+    modal.addEventListener('click',function(ev){if(ev.target===modal){var fr=byId('pss-upload-v245-iframe');if(fr)fr.src='about:blank';modal.classList.remove('open');}});
+    return modal;
+  }
+
+  function montarMetaV335(){
+    var tipoEnvio=(byId('tipoEnvioComprovante')&&byId('tipoEnvioComprovante').value)||'meu';
+    var tipoCota=(byId('tipoCota')&&byId('tipoCota').value)||'unica';
+    var qtdPartes=(byId('qtdPartes')&&byId('qtdPartes').value)||'';
+    var fracao=(byId('fracaoCotaTerceiroV225')&&byId('fracaoCotaTerceiroV225').value)||'';
+    var qtdCotas=(byId('qtdCotasComprovanteV335')&&byId('qtdCotasComprovanteV335').value)||'1';
+    var meta={
+      tipoEnvio:tipoEnvio==='terceiro'?'TERCEIRO':'PROPRIO',
+      adminEmail:(ESTADO&&ESTADO.email)||'',
+      tipoCota:tipoCota,
+      qtdPartes:qtdPartes,
+      fracaoCota:fracao,
+      qtdCotas:qtdCotas,
+      qtdCotasComprovante:qtdCotas,
+      nomesPartes:nomesPartesV335(),
+      participantesDivisaoResolvidos:participantesDivisaoV335(),
+      obsAdmin:obsAdminComMarcadorV335()
+    };
+    if(tipoEnvio==='terceiro'){
+      meta.emailParticipante=((byId('emailParticipanteTerceiroV225')&&byId('emailParticipanteTerceiroV225').value)||'').trim().toLowerCase();
+      meta.nomeParticipante=((byId('nomeParticipanteTerceiroV225')&&byId('nomeParticipanteTerceiroV225').value)||'').trim();
+    }else{
+      meta.emailParticipante=(ESTADO&&ESTADO.email)||'';
+      meta.nomeParticipante=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name))||'';
+    }
+    return meta;
+  }
+  window.montarMetaComprovanteV335=montarMetaV335;
+
+  window.PSS_abrirUploadComprovanteV272=function(){
+    var loteria=(byId('uploadBolao')&&byId('uploadBolao').value)||((ESTADO&&ESTADO.bolaoSelecionado)||'');
+    if(!loteria) return toast2('Selecione a loteria do depósito.','error');
+    var meta=montarMetaV335();
+    if(meta.tipoEnvio==='TERCEIRO'){
+      if(typeof isAdmin==='function' && !isAdmin()) return toast2('Apenas administrador pode enviar comprovante de terceiro.','error');
+      var modo=(byId('vinculoTerceiroV272')&&byId('vinculoTerceiroV272').value)||'com_cadastro';
+      if(modo==='com_cadastro' && !meta.emailParticipante) return toast2('Selecione o participante cadastrado vinculado ao comprovante.','error');
+      if(modo==='sem_cadastro'){
+        var nome=(byId('nomeProvisorioTerceiroV272')&&byId('nomeProvisorioTerceiroV272').value||'').trim();
+        if(!nome) return toast2('Informe o nome provisório do pagador/participante sem cadastro.','error');
+      }
+    }
+    try{ESTADO.bolaoSelecionado=loteria;localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);}catch(e){}
+    montarResumoEnvioComprovanteV335();
+    var modal=ensureModalV335();
+    var frame=byId('pss-upload-v245-iframe');
+    var params=new URLSearchParams();
+    params.set('mode','upload_app');
+    params.set('loteria',loteria);
+    params.set('email',(ESTADO&&ESTADO.email)||'');
+    params.set('adminEmail',(ESTADO&&ESTADO.email)||'');
+    params.set('tipoEnvio',meta.tipoEnvio||'PROPRIO');
+    params.set('emailParticipante',meta.emailParticipante||((ESTADO&&ESTADO.email)||''));
+    params.set('nomeParticipante',meta.nomeParticipante||'');
+    params.set('tipoCota',meta.tipoCota||'');
+    params.set('qtdPartes',meta.qtdPartes||'');
+    params.set('fracaoCota',meta.fracaoCota||'');
+    params.set('qtdCotas',meta.qtdCotas||'1');
+    params.set('qtdCotasComprovante',meta.qtdCotasComprovante||meta.qtdCotas||'1');
+    params.set('nomesPartes',JSON.stringify(meta.nomesPartes||[]));
+    params.set('obsAdmin',meta.obsAdmin||'');
+    params.set('v','V335');
+    params.set('t',Date.now());
+    if(frame) frame.src=CONFIG.apiUrl+'?'+params.toString();
+    modal.classList.add('open');
+    try{if(typeof atualizarProgressoUploadComprovante_==='function') atualizarProgressoUploadComprovante_(1,'Abrindo envio','Preparando envio seguro.','run');}catch(e2){}
+  };
+
+  window.diagnosticarIndexV335=function(){
+    return {
+      versao:'V335_DIVISAO_COTAS_TELEGRAM_PERFIL_SEGURO',
+      qtdCotas:byId('qtdCotasComprovanteV335')?byId('qtdCotasComprovanteV335').value:null,
+      participantesDivisao:participantesDivisaoV335(),
+      valorCotaAtual:valorCotaAtual(),
+      meta:typeof montarMetaV335==='function'?montarMetaV335():{}
+    };
   };
 })();
 </script>
