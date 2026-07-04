@@ -25164,5 +25164,205 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * PATCH V346 — INÍCIO LIMPO + PALPITES HISTÓRICO ADMIN + CONTADOR CORRETO
+ * - Remove somente a duplicidade visual do Histórico de cotas criada no V345.
+ * - Mantém o botão/modal de histórico que já funcionou no teste.
+ * - Corrige o bloco Sistema ativo para não exibir Aprovados 0 quando há inscritos.
+ * - Em Palpite > Encerrados, administrador visualiza todos os bolões históricos.
+ * - Não altera upload de comprovante, OCR, Drive, pagamentos, jogos realizados ou API.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V346_INICIO_LIMPO_PALPITES_ADMIN_SEM_MEXER_UPLOAD';
+  try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
+
+  function $id(id){return document.getElementById(id);}
+  function txt(v){return String(v==null?'':v).trim();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
+  function attr(v){try{if(typeof escapeAttr==='function')return escapeAttr(v);}catch(e){}return esc(v);}
+  function num(v){var n=Number(String(v==null?'':v).replace(',','.').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0;}
+  function lista(v){return Array.isArray(v)?v:[];}
+  function unwrap(r){var d=r;if(d&&d.dados!==undefined)d=d.dados;if(d&&d.result!==undefined&&!d.lista&&!d.historico)d=d.result;return d||{};}
+  function emailAtual(){return txt((window.ESTADO&&ESTADO.email)||localStorage.getItem('PSS_BOLAO_EMAIL')||'').toLowerCase();}
+  function isAdminV346(){try{if(typeof isAdminLocal==='function'&&isAdminLocal())return true;}catch(e){}try{if(typeof isAdmin==='function'&&isAdmin())return true;}catch(e){}try{var p=txt((window.ESTADO&&ESTADO.perfil)||localStorage.getItem('PSS_BOLAO_PERFIL')||'').toUpperCase();return p.indexOf('ADMIN')>=0;}catch(e){}return false;}
+  function cotasTextoV346(v){var n=Math.round(num(v)*1000)/1000;if(!n)return '0';return Math.abs(n-Math.round(n))<0.0001?String(Math.round(n)):String(n).replace('.',',');}
+  function fmtDataV346(v){try{if(typeof fmtData==='function')return fmtData(v);}catch(e){}return txt(v)||'-';}
+  function moedaV346(v){try{if(typeof moedaLocal==='function')return moedaLocal(v);}catch(e){}var n=num(v);try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(e2){return 'R$ '+String(Math.round(n*100)/100).replace('.',',');}}
+  async function apiV346(action,dados,args,timeout){dados=dados||{};args=args||[];if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados,args,timeout||16000);if(typeof apiMulti==='function')return apiMulti([{action:action,dados:dados,args:args}],timeout||16000);if(typeof api==='function')return api(action,dados,args);throw new Error('API do site não inicializada.');}
+
+  /* 1) Histórico de cotas: remove a seção duplicada do V345 e preserva o modal/lista que já funcionou. */
+  function limparHistoricoDuplicadoV346(){
+    try{
+      var sec=$id('historicoCotasInicioV345');
+      if(sec&&sec.parentNode)sec.parentNode.removeChild(sec);
+      var btn=$id('btnHistoricoCotasInicioV345');
+      if(btn&&btn.parentNode)btn.parentNode.removeChild(btn);
+      var botoes=[].slice.call(document.querySelectorAll('button.btn'));
+      var hist=botoes.filter(function(b){return /^\s*hist[oó]rico\s+de\s+cotas\s*$/i.test(txt(b.textContent));});
+      if(hist.length>1){
+        var manter=hist.find(function(b){return b.id==='btnHistoricoCotasV343';})||hist[hist.length-1];
+        hist.forEach(function(b){if(b!==manter&&b.parentNode)b.parentNode.removeChild(b);});
+      }
+      var btnOk=$id('btnHistoricoCotasV343')||[].slice.call(document.querySelectorAll('button.btn')).find(function(b){return /^\s*hist[oó]rico\s+de\s+cotas\s*$/i.test(txt(b.textContent));});
+      if(btnOk){btnOk.onclick=function(){if(typeof window.abrirHistoricoCotasV343==='function')return window.abrirHistoricoCotasV343();if(typeof window.abrirHistoricoCotasV345==='function')return window.abrirHistoricoCotasV345();};}
+    }catch(e){}
+  }
+  window.carregarHistoricoCotasInicioV345=function(){limparHistoricoDuplicadoV346();return Promise.resolve({ok:true,removido:true});};
+  window.abrirHistoricoCotasV345=function(){if(typeof window.abrirHistoricoCotasV343==='function')return window.abrirHistoricoCotasV343();};
+
+  /* 2) Sistema ativo: aproveita o total correto já exibido em outro bloco e evita Aprovados 0. */
+  function localizarSistemaAtivoV346(){
+    var c=$id('sistemaAtivoCardV275');
+    if(c)return c;
+    var h=[].slice.call(document.querySelectorAll('#view h2,h2')).find(function(x){return /^\s*sistema\s+ativo\s*$/i.test(txt(x.textContent));});
+    return h?(h.closest('.panel')||h.parentElement):null;
+  }
+  function totalInscritosDomV346(){
+    var max=0;
+    [].slice.call(document.querySelectorAll('button,span,div')).forEach(function(el){
+      var s=txt(el.textContent||'');
+      var m=s.match(/(?:inscritos|aprovados)\s*:\s*(\d+)/i);
+      if(m)max=Math.max(max,parseInt(m[1],10)||0);
+    });
+    return max;
+  }
+  function aplicarTotalSistemaV346(total){
+    var card=localizarSistemaAtivoV346();
+    if(!card)return;
+    total=num(total)||totalInscritosDomV346();
+    if(total>0){
+      var blocoResumo=$id('sistemaAtivoResumoV297');
+      var temBlocoBom=/Participantes aprovados no cadastro/i.test(card.textContent||'')&&/Inscritos\s*:\s*[1-9]/i.test(card.textContent||'');
+      if(blocoResumo&&temBlocoBom&&blocoResumo.parentNode)blocoResumo.parentNode.removeChild(blocoResumo);
+      [].slice.call(card.querySelectorAll('button')).forEach(function(b){
+        if(/Aprovados\s*:\s*0/i.test(b.textContent||'')||/Aprovados\s*:/i.test(b.textContent||''))b.textContent='👥 Inscritos: '+String(total);
+      });
+      if(!/Inscritos\s*:\s*[1-9]/i.test(card.textContent||'')){
+        var html='<div id="sistemaAtivoResumoV346" style="border-top:1px solid rgba(255,255,255,.25);margin-top:14px;padding-top:14px;">'+
+          '<div style="font-weight:900;color:#fff;margin-bottom:8px;">Participantes aprovados no cadastro</div>'+ 
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'+
+          '<button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{abrirResumoInscritosTopo()}catch(e){}">👥 Inscritos: '+esc(total)+'</button>'+ 
+          '</div></div>';
+        card.insertAdjacentHTML('beforeend',html);
+      }
+    }
+  }
+  async function atualizarSistemaV346(){
+    try{
+      aplicarTotalSistemaV346(totalInscritosDomV346());
+      var r=await apiV346('getResumoInscritosBoloes',{cacheBust:Date.now(),email:emailAtual()},[emailAtual()],14000).catch(function(){return null;});
+      r=unwrap(r);
+      var total=num(r.totalAprovadosSite||r.totalAprovados||r.totalInscritosSite||r.totalInscritos||r.inscritos||r.aprovados||r.total||0);
+      if(total>0)aplicarTotalSistemaV346(total); else aplicarTotalSistemaV346(totalInscritosDomV346());
+    }catch(e){aplicarTotalSistemaV346(totalInscritosDomV346());}
+  }
+  window.PSS_atualizarSistemaAtivoV346=atualizarSistemaV346;
+
+  /* 3) Palpite > Encerrados: admin vê todos os bolões históricos; participante continua restrito ao vínculo/pagamento. */
+  function historicoBolaoV346(b){
+    b=b||{};
+    var s=txt(b.status||b.STATUS||b.situacao||b.SITUACAO).toUpperCase();
+    if(/HIST|ENCERR|FINALIZ|CONCLU/.test(s))return true;
+    var fim=txt(b.fimPalpite||b.palpiteFim||b.dataFimPalpite||b.fimPagamento||b.dataSorteio||b.sorteio);
+    if(fim){
+      var m=fim.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if(m){var dt=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),23,59,59); if(dt.getTime()&&dt.getTime()<Date.now())return true;}
+    }
+    return false;
+  }
+  async function carregarBoloesV346(){
+    if(typeof window.PSS_carregarBoloesCompletoV267_==='function')return lista(await window.PSS_carregarBoloesCompletoV267_(false));
+    if(typeof carregarBoloes==='function')return lista(await carregarBoloes(false));
+    return [];
+  }
+  async function statusPalpiteV346(nome){
+    var email=emailAtual();
+    try{return unwrap(await apiV346('checarStatusPalpite',{email:email,loteria:nome},[email,nome],12000));}catch(e1){
+      try{return unwrap(await apiV346('getStatusPalpite',{email:email,loteria:nome},[email,nome],12000));}catch(e2){return {};}
+    }
+  }
+  function cotasDoStatusV346(b,st){
+    b=b||{};st=st||{};
+    var campos=['cotas','maxJogos','cotasConfirmadas','minhasCotasConfirmadas','cotasPagas','cotasUsuario','qtdCotas'];
+    for(var i=0;i<campos.length;i++){if(num(st[campos[i]])>0)return Math.round(num(st[campos[i]])*1000)/1000;}
+    var camposB=['cotasConfirmadasUsuario','minhasCotasConfirmadas','cotasPagasUsuario','minhasCotasPagas','cotasUsuario','minhasCotas','COTAS_CONFIRMADAS_USUARIO','MINHAS_COTAS_CONFIRMADAS'];
+    for(var j=0;j<camposB.length;j++){if(num(b[camposB[j]])>0)return Math.round(num(b[camposB[j]])*1000)/1000;}
+    return 0;
+  }
+  function temVinculoPalpiteV346(b,st){
+    var c=cotasDoStatusV346(b,st);
+    if(c>=1)return true;
+    if(st&&(st.podeEditar===true||st.liberado===true)&&num(st.cotas||st.maxJogos||st.qtdCotas||0)>=1)return true;
+    return false;
+  }
+  function cardPalpiteV346(item,tipo,admin){
+    var b=item.b||{}, st=item.status||{}, nome=txt(b.loteria||b.nome||b.id||'Bolão'), cotas=item.cotas||0;
+    var hist=historicoBolaoV346(b);
+    var badge= hist?'Histórico':(temVinculoPalpiteV346(b,st)?'Pagamento confirmado':'Consulta administrativa');
+    var botao=(admin&&tipo==='historico'&&!temVinculoPalpiteV346(b,st))
+      ? '<button class="btn" onclick="renderPalpiteAbertoAdminV346(\''+attr(nome)+'\')">Consultar</button>'
+      : '<button class="btn" onclick="renderPalpiteAberto(\''+attr(nome)+'\')">Abrir palpite</button>';
+    return '<div class="bolao-card"><h3>🎯 '+esc(nome)+'</h3><div class="status-pill">'+esc(badge)+'</div><br>'+ 
+      (cotas?'<div class="outline-pill" style="border-color:#0b6f28;color:#064d1f;background:#f2fff6;">Minhas cotas confirmadas: '+esc(cotasTextoV346(cotas))+'</div>':'')+
+      '<div class="meta-grid"><div class="meta-box"><b>Status</b><span>'+esc(b.status||b.STATUS||(hist?'HISTÓRICO':'ATIVO'))+'</span></div><div class="meta-box"><b>Sorteio</b><span>'+esc(fmtDataV346(b.dataSorteio||b.sorteio||'-'))+'</span></div><div class="meta-box"><b>Pagamento</b><span>'+esc(fmtDataV346(b.inicioPagamento||'-'))+' a '+esc(fmtDataV346(b.fimPagamento||'-'))+'</span></div><div class="meta-box"><b>Palpites</b><span>'+esc(fmtDataV346(b.inicioPalpite||'-'))+' a '+esc(fmtDataV346(b.fimPalpite||'-'))+'</span></div></div>'+botao+'</div>';
+  }
+  window.renderPalpiteAbertoAdminV346=async function(nome){
+    if(typeof loading==='function')loading('Carregando consulta');
+    try{
+      var info={};try{info=unwrap(await apiV346('obterDadosPalpite',{loteria:nome},[nome],15000));}catch(e1){}
+      var st=await statusPalpiteV346(nome);
+      var palpites=lista(st.palpites);
+      var linhas=palpites.length&&typeof renderHistoricoPalpite==='function'?renderHistoricoPalpite(palpites):'<tr><td colspan="4">Nenhum palpite localizado para este usuário.</td></tr>';
+      if(typeof setView==='function')setView('<div class="panel"><h2>🎯 '+esc(nome)+'</h2><div class="notice warn">Consulta administrativa de bolão encerrado. A edição de palpite permanece bloqueada sem vínculo/cota confirmada.</div><div class="meta-box" style="margin-top:12px;"><b>Resumo</b><span>Range: '+esc(info.range||info.nMax||'-')+' · Qtd. por palpite: '+esc(info.qtdEscolha||info.qtdPalpite||'-')+'</span></div><div class="table-wrap" style="margin-top:10px;"><table><thead><tr><th>#</th><th>Data</th><th>Dezenas</th><th>Ação</th></tr></thead><tbody>'+linhas+'</tbody></table></div><div class="actions"><button class="btn btn-light" onclick="renderPalpiteLista(\'historico\')">Voltar aos encerrados</button></div></div>');
+    }catch(e){if(typeof setView==='function')setView('<div class="panel"><div class="notice error">'+esc((e&&e.message)||e)+'</div></div>');}
+  };
+  window.renderPalpiteLista=async function(tipo){
+    tipo=tipo||'ativos';
+    if(typeof loading==='function')loading('Carregando palpites');
+    try{
+      var admin=isAdminV346();
+      var todos=await carregarBoloesV346();
+      var dados=todos.filter(function(b){return tipo==='historico'?historicoBolaoV346(b):!historicoBolaoV346(b);});
+      var cards=[];
+      for(var i=0;i<dados.length;i++){
+        var b=dados[i]||{}, nome=txt(b.loteria||b.nome||b.id||'');
+        if(!nome)continue;
+        var st=await statusPalpiteV346(nome);
+        var cotas=cotasDoStatusV346(b,st);
+        if((admin&&tipo==='historico')||temVinculoPalpiteV346(b,st))cards.push({b:b,status:st,cotas:cotas});
+      }
+      var vazio=(tipo==='historico'&&admin)?'Nenhum bolão encerrado/histórico localizado.':'Nenhum bolão com pagamento confirmado para este participante foi localizado. O palpite só é liberado quando houver pagamento confirmado para o mesmo e-mail e a mesma loteria, com cota mínima de 1.';
+      var html=cards.length?'<div class="cards-row">'+cards.map(function(x){return cardPalpiteV346(x,tipo,admin);}).join('')+'</div>':'<div class="notice warn">'+esc(vazio)+'</div><div class="actions"><button class="btn" onclick="navegar(\'boloes\')">Ver bolões</button></div>';
+      if(typeof setView==='function')setView('<div class="panel"><h2>🎯 Palpites do participante</h2><p>Para constar como inscrito, o sistema verifica pagamento confirmado pelo e-mail logado e pela loteria do bolão.</p><div class="actions"><button type="button" class="btn btn-tab '+(tipo==='ativos'?'active':'')+'" onclick="renderPalpiteLista(\'ativos\')">Ativos</button><button type="button" class="btn btn-tab '+(tipo==='historico'?'active':'')+'" onclick="renderPalpiteLista(\'historico\')">Encerrados</button></div>'+html+'</div>');
+    }catch(e){if(typeof setView==='function')setView('<div class="panel"><div class="notice error">'+esc((e&&e.message)||e)+'</div></div>');}
+  };
+
+  var renderInicioBaseV346=window.renderInicio||((typeof renderInicio==='function')?renderInicio:null);
+  if(renderInicioBaseV346){
+    window.renderInicio=renderInicio=async function(){
+      var r=await renderInicioBaseV346.apply(this,arguments);
+      setTimeout(function(){limparHistoricoDuplicadoV346();atualizarSistemaV346();},250);
+      setTimeout(function(){limparHistoricoDuplicadoV346();atualizarSistemaV346();},1800);
+      return r;
+    };
+  }
+  var navegarBaseV346=window.navegar;
+  if(typeof navegarBaseV346==='function'){
+    window.navegar=navegar=function(v){
+      var r=navegarBaseV346.apply(this,arguments);
+      if(String(v||'').toLowerCase()==='inicio')setTimeout(function(){limparHistoricoDuplicadoV346();atualizarSistemaV346();},450);
+      if(String(v||'').toLowerCase()==='palpite')setTimeout(function(){try{renderPalpiteLista('ativos');}catch(e){}},80);
+      return r;
+    };
+  }
+  window.diagnosticarIndexV346=function(){return {versao:V,historicoDuplicadoRemovido:!$id('historicoCotasInicioV345')&&!$id('btnHistoricoCotasInicioV345'),admin:isAdminV346(),totalInscritosDom:totalInscritosDomV346(),regra:'Somente index: remove duplicidade do histórico, corrige contador do sistema ativo e libera histórico de palpites para admin.'};};
+  setTimeout(function(){limparHistoricoDuplicadoV346();atualizarSistemaV346();},900);
+  setInterval(function(){limparHistoricoDuplicadoV346();aplicarTotalSistemaV346(totalInscritosDomV346());},2500);
+})();
+</script>
 </body>
 </html>
