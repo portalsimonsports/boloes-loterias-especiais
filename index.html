@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V355_LOGS50_LETREIRO_ACOES_ADMIN</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V356_EXCLUI_DUPLICADO_REMOVE_LINHA</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V355_LOGS50_LETREIRO_ACOES_ADMIN',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V356_EXCLUI_DUPLICADO_REMOVE_LINHA',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -25552,7 +25552,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 <script>
 /******************** PATCH V348 — BUSCA E UPLOAD DE COMPROVANTE ESTÁVEIS ********************/
 (function(){
-  var V='V355_LOGS50_LETREIRO_ACOES_ADMIN';
+  var V='V356_EXCLUI_DUPLICADO_REMOVE_LINHA';
   if(window.PSS_V348_BUSCA_UPLOAD_APLICADO) return;
   window.PSS_V348_BUSCA_UPLOAD_APLICADO=true;
   try{ if(typeof CONFIG==='object') CONFIG.versao=V; }catch(e){}
@@ -26525,7 +26525,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 /* V354 — consolidação: mantém ações admin V353 e usa GS V349 para data Nubank/mês referência. */
 (function(){
   window.diagnosticarIndexV354=function(){
-    return {sucesso:true, versao:'V355_LOGS50_LETREIRO_ACOES_ADMIN', regra:'HTML mantém ações admin; correção de data/mês referência está no GS V349.'};
+    return {sucesso:true, versao:'V356_EXCLUI_DUPLICADO_REMOVE_LINHA', regra:'HTML mantém ações admin; correção de data/mês referência está no GS V349.'};
   };
 })();
 </script>
@@ -26542,7 +26542,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  * ===================================================================== */
 (function(){
   'use strict';
-  var V='V355_LOGS50_LETREIRO_ACOES_ADMIN';
+  var V='V356_EXCLUI_DUPLICADO_REMOVE_LINHA';
   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
 
   function txt(v){return String(v===undefined||v===null?'':v).trim();}
@@ -26679,6 +26679,119 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.renderLetreiroResultadosPublicosV213=function(d){renderLetreiroV355(d);};
   window.diagnosticarIndexV355=function(){return {sucesso:true,versao:V,adminEmail:emailAdmin(),acoes:['excluirComprovanteDuplicadoAdminV350','anularComprovantePagoIncompativelV350'],letreiro:'carregarLetreiroResultadosPublicosV213 override V355'};};
   setTimeout(function(){try{if(document.querySelector('.home-hero'))window.carregarLetreiroResultadosPublicosV213(false);}catch(e){}},350);
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V356 — EXCLUIR DUPLICADO REMOVE LINHA
+ * Base preservada: V355.
+ * - Excluir duplicado remove a linha duplicada da aba PAGAMENTOS.
+ * - Remove o item do histórico individual do participante no GS.
+ * - Recarrega a lista para o card desaparecer, não apenas mudar status.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V356_EXCLUI_DUPLICADO_REMOVE_LINHA';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function emailAdminV356(){
+    var arr=[];
+    try{arr.push(window.ESTADO&&ESTADO.email);}catch(e){}
+    try{arr.push(window.ESTADO&&ESTADO.usuario&&ESTADO.usuario.email);}catch(e){}
+    try{arr.push(localStorage.getItem('PSS_BOLAO_EMAIL'));}catch(e){}
+    try{arr.push((JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'{}')||{}).email);}catch(e){}
+    try{arr.push((JSON.parse(sessionStorage.getItem('PSS_BOLAO_SESSAO')||'{}')||{}).email);}catch(e){}
+    try{var u=document.getElementById('userDisplay');var m=u&&u.textContent?u.textContent.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i):null;if(m)arr.push(m[0]);}catch(e){}
+    for(var i=0;i<arr.length;i++){var em=txt(arr[i]).toLowerCase();if(em)return em;}
+    return 'portalsimonsports@gmail.com';
+  }
+  async function apiV356(action,dados,args,timeout){
+    dados=dados||{}; args=args||null; timeout=timeout||22000;
+    if(typeof apiJsonpDireto_==='function')return await apiJsonpDireto_(action,dados,args,timeout);
+    if(typeof api==='function')return await api(action,dados,args);
+    throw new Error('API local indisponível no index.');
+  }
+  async function tentativasV356(lista){
+    var ultimo=null;
+    for(var i=0;i<lista.length;i++){
+      try{return await apiV356(lista[i].action,lista[i].dados,lista[i].args,lista[i].timeout||22000);}catch(e){ultimo=e;}
+    }
+    throw ultimo||new Error('Nenhuma ação respondeu.');
+  }
+  function avisarV356(msg,tipo){
+    try{ if(typeof notify==='function')return notify(msg,tipo||'success'); }catch(e){}
+    try{ if(typeof toast==='function')return toast(msg,tipo||'success'); }catch(e){}
+    alert(msg);
+  }
+  function recarregarPagamentosV356(){
+    setTimeout(function(){
+      try{ if(typeof renderPagamentosAdminTab==='function')return renderPagamentosAdminTab('efetuados'); }catch(e1){}
+      try{ if(typeof renderPagamentosAdmin==='function')return renderPagamentosAdmin(); }catch(e2){}
+      try{ if(typeof renderPagamentos==='function')return renderPagamentos(); }catch(e3){}
+    },350);
+  }
+
+  window.excluirComprovanteDuplicadoAdminV352=function(linha){
+    linha=Number(linha||0);
+    if(!linha) return avisarV356('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');
+    try{
+      if(typeof abrirModal==='function'){
+        abrirModal('Excluir comprovante duplicado',
+          '<div class="notice warn"><strong>Atenção:</strong> esta ação vai remover o registro duplicado da aba PAGAMENTOS e do histórico individual do participante. Se houver FILE_ID válido, o arquivo duplicado será enviado para a lixeira do Drive.</div>'+ 
+          '<p><strong>Linha a remover:</strong> '+esc(linha)+'</p>'+ 
+          '<div class="field"><label>Motivo</label><textarea id="motivoExcluirDuplicadoV352">Comprovante duplicado / reenvio indevido.</textarea></div>'+ 
+          '<div class="actions" style="justify-content:flex-end;">'+
+          '<button class="btn btn-light" onclick="fecharModal()">Cancelar</button>'+ 
+          '<button class="btn btn-danger" onclick="executarExcluirComprovanteDuplicadoAdminV352('+linha+')">Excluir e remover linha</button>'+ 
+          '</div>');
+      }else if(confirm('Excluir definitivamente a linha duplicada '+linha+' da planilha?')){
+        window.executarExcluirComprovanteDuplicadoAdminV352(linha);
+      }
+    }catch(e){ avisarV356(e.message||String(e),'error'); }
+  };
+
+  window.executarExcluirComprovanteDuplicadoAdminV352=function(linha){ return window.executarExcluirComprovanteDuplicadoAdminV356(linha); };
+  window.executarExcluirComprovanteDuplicadoAdminV355=function(linha){ return window.executarExcluirComprovanteDuplicadoAdminV356(linha); };
+  window.executarExcluirComprovanteDuplicadoAdminV356=async function(linha){
+    linha=Number(linha||0);
+    var motivo=txt((document.getElementById('motivoExcluirDuplicadoV352')||{}).value)||'Comprovante duplicado / reenvio indevido.';
+    try{ if(typeof fecharModal==='function')fecharModal(); }catch(e){}
+    var admin=emailAdminV356();
+    var card=document.querySelector('[data-pay-row="'+linha+'"]');
+    var btn=document.querySelector('button[onclick="executarExcluirComprovanteDuplicadoAdminV352('+linha+')"],button[onclick="executarExcluirComprovanteDuplicadoAdminV355('+linha+')"],button[onclick="executarExcluirComprovanteDuplicadoAdminV356('+linha+')"]');
+    try{
+      if(btn){btn.disabled=true;btn.textContent='REMOVENDO...';}
+      var payload={linha:linha,adminEmail:admin,motivo:motivo};
+      var r=await tentativasV356([
+        {action:'excluirComprovanteDuplicadoAdminV351',dados:payload,args:[payload],timeout:22000},
+        {action:'excluirComprovanteDuplicadoAdminV350',dados:payload,args:[payload],timeout:22000},
+        {action:'excluirComprovanteDuplicadoAdminV348',dados:payload,args:[payload],timeout:22000},
+        {action:'excluirComprovanteDuplicadoAdmin',dados:payload,args:[payload],timeout:22000}
+      ]);
+      if(card){
+        card.style.transition='opacity .2s ease, transform .2s ease';
+        card.style.opacity='0';
+        card.style.transform='scale(.985)';
+        setTimeout(function(){try{card.remove();}catch(e){}},220);
+      }
+      avisarV356((r&&r.msg)||'Duplicado removido da planilha e do histórico do participante.','success');
+      recarregarPagamentosV356();
+      return r;
+    }catch(err){
+      if(btn){btn.disabled=false;btn.textContent='EXCLUIR DUPLICADO';}
+      avisarV356((err&&err.message)||String(err),'error');
+      throw err;
+    }
+  };
+
+  window.diagnosticarIndexV356=function(){
+    return {sucesso:true,versao:V,acaoExcluir:'excluirComprovanteDuplicadoAdminV351',regra:'Excluir duplicado remove a linha da aba PAGAMENTOS e remove o lançamento do histórico individual do participante.'};
+  };
 })();
 </script>
 
