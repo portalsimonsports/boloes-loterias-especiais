@@ -23720,7 +23720,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
   window.diagnosticarIndexV335=function(){
     return {
-      versao:'V335_DIVISAO_COTAS_TELEGRAM_PERFIL_SEGURO',
+      versao:'V350_UPLOAD_COMPROVANTE_DRIVE_ONLY_ANTIDUP',
       qtdCotas:byId('qtdCotasComprovanteV335')?byId('qtdCotasComprovanteV335').value:null,
       participantesDivisao:participantesDivisaoV335(),
       valorCotaAtual:valorCotaAtual(),
@@ -25844,6 +25844,270 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     var locais=cacheGetV348().concat(pessoasCacheDomV348());
     return {sucesso:true,versao:V,cache:cacheGetV348().length,cacheDom:pessoasCacheDomV348().length,resultadosLocais:filtrarPessoasV348(locais,q).length,uploadEstavel:typeof (window.PSS_abrirUploadComprovanteV272||window.abrirUploadComprovanteAppsScriptV245||window.abrirUploadDiretoV340)==='function'?'OK':'AUSENTE',regra:'Busca de participante por cache + API direta; envio preserva o método estável de comprovante, sem mexer nos demais menus.'};
   };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V350 — UPLOAD DE COMPROVANTE SOMENTE DRIVE + ANTIDUPLICIDADE
+ * Correção isolada sobre a base V348:
+ * - Mantém busca de participante V348.
+ * - Mantém tela atual.
+ * - Troca somente o envio do comprovante para ação V346 somente Drive com bloqueio de duplicidade.
+ * - O servidor grava no Drive, cria registro mínimo pendente e retorna. OCR/reprocessamento ficam para rotina posterior.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V350_UPLOAD_COMPROVANTE_DRIVE_ONLY_ANTIDUP';
+  try{ if(window.CONFIG){ CONFIG.versao=V; } localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function byId(id){return document.getElementById(id);}
+  function s(v){return String(v==null?'':v).trim();}
+  function esc(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v); }catch(e){}
+    return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function notify(msg,tipo){
+    try{ if(typeof toast==='function') return toast(msg,tipo||'info'); }catch(e){}
+    try{ alert(msg); }catch(e2){}
+  }
+  function progresso(p,t,d,st){
+    try{ if(typeof atualizarProgressoUploadComprovante_==='function') return atualizarProgressoUploadComprovante_(p,t,d,st||'run'); }catch(e){}
+    var box=byId('comprovanteUploadProgressBox');
+    if(box) box.classList.add('open');
+    var tit=byId('comprovanteUploadTitulo'), pct=byId('comprovanteUploadPercentual'), det=byId('comprovanteUploadDetalhe'), fill=byId('comprovanteUploadFill');
+    if(tit) tit.textContent=t||'';
+    if(pct) pct.textContent=Math.round(Number(p)||0)+'%';
+    if(det) det.textContent=d||'';
+    if(fill) fill.style.width=Math.max(0,Math.min(100,Number(p)||0))+'%';
+  }
+  function addHidden(form,name,value){
+    var input=document.createElement('input');
+    input.type='hidden';
+    input.name=name;
+    if(value===undefined||value===null)value='';
+    if(typeof value==='object'){
+      try{value=JSON.stringify(value);}catch(e){value=String(value);}
+    }
+    input.value=String(value);
+    form.appendChild(input);
+    return input;
+  }
+  function okResp(resp){
+    if(!resp) return false;
+    if(resp.ok===true || resp.sucesso===true) return true;
+    var d=resp.dados||resp.result||resp.response;
+    return !!(d && (d.sucesso===true || d.ok===true || d.fileId || d.url));
+  }
+  function unwrap(resp){
+    var d=resp;
+    if(d && d.dados!==undefined) d=d.dados;
+    if(d && d.result!==undefined && !d.fileId && !d.url) d=d.result;
+    return d||resp||{};
+  }
+  function msgResp(resp){
+    var d=unwrap(resp);
+    return s(d.msg||d.mensagem||resp.msg||resp.mensagem)||'Comprovante gravado no Drive. Processamento posterior pendente.';
+  }
+
+  function metaV349(){
+    var meta={};
+    try{ if(typeof montarMetaComprovanteV335==='function') meta=montarMetaComprovanteV335()||{}; }catch(e){}
+    if(!meta || typeof meta!=='object') meta={};
+
+    var tipoEnvio=(byId('tipoEnvioComprovante')&&byId('tipoEnvioComprovante').value)||'meu';
+    var modo=(byId('vinculoTerceiroV272')&&byId('vinculoTerceiroV272').value)||'com_cadastro';
+    var emailLogado=(window.ESTADO&&ESTADO.email)||localStorage.getItem('PSS_BOLAO_EMAIL')||'';
+
+    meta.tipoEnvio = meta.tipoEnvio || (tipoEnvio==='terceiro'?'TERCEIRO':'PROPRIO');
+    meta.adminEmail = meta.adminEmail || emailLogado;
+    meta.emailParticipante = s(meta.emailParticipante || ((tipoEnvio==='terceiro') ? (byId('emailParticipanteTerceiroV225')&&byId('emailParticipanteTerceiroV225').value) : emailLogado)).toLowerCase();
+    meta.nomeParticipante = s(meta.nomeParticipante || ((byId('nomeParticipanteTerceiroV225')&&byId('nomeParticipanteTerceiroV225').value) || (byId('nomeProvisorioTerceiroV272')&&byId('nomeProvisorioTerceiroV272').value) || (window.ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name)) || ''));
+    meta.tipoCota = meta.tipoCota || ((byId('tipoCota')&&byId('tipoCota').value)||'unica');
+    meta.qtdPartes = meta.qtdPartes || ((byId('qtdPartes')&&byId('qtdPartes').value)||'');
+    meta.fracaoCota = meta.fracaoCota || ((byId('fracaoCotaTerceiroV225')&&byId('fracaoCotaTerceiroV225').value)||'');
+    meta.qtdCotas = meta.qtdCotas || meta.qtdCotasComprovante || ((byId('qtdCotasComprovanteV335')&&byId('qtdCotasComprovanteV335').value)||'1');
+    meta.qtdCotasComprovante = meta.qtdCotasComprovante || meta.qtdCotas || '1';
+    meta.obsAdmin = meta.obsAdmin || ((byId('obsComprovanteTerceiroV225')&&byId('obsComprovanteTerceiroV225').value)||'');
+    meta.modoCadastroTerceiro = modo;
+
+    if(!Array.isArray(meta.nomesPartes)){
+      meta.nomesPartes=[];
+      try{ document.querySelectorAll('#nomesPartes input').forEach(function(inp){ var v=s(inp.value); if(v) meta.nomesPartes.push(v); }); }catch(e2){}
+    }
+    try{ if(typeof participantesDivisaoV335==='function') meta.participantesDivisaoResolvidos=participantesDivisaoV335(); }catch(e3){}
+    return meta;
+  }
+
+  function validarV349(loteria,meta){
+    if(!loteria) return 'Selecione a loteria do depósito.';
+    if(meta.tipoEnvio==='TERCEIRO'){
+      try{ if(typeof isAdmin==='function' && !isAdmin()) return 'Apenas administrador pode enviar comprovante de terceiro.'; }catch(e){}
+      if(meta.modoCadastroTerceiro==='com_cadastro' && !meta.emailParticipante) return 'Selecione o participante cadastrado vinculado ao comprovante.';
+      if(meta.modoCadastroTerceiro==='sem_cadastro' && !meta.nomeParticipante) return 'Informe o nome provisório do pagador/participante sem cadastro.';
+      if(meta.modoCadastroTerceiro==='sem_cadastro' && !meta.emailParticipante){
+        meta.emailParticipante = s(meta.adminEmail).toLowerCase();
+        meta.obsAdmin = ('SEM CADASTRO | Nome provisório: '+s(meta.nomeParticipante)+' | '+s(meta.obsAdmin)).trim();
+      }
+    }
+    if(!meta.emailParticipante) return 'E-mail do participante não localizado. Faça login novamente.';
+    return '';
+  }
+
+  function escolherArquivoV349(){
+    return new Promise(function(resolve,reject){
+      var input=document.createElement('input');
+      input.type='file';
+      input.accept='image/*,.pdf,application/pdf';
+      input.style.position='fixed'; input.style.left='-9999px'; input.style.top='-9999px'; input.style.width='1px'; input.style.height='1px'; input.style.opacity='0';
+      input.onchange=function(){
+        var file=input.files&&input.files[0];
+        if(!file){ try{input.remove();}catch(e){} reject(new Error('Nenhum arquivo selecionado.')); return; }
+        resolve({input:input,file:file});
+      };
+      document.body.appendChild(input);
+      input.click();
+    });
+  }
+
+  function enviarDiretoRawV349(fileInput,file,loteria,meta){
+    return new Promise(function(resolve,reject){
+      var token='PSS_V350_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+      var iframe=document.createElement('iframe');
+      iframe.name='pss_upload_v349_'+token;
+      iframe.style.position='fixed'; iframe.style.left='-9999px'; iframe.style.top='-9999px'; iframe.style.width='1px'; iframe.style.height='1px'; iframe.style.opacity='0'; iframe.style.pointerEvents='none';
+      iframe.setAttribute('aria-hidden','true');
+
+      var form=document.createElement('form');
+      form.method='POST';
+      form.enctype='multipart/form-data';
+      form.target=iframe.name;
+      form.action=(window.CONFIG&&CONFIG.apiUrl)||'';
+      form.acceptCharset='UTF-8';
+      form.style.position='fixed'; form.style.left='-9999px'; form.style.top='-9999px'; form.style.width='1px'; form.style.height='1px'; form.style.opacity='0';
+      if(!form.action){ reject(new Error('apiUrl não configurada.')); return; }
+
+      var done=false,timer=null;
+      function limpar(){
+        window.removeEventListener('message',onMsg);
+        try{ if(fileInput&&fileInput.parentNode) fileInput.parentNode.removeChild(fileInput); }catch(e){}
+        try{ if(form&&form.parentNode) form.parentNode.removeChild(form); }catch(e2){}
+        setTimeout(function(){ try{ if(iframe&&iframe.parentNode) iframe.parentNode.removeChild(iframe); }catch(e3){} },500);
+      }
+      function fim(resp){ if(done)return; done=true; clearTimeout(timer); limpar(); resolve(resp); }
+      function falha(err){ if(done)return; done=true; clearTimeout(timer); limpar(); reject(err instanceof Error?err:new Error(String(err||'Falha no envio.'))); }
+      function onMsg(ev){
+        var data=ev&&ev.data;
+        if(typeof data==='string'){ try{data=JSON.parse(data);}catch(e){} }
+        if(data && data.pssBoloesApi===true && data.token===token) fim(data.response);
+      }
+      function pollName(){
+        if(done)return;
+        try{
+          var raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+          if(raw){ var data=JSON.parse(raw); if(data && data.pssBoloesApi===true && data.token===token){ fim(data.response); return; } }
+        }catch(e){}
+        setTimeout(pollName,500);
+      }
+
+      window.addEventListener('message',onMsg);
+      document.body.appendChild(iframe);
+      document.body.appendChild(form);
+      fileInput.name='arquivoUpload';
+      form.appendChild(fileInput);
+
+      var action='uploadComprovanteDriveOnlyV346';
+      var payload={
+        action:action, fn:action, fnName:action,
+        email:meta.adminEmail||((window.ESTADO&&ESTADO.email)||''),
+        adminEmail:meta.adminEmail||((window.ESTADO&&ESTADO.email)||''),
+        loteria:loteria, fileName:file.name, mimeType:file.type||'',
+        tipoEnvio:meta.tipoEnvio||'PROPRIO',
+        emailParticipante:meta.emailParticipante||'', nomeParticipante:meta.nomeParticipante||'',
+        tipoCota:meta.tipoCota||'', fracaoCota:meta.fracaoCota||'', qtdPartes:meta.qtdPartes||'',
+        qtdCotas:meta.qtdCotas||'1', qtdCotasComprovante:meta.qtdCotasComprovante||meta.qtdCotas||'1',
+        nomesPartes:JSON.stringify(meta.nomesPartes||[]),
+        participantesDivisaoResolvidos:JSON.stringify(meta.participantesDivisaoResolvidos||[]),
+        obsAdmin:meta.obsAdmin||'', metaJson:JSON.stringify(meta), uploadOrigem:'INDEX_V350_DRIVE_ONLY_ANTIDUP'
+      };
+
+      addHidden(form,'mode','postmessage');
+      addHidden(form,'action',action);
+      addHidden(form,'fn',action);
+      addHidden(form,'fnName',action);
+      addHidden(form,'callback','callback');
+      addHidden(form,'token',token);
+      Object.keys(payload).forEach(function(k){ addHidden(form,k,payload[k]); });
+      addHidden(form,'payload',JSON.stringify(payload));
+      addHidden(form,'_',Date.now());
+
+      iframe.onload=function(){ setTimeout(pollName,100); };
+      iframe.onerror=function(){ falha(new Error('Falha ao abrir canal de envio direto.')); };
+      timer=setTimeout(function(){ falha(new Error('Tempo limite no envio ao Drive. Verifique em Meus Envios Recentes antes de reenviar para evitar duplicidade.')); },90000);
+      try{ form.submit(); setTimeout(pollName,800); }catch(eSub){ falha(eSub); }
+    });
+  }
+
+  async function abrirUploadRawV349(ev){
+    if(ev&&ev.preventDefault) ev.preventDefault();
+    var loteria=(byId('uploadBolao')&&byId('uploadBolao').value)||((window.ESTADO&&ESTADO.bolaoSelecionado)||'');
+    var meta=metaV349();
+    var erro=validarV349(loteria,meta);
+    if(erro) return notify(erro,'error');
+
+    try{ if(window.ESTADO){ESTADO.bolaoSelecionado=loteria;} localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria); }catch(e){}
+    var btn=byId('btnAbrirUploadComprovanteV247')||byId('btnEnviarComprovante');
+    var oldTxt=btn?btn.textContent:'';
+    try{ if(btn){ btn.disabled=true; btn.textContent='Selecionando arquivo...'; } }catch(eBtn){}
+
+    try{
+      progresso(5,'Selecionando arquivo','Escolha PDF, JPG ou PNG no seu dispositivo.','run');
+      var sel=await escolherArquivoV349();
+      if(btn) btn.textContent='Enviando...';
+      progresso(25,'Preparando arquivo','Arquivo selecionado: '+sel.file.name,'run');
+      progresso(55,'Enviando direto ao servidor','Gravação somente no Drive. Processamento posterior ficará pendente.','run');
+      var resp=await enviarDiretoRawV349(sel.input,sel.file,loteria,meta);
+      if(!okResp(resp)){
+        var d=unwrap(resp);
+        throw new Error(s(d.erro||d.error||d.msg||d.mensagem||resp.erro||resp.error)||'O servidor não confirmou o envio.');
+      }
+      progresso(100,'Comprovante enviado',msgResp(resp),'ok');
+      notify(msgResp(resp),'success');
+      try{ if(typeof cacheDel_==='function') cacheDel_(cacheKeyLoteria_('historicoComprovantes',loteria)); }catch(eCache1){}
+      try{ if(typeof cacheDel340==='function') cacheDel340(cacheKeyLot340('historicoComprovantes',loteria)); }catch(eCache2){}
+      setTimeout(function(){ try{ if(typeof renderComprovante==='function') renderComprovante(); }catch(eRender){} },900);
+    }catch(err){
+      var msg=(err&&err.message)||String(err||'Falha no envio.');
+      if(msg==='Nenhum arquivo selecionado.') progresso(0,'Envio cancelado',msg,'warn');
+      else { progresso(0,'Falha no envio',msg,'error'); notify(msg,'error'); }
+    }finally{
+      try{ if(btn){btn.disabled=false;btn.textContent=oldTxt||'Carregar comprovante';} }catch(eFin){}
+    }
+  }
+
+  window.abrirUploadRawV349=abrirUploadRawV349;
+  window.PSS_abrirUploadComprovanteV272=abrirUploadRawV349;
+  window.abrirUploadComprovanteAppsScriptV245=abrirUploadRawV349;
+  window.enviarComprovante=enviarComprovante=abrirUploadRawV349;
+
+  function rearmarV349(){
+    var b=byId('btnAbrirUploadComprovanteV247')||byId('btnEnviarComprovante');
+    if(b){ b.onclick=abrirUploadRawV349; }
+  }
+  setTimeout(rearmarV349,300);
+  setTimeout(rearmarV349,1200);
+  var navBase=window.navegar;
+  if(typeof navBase==='function'){
+    window.navegar=function(v){ var r=navBase.apply(this,arguments); if(String(v)==='comprovante') setTimeout(rearmarV349,700); return r; };
+    try{navegar=window.navegar;}catch(e){}
+  }
+
+  window.diagnosticarUploadComprovanteV350=function(){
+    return {sucesso:true,versao:V,apiUrl:!!(window.CONFIG&&CONFIG.apiUrl),acao:'uploadComprovanteDriveOnlyV346',uploadRaw:'OK',regra:'Envio usa V346: somente grava no Drive, cria registro mínimo pendente e bloqueia duplicidade por hash. Não executa OCR/reprocessamento/perfil/Telegram no envio.'};
+  };
+  window.diagnosticarUploadComprovanteV349=window.diagnosticarUploadComprovanteV350;
 })();
 </script>
 
