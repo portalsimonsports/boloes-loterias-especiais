@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V348_BUSCA_UPLOAD_COMPROVANTE_ESTAVEL</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V354_MANTEM_ADMIN_FIX_USA_GS_V349_DATA_NUBANK</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V348_BUSCA_UPLOAD_COMPROVANTE_ESTAVEL',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V354_MANTEM_ADMIN_FIX_USA_GS_V349_DATA_NUBANK',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -23720,7 +23720,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
   window.diagnosticarIndexV335=function(){
     return {
-      versao:'V352_UPLOAD_ANTIDUP_ADMIN_PERIODO',
+      versao:'V353_ADMIN_EMAIL_ACOES_PAGAMENTO_FIX',
       qtdCotas:byId('qtdCotasComprovanteV335')?byId('qtdCotasComprovanteV335').value:null,
       participantesDivisao:participantesDivisaoV335(),
       valorCotaAtual:valorCotaAtual(),
@@ -25552,7 +25552,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 <script>
 /******************** PATCH V348 — BUSCA E UPLOAD DE COMPROVANTE ESTÁVEIS ********************/
 (function(){
-  var V='V348_BUSCA_UPLOAD_COMPROVANTE_ESTAVEL';
+  var V='V354_MANTEM_ADMIN_FIX_USA_GS_V349_DATA_NUBANK';
   if(window.PSS_V348_BUSCA_UPLOAD_APLICADO) return;
   window.PSS_V348_BUSCA_UPLOAD_APLICADO=true;
   try{ if(typeof CONFIG==='object') CONFIG.versao=V; }catch(e){}
@@ -25860,7 +25860,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  * ===================================================================== */
 (function(){
   'use strict';
-  var V='V352_UPLOAD_ANTIDUP_ADMIN_PERIODO';
+  var V='V353_ADMIN_EMAIL_ACOES_PAGAMENTO_FIX';
   try{ if(window.CONFIG){ CONFIG.versao=V; } localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
 
   function byId(id){return document.getElementById(id);}
@@ -26122,7 +26122,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  * - Adiciona botões: Excluir duplicado e Anular pagamento incompatível.
  * ===================================================================== */
 (function(){
-  var V='V352_UPLOAD_ANTIDUP_ADMIN_PERIODO';
+  var V='V353_ADMIN_EMAIL_ACOES_PAGAMENTO_FIX';
   try{ if(window.CONFIG) CONFIG.versao=V; }catch(eCfg){}
   function s(v){return String(v===null||v===undefined?'':v).trim();}
   function byId(id){return document.getElementById(id);}
@@ -26284,7 +26284,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
         qtdCotas:meta.qtdCotas||'1', qtdCotasComprovante:meta.qtdCotasComprovante||meta.qtdCotas||'1',
         nomesPartes:JSON.stringify(meta.nomesPartes||[]),
         participantesDivisaoResolvidos:JSON.stringify(meta.participantesDivisaoResolvidos||[]),
-        obsAdmin:meta.obsAdmin||'', metaJson:JSON.stringify(meta), uploadOrigem:'INDEX_V352_UPLOAD_ANTIDUP_ADMIN_PERIODO'
+        obsAdmin:meta.obsAdmin||'', metaJson:JSON.stringify(meta), uploadOrigem:'INDEX_V353_ADMIN_EMAIL_ACOES_PAGAMENTO_FIX'
       };
 
       addHidden(form,'mode','postmessage');
@@ -26368,6 +26368,44 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     try{navegar=window.navegar;}catch(eNav){}
   }
 
+  function emailAdminPagamentoV353(){
+    try{
+      if(typeof ESTADO!=='undefined' && ESTADO && ESTADO.email) return String(ESTADO.email||'').trim().toLowerCase();
+    }catch(e){}
+    try{
+      var s1=JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'{}');
+      if(s1 && s1.email) return String(s1.email||'').trim().toLowerCase();
+    }catch(e2){}
+    try{
+      var s2=JSON.parse(sessionStorage.getItem('PSS_BOLAO_SESSAO')||'{}');
+      if(s2 && s2.email) return String(s2.email||'').trim().toLowerCase();
+    }catch(e3){}
+    try{
+      if(localStorage.getItem('PSS_BOLAO_EMAIL')) return String(localStorage.getItem('PSS_BOLAO_EMAIL')||'').trim().toLowerCase();
+    }catch(e4){}
+    return '';
+  }
+
+  function atualizarCardPagamentoAdminV353(linha,status,msg){
+    try{
+      var card=document.querySelector('[data-pay-row="'+Number(linha||0)+'"]');
+      if(!card) return false;
+      var badge=card.querySelector('.pay-admin-status');
+      if(badge){ badge.textContent=status||'Atualizado'; badge.className='pay-admin-status danger'; }
+      var obs=card.querySelector('.pay-admin-info.full span');
+      if(obs && msg) obs.textContent=msg;
+      if(String(status||'').toUpperCase().indexOf('EXCLU')>=0){
+        card.style.opacity='.55';
+        card.style.filter='grayscale(.25)';
+        card.querySelectorAll('button').forEach(function(b){
+          var txt=(b.textContent||'').toUpperCase();
+          if(txt.indexOf('VER COMPROVANTE')<0) b.disabled=true;
+        });
+      }
+      return true;
+    }catch(e){return false;}
+  }
+
   window.excluirComprovanteDuplicadoAdminV352=function(linha){
     linha=Number(linha||0);
     if(!linha) return notify('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');
@@ -26388,9 +26426,14 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     var motivo=s((byId('motivoExcluirDuplicadoV352')||{}).value)||'Comprovante duplicado / reenvio indevido.';
     fecharModal();
     try{
-      await api('excluirComprovanteDuplicadoAdminV348',{linha:linha,adminEmail:(window.ESTADO&&ESTADO.email)||'',motivo:motivo},[{linha:linha,adminEmail:(window.ESTADO&&ESTADO.email)||'',motivo:motivo}]);
-      notify('Comprovante duplicado excluído do controle.','success');
-      try{ renderPagamentosAdminTab('efetuados'); }catch(eR){ if(typeof renderPagamentos==='function') renderPagamentos(); }
+      var adminEmail=emailAdminPagamentoV353();
+      if(!adminEmail) throw new Error('E-mail do administrador não localizado na sessão. Saia e entre novamente no sistema.');
+      var btn=document.querySelector('button[onclick=\"executarExcluirComprovanteDuplicadoAdminV352('+linha+')\"]');
+      if(btn){btn.disabled=true;btn.textContent='EXCLUINDO...';}
+      var r=await api('excluirComprovanteDuplicadoAdminV348',{linha:linha,adminEmail:adminEmail,motivo:motivo},[{linha:linha,adminEmail:adminEmail,motivo:motivo}]);
+      notify((r&&r.msg)||'Comprovante duplicado excluído do controle.','success');
+      atualizarCardPagamentoAdminV353(linha,'Excluído Duplicado',(r&&r.msg)||'Comprovante duplicado excluído do controle.');
+      setTimeout(function(){try{ renderPagamentosAdminTab('efetuados'); }catch(eR){ if(typeof renderPagamentos==='function') renderPagamentos(); }},800);
     }catch(err){ notify(err.message||err,'error'); }
   };
 
@@ -26414,15 +26457,21 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     var motivo=s((byId('motivoAnularIncompativelV352')||{}).value)||'Pagamento anulado por incompatibilidade administrativa.';
     fecharModal();
     try{
-      await api('anularComprovantePagoIncompativelV348',{linha:linha,adminEmail:(window.ESTADO&&ESTADO.email)||'',motivo:motivo},[{linha:linha,adminEmail:(window.ESTADO&&ESTADO.email)||'',motivo:motivo}]);
-      notify('Pagamento anulado por incompatibilidade.','success');
-      try{ renderPagamentosAdminTab('efetuados'); }catch(eR){ if(typeof renderPagamentos==='function') renderPagamentos(); }
+      var adminEmail=emailAdminPagamentoV353();
+      if(!adminEmail) throw new Error('E-mail do administrador não localizado na sessão. Saia e entre novamente no sistema.');
+      var btn=document.querySelector('button[onclick=\"executarAnularComprovantePagoIncompativelV352('+linha+')\"]');
+      if(btn){btn.disabled=true;btn.textContent='ANULANDO...';}
+      var r=await api('anularComprovantePagoIncompativelV348',{linha:linha,adminEmail:adminEmail,motivo:motivo},[{linha:linha,adminEmail:adminEmail,motivo:motivo}]);
+      notify((r&&r.msg)||'Pagamento anulado por incompatibilidade.','success');
+      atualizarCardPagamentoAdminV353(linha,'Anulado',(r&&r.msg)||'Pagamento anulado por incompatibilidade.');
+      setTimeout(function(){try{ renderPagamentosAdminTab('efetuados'); }catch(eR){ if(typeof renderPagamentos==='function') renderPagamentos(); }},800);
     }catch(err){ notify(err.message||err,'error'); }
   };
 
   window.marcarDuplicadosPorIdTransacaoV352=async function(){
     try{
-      var r=await api('marcarDuplicadosPorIdTransacaoV348',{adminEmail:(window.ESTADO&&ESTADO.email)||''},[{adminEmail:(window.ESTADO&&ESTADO.email)||''}]);
+      var adminEmail=emailAdminPagamentoV353();
+      var r=await api('marcarDuplicadosPorIdTransacaoV348',{adminEmail:adminEmail},[{adminEmail:adminEmail}]);
       notify((r&&r.msg)||'Revisão de duplicados concluída.','success');
       try{ renderPagamentosAdminTab('efetuados'); }catch(eR){}
     }catch(err){ notify(err.message||err,'error'); }
@@ -26466,7 +26515,17 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   try{ renderPagamentoCardAdmin_=window.renderPagamentoCardAdmin_; }catch(eAssign){}
 
   window.diagnosticarUploadComprovanteV352=function(){
-    return {sucesso:true,versao:V,apiUrl:!!(window.CONFIG&&CONFIG.apiUrl),acao:'uploadComprovanteDriveFastV348',upload:'Drive only',antidup:'cliente + servidor',acoesAdmin:['excluir duplicado','anular incompatível'],regra:'Upload só grava no Drive e cria pendente; processamento posterior faz OCR; período fora do prazo fica para análise.'};
+    return {sucesso:true,versao:V,apiUrl:!!(window.CONFIG&&CONFIG.apiUrl),acao:'uploadComprovanteDriveFastV348',upload:'Drive only',antidup:'cliente + servidor',acoesAdmin:['excluir duplicado','anular incompatível'], adminEmailDetectado: emailAdminPagamentoV353(),regra:'Upload só grava no Drive e cria pendente; processamento posterior faz OCR; período fora do prazo fica para análise.'};
+  };
+})();
+</script>
+
+
+<script>
+/* V354 — consolidação: mantém ações admin V353 e usa GS V349 para data Nubank/mês referência. */
+(function(){
+  window.diagnosticarIndexV354=function(){
+    return {sucesso:true, versao:'V354_MANTEM_ADMIN_FIX_USA_GS_V349_DATA_NUBANK', regra:'HTML mantém ações admin; correção de data/mês referência está no GS V349.'};
   };
 })();
 </script>
