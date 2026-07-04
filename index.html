@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V347_CORRIGE_BUSCA_PARTICIPANTE_TERCEIRO_SEM_WINDOWNAME</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V348_BUSCA_UPLOAD_COMPROVANTE_ESTAVEL</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V335_DIVISAO_COTAS_TELEGRAM_PERFIL_SEGURO',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V348_BUSCA_UPLOAD_COMPROVANTE_ESTAVEL',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -25543,6 +25543,306 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.diagnosticarBuscaParticipanteTerceiroV347=function(q){
     q=q||'';
     return {sucesso:true,versao:V,cacheLocal:usuariosCacheLocal().length,cacheBusca:getCacheParticipantes().length,resultados:filtrarParticipantes(usuariosCacheLocal().concat(getCacheParticipantes()),q).length,regra:'Busca de participante para comprovante de terceiro usa cache local + API rápida JSONP/fetch. Não usa fallback window.name.'};
+  };
+})();
+</script>
+
+
+
+<script>
+/******************** PATCH V348 — BUSCA E UPLOAD DE COMPROVANTE ESTÁVEIS ********************/
+(function(){
+  var V='V348_BUSCA_UPLOAD_COMPROVANTE_ESTAVEL';
+  if(window.PSS_V348_BUSCA_UPLOAD_APLICADO) return;
+  window.PSS_V348_BUSCA_UPLOAD_APLICADO=true;
+  try{ if(typeof CONFIG==='object') CONFIG.versao=V; }catch(e){}
+  try{ localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function $id(id){return document.getElementById(id);}  
+  function txt(v){return String(v==null?'':v).trim();}
+  function esc(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v==null?'':v); }catch(e){}
+    return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function attr(v){
+    try{ if(typeof escapeAttr==='function') return escapeAttr(v==null?'':v); }catch(e){}
+    return esc(v);
+  }
+  function norm(v){
+    try{ if(typeof normalizar==='function') return normalizar(v||''); }catch(e){}
+    return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9@.]+/g,' ').trim();
+  }
+  function emailOk(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim());}
+
+  function normalizarPessoaV348(p){
+    p=p||{};
+    if(Array.isArray(p)) return {};
+    var email=txt(p.email||p.EMAIL||p['E-MAIL']||p.emailParticipante||p.EMAIL_NORMALIZADO||p.usuario||'').toLowerCase();
+    var nome=txt(p.nome||p.NOME||p.nomeCompleto||p.NOME_COMPLETO||p.participante||p.PARTICIPANTE||p.pagador||p.PAGADOR||email);
+    var nomePublico=txt(p.nomePublico||p.NOME_PUBLICO||p['NOME PÚBLICO']||p.nomeTelegram||p.NOME_TELEGRAM||p['NOME PARA TELEGRAM']||p.telegramNome||'');
+    var status=txt(p.status||p.STATUS||p.situacao||p.SITUACAO||p['SITUAÇÃO']||p.ativo||p.ATIVO||'');
+    return {nome:nome,email:email,nomePublico:nomePublico,status:status,origem:txt(p.origem||p.ORIGEM||p.fonte||p.FONTE||'')};
+  }
+
+  function addPessoaV348(mapa,p){
+    p=normalizarPessoaV348(p);
+    if(!emailOk(p.email)) return;
+    var k=p.email.toLowerCase();
+    if(!mapa[k]) mapa[k]=p;
+    else{
+      if((!mapa[k].nome || mapa[k].nome===mapa[k].email) && p.nome) mapa[k].nome=p.nome;
+      if(!mapa[k].nomePublico && p.nomePublico) mapa[k].nomePublico=p.nomePublico;
+      if(!mapa[k].status && p.status) mapa[k].status=p.status;
+      if(!mapa[k].origem && p.origem) mapa[k].origem=p.origem;
+    }
+  }
+
+  function coletarRecursivoV348(obj,mapa,prof){
+    if(!obj || prof>4) return;
+    if(Array.isArray(obj)){
+      for(var i=0;i<obj.length && i<700;i++) coletarRecursivoV348(obj[i],mapa,prof+1);
+      return;
+    }
+    if(typeof obj==='object'){
+      if(obj.email||obj.EMAIL||obj['E-MAIL']||obj.nome||obj.NOME||obj.nomePublico||obj.NOME_PUBLICO) addPessoaV348(mapa,obj);
+      Object.keys(obj).slice(0,90).forEach(function(k){
+        var v=obj[k];
+        if(v && (Array.isArray(v)||(typeof v==='object' && prof<3))) coletarRecursivoV348(v,mapa,prof+1);
+      });
+    }
+  }
+
+  function extrairTabelaAdminV348(dados){
+    var mapa={};
+    dados=dados||{};
+    var h=dados.headers||[];
+    var rows=dados.rows||[];
+    if(!Array.isArray(h) || !Array.isArray(rows)) return [];
+    function idx(nomes){
+      for(var i=0;i<nomes.length;i++){
+        var alvo=norm(nomes[i]);
+        for(var j=0;j<h.length;j++) if(norm(h[j])===alvo) return j;
+      }
+      return -1;
+    }
+    var iEmail=idx(['EMAIL','E-MAIL']);
+    var iNome=idx(['NOME','NOME_COMPLETO','NOME COMPLETO']);
+    var iPub=idx(['NOME_PUBLICO','NOME PÚBLICO','NOME PARA TELEGRAM','NOME_TELEGRAM','NOME TELEGRAM']);
+    var iStatus=idx(['STATUS','ATIVO']);
+    rows.forEach(function(r){
+      addPessoaV348(mapa,{email:iEmail>=0?r[iEmail]:'',nome:iNome>=0?r[iNome]:'',nomePublico:iPub>=0?r[iPub]:'',status:iStatus>=0?r[iStatus]:'',origem:'GET_DADOS_ADMIN'});
+    });
+    return Object.keys(mapa).map(function(k){return mapa[k];});
+  }
+
+  function pessoasCacheDomV348(){
+    var mapa={};
+    try{ coletarRecursivoV348(window.ESTADO,mapa,0); }catch(e){}
+    try{
+      if(window.PSS_USUARIOS_CACHE_V286 && Array.isArray(PSS_USUARIOS_CACHE_V286.rows)){
+        extrairTabelaAdminV348(PSS_USUARIOS_CACHE_V286).forEach(function(p){addPessoaV348(mapa,p);});
+      }
+    }catch(e2){}
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i)||'';
+        if(!/(USUARIO|USUÁRIO|INSCRIT|PARTICIP|RESUMO|CADASTRO|TERCEIRO)/i.test(k)) continue;
+        var raw=localStorage.getItem(k);
+        if(!raw || raw.length>900000) continue;
+        try{coletarRecursivoV348(JSON.parse(raw),mapa,0);}catch(e3){}
+      }
+    }catch(e4){}
+    return Object.keys(mapa).map(function(k){return mapa[k];});
+  }
+
+  function cacheGetV348(){
+    try{
+      var o=JSON.parse(localStorage.getItem('PSS_PARTICIPANTES_TERCEIRO_CACHE_V348')||'null');
+      if(o && Array.isArray(o.lista) && Date.now()-Number(o.t||0)<12*60*60*1000) return o.lista;
+    }catch(e){}
+    return [];
+  }
+  function cacheSetV348(lista){
+    try{localStorage.setItem('PSS_PARTICIPANTES_TERCEIRO_CACHE_V348',JSON.stringify({t:Date.now(),lista:(lista||[]).map(normalizarPessoaV348)}));}catch(e){}
+  }
+
+  function filtrarPessoasV348(lista,q){
+    var alvo=norm(q);
+    var emailBusca=/[^\s@]+@[^\s@]+\.[^\s@]+/.test(String(q||''));
+    var visto={};
+    var out=(Array.isArray(lista)?lista:[]).map(normalizarPessoaV348).filter(function(p){
+      if(!emailOk(p.email)) return false;
+      var texto=norm([p.nome,p.email,p.nomePublico,p.status,p.origem].join(' '));
+      return !alvo || texto.indexOf(alvo)>=0 || (emailBusca && norm(p.email).indexOf(alvo)>=0);
+    }).filter(function(p){
+      var k=p.email.toLowerCase();
+      if(visto[k]) return false;
+      visto[k]=true;
+      return true;
+    });
+    out.sort(function(a,b){
+      var an=norm(a.nomePublico||a.nome||a.email),bn=norm(b.nomePublico||b.nome||b.email),ae=norm(a.email),be=norm(b.email);
+      var ax=alvo?(an===alvo||ae===alvo?0:(an.indexOf(alvo)===0?1:2)):1;
+      var bx=alvo?(bn===alvo||be===alvo?0:(bn.indexOf(alvo)===0?1:2)):1;
+      return ax-bx || String(a.nome||a.email).localeCompare(String(b.nome||b.email),'pt-BR');
+    });
+    return out.slice(0,50);
+  }
+
+  function apiJsonpV348(action,dados,args,timeoutMs){
+    timeoutMs=timeoutMs||18000;
+    if(typeof apiJsonpDireto_==='function') return apiJsonpDireto_(action,dados||{},args||null,timeoutMs);
+    return new Promise(function(resolve,reject){
+      var cb='PSS_CB_V348_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+      var params=new URLSearchParams();
+      var payload=Object.assign({},dados||{});
+      payload.action=action; payload.fnName=action;
+      if(Array.isArray(args)) payload.args=args;
+      params.set('action',action); params.set('fn',action); params.set('fnName',action); params.set('callback',cb);
+      params.set('payload',JSON.stringify(payload)); params.set('email',(window.ESTADO&&ESTADO.email)||dados.email||''); params.set('_',Date.now());
+      var s=document.createElement('script'),done=false,old=window[cb];
+      function clean(){try{if(old===undefined)delete window[cb];else window[cb]=old;}catch(e){window[cb]=old;} if(s&&s.parentNode)s.parentNode.removeChild(s);}
+      window[cb]=function(r){if(done)return;done=true;clearTimeout(timer);clean();try{resolve(typeof tratarRespostaApi_==='function'?tratarRespostaApi_(r):(r.dados!==undefined?r.dados:r.result));}catch(e){reject(e);}};
+      var timer=setTimeout(function(){if(done)return;done=true;clean();reject(new Error('Tempo limite JSONP.'));},timeoutMs);
+      s.onerror=function(){if(done)return;done=true;clearTimeout(timer);clean();reject(new Error('Falha JSONP.'));};
+      s.async=true; s.src=(CONFIG&&CONFIG.apiUrl?CONFIG.apiUrl:'')+'?'+params.toString(); document.body.appendChild(s);
+    });
+  }
+
+  async function buscarServidorV348(q){
+    var admin=(window.ESTADO&&ESTADO.email)||'';
+    var todos=[];
+    var tentativas=[
+      ['listarParticipantesComprovanteTerceiroV344',{adminEmail:admin},[admin],20000,'lista'],
+      ['buscarParticipantesComprovanteTerceiroV344',{query:q,adminEmail:admin},[q,admin],18000,'busca'],
+      ['buscarParticipantesComprovanteTerceiroV343',{query:q,adminEmail:admin},[q,admin],18000,'busca'],
+      ['buscarParticipantesComprovanteTerceiroV225',{query:q,adminEmail:admin},[q,admin],18000,'busca'],
+      ['getDadosAdmin',{nomeAba:'Usuarios',aba:'Usuarios',email:admin},['Usuarios'],22000,'tabela'],
+      ['consultaParticipanteAdmin',{adminEmail:admin},[{adminEmail:admin}],22000,'objeto']
+    ];
+    var erros=[];
+    for(var i=0;i<tentativas.length;i++){
+      var t=tentativas[i];
+      try{
+        var r=await apiJsonpV348(t[0],t[1],t[2],t[3]);
+        var arr=[];
+        if(t[4]==='tabela') arr=extrairTabelaAdminV348(r);
+        else if(Array.isArray(r)) arr=r;
+        else arr=(r&&r.lista)||(r&&r.participantes)||(r&&r.usuariosAprovados)||(r&&r.usuarios)||(r&&r.dados)||[];
+        if(!Array.isArray(arr) && arr && typeof arr==='object'){
+          var mapa={}; coletarRecursivoV348(arr,mapa,0); arr=Object.keys(mapa).map(function(k){return mapa[k];});
+        }
+        if(Array.isArray(arr)&&arr.length){
+          todos=todos.concat(arr);
+          cacheSetV348(todos);
+          var filtrado=filtrarPessoasV348(todos,q);
+          if(filtrado.length) return filtrado;
+        }
+      }catch(e){erros.push(t[0]+': '+((e&&e.message)||e));}
+    }
+    var final=filtrarPessoasV348(todos,q);
+    if(final.length) return final;
+    if(erros.length) throw new Error(erros[0]);
+    return [];
+  }
+
+  function renderResultadosV348(lista,q,erro){
+    var box=$id('resultadosParticipanteTerceiroV225'); if(!box) return;
+    lista=Array.isArray(lista)?lista:[];
+    if(lista.length){
+      box.innerHTML=lista.map(function(p){
+        p=normalizarPessoaV348(p);
+        var nome=p.nomePublico||p.nome||p.email;
+        var sub=p.email+(p.nomePublico && p.nomePublico!==p.nome?' • '+p.nome:'');
+        return '<div class="v225-user-result"><div><b>'+esc(nome)+'</b><small>'+esc(sub)+'</small></div><button type="button" class="btn btn-light" onclick="selecionarParticipanteTerceiroV225(\''+attr(encodeURIComponent(p.email))+'\',\''+attr(encodeURIComponent(nome))+'\')">Selecionar</button></div>';
+      }).join('');
+      return;
+    }
+    var em=(String(q||'').match(/[^\s@]+@[^\s@]+\.[^\s@]+/)||[])[0];
+    if(em){
+      box.innerHTML='<div class="notice warn">Nenhum cadastro foi localizado pelo nome, mas é possível usar o e-mail completo informado para vincular o comprovante.</div><div class="v225-user-result"><div><b>'+esc(em.toLowerCase())+'</b><small>Uso direto por e-mail informado</small></div><button type="button" class="btn btn-light" onclick="selecionarParticipanteTerceiroV225(\''+attr(encodeURIComponent(em.toLowerCase()))+'\',\''+attr(encodeURIComponent(em.toLowerCase()))+'\')">Usar e-mail</button></div>';
+      return;
+    }
+    box.innerHTML='<div class="notice warn">Nenhum participante localizado. Digite mais letras ou informe o e-mail completo do participante.</div>'+(erro?'<div class="notice info">A busca consultou cache local e base direta de usuários, sem depender de window.name.</div>':'');
+  }
+
+  var timerBuscaV348=null;
+  window.buscarParticipantesTerceiroV225=function(){
+    clearTimeout(timerBuscaV348);
+    timerBuscaV348=setTimeout(async function(){
+      var q=txt(($id('buscaParticipanteTerceiroV225')||{}).value||'');
+      var box=$id('resultadosParticipanteTerceiroV225'); if(!box) return;
+      if(q.length<2){ box.innerHTML='<div class="notice info">Digite pelo menos 2 letras para buscar.</div>'; return; }
+      var locais=filtrarPessoasV348(cacheGetV348().concat(pessoasCacheDomV348()),q);
+      if(locais.length) renderResultadosV348(locais,q);
+      else box.innerHTML='<div class="notice info">Buscando participante...</div>';
+      try{
+        var lista=await buscarServidorV348(q);
+        renderResultadosV348(lista,q);
+      }catch(e){
+        renderResultadosV348(locais,q,e);
+      }
+    },160);
+  };
+
+  window.selecionarParticipanteTerceiroV225=function(emailCod,nomeCod){
+    var email=decodeURIComponent(emailCod||'');
+    var nome=decodeURIComponent(nomeCod||'');
+    var emailInput=$id('emailParticipanteTerceiroV225');
+    var nomeInput=$id('nomeParticipanteTerceiroV225');
+    var box=$id('participanteSelecionadoTerceiroV225');
+    if(emailInput) emailInput.value=email;
+    if(nomeInput) nomeInput.value=nome;
+    if(box) box.innerHTML='<div class="v225-selected-user">Participante selecionado: '+esc(nome||email)+' — '+esc(email)+'</div>';
+    var resultados=$id('resultadosParticipanteTerceiroV225');
+    if(resultados) resultados.innerHTML='';
+    try{ if(typeof montarResumoEnvioComprovanteV272==='function') montarResumoEnvioComprovanteV272(); }catch(e){}
+    try{ if(typeof montarResumoEnvioComprovanteV335==='function') montarResumoEnvioComprovanteV335(); }catch(e2){}
+  };
+
+  window.precarregarParticipantesComprovanteV348=async function(){
+    if(!window.ESTADO || !ESTADO.email) return [];
+    if(cacheGetV348().length) return cacheGetV348();
+    try{
+      var lista=await buscarServidorV348('');
+      cacheSetV348(lista);
+      return lista;
+    }catch(e){return cacheGetV348();}
+  };
+
+  var alternarBaseV348=window.alternarTipoEnvioComprovanteV225;
+  window.alternarTipoEnvioComprovanteV225=function(){
+    if(typeof alternarBaseV348==='function') alternarBaseV348.apply(this,arguments);
+    var tipo=($id('tipoEnvioComprovante')||{}).value||'meu';
+    if(tipo==='terceiro') setTimeout(function(){precarregarParticipantesComprovanteV348();},120);
+  };
+
+  var renderCompBaseV348=window.renderComprovante;
+  if(typeof renderCompBaseV348==='function'){
+    window.renderComprovante=renderComprovante=async function(){
+      var r=await renderCompBaseV348.apply(this,arguments);
+      setTimeout(function(){try{precarregarParticipantesComprovanteV348();}catch(e){}},450);
+      return r;
+    };
+  }
+
+  /* Envio preservado: usa o botão/fluxo já estável do upload direto do Apps Script. */
+  function enviarUploadEstavelV348(ev){
+    if(ev&&ev.preventDefault) ev.preventDefault();
+    var fn=window.PSS_abrirUploadComprovanteV272 || window.abrirUploadComprovanteAppsScriptV245 || window.abrirUploadDiretoV340;
+    if(typeof fn==='function') return fn();
+    return typeof toast==='function' ? toast('Função de upload não localizada.','error') : alert('Função de upload não localizada.');
+  }
+  window.enviarComprovante=enviarComprovante=enviarUploadEstavelV348;
+  setTimeout(function(){
+    var b=$id('btnAbrirUploadComprovanteV247')||$id('btnEnviarComprovante');
+    if(b){ b.onclick=enviarUploadEstavelV348; }
+  },900);
+
+  window.diagnosticarBuscaUploadComprovanteV348=function(q){
+    q=q||'';
+    var locais=cacheGetV348().concat(pessoasCacheDomV348());
+    return {sucesso:true,versao:V,cache:cacheGetV348().length,cacheDom:pessoasCacheDomV348().length,resultadosLocais:filtrarPessoasV348(locais,q).length,uploadEstavel:typeof (window.PSS_abrirUploadComprovanteV272||window.abrirUploadComprovanteAppsScriptV245||window.abrirUploadDiretoV340)==='function'?'OK':'AUSENTE',regra:'Busca de participante por cache + API direta; envio preserva o método estável de comprovante, sem mexer nos demais menus.'};
   };
 })();
 </script>
