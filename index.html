@@ -28143,4 +28143,114 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * PATCH V370 — TRAVA GERAL: NENHUM BOTÃO/MENU ABRE PÁGINA FORA DO SITE
+ * Base preservada: V369 (mantém uploadComprovanteDiretoDriveV242 e
+ * uploadJogosDiretoDriveV242 via iframe oculto).
+ *
+ * Motivo: os patches V358 a V363 chegaram a abrir script.google.com em
+ * nova aba/modal em algum momento do histórico. O V369 corrigiu o fluxo
+ * principal de Comprovante e Jogos, mas ficavam pontos soltos:
+ * - qualquer onclick antigo que ainda chame nomes de função de versões
+ *   anteriores (abrirUploadComprovanteAppsScriptV245, PSS_abrirUploadComprovanteV272,
+ *   enviarComprovante, enviarJogoRealizadoBolao, enviarJogoRealizadoBolaoV232)
+ *   já funciona porque o V369 sobrescreve essas variáveis globais, mas não
+ *   havia rede de segurança caso alguma delas fosse redefinida de novo por
+ *   engano em versão futura.
+ * - não havia bloqueio genérico contra window.open()/links para
+ *   script.google.com vindo de qualquer botão, menu ou link esquecido.
+ *
+ * O que este patch faz, sem remover nada do V369:
+ * 1) Intercepta window.open(): se a URL contiver "script.google.com" (o
+ *    domínio do Apps Script), a chamada é bloqueada e um aviso aparece
+ *    na tela, em vez de abrir aba externa. Vale para qualquer botão ou
+ *    menu, atual ou futuro, que tente repetir o comportamento antigo.
+ * 2) Intercepta cliques em qualquer link <a> cujo href aponte para
+ *    script.google.com e cancela a navegação.
+ * 3) Reforça periodicamente que os nomes de função usados pelos botões
+ *    de Comprovante e Jogos sempre apontem para as versões V369 (dentro
+ *    do site), mesmo que algum trecho antigo tente redefinir depois.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V370_TRAVA_GERAL_SEM_ABRIR_APPS_SCRIPT_FORA_DO_SITE';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function aviso(msg,tipo){ try{ if(typeof toast==='function') return toast(msg,tipo||'info'); }catch(e){} try{ if(typeof notify==='function') return notify(msg,tipo||'info'); }catch(e2){} }
+  function ehAppsScript(u){ return /script\.google\.com/i.test(String(u||'')); }
+
+  /* 1) Bloqueia qualquer window.open para script.google.com */
+  try{
+    var openOriginal=window.open;
+    window.open=function(url){
+      if(ehAppsScript(url)){
+        try{ console.warn('[PSS V370] window.open bloqueado para Apps Script:',url); }catch(e){}
+        aviso('Este envio agora acontece dentro do site, sem abrir outra página.','info');
+        return null;
+      }
+      return openOriginal.apply(window,arguments);
+    };
+  }catch(eOpen){}
+
+  /* 2) Bloqueia cliques em links que apontem para script.google.com */
+  document.addEventListener('click',function(ev){
+    var a=ev.target&&ev.target.closest?ev.target.closest('a[href]'):null;
+    if(!a) return;
+    if(ehAppsScript(a.getAttribute('href'))){
+      ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      aviso('Este link foi bloqueado para manter você dentro do site.','info');
+    }
+  },true);
+
+  /* 3) Garante que os nomes de função usados pelos botões de Comprovante e
+   *    Jogos sempre fiquem apontando para o fluxo V369 (dentro do site). */
+  function travarFuncoes(){
+    ['PSS_abrirUploadComprovanteV272','abrirUploadComprovanteAppsScriptV245','enviarComprovante'].forEach(function(nome){
+      var atual=window[nome];
+      if(typeof atual!=='function'||atual.__pssV369Seguro!==true){
+        try{
+          if(typeof window.abrirComprovanteDentroDoSiteV369==='function'){
+            window.abrirComprovanteDentroDoSiteV369.__pssV369Seguro=true;
+            window[nome]=window.abrirComprovanteDentroDoSiteV369;
+          }
+        }catch(e){}
+      }
+    });
+    ['enviarJogoRealizadoBolaoV232','enviarJogoRealizadoBolao'].forEach(function(nome){
+      var atual=window[nome];
+      if(typeof atual!=='function'||atual.__pssV369Seguro!==true){
+        try{
+          if(typeof window.enviarJogosDentroDoSiteV369==='function'){
+            window.enviarJogosDentroDoSiteV369.__pssV369Seguro=true;
+            window[nome]=window.enviarJogosDentroDoSiteV369;
+          }
+        }catch(e){}
+      }
+    });
+  }
+  try{
+    if(typeof window.abrirComprovanteDentroDoSiteV369==='function') window.abrirComprovanteDentroDoSiteV369.__pssV369Seguro=true;
+    if(typeof window.enviarJogosDentroDoSiteV369==='function') window.enviarJogosDentroDoSiteV369.__pssV369Seguro=true;
+  }catch(e){}
+  travarFuncoes();
+  setTimeout(travarFuncoes,600);
+  setTimeout(travarFuncoes,1800);
+  setTimeout(travarFuncoes,3500);
+  // Reaplica a trava periodicamente, caso algum script futuro redefina as funções.
+  setInterval(travarFuncoes,4000);
+
+  window.diagnosticarIndexV370=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      regra:'window.open e links <a> para script.google.com são bloqueados; funções de comprovante/jogos travadas no fluxo V369 (dentro do site)',
+      dependeDe:'V369_UPLOAD_SEM_ABRIR_APPS_SCRIPT_DENTRO_SITE'
+    };
+  };
+})();
+</script>
+
 </body></html>
