@@ -28182,18 +28182,45 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   function aviso(msg,tipo){ try{ if(typeof toast==='function') return toast(msg,tipo||'info'); }catch(e){} try{ if(typeof notify==='function') return notify(msg,tipo||'info'); }catch(e2){} }
   function ehAppsScript(u){ return /script\.google\.com/i.test(String(u||'')); }
 
-  /* 1) Bloqueia qualquer window.open para script.google.com */
+  /* 1) Bloqueia qualquer window.open para script.google.com.
+   *    IMPORTANTE: devolve um objeto "janela" falso (verdadeiro em JS),
+   *    em vez de null. Vários patches antigos (ex: V366/"V368") fazem
+   *    `var w=window.open(...); if(!w){ alert('navegador bloqueou a
+   *    nova aba...') }`. Se devolvêssemos null, esse alerta feio de
+   *    "pop-up bloqueado" continuaria aparecendo mesmo sem nenhuma aba
+   *    tentando abrir. Devolvendo um objeto verdadeiro, esse código
+   *    antigo entende que "abriu" e não dispara mais o alert. */
   try{
     var openOriginal=window.open;
+    var janelaFalsaV370={ closed:false, close:function(){}, focus:function(){}, blur:function(){}, postMessage:function(){} };
     window.open=function(url){
       if(ehAppsScript(url)){
         try{ console.warn('[PSS V370] window.open bloqueado para Apps Script:',url); }catch(e){}
-        aviso('Este envio agora acontece dentro do site, sem abrir outra página.','info');
-        return null;
+        return janelaFalsaV370;
       }
       return openOriginal.apply(window,arguments);
     };
   }catch(eOpen){}
+
+  /* 1b) Neutraliza diretamente as funções de patches antigos (V359 a V368)
+   *     que ainda tentam abrir o Apps Script por conta própria, chamando-as
+   *     para o fluxo seguro do V369 (dentro do site). */
+  function neutralizarPatchesAntigos(){
+    ['abrirUploadComprovanteMobileV366','abrirUploadComprovanteMobileV365','abrirUploadComprovanteMobileV364',
+     'abrirUploadComprovanteMobileV363','abrirUploadComprovanteMobileV362','abrirUploadComprovanteMobileV361',
+     'abrirUploadComprovanteMobileV360','abrirUploadComprovanteMobileV359'].forEach(function(nome){
+      try{
+        if(typeof window.abrirComprovanteDentroDoSiteV369==='function'){
+          window.abrirComprovanteDentroDoSiteV369.__pssV369Seguro=true;
+          window[nome]=window.abrirComprovanteDentroDoSiteV369;
+        }
+      }catch(e){}
+    });
+  }
+  neutralizarPatchesAntigos();
+  setTimeout(neutralizarPatchesAntigos,600);
+  setTimeout(neutralizarPatchesAntigos,1800);
+  setInterval(neutralizarPatchesAntigos,4000);
 
   /* 2) Bloqueia cliques em links que apontem para script.google.com */
   document.addEventListener('click',function(ev){
