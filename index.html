@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V372_PUBLICA_MENUS_FIX</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V373_PUBLICA_LOGIN_MODAL_FIX</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V372_PUBLICA_MENUS_FIX',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V373_PUBLICA_LOGIN_MODAL_FIX',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -28368,201 +28368,259 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
 
 
+
+
+
+
+
 <script>
 /* =====================================================================
- * PATCH V372 — CORREÇÃO DOS BOTÕES/MENUS DA PÁGINA PÚBLICA
- * Pedido: corrigir o problema de "não abrir nada" ao clicar nos botões
- * da página pública.
+ * PATCH V373 — HOME PÚBLICA, LOGIN E MODAL SEM INTERFERÊNCIA
+ * Escopo: corrigir somente a navegação da página pública, fechamento de
+ * modal e submissão do login. Remove a abordagem agressiva da V372 que
+ * interceptava cliques por texto e podia bloquear botões dentro de modais
+ * ou formulários.
  *
- * Escopo restrito:
- * - NÃO altera upload de comprovante;
- * - NÃO altera jogos realizados;
- * - NÃO abre script.google.com;
- * - NÃO altera login/Firebase, API, Telegram, pagamentos ou letreiro;
- * - apenas garante que os botões públicos chamem as funções corretas.
- *
- * Botões corrigidos:
- * - Entrar no sistema
- * - Solicitar cadastro
- * - Ver regulamento
- * - Ver bolões ativos
+ * NÃO altera upload de comprovante, jogos realizados, rotas de API,
+ * Telegram, pagamentos, OCR, baixa automática ou menus internos logados.
  * ===================================================================== */
 (function(){
   'use strict';
-
-  var V='V372_PUBLICA_MENUS_FIX';
+  var V='V373_PUBLICA_LOGIN_MODAL_FIX';
   try{
     if(window.CONFIG) CONFIG.versao=V;
     localStorage.setItem('PSS_INDEX_VERSION',V);
   }catch(e){}
 
-  function txtV372(v){
-    return String(v||'')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  function by(id){ return document.getElementById(id); }
+  function txt(v){
+    return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
       .toLowerCase().replace(/\s+/g,' ').trim();
   }
-
-  function avisoV372(msg,tipo){
-    try{ if(typeof toast==='function') return toast(msg,tipo||'info'); }catch(e){}
-    try{ alert(msg); }catch(e2){}
-  }
-
-  function paginaPublicaV372(){
+  function isHomePublica(){
     try{
       return !!document.querySelector('.home-hero') && !document.body.classList.contains('app-logado');
     }catch(e){ return false; }
   }
-
-  function acaoDoBotaoPublicoV372(el){
-    if(!el) return '';
-    var ds='';
-    try{ ds=String(el.getAttribute('data-pss-public-action')||''); }catch(e){}
-    if(ds) return ds;
-
-    var t=txtV372((el.textContent||el.value||''));
-    if(t.indexOf('entrar no sistema')>=0) return 'login';
-    if(t.indexOf('solicitar cadastro')>=0 || t==='cadastrar') return 'cadastro';
-    if(t.indexOf('ver regulamento')>=0 || t==='regulamento') return 'regulamento';
-    if(t.indexOf('ver boloes ativos')>=0 || t.indexOf('boloes ativos')>=0) return 'boloes';
-    return '';
+  function isDentroDeModalOuFormulario(el){
+    try{
+      return !!(el && el.closest && (el.closest('#modalBackdrop') || el.closest('.modal') || el.closest('.login-wrap') || el.closest('form')));
+    }catch(e){ return false; }
   }
 
-  function executarAcaoPublicaV372(acao){
-    if(!acao) return false;
+  /* Modal: função robusta, global e independente de patches anteriores. */
+  window.fecharModal=function(){
+    try{
+      var mb=by('modalBackdrop');
+      if(mb){
+        mb.classList.remove('open');
+        mb.style.display='';
+      }
+    }catch(e){}
+  };
+  window.abrirModal=function(titulo,html){
+    try{
+      var mt=by('modalTitulo'), mc=by('modalConteudo'), mb=by('modalBackdrop');
+      if(mt) mt.textContent=String(titulo||'Aviso');
+      if(mc) mc.innerHTML=String(html||'');
+      if(mb){
+        mb.classList.add('open');
+        mb.style.display='flex';
+      }
+    }catch(e){
+      try{ alert(String(titulo||'Aviso')+'\n\n'+String(html||'')); }catch(_e){}
+    }
+  };
 
+  /* Fechamento do X e do fundo do modal, sem depender de onclick inline. */
+  document.addEventListener('click',function(ev){
+    var alvo=ev.target;
+    try{
+      if(alvo && alvo.closest && alvo.closest('#modalBackdrop .close')){
+        ev.preventDefault();
+        ev.stopPropagation();
+        if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+        window.fecharModal();
+        return false;
+      }
+      if(alvo && alvo.id==='modalBackdrop'){
+        ev.preventDefault();
+        ev.stopPropagation();
+        window.fecharModal();
+        return false;
+      }
+    }catch(e){}
+  },true);
+  document.addEventListener('keydown',function(ev){
+    if(ev && ev.key==='Escape') window.fecharModal();
+  });
+
+  function executarHomePublica(acao){
     if(acao==='login'){
-      try{
-        if(typeof window.renderLogin==='function') window.renderLogin();
-        else if(typeof renderLogin==='function') renderLogin();
-        else avisoV372('Tela de login indisponível nesta versão.','error');
-      }catch(e){ avisoV372('Erro ao abrir login: '+(e&&e.message?e.message:e),'error'); }
+      try{ if(typeof window.renderLogin==='function') window.renderLogin(); }catch(e){}
       return true;
     }
-
     if(acao==='cadastro'){
-      try{
-        if(typeof window.abrirCadastro==='function') window.abrirCadastro();
-        else if(typeof abrirCadastro==='function') abrirCadastro();
-        else avisoV372('Tela de cadastro indisponível nesta versão.','error');
-      }catch(e){ avisoV372('Erro ao abrir cadastro: '+(e&&e.message?e.message:e),'error'); }
+      try{ if(typeof window.abrirCadastro==='function') window.abrirCadastro(); }catch(e){}
       return true;
     }
-
     if(acao==='regulamento'){
       try{
         if(typeof window.abrirRegulamentoPublico==='function') window.abrirRegulamentoPublico();
-        else if(typeof abrirRegulamentoPublico==='function') abrirRegulamentoPublico();
         else if(typeof window.renderRegulamento==='function') window.renderRegulamento();
-        else if(typeof renderRegulamento==='function') renderRegulamento();
-        else avisoV372('Regulamento indisponível nesta versão.','error');
-      }catch(e){ avisoV372('Erro ao abrir regulamento: '+(e&&e.message?e.message:e),'error'); }
+      }catch(e){}
       return true;
     }
-
     if(acao==='boloes'){
       try{
-        var alvo=document.getElementById('homeBoloesPublicos');
-        if(!alvo && typeof window.renderHomePublica==='function'){
-          window.renderHomePublica();
-          setTimeout(function(){
-            var el=document.getElementById('homeBoloesPublicos');
-            if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
-            try{ if(typeof window.carregarHomePublicaBoloes==='function') window.carregarHomePublicaBoloes(); }catch(e){}
-          },180);
-          return true;
-        }
+        var alvo=by('homeBoloesPublicos');
         if(alvo) alvo.scrollIntoView({behavior:'smooth',block:'start'});
-        try{ if(typeof window.carregarHomePublicaBoloes==='function') window.carregarHomePublicaBoloes(); }catch(e2){}
-      }catch(e){ avisoV372('Erro ao abrir bolões ativos: '+(e&&e.message?e.message:e),'error'); }
+        if(typeof window.carregarHomePublicaBoloes==='function') window.carregarHomePublicaBoloes();
+      }catch(e){}
       return true;
     }
-
     return false;
   }
 
-  function marcarBotoesPublicosV372(){
-    try{
-      var botoes=[].slice.call(document.querySelectorAll(
-        '.home-hero button, .home-section button, .public-header button, .home-hero a, .home-section a'
-      ));
+  function acaoHomePorTexto(el){
+    var t=txt(el && (el.textContent||el.value||''));
+    if(t.indexOf('entrar no sistema')>=0) return 'login';
+    if(t.indexOf('solicitar cadastro')>=0) return 'cadastro';
+    if(t.indexOf('ver regulamento')>=0) return 'regulamento';
+    if(t.indexOf('ver boloes ativos')>=0) return 'boloes';
+    return '';
+  }
 
+  function amarrarHomePublica(){
+    if(!isHomePublica()) return;
+    try{
+      var botoes=[].slice.call(document.querySelectorAll('.home-hero button, .home-section button'));
       botoes.forEach(function(b){
-        var acao=acaoDoBotaoPublicoV372(b);
+        if(isDentroDeModalOuFormulario(b)) return;
+        var acao=acaoHomePorTexto(b);
         if(!acao) return;
-        b.setAttribute('data-pss-public-action',acao);
-        if(String(b.tagName||'').toLowerCase()==='button'){
-          try{ b.setAttribute('type','button'); }catch(e){}
-        }
+        try{ b.setAttribute('type','button'); }catch(e){}
+        b.setAttribute('data-pss-home-publica-v373',acao);
+        b.onclick=function(ev){
+          if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+          executarHomePublica(acao);
+          return false;
+        };
       });
     }catch(e){}
   }
 
-  function tratarCliquePublicoV372(ev){
-    try{
-      var alvo=ev.target && ev.target.closest ? ev.target.closest('button,a,input[type="button"],input[type="submit"]') : ev.target;
-      if(!alvo) return;
-      var acao=acaoDoBotaoPublicoV372(alvo);
-      if(!acao) return;
+  var renderHomeBase=window.renderHomePublica;
+  if(typeof renderHomeBase==='function' && renderHomeBase.__pssV373!==true){
+    window.renderHomePublica=function(){
+      var r=renderHomeBase.apply(this,arguments);
+      setTimeout(amarrarHomePublica,40);
+      setTimeout(amarrarHomePublica,300);
+      setTimeout(amarrarHomePublica,900);
+      return r;
+    };
+    window.renderHomePublica.__pssV373=true;
+  }
 
-      /* Só intercepta os botões da home pública. Não toca menus internos
-       * logados nem botões de upload/comprovante/jogos. */
-      var dentroPublica=false;
-      try{ dentroPublica=!!(alvo.closest('.home-hero') || alvo.closest('.home-section') || alvo.closest('.public-header')); }catch(e){}
-      if(!dentroPublica && !paginaPublicaV372()) return;
-
+  /* Login seguro: garante que o botão Entrar do formulário realmente submeta
+   * o Firebase, sem depender de handlers que possam ter sido perdidos. */
+  var loginExecutando=false;
+  window.PSS_fazerLoginSeguroV373=async function(ev){
+    if(ev){
       ev.preventDefault();
       ev.stopPropagation();
       if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+    }
+    if(loginExecutando) return false;
+    var emailEl=by('loginEmail'), senhaEl=by('loginSenha'), btn=by('btnLogin'), msg=by('loginMsg');
+    if(!emailEl || !senhaEl) return false;
+    var email=String(emailEl.value||'').trim().toLowerCase();
+    var senha=String(senhaEl.value||'').trim();
+    if(!email || !senha){
+      try{ if(msg) msg.innerHTML='<div class="notice error">Informe e-mail e senha.</div>'; }catch(e){}
+      return false;
+    }
+    loginExecutando=true;
+    try{
+      if(msg) msg.innerHTML='<div class="notice info">Autenticando no Firebase...</div>';
+      if(btn){ btn.disabled=true; btn.textContent='Entrando...'; }
+      if(typeof window.inicializarFirebase_==='function') await window.inicializarFirebase_();
+      else if(typeof inicializarFirebase_==='function') await inicializarFirebase_();
+      if(!window.FIREBASE_AUTH && typeof FIREBASE_AUTH!=='undefined') window.FIREBASE_AUTH=FIREBASE_AUTH;
+      var auth=window.FIREBASE_AUTH || (typeof FIREBASE_AUTH!=='undefined'?FIREBASE_AUTH:null);
+      if(!auth || !auth.signInWithEmailAndPassword) throw new Error('Firebase Auth não inicializado. Recarregue a página e tente novamente.');
+      await auth.signInWithEmailAndPassword(email,senha);
+      if(msg) msg.innerHTML='<div class="notice info">Verificando aprovação do cadastro...</div>';
+      var u;
+      if(typeof window.firebaseValidarUsuarioAprovado_==='function') u=await window.firebaseValidarUsuarioAprovado_(email);
+      else if(typeof firebaseValidarUsuarioAprovado_==='function') u=await firebaseValidarUsuarioAprovado_(email);
+      else u={email:email,nome:email,role:'usuario',perfil:'USUARIO'};
+      if(typeof window.normalizarUsuarioSessao_==='function') window.ESTADO.usuario=window.normalizarUsuarioSessao_(u);
+      else window.ESTADO.usuario=u;
+      window.ESTADO.email=window.ESTADO.usuario.email||email;
+      window.ESTADO.role=window.ESTADO.usuario.role||window.ESTADO.usuario.perfil||'usuario';
+      try{
+        var lembrar=by('lembrarEmail');
+        if(lembrar && lembrar.checked) localStorage.setItem('PSS_BOLAO_EMAIL',window.ESTADO.email);
+        else localStorage.removeItem('PSS_BOLAO_EMAIL');
+      }catch(e){}
+      try{ if(typeof window.salvarSessao==='function') window.salvarSessao(window.ESTADO.usuario); }catch(e){}
+      try{ if(typeof window.aplicarLayoutLogado==='function') window.aplicarLayoutLogado(); }catch(e){}
+      try{ if(typeof window.navegar==='function') window.navegar('inicio'); }catch(e){}
+    }catch(err){
+      try{ var auth2=window.FIREBASE_AUTH || (typeof FIREBASE_AUTH!=='undefined'?FIREBASE_AUTH:null); if(auth2 && auth2.signOut) await auth2.signOut(); }catch(e){}
+      var texto=(typeof window.firebaseMensagemErro_==='function')?window.firebaseMensagemErro_(err):String((err&&err.message)||err||'Erro ao acessar.');
+      if(msg) msg.innerHTML='<div class="notice error">'+String(texto).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];})+'</div>';
+    }finally{
+      loginExecutando=false;
+      if(btn){ btn.disabled=false; btn.textContent='Entrar no sistema'; }
+    }
+    return false;
+  };
+  window.fazerLogin=window.PSS_fazerLoginSeguroV373;
 
-      executarAcaoPublicaV372(acao);
+  document.addEventListener('submit',function(ev){
+    try{
+      var f=ev.target;
+      if(f && f.querySelector && f.querySelector('#loginEmail') && f.querySelector('#loginSenha')){
+        window.PSS_fazerLoginSeguroV373(ev);
+        return false;
+      }
+    }catch(e){}
+  },true);
+
+  document.addEventListener('click',function(ev){
+    try{
+      var b=ev.target && ev.target.closest ? ev.target.closest('#btnLogin') : null;
+      if(!b) return;
+      window.PSS_fazerLoginSeguroV373(ev);
       return false;
     }catch(e){}
-  }
-
-  /* Delegação em captura: corrige inclusive botões com onclick antigo ou
-   * que tenham ficado sem ação por algum patch anterior. */
-  document.addEventListener('click',tratarCliquePublicoV372,true);
-
-  var renderHomeBaseV372=window.renderHomePublica;
-  if(typeof renderHomeBaseV372==='function' && renderHomeBaseV372.__pssV372PublicMenus!==true){
-    window.renderHomePublica=renderHomePublica=function(){
-      var r=renderHomeBaseV372.apply(this,arguments);
-      setTimeout(marcarBotoesPublicosV372,30);
-      setTimeout(marcarBotoesPublicosV372,250);
-      return r;
-    };
-    window.renderHomePublica.__pssV372PublicMenus=true;
-  }
+  },true);
 
   if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',function(){
-      setTimeout(marcarBotoesPublicosV372,80);
-      setTimeout(marcarBotoesPublicosV372,600);
-    });
+    document.addEventListener('DOMContentLoaded',function(){ setTimeout(amarrarHomePublica,80); });
   }else{
-    setTimeout(marcarBotoesPublicosV372,80);
-    setTimeout(marcarBotoesPublicosV372,600);
+    setTimeout(amarrarHomePublica,80);
   }
 
   try{
-    var moV372=new MutationObserver(function(){ marcarBotoesPublicosV372(); });
-    moV372.observe(document.body,{childList:true,subtree:true});
+    var mo=new MutationObserver(function(){ setTimeout(amarrarHomePublica,20); });
+    mo.observe(document.body,{childList:true,subtree:true});
   }catch(e){}
 
-  window.diagnosticarIndexV372=function(){
-    var botoes=[].slice.call(document.querySelectorAll('[data-pss-public-action]')).map(function(b){
-      return {texto:(b.textContent||b.value||'').trim(),acao:b.getAttribute('data-pss-public-action')};
-    });
+  window.diagnosticarIndexV373=function(){
     return {
       sucesso:true,
       versao:V,
-      paginaPublica:paginaPublicaV372(),
-      botoesPublicos:botoes,
-      regra:'Corrige somente os botões da página pública: Entrar no sistema, Solicitar cadastro, Ver regulamento e Ver bolões ativos. Não altera upload, jogos, API, login interno ou processamento.'
+      modalAberto:!!(by('modalBackdrop')&&by('modalBackdrop').classList.contains('open')),
+      loginForm:!!(by('loginEmail')&&by('loginSenha')&&by('btnLogin')),
+      homePublica:isHomePublica(),
+      botoesHome:[].slice.call(document.querySelectorAll('[data-pss-home-publica-v373]')).map(function(b){return {texto:(b.textContent||b.value||'').trim(),acao:b.getAttribute('data-pss-home-publica-v373')};}),
+      regra:'V373 corrige somente home pública, fechamento de modal e login. Não altera upload, jogos, pagamentos, OCR, baixa automática, Telegram ou GS.'
     };
   };
 })();
 </script>
-
 
 </body></html>
