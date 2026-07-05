@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V356_EXCLUI_DUPLICADO_REMOVE_LINHA</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V357_UPLOAD_V242_PURO_DRIVE_FIRST</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V356_EXCLUI_DUPLICADO_REMOVE_LINHA',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V357_UPLOAD_V242_PURO_DRIVE_FIRST',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -25552,7 +25552,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 <script>
 /******************** PATCH V348 — BUSCA E UPLOAD DE COMPROVANTE ESTÁVEIS ********************/
 (function(){
-  var V='V356_EXCLUI_DUPLICADO_REMOVE_LINHA';
+  var V='V357_UPLOAD_V242_PURO_DRIVE_FIRST';
   if(window.PSS_V348_BUSCA_UPLOAD_APLICADO) return;
   window.PSS_V348_BUSCA_UPLOAD_APLICADO=true;
   try{ if(typeof CONFIG==='object') CONFIG.versao=V; }catch(e){}
@@ -26117,7 +26117,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 <script>
 /* =====================================================================
  * V352 — upload V348 + ações administrativas em pagamentos
- * - Envio chama uploadComprovanteDriveFastV348.
+ * - Envio chama uploadComprovanteDiretoDriveV242PuroV353.
  * - Trava reenvio local do mesmo arquivo por alguns minutos.
  * - Adiciona botões: Excluir duplicado e Anular pagamento incompatível.
  * ===================================================================== */
@@ -26266,7 +26266,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       document.body.appendChild(iframe); document.body.appendChild(form);
       fileInput.name='arquivoUpload'; form.appendChild(fileInput);
 
-      var action='uploadComprovanteDriveFastV348';
+      var action='uploadComprovanteDiretoDriveV242PuroV353';
       var payload={
         action:action, fn:action, fnName:action,
         email:meta.adminEmail||((window.ESTADO&&ESTADO.email)||''),
@@ -26284,7 +26284,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
         qtdCotas:meta.qtdCotas||'1', qtdCotasComprovante:meta.qtdCotasComprovante||meta.qtdCotas||'1',
         nomesPartes:JSON.stringify(meta.nomesPartes||[]),
         participantesDivisaoResolvidos:JSON.stringify(meta.participantesDivisaoResolvidos||[]),
-        obsAdmin:meta.obsAdmin||'', metaJson:JSON.stringify(meta), uploadOrigem:'INDEX_V353_ADMIN_EMAIL_ACOES_PAGAMENTO_FIX'
+        obsAdmin:meta.obsAdmin||'', metaJson:JSON.stringify(meta), uploadOrigem:'INDEX_V357_UPLOAD_V242_PURO_DRIVE_FIRST'
       };
 
       addHidden(form,'mode','postmessage');
@@ -26515,7 +26515,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   try{ renderPagamentoCardAdmin_=window.renderPagamentoCardAdmin_; }catch(eAssign){}
 
   window.diagnosticarUploadComprovanteV352=function(){
-    return {sucesso:true,versao:V,apiUrl:!!(window.CONFIG&&CONFIG.apiUrl),acao:'uploadComprovanteDriveFastV348',upload:'Drive only',antidup:'cliente + servidor',acoesAdmin:['excluir duplicado','anular incompatível'], adminEmailDetectado: emailAdminPagamentoV353(),regra:'Upload só grava no Drive e cria pendente; processamento posterior faz OCR; período fora do prazo fica para análise.'};
+    return {sucesso:true,versao:V,apiUrl:!!(window.CONFIG&&CONFIG.apiUrl),acao:'uploadComprovanteDiretoDriveV242PuroV353',upload:'V242 puro',antidup:'sem varredura pesada no upload',acoesAdmin:['excluir duplicado','anular incompatível'], adminEmailDetectado: emailAdminPagamentoV353(),regra:'Upload usa V242 puro: recebe arquivo multipart, grava no Drive, registra pendente e retorna; processamento posterior faz OCR.'};
   };
 })();
 </script>
@@ -26525,7 +26525,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 /* V354 — consolidação: mantém ações admin V353 e usa GS V349 para data Nubank/mês referência. */
 (function(){
   window.diagnosticarIndexV354=function(){
-    return {sucesso:true, versao:'V356_EXCLUI_DUPLICADO_REMOVE_LINHA', regra:'HTML mantém ações admin; correção de data/mês referência está no GS V349.'};
+    return {sucesso:true, versao:'V357_UPLOAD_V242_PURO_DRIVE_FIRST', regra:'HTML mantém ações admin; correção de data/mês referência está no GS V349.'};
   };
 })();
 </script>
@@ -26542,7 +26542,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  * ===================================================================== */
 (function(){
   'use strict';
-  var V='V356_EXCLUI_DUPLICADO_REMOVE_LINHA';
+  var V='V357_UPLOAD_V242_PURO_DRIVE_FIRST';
   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
 
   function txt(v){return String(v===undefined||v===null?'':v).trim();}
@@ -26694,7 +26694,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  * ===================================================================== */
 (function(){
   'use strict';
-  var V='V356_EXCLUI_DUPLICADO_REMOVE_LINHA';
+  var V='V357_UPLOAD_V242_PURO_DRIVE_FIRST';
   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
 
   function txt(v){return String(v===undefined||v===null?'':v).trim();}
@@ -26792,6 +26792,32 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.diagnosticarIndexV356=function(){
     return {sucesso:true,versao:V,acaoExcluir:'excluirComprovanteDuplicadoAdminV351',regra:'Excluir duplicado remove a linha da aba PAGAMENTOS e remove o lançamento do histórico individual do participante.'};
   };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V357 — HTML usando upload V242 puro / Drive first
+ * - Mantém toda a tela e ações administrativas da V356.
+ * - A ação de envio de comprovante passa para uploadComprovanteDiretoDriveV242PuroV353.
+ * - Sem OCR/reprocessamento/perfil/Telegram no clique.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V357_UPLOAD_V242_PURO_DRIVE_FIRST';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+  window.diagnosticarUploadComprovanteV357=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      acao:'uploadComprovanteDiretoDriveV242PuroV353',
+      fluxo:'POST multipart real -> Apps Script -> Drive -> linha pendente -> retorno',
+      regra:'Envio voltou ao V242 puro. Não usa DriveFast V348, não calcula duplicidade pesada antes do Drive, não executa OCR nem reprocessamento no clique.'
+    };
+  };
+  window.diagnosticarUploadComprovanteV356=window.diagnosticarUploadComprovanteV357;
 })();
 </script>
 
