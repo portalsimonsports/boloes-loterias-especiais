@@ -26824,8 +26824,8 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
 <script>
 /* =====================================================================
- * PATCH V359 — MOBILE ABRE UPLOAD EM NOVA ABA SEM DESLOGAR
- * Base preservada: V357.
+ * PATCH V360 — MOBILE LINK LIMPO SEM RECURSIVIDADE
+ * Base preservada: V359.
  * - Desktop continua no fluxo V242 multipart atual.
  * - Mobile deixa de mandar arquivo pesado pelo GitHub Pages/iframe oculto.
  * - Mobile abre a página HtmlService do Apps Script para COMPROVANTE e JOGOS.
@@ -26833,23 +26833,35 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  * ===================================================================== */
 (function(){
   'use strict';
-  var V='V359_UPLOAD_MOBILE_NOVA_ABA_SEM_LOGOUT_COMPROVANTES_JOGOS';
+  var V='V360_UPLOAD_MOBILE_LINK_LIMPO_SEM_RECURSIVIDADE';
   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
 
   function by(id){return document.getElementById(id);}
   function txt(v){return String(v===undefined||v===null?'':v).trim();}
   function mobile(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'') || (window.innerWidth&&window.innerWidth<760);}
   function aviso(msg,tipo){try{if(typeof toast==='function')return toast(msg,tipo||'info');}catch(e){}try{if(typeof notify==='function')return notify(msg,tipo||'info');}catch(e2){}alert(msg);}
+  function apiUrlLimpaV360(){
+    var u='';
+    try{u=(window.CONFIG&&CONFIG.apiUrl)?String(CONFIG.apiUrl):'';}catch(e){}
+    /* Segurança: a tela mobile precisa abrir o Web App do Apps Script, nunca a própria URL do GitHub.
+       Se CONFIG.apiUrl vier vazio/corrompido por cache, usa a URL fixa atual do Web App. */
+    if(!/^https:\/\/script\.google\.com\/macros\/s\//i.test(u)){
+      u='https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec';
+    }
+    return u.split('?')[0];
+  }
   function urlApi(params){
     params=params||{};
     var qs=new URLSearchParams();
     Object.keys(params).forEach(function(k){var v=params[k]; if(v!==undefined&&v!==null&&String(v)!=='') qs.set(k,String(v));});
     qs.set('t',Date.now());
-    return (window.CONFIG&&CONFIG.apiUrl?CONFIG.apiUrl:'')+'?'+qs.toString();
+    return apiUrlLimpaV360()+'?'+qs.toString();
   }
   function voltarUrl(){
-    try{return location.origin+location.pathname+location.search.replace(/([?&])v=[^&]*/,'$1v=V359');}catch(e){}
-    return 'https://portalsimonsports.github.io/boloes-loterias-especiais/?v=V359';
+    /* V360: returnUrl sempre limpo. Nunca reutiliza location.search, pois se a aba atual já estiver em
+       mode=upload_mobile, o returnUrl passa a conter outro returnUrl e o link fica recursivo/gigante. */
+    try{return location.origin+location.pathname+'?v=V360&uploadRetorno=1';}catch(e){}
+    return 'https://portalsimonsports.github.io/boloes-loterias-especiais/?v=V360&uploadRetorno=1';
   }
   function dataBRFromInput(v){
     v=txt(v); if(!v)return '';
@@ -26858,7 +26870,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   }
   function abrirEmTelaMobile(u){
     /* V359: NÃO substituir a aba do site no mobile.
-       A versão V358 usava location.href=u; e isso tirava o usuário da sessão do GitHub/Firebase,
+       As versões V358/V359 podiam herdar returnUrl recursivo; V360 limpa o retorno. A versão V358 usava location.href=u; e isso tirava o usuário da sessão do GitHub/Firebase,
        parecendo logout. Agora abre em nova aba/janela e preserva o site logado. */
     try{ localStorage.setItem('PSS_UPLOAD_MOBILE_V359_URL',u); }catch(e){}
     try{
@@ -26968,9 +26980,10 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     }
   });
 
-  window.diagnosticarIndexV359=function(){return {sucesso:true,versao:V,mobileUpload:'Apps Script HtmlService em nova aba para não deslogar',comprovante:'mode=upload_mobile&tipo=comprovante',jogos:'mode=upload_mobile&tipo=jogos',desktop:'mantém fluxo anterior V242 multipart',correcao:'V359 remove location.href no mobile e usa window.open'};};
+  window.diagnosticarIndexV360=function(){return {sucesso:true,versao:V,mobileUpload:'Apps Script HtmlService em nova aba para não deslogar',apiUrl:apiUrlLimpaV360(),returnUrl:voltarUrl(),comprovante:'mode=upload_mobile&tipo=comprovante',jogos:'mode=upload_mobile&tipo=jogos',desktop:'mantém fluxo anterior V242 multipart',correcao:'V360 usa apiUrl do Apps Script e returnUrl limpo, sem recursividade'};};
 
-  window.diagnosticarIndexV358=window.diagnosticarIndexV359;
+  window.diagnosticarIndexV359=window.diagnosticarIndexV360;
+  window.diagnosticarIndexV358=window.diagnosticarIndexV360;
 })();
 </script>
 
