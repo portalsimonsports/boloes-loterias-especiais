@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V365_COMPROVANTES_BASE2706_AUTO_OCR_BAIXA</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V372_PUBLICA_MENUS_FIX</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V367_API_URL_FIX_UPLOAD_MOBILE',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V372_PUBLICA_MENUS_FIX',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -28365,5 +28365,204 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   };
 })();
 </script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V372 — CORREÇÃO DOS BOTÕES/MENUS DA PÁGINA PÚBLICA
+ * Pedido: corrigir o problema de "não abrir nada" ao clicar nos botões
+ * da página pública.
+ *
+ * Escopo restrito:
+ * - NÃO altera upload de comprovante;
+ * - NÃO altera jogos realizados;
+ * - NÃO abre script.google.com;
+ * - NÃO altera login/Firebase, API, Telegram, pagamentos ou letreiro;
+ * - apenas garante que os botões públicos chamem as funções corretas.
+ *
+ * Botões corrigidos:
+ * - Entrar no sistema
+ * - Solicitar cadastro
+ * - Ver regulamento
+ * - Ver bolões ativos
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var V='V372_PUBLICA_MENUS_FIX';
+  try{
+    if(window.CONFIG) CONFIG.versao=V;
+    localStorage.setItem('PSS_INDEX_VERSION',V);
+  }catch(e){}
+
+  function txtV372(v){
+    return String(v||'')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().replace(/\s+/g,' ').trim();
+  }
+
+  function avisoV372(msg,tipo){
+    try{ if(typeof toast==='function') return toast(msg,tipo||'info'); }catch(e){}
+    try{ alert(msg); }catch(e2){}
+  }
+
+  function paginaPublicaV372(){
+    try{
+      return !!document.querySelector('.home-hero') && !document.body.classList.contains('app-logado');
+    }catch(e){ return false; }
+  }
+
+  function acaoDoBotaoPublicoV372(el){
+    if(!el) return '';
+    var ds='';
+    try{ ds=String(el.getAttribute('data-pss-public-action')||''); }catch(e){}
+    if(ds) return ds;
+
+    var t=txtV372((el.textContent||el.value||''));
+    if(t.indexOf('entrar no sistema')>=0) return 'login';
+    if(t.indexOf('solicitar cadastro')>=0 || t==='cadastrar') return 'cadastro';
+    if(t.indexOf('ver regulamento')>=0 || t==='regulamento') return 'regulamento';
+    if(t.indexOf('ver boloes ativos')>=0 || t.indexOf('boloes ativos')>=0) return 'boloes';
+    return '';
+  }
+
+  function executarAcaoPublicaV372(acao){
+    if(!acao) return false;
+
+    if(acao==='login'){
+      try{
+        if(typeof window.renderLogin==='function') window.renderLogin();
+        else if(typeof renderLogin==='function') renderLogin();
+        else avisoV372('Tela de login indisponível nesta versão.','error');
+      }catch(e){ avisoV372('Erro ao abrir login: '+(e&&e.message?e.message:e),'error'); }
+      return true;
+    }
+
+    if(acao==='cadastro'){
+      try{
+        if(typeof window.abrirCadastro==='function') window.abrirCadastro();
+        else if(typeof abrirCadastro==='function') abrirCadastro();
+        else avisoV372('Tela de cadastro indisponível nesta versão.','error');
+      }catch(e){ avisoV372('Erro ao abrir cadastro: '+(e&&e.message?e.message:e),'error'); }
+      return true;
+    }
+
+    if(acao==='regulamento'){
+      try{
+        if(typeof window.abrirRegulamentoPublico==='function') window.abrirRegulamentoPublico();
+        else if(typeof abrirRegulamentoPublico==='function') abrirRegulamentoPublico();
+        else if(typeof window.renderRegulamento==='function') window.renderRegulamento();
+        else if(typeof renderRegulamento==='function') renderRegulamento();
+        else avisoV372('Regulamento indisponível nesta versão.','error');
+      }catch(e){ avisoV372('Erro ao abrir regulamento: '+(e&&e.message?e.message:e),'error'); }
+      return true;
+    }
+
+    if(acao==='boloes'){
+      try{
+        var alvo=document.getElementById('homeBoloesPublicos');
+        if(!alvo && typeof window.renderHomePublica==='function'){
+          window.renderHomePublica();
+          setTimeout(function(){
+            var el=document.getElementById('homeBoloesPublicos');
+            if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+            try{ if(typeof window.carregarHomePublicaBoloes==='function') window.carregarHomePublicaBoloes(); }catch(e){}
+          },180);
+          return true;
+        }
+        if(alvo) alvo.scrollIntoView({behavior:'smooth',block:'start'});
+        try{ if(typeof window.carregarHomePublicaBoloes==='function') window.carregarHomePublicaBoloes(); }catch(e2){}
+      }catch(e){ avisoV372('Erro ao abrir bolões ativos: '+(e&&e.message?e.message:e),'error'); }
+      return true;
+    }
+
+    return false;
+  }
+
+  function marcarBotoesPublicosV372(){
+    try{
+      var botoes=[].slice.call(document.querySelectorAll(
+        '.home-hero button, .home-section button, .public-header button, .home-hero a, .home-section a'
+      ));
+
+      botoes.forEach(function(b){
+        var acao=acaoDoBotaoPublicoV372(b);
+        if(!acao) return;
+        b.setAttribute('data-pss-public-action',acao);
+        if(String(b.tagName||'').toLowerCase()==='button'){
+          try{ b.setAttribute('type','button'); }catch(e){}
+        }
+      });
+    }catch(e){}
+  }
+
+  function tratarCliquePublicoV372(ev){
+    try{
+      var alvo=ev.target && ev.target.closest ? ev.target.closest('button,a,input[type="button"],input[type="submit"]') : ev.target;
+      if(!alvo) return;
+      var acao=acaoDoBotaoPublicoV372(alvo);
+      if(!acao) return;
+
+      /* Só intercepta os botões da home pública. Não toca menus internos
+       * logados nem botões de upload/comprovante/jogos. */
+      var dentroPublica=false;
+      try{ dentroPublica=!!(alvo.closest('.home-hero') || alvo.closest('.home-section') || alvo.closest('.public-header')); }catch(e){}
+      if(!dentroPublica && !paginaPublicaV372()) return;
+
+      ev.preventDefault();
+      ev.stopPropagation();
+      if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+
+      executarAcaoPublicaV372(acao);
+      return false;
+    }catch(e){}
+  }
+
+  /* Delegação em captura: corrige inclusive botões com onclick antigo ou
+   * que tenham ficado sem ação por algum patch anterior. */
+  document.addEventListener('click',tratarCliquePublicoV372,true);
+
+  var renderHomeBaseV372=window.renderHomePublica;
+  if(typeof renderHomeBaseV372==='function' && renderHomeBaseV372.__pssV372PublicMenus!==true){
+    window.renderHomePublica=renderHomePublica=function(){
+      var r=renderHomeBaseV372.apply(this,arguments);
+      setTimeout(marcarBotoesPublicosV372,30);
+      setTimeout(marcarBotoesPublicosV372,250);
+      return r;
+    };
+    window.renderHomePublica.__pssV372PublicMenus=true;
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){
+      setTimeout(marcarBotoesPublicosV372,80);
+      setTimeout(marcarBotoesPublicosV372,600);
+    });
+  }else{
+    setTimeout(marcarBotoesPublicosV372,80);
+    setTimeout(marcarBotoesPublicosV372,600);
+  }
+
+  try{
+    var moV372=new MutationObserver(function(){ marcarBotoesPublicosV372(); });
+    moV372.observe(document.body,{childList:true,subtree:true});
+  }catch(e){}
+
+  window.diagnosticarIndexV372=function(){
+    var botoes=[].slice.call(document.querySelectorAll('[data-pss-public-action]')).map(function(b){
+      return {texto:(b.textContent||b.value||'').trim(),acao:b.getAttribute('data-pss-public-action')};
+    });
+    return {
+      sucesso:true,
+      versao:V,
+      paginaPublica:paginaPublicaV372(),
+      botoesPublicos:botoes,
+      regra:'Corrige somente os botões da página pública: Entrar no sistema, Solicitar cadastro, Ver regulamento e Ver bolões ativos. Não altera upload, jogos, API, login interno ou processamento.'
+    };
+  };
+})();
+</script>
+
 
 </body></html>
