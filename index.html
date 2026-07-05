@@ -28280,4 +28280,90 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * PATCH V371 — "ÚLTIMOS RESULTADOS" SOMENTE NA PÁGINA PÚBLICA
+ * Motivo: o painel/letreiro de últimos resultados (id
+ * homeResultadosPublicosV213) e o modal "Últimos resultados" foram
+ * escritos originalmente só para a home pública (.home-hero), mas várias
+ * versões (V213 até V355) tinham um `setTimeout` de auto-carregamento sem
+ * checar se a página atual era a pública ou uma tela logada. Resultado:
+ * o painel/modal podia aparecer em cima de telas internas como
+ * Comprovante, Jogos, Config etc., mesmo com o usuário logado.
+ *
+ * Regra usada aqui: a home pública é identificada pela ausência da
+ * classe "app-logado" no <body> (classe que o próprio sistema já usa
+ * para saber se o usuário está logado) e pela existência de .home-hero
+ * na tela. Em qualquer outra tela, com o usuário logado, o painel e o
+ * modal de resultados ficam bloqueados/removidos.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V371_RESULTADOS_SOMENTE_PAGINA_PUBLICA';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function logado(){
+    try{ if(document.body.classList.contains('app-logado')) return true; }catch(e){}
+    try{ if(window.ESTADO && ESTADO.usuario && ESTADO.usuario.email) return true; }catch(e2){}
+    try{ var h=document.getElementById('appHeader'); if(h && !h.classList.contains('hidden')) return true; }catch(e3){}
+    return false;
+  }
+  function paginaPublicaAtual(){
+    try{ if(document.querySelector('.home-hero')) return true; }catch(e){}
+    return false;
+  }
+  function devemostrarResultados(){ return paginaPublicaAtual() && !logado(); }
+
+  function removerPainelResultados(){
+    try{ var el=document.getElementById('homeResultadosPublicosV213'); if(el) el.remove(); }catch(e){}
+  }
+
+  /* 1) Envolve o carregador do letreiro: só executa de fato na página pública */
+  var carregarBaseV371=window.carregarLetreiroResultadosPublicosV213;
+  window.carregarLetreiroResultadosPublicosV213=function(forcar){
+    if(!devemostrarResultados()){
+      removerPainelResultados();
+      return Promise.resolve(null);
+    }
+    return (typeof carregarBaseV371==='function') ? carregarBaseV371.apply(this,arguments) : Promise.resolve(null);
+  };
+
+  /* 2) Bloqueia o modal "Últimos resultados" fora da página pública,
+   *    envolvendo a função genérica de modal do site. */
+  var abrirModalBaseV371=window.abrirModal;
+  if(typeof abrirModalBaseV371==='function'){
+    window.abrirModal=function(titulo,html){
+      var t=String(titulo||'');
+      if(/ltimos resultados/i.test(t) && !devemostrarResultados()){
+        try{ console.warn('[PSS V371] Modal de últimos resultados bloqueado fora da página pública.'); }catch(e){}
+        return;
+      }
+      return abrirModalBaseV371.apply(this,arguments);
+    };
+  }
+
+  /* 3) Rede de segurança: remove o painel se algum script antigo ainda
+   *    conseguir inseri-lo fora da página pública. */
+  function limparSeNecessario(){
+    if(!devemostrarResultados()) removerPainelResultados();
+  }
+  try{
+    var moV371=new MutationObserver(function(){ limparSeNecessario(); });
+    moV371.observe(document.body,{childList:true,subtree:true});
+  }catch(eObs){}
+  limparSeNecessario();
+  setInterval(limparSeNecessario,1500);
+
+  window.diagnosticarIndexV371=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      regra:'Painel/letreiro e modal de "Últimos resultados" só aparecem na home pública (.home-hero, usuário não logado). Em qualquer tela logada (body.app-logado, appHeader visível), ficam bloqueados e removidos automaticamente.'
+    };
+  };
+})();
+</script>
+
 </body></html>
