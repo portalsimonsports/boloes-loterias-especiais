@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V365_COMPROVANTES_BASE2706_AUTO_OCR_BAIXA',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V367_API_URL_FIX_UPLOAD_MOBILE',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -27715,11 +27715,21 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 /**************** PATCH INDEX V366 — MOBILE USA GS V360 FUNÇÃO PÚBLICA ****************/
 (function(){
   'use strict';
-  var V='V366_UPLOAD_MOBILE_GS_V360_FUNCAO_PUBLICA_AUTO_BAIXA';
-  var API='';
-  try{ API=(window.CONFIG&&CONFIG.apiUrl)||window.API_URL||''; }catch(e){}
+  var V='V367_UPLOAD_MOBILE_API_URL_FIX_FUNCAO_PUBLICA_AUTO_BAIXA';
+  var API_FALLBACK_V367='https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec';
+  function apiUrlV367(){
+    var u='';
+    try{ if(typeof CONFIG!=='undefined' && CONFIG && CONFIG.apiUrl) u=String(CONFIG.apiUrl||'').trim(); }catch(e){}
+    try{ if(!u && window.CONFIG && window.CONFIG.apiUrl) u=String(window.CONFIG.apiUrl||'').trim(); }catch(e2){}
+    try{ if(!u && window.PSS_API_URL) u=String(window.PSS_API_URL||'').trim(); }catch(e3){}
+    try{ if(!u && window.API_URL) u=String(window.API_URL||'').trim(); }catch(e4){}
+    if(!/^https:\/\/script\.google\.com\/macros\/s\//i.test(u)) u=API_FALLBACK_V367;
+    try{ window.PSS_API_URL=u; window.API_URL=u; }catch(e5){}
+    return u;
+  }
+  var API=apiUrlV367();
   function isMobile(){ return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'') || (window.innerWidth||9999) < 760; }
-  function retorno(){ return 'https://portalsimonsports.github.io/boloes-loterias-especiais/?v=V366&uploadRetorno=1'; }
+  function retorno(){ return 'https://portalsimonsports.github.io/boloes-loterias-especiais/?v=V367&uploadRetorno=1'; }
   function params(obj){ return Object.keys(obj).filter(function(k){return obj[k]!==undefined&&obj[k]!==null&&String(obj[k])!=='';}).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(String(obj[k]));}).join('&'); }
   function abrir(url){
     try{ localStorage.setItem('PSS_UPLOAD_MOBILE_V366_URL',url); }catch(e){}
@@ -27760,13 +27770,14 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     };
   }
   function abrirUploadComprovanteV366(){
-    if(!API){ alert('API URL não configurada para upload.'); return false; }
+    API=apiUrlV367();
+    if(!API){ alert('Falha ao montar URL do Apps Script para upload.'); return false; }
     var url = API + (API.indexOf('?')>=0?'&':'?') + params(metaComprovante());
     abrir(url);
     return false;
   }
   window.abrirUploadComprovanteMobileV366 = abrirUploadComprovanteV366;
-  window.diagnosticarIndexV366=function(){return {sucesso:true,versao:V,apiUrl:API,comprovante:'mode=upload_mobile&tipo=comprovante&v=V360',regra:'mobile abre Apps Script externo; página GS V360 chama função pública google.script.run sem underscore; preserva OCR/baixa automática'};};
+  window.diagnosticarIndexV366=function(){return {sucesso:true,versao:V,apiUrl:apiUrlV367(),fallbackApi:API_FALLBACK_V367,comprovante:'mode=upload_mobile&tipo=comprovante&v=V360',regra:'mobile abre Apps Script externo; página GS V360 chama função pública google.script.run sem underscore; preserva OCR/baixa automática'};};
 
   var nomes=['abrirUploadComprovanteMobileV365','abrirUploadComprovanteMobileV364','abrirUploadComprovanteMobileV363','abrirUploadComprovanteMobileV362','abrirUploadComprovanteMobileV361','abrirUploadComprovanteMobileV360','abrirUploadComprovanteMobileV359'];
   nomes.forEach(function(n){ try{ window[n]=abrirUploadComprovanteV366; }catch(e){} });
