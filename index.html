@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V357_UPLOAD_V242_PURO_DRIVE_FIRST</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V364_UPLOAD_MOBILE_BASE64_APPS_SCRIPT_DRIVE_FIRST</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V357_UPLOAD_V242_PURO_DRIVE_FIRST',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V364_UPLOAD_MOBILE_BASE64_APPS_SCRIPT_DRIVE_FIRST',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -26525,7 +26525,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 /* V354 — consolidação: mantém ações admin V353 e usa GS V349 para data Nubank/mês referência. */
 (function(){
   window.diagnosticarIndexV354=function(){
-    return {sucesso:true, versao:'V357_UPLOAD_V242_PURO_DRIVE_FIRST', regra:'HTML mantém ações admin; correção de data/mês referência está no GS V349.'};
+    return {sucesso:true, versao:'V364_UPLOAD_MOBILE_BASE64_APPS_SCRIPT_DRIVE_FIRST', regra:'HTML mantém ações admin; correção de data/mês referência está no GS V349.'};
   };
 })();
 </script>
@@ -27518,6 +27518,180 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.diagnosticarIndexV362=window.diagnosticarIndexV363;
   window.diagnosticarIndexV361=window.diagnosticarIndexV363;
 })();
+
+/* =====================================================================
+ * PATCH V364 — MOBILE EXTERNO + APPS SCRIPT BASE64 DRIVE-FIRST
+ * Correção:
+ * - Fecha/ignora qualquer modal antigo V361.
+ * - No mobile abre o Apps Script em aba externa/top-level.
+ * - Usa GS V358, cuja página usa FileReader base64 + google.script.run e grava primeiro no Drive.
+ * - Aplicado a comprovantes e jogos realizados.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V364_UPLOAD_MOBILE_BASE64_APPS_SCRIPT_DRIVE_FIRST';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function by(id){return document.getElementById(id);}
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function mobile(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'') || (window.innerWidth&&window.innerWidth<760);}
+  function aviso(msg,tipo){try{if(typeof toast==='function')return toast(msg,tipo||'info');}catch(e){}try{if(typeof notify==='function')return notify(msg,tipo||'info');}catch(e2){}alert(msg);}
+  function escAttr(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function apiUrlV364(){
+    var u='';
+    try{u=(window.CONFIG&&CONFIG.apiUrl)?String(CONFIG.apiUrl):'';}catch(e){}
+    if(!/^https:\/\/script\.google\.com\/macros\/s\//i.test(u)){
+      u='https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec';
+    }
+    return u.split('?')[0];
+  }
+  function retornoV364(){
+    try{return location.origin+location.pathname+'?v=V364&uploadRetorno=1';}catch(e){}
+    return 'https://portalsimonsports.github.io/boloes-loterias-especiais/?v=V364&uploadRetorno=1';
+  }
+  function urlApiV364(params){
+    params=params||{};
+    var qs=new URLSearchParams();
+    Object.keys(params).forEach(function(k){var v=params[k]; if(v!==undefined&&v!==null&&String(v)!=='') qs.set(k,String(v));});
+    qs.set('t',Date.now());
+    return apiUrlV364()+'?'+qs.toString();
+  }
+  function fecharModaisAntigos(){
+    ['pssUploadMobileOverlayV361','pss-upload-v245-modal','pss-upload-v250-modal'].forEach(function(id){
+      try{var el=by(id); if(el){el.classList.remove('open'); el.remove();}}catch(e){}
+    });
+    ['pssUploadMobileFrameV361','pss-upload-v245-iframe','pss-upload-v250-iframe'].forEach(function(id){try{var f=by(id); if(f)f.src='about:blank';}catch(e){}});
+  }
+  function preservarSessao(){
+    try{ if(window.ESTADO && ESTADO.usuario && typeof salvarSessao==='function') salvarSessao(ESTADO.usuario); }catch(e){}
+    try{ localStorage.setItem('PSS_UPLOAD_V364_ULTIMA_SESSAO', JSON.stringify({em:new Date().toISOString(),email:(window.ESTADO&&ESTADO.email)||''})); }catch(e2){}
+  }
+  function abrirExternoTopLevelV364(u,titulo){
+    fecharModaisAntigos();
+    preservarSessao();
+    try{ localStorage.setItem('PSS_UPLOAD_MOBILE_V364_URL',u); }catch(e){}
+    var a=document.createElement('a');
+    a.href=u; a.target='_blank'; a.rel='noopener';
+    a.style.position='fixed'; a.style.left='-9999px'; a.style.top='-9999px';
+    document.body.appendChild(a);
+    try{ a.click(); }catch(eClick){ try{window.open(u,'_blank','noopener');}catch(eOpen){} }
+    setTimeout(function(){try{a.remove();}catch(e){}},1200);
+    aviso((titulo||'Upload')+' aberto em aba externa do Apps Script. A aba original permanece logada.','info');
+    var box=by('comprovanteUploadStatus')||by('jogosUploadStatus')||by('uploadStatus')||by('comprovanteUploadProgressBox');
+    if(box){
+      box.style.display='block';
+      box.innerHTML='<div class="upload-progress-title">Upload externo aberto</div><div class="upload-progress-detail">Se a nova aba não abrir, <a href="'+escAttr(u)+'" target="_blank" rel="noopener">toque aqui para abrir o envio direto no Apps Script</a>.</div>';
+    }
+    return false;
+  }
+  function dataBR(v){
+    v=txt(v); if(!v)return '';
+    if(typeof dataInputValorParaBR_==='function')return dataInputValorParaBR_(v);
+    var p=v.split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v;
+  }
+  function metaComprovante(){
+    if(typeof window.montarMetaComprovanteV335==='function'){
+      try{return window.montarMetaComprovanteV335()||{};}catch(e){}
+    }
+    var tipoEnvio=(by('tipoEnvioComprovante')&&by('tipoEnvioComprovante').value)||'meu';
+    var meta={
+      tipoEnvio:tipoEnvio==='terceiro'?'TERCEIRO':'PROPRIO',
+      adminEmail:(window.ESTADO&&ESTADO.email)||'',
+      tipoCota:(by('tipoCota')&&by('tipoCota').value)||'unica',
+      qtdPartes:(by('qtdPartes')&&by('qtdPartes').value)||'',
+      fracaoCota:(by('fracaoCotaTerceiroV225')&&by('fracaoCotaTerceiroV225').value)||'',
+      qtdCotas:(by('qtdCotasComprovanteV335')&&by('qtdCotasComprovanteV335').value)||'1',
+      qtdCotasComprovante:(by('qtdCotasComprovanteV335')&&by('qtdCotasComprovanteV335').value)||'1',
+      nomesPartes:[], participantesDivisaoResolvidos:[],
+      obsAdmin:(by('obsAdminComprovante')&&by('obsAdminComprovante').value)||''
+    };
+    if(meta.tipoEnvio==='TERCEIRO'){
+      meta.emailParticipante=txt((by('emailParticipanteTerceiroV225')||{}).value).toLowerCase();
+      meta.nomeParticipante=txt((by('nomeParticipanteTerceiroV225')||{}).value)||txt((by('nomeProvisorioTerceiroV272')||{}).value);
+    }else{
+      meta.emailParticipante=(window.ESTADO&&ESTADO.email)||'';
+      meta.nomeParticipante=(window.ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name))||'';
+    }
+    return meta;
+  }
+  function abrirComprovanteMobileV364(ev){
+    if(ev&&ev.preventDefault)ev.preventDefault();
+    if(!mobile() && typeof window.__baseComprovanteDesktopV364==='function') return window.__baseComprovanteDesktopV364.apply(this,arguments);
+    var loteria=(by('uploadBolao')&&by('uploadBolao').value)||((window.ESTADO&&ESTADO.bolaoSelecionado)||'');
+    if(!loteria){aviso('Selecione a loteria do depósito.','error');return false;}
+    var meta=metaComprovante();
+    if(meta.tipoEnvio==='TERCEIRO'){
+      try{if(typeof isAdmin==='function'&&!isAdmin()){aviso('Apenas administrador pode enviar comprovante de terceiro.','error');return false;}}catch(e){}
+      var modo=(by('vinculoTerceiroV272')&&by('vinculoTerceiroV272').value)||'com_cadastro';
+      if(modo==='com_cadastro'&&!meta.emailParticipante){aviso('Selecione o participante cadastrado vinculado ao comprovante.','error');return false;}
+      if(modo==='sem_cadastro'&&!meta.nomeParticipante){aviso('Informe o nome provisório do pagador/participante sem cadastro.','error');return false;}
+      if(!meta.emailParticipante) meta.emailParticipante=(window.ESTADO&&ESTADO.email)||'';
+    }
+    try{ESTADO.bolaoSelecionado=loteria;localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);}catch(e){}
+    var u=urlApiV364({
+      mode:'upload_mobile',tipo:'comprovante',v:'V358',returnUrl:retornoV364(),
+      loteria:loteria,email:(window.ESTADO&&ESTADO.email)||'',adminEmail:meta.adminEmail||((window.ESTADO&&ESTADO.email)||''),
+      tipoEnvio:meta.tipoEnvio||'PROPRIO',emailParticipante:meta.emailParticipante||((window.ESTADO&&ESTADO.email)||''),nomeParticipante:meta.nomeParticipante||'',
+      tipoCota:meta.tipoCota||'',qtdPartes:meta.qtdPartes||'',fracaoCota:meta.fracaoCota||'',
+      qtdCotas:meta.qtdCotas||'1',qtdCotasComprovante:meta.qtdCotasComprovante||meta.qtdCotas||'1',
+      nomesPartes:JSON.stringify(meta.nomesPartes||[]),participantesDivisaoResolvidos:JSON.stringify(meta.participantesDivisaoResolvidos||[]),
+      obsAdmin:meta.obsAdmin||'',valorEsperado:meta.valorEsperado||'',valorPagamentoAgora:meta.valorPagamentoAgora||'',valorTotal:meta.valorTotal||'',cotasEquivalentes:meta.cotasEquivalentes||'',idAquisicao:meta.idAquisicao||''
+    });
+    return abrirExternoTopLevelV364(u,'Envio de comprovante');
+  }
+  function enviarJogosMobileV364(ev){
+    if(ev&&ev.preventDefault)ev.preventDefault();
+    if(!mobile() && typeof window.__baseJogosDesktopV364==='function') return window.__baseJogosDesktopV364.call(this,ev);
+    var loteria=(by('jogosBolao')&&by('jogosBolao').value)||((window.ESTADO&&ESTADO.bolaoSelecionado)||'');
+    var concurso=txt((by('jogoConcurso')||{}).value);
+    var dataJogo=dataBR((by('jogoData')||{}).value);
+    var obs=txt((by('jogoObs')||{}).value);
+    if(!loteria){aviso('Selecione a loteria/bolão.','error');return false;}
+    try{if(typeof isAdmin==='function'&&!isAdmin()){aviso('Apenas administrador pode enviar jogos realizados.','error');return false;}}catch(e){}
+    try{ESTADO.bolaoSelecionado=loteria;localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria);}catch(e2){}
+    var u=urlApiV364({
+      mode:'upload_mobile',tipo:'jogos',v:'V358',returnUrl:retornoV364(),
+      loteria:loteria,jogosBolao:loteria,email:(window.ESTADO&&ESTADO.email)||'',adminEmail:(window.ESTADO&&ESTADO.email)||'',
+      concurso:concurso,jogoConcurso:concurso,dataJogo:dataJogo,jogoData:dataJogo,obs:obs,jogoObs:obs
+    });
+    return abrirExternoTopLevelV364(u,'Envio de jogos realizados');
+  }
+  window.__baseComprovanteDesktopV364 = window.__baseComprovanteDesktopV364 || window.PSS_abrirUploadComprovanteV272 || window.abrirUploadComprovanteAppsScriptV245;
+  window.__baseJogosDesktopV364 = window.__baseJogosDesktopV364 || window.enviarJogoRealizadoBolaoV232 || window.enviarJogoRealizadoBolao;
+  window.PSS_abrirUploadComprovanteV272=abrirComprovanteMobileV364;
+  window.abrirUploadComprovanteAppsScriptV245=abrirComprovanteMobileV364;
+  window.enviarComprovante=abrirComprovanteMobileV364;
+  window.enviarJogoRealizadoBolaoV232=enviarJogosMobileV364;
+  window.enviarJogoRealizadoBolao=enviarJogosMobileV364;
+  function amarrarBotoesV364(){
+    fecharModaisAntigos();
+    var b=by('btnAbrirUploadComprovanteV247');
+    if(b){b.onclick=function(ev){return abrirComprovanteMobileV364(ev);};}
+    var bj=by('btnEnviarJogoRealizado');
+    if(bj){var form=bj.closest&&bj.closest('form'); if(form){form.onsubmit=function(ev){return enviarJogosMobileV364(ev);};}}
+  }
+  document.addEventListener('click',function(ev){
+    var t=ev.target&&ev.target.closest?ev.target.closest('button,a,input[type="button"],input[type="submit"]'):ev.target;
+    if(!t)return;
+    var id=t.id||''; var tx=(t.textContent||t.value||'').trim().toLowerCase();
+    if(id==='btnAbrirUploadComprovanteV247' || tx==='carregar comprovante'){
+      ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation)ev.stopImmediatePropagation(); abrirComprovanteMobileV364(ev); return false;
+    }
+  },true);
+  document.addEventListener('submit',function(ev){
+    var f=ev.target; if(!f)return;
+    var s=String(f.getAttribute('onsubmit')||'');
+    if(s.indexOf('enviarJogoRealizado')>=0){ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation)ev.stopImmediatePropagation(); enviarJogosMobileV364(ev); return false; }
+  },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',amarrarBotoesV364); else amarrarBotoesV364();
+  setTimeout(amarrarBotoesV364,700);
+  setTimeout(amarrarBotoesV364,1800);
+  window.diagnosticarIndexV364=function(){return {sucesso:true,versao:V,mobileUpload:'aba externa/top-level do Apps Script; formulário V358 usa FileReader base64 dentro do Apps Script, sem POST multipart e sem iframe/modal',apiUrl:apiUrlV364(),returnUrl:retornoV364(),comprovante:'mode=upload_mobile&tipo=comprovante&v=V358',jogos:'mode=upload_mobile&tipo=jogos&v=V358',regra:'mobile abre Apps Script em aba externa; site não desloga; upload não usa modal V361 nem iframe'};};
+  window.diagnosticarIndexV362=window.diagnosticarIndexV364;
+  window.diagnosticarIndexV363=window.diagnosticarIndexV364;
+  window.diagnosticarIndexV361=window.diagnosticarIndexV364;
+})();
+
 </script>
 </body>
 </html>
