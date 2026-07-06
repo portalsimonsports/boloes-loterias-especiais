@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V352_FIREBASE_LOGIN_CACHE_UPLOAD_V246_RESTAURADO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V352_FIREBASE_LOGIN_CACHE_UPLOAD_V246_RESTAURADO',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -25550,7 +25550,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
 <script>
 (function(){
-  var V='V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA';
+  var V='V352_FIREBASE_LOGIN_CACHE_UPLOAD_V246_RESTAURADO';
   try{ if(window.CONFIG) CONFIG.versao=V; }catch(e){}
 
   function reforcarUploadComprovanteV246_(){
@@ -25672,7 +25672,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   if(window.PSS_V351_PUBLICA_LOGIN_FIREBASE_FIX_APLICADO) return;
   window.PSS_V351_PUBLICA_LOGIN_FIREBASE_FIX_APLICADO = true;
 
-  var V='V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA';
+  var V='V352_FIREBASE_LOGIN_CACHE_UPLOAD_V246_RESTAURADO';
   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
 
   function byId(id){return document.getElementById(id);}
@@ -25918,6 +25918,274 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       upload:'não alterado',
       regra:'Letreiro apenas na home pública; login Firebase preservado; modal fecha; URL limpa.'
     };
+  };
+})();
+</script>
+
+
+<script>
+/* =====================================================================
+ * V352 — RESTAURA UPLOAD DE COMPROVANTE V246 BASE 27/06/V324
+ * Foco único:
+ * - Preserva login Firebase que voltou a funcionar na V351.
+ * - Preserva URL limpa e cache local rápido.
+ * - Derruba o override V340 de upload direto.
+ * - Restaura: site -> iframe interno upload_app -> google.script.run -> Drive/PAGAMENTOS -> OCR/baixa.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V352_FIREBASE_LOGIN_CACHE_UPLOAD_V246_RESTAURADO';
+  try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function txt(v){ return String(v==null?'':v).trim(); }
+  function norm(v){
+    return txt(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  }
+  function esc(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v); }catch(e){}
+    return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function toastSafe(msg,tipo){
+    try{ if(typeof toast==='function') return toast(msg,tipo||'info'); }catch(e){}
+    try{ alert(msg); }catch(e2){}
+  }
+  function setProg(p,t,d,kind){
+    try{ if(typeof atualizarProgressoUploadComprovante_==='function') atualizarProgressoUploadComprovante_(p,t,d,kind); }catch(e){}
+  }
+  function val(ids){
+    for(var i=0;i<ids.length;i++){
+      var el=byId(ids[i]);
+      if(el && txt(el.value)) return txt(el.value);
+    }
+    return '';
+  }
+  function jsonArrayFromValue(v){
+    v=txt(v);
+    if(!v) return [];
+    try{ var a=JSON.parse(v); if(Array.isArray(a)) return a; }catch(e){}
+    return v.split(/[|;,/]+/).map(function(x){return txt(x);}).filter(Boolean);
+  }
+  function coletarNomesPartesV352(){
+    var out=[];
+    try{
+      document.querySelectorAll('#nomesPartes input,[data-nome-parte],.nome-parte input').forEach(function(inp){
+        var v=txt(inp&&inp.value);
+        if(v) out.push(v);
+      });
+    }catch(e){}
+    var raw=val(['nomesPartes','nomesPartesComprovante','partesComprovante']);
+    if(raw) out=out.concat(jsonArrayFromValue(raw));
+    var seen={};
+    return out.filter(function(x){ var k=norm(x); if(!k||seen[k]) return false; seen[k]=true; return true; });
+  }
+  function coletarParticipantesResolvidosV352(){
+    var raw=val(['participantesDivisaoResolvidos','participantesDivisaoResolvidosV335','divisaoResolvidos']);
+    if(!raw) return [];
+    try{ var a=JSON.parse(raw); if(Array.isArray(a)) return a; }catch(e){}
+    return [];
+  }
+  function tipoEnvioAtualV352(){
+    var v=val(['tipoEnvioComprovante','tipoComprovanteEnvio']);
+    var n=norm(v);
+    return (n.indexOf('TERCEIRO')>=0 || n==='TERCEIRO' || v==='terceiro') ? 'TERCEIRO' : 'PROPRIO';
+  }
+  function metaUploadV246V352(){
+    var tipoEnvio=tipoEnvioAtualV352();
+    var usuario=(window.ESTADO&&ESTADO.usuario)||{};
+    var emailLogado=txt((window.ESTADO&&ESTADO.email)||localStorage.getItem('PSS_BOLAO_EMAIL')||'').toLowerCase();
+    var emailParticipante = tipoEnvio==='TERCEIRO'
+      ? val(['emailParticipanteTerceiroV225','emailParticipanteComprovanteTerceiro','emailParticipanteTerceiro']).toLowerCase()
+      : emailLogado;
+    var nomeParticipante = tipoEnvio==='TERCEIRO'
+      ? val(['nomeParticipanteTerceiroV225','nomeParticipanteComprovanteTerceiro','nomeParticipanteTerceiro','nomeProvisorioTerceiroV272'])
+      : txt(usuario.nome||usuario.NOME||emailLogado);
+
+    return {
+      tipoEnvio: tipoEnvio,
+      adminEmail: emailLogado,
+      emailParticipante: emailParticipante,
+      nomeParticipante: nomeParticipante,
+      tipoCota: val(['tipoCota','tipoCotaComprovante']) || 'unica',
+      qtdPartes: val(['qtdPartes','qtdPartesComprovante']),
+      fracaoCota: val(['fracaoCotaTerceiroV225','fracaoComprovanteTerceiroV225','fracaoCota','fracaoComprovante']),
+      qtdCotas: val(['qtdCotasComprovante','qtdCotas','qtdCotasSelecionadas']) || '1',
+      qtdCotasComprovante: val(['qtdCotasComprovante','qtdCotas','qtdCotasSelecionadas']) || '1',
+      nomesPartes: coletarNomesPartesV352(),
+      participantesDivisaoResolvidos: coletarParticipantesResolvidosV352(),
+      obsAdmin: val(['obsComprovanteTerceiroV225','obsAdmin','observacaoComprovante']),
+      valorEsperado: val(['valorEsperadoComprovante','valorEsperado','valorCotaComprovante']),
+      valorPagamentoAgora: val(['valorPagamentoAgora','valorComprovante','valorPagoComprovante']),
+      valorTotal: val(['valorTotalComprovante','valorTotal']),
+      cotasEquivalentes: val(['cotasEquivalentes','cotasEquivalentesComprovante']),
+      idAquisicao: val(['idAquisicaoComprovante','idAquisicao'])
+    };
+  }
+
+  function injectUploadModalStyleV352(){
+    if(byId('pss-upload-v352-style')) return;
+    var css=document.createElement('style');
+    css.id='pss-upload-v352-style';
+    css.textContent=''+
+      '.pss-upload-v352-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:30000;display:none;align-items:center;justify-content:center;padding:12px;}'+
+      '.pss-upload-v352-backdrop.open{display:flex;}'+
+      '.pss-upload-v352-box{width:min(680px,100%);height:min(720px,94vh);background:#fff;border-radius:16px;box-shadow:0 22px 70px rgba(0,0,0,.38);overflow:hidden;display:flex;flex-direction:column;border-top:5px solid #0b6f28;}'+
+      '.pss-upload-v352-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid #dfe8e2;background:#f8fcf9;}'+
+      '.pss-upload-v352-head b{color:#003b12;font-size:15px;}'+
+      '.pss-upload-v352-close{border:0;border-radius:999px;background:#e9eef2;color:#111;font-weight:900;width:34px;height:34px;cursor:pointer;font-size:20px;line-height:1;}'+
+      '.pss-upload-v352-frame{border:0;width:100%;height:100%;flex:1;background:#f4f7f5;}'+
+      '@media(max-width:720px){.pss-upload-v352-backdrop{padding:0;align-items:stretch}.pss-upload-v352-box{width:100%;height:100vh;border-radius:0}.pss-upload-v352-head{padding-top:calc(12px + env(safe-area-inset-top));}}';
+    document.head.appendChild(css);
+  }
+  function ensureUploadModalV352(){
+    injectUploadModalStyleV352();
+    var modal=byId('pss-upload-v352-modal');
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.id='pss-upload-v352-modal';
+    modal.className='pss-upload-v352-backdrop';
+    modal.innerHTML='<div class="pss-upload-v352-box"><div class="pss-upload-v352-head"><b>Enviar comprovante</b><button type="button" class="pss-upload-v352-close" aria-label="Fechar">×</button></div><iframe id="pss-upload-v352-iframe" class="pss-upload-v352-frame" allow="clipboard-read; clipboard-write"></iframe></div>';
+    document.body.appendChild(modal);
+    var close=modal.querySelector('.pss-upload-v352-close');
+    if(close) close.addEventListener('click',fecharUploadModalV352);
+    modal.addEventListener('click',function(ev){ if(ev.target===modal) fecharUploadModalV352(); });
+    return modal;
+  }
+  function fecharUploadModalV352(){
+    var frame=byId('pss-upload-v352-iframe');
+    if(frame) frame.src='about:blank';
+    var modal=byId('pss-upload-v352-modal');
+    if(modal) modal.classList.remove('open');
+  }
+
+  function abrirUploadComprovanteV246V352(){
+    var loteria=val(['uploadBolao','loteriaComprovante']) || txt((window.ESTADO&&ESTADO.bolaoSelecionado)||'');
+    if(!loteria) return toastSafe('Selecione a loteria do depósito.','error');
+    var meta=metaUploadV246V352();
+    if(meta.tipoEnvio==='TERCEIRO'){
+      try{ if(typeof isAdmin==='function' && !isAdmin()) return toastSafe('Apenas administrador pode enviar comprovante de terceiro.','error'); }catch(e){}
+      if(!meta.emailParticipante) return toastSafe('Selecione o participante vinculado ao comprovante.','error');
+    }
+    if(!meta.emailParticipante) meta.emailParticipante=txt((window.ESTADO&&ESTADO.email)||'').toLowerCase();
+    if(!meta.adminEmail) meta.adminEmail=txt((window.ESTADO&&ESTADO.email)||'').toLowerCase();
+
+    try{ if(window.ESTADO) ESTADO.bolaoSelecionado=loteria; localStorage.setItem('PSS_BOLAO_SELECIONADO',loteria); }catch(e){}
+
+    var apiUrl=txt((window.CONFIG&&CONFIG.apiUrl)||'');
+    if(!apiUrl) return toastSafe('API URL não configurada para envio do comprovante.','error');
+
+    var modal=ensureUploadModalV352();
+    var frame=byId('pss-upload-v352-iframe');
+    var params=new URLSearchParams();
+    params.set('mode','upload_app');
+    params.set('loteria',loteria);
+    params.set('email',meta.adminEmail||meta.emailParticipante||'');
+    params.set('adminEmail',meta.adminEmail||'');
+    params.set('tipoEnvio',meta.tipoEnvio||'PROPRIO');
+    params.set('emailParticipante',meta.emailParticipante||meta.adminEmail||'');
+    params.set('nomeParticipante',meta.nomeParticipante||'');
+    params.set('tipoCota',meta.tipoCota||'');
+    params.set('qtdPartes',meta.qtdPartes||'');
+    params.set('fracaoCota',meta.fracaoCota||'');
+    params.set('qtdCotas',meta.qtdCotas||'');
+    params.set('qtdCotasComprovante',meta.qtdCotasComprovante||meta.qtdCotas||'');
+    params.set('nomesPartes',JSON.stringify(meta.nomesPartes||[]));
+    params.set('participantesDivisaoResolvidos',JSON.stringify(meta.participantesDivisaoResolvidos||[]));
+    params.set('obsAdmin',meta.obsAdmin||'');
+    params.set('valorEsperado',meta.valorEsperado||'');
+    params.set('valorPagamentoAgora',meta.valorPagamentoAgora||meta.valorEsperado||'');
+    params.set('valorTotal',meta.valorTotal||'');
+    params.set('cotasEquivalentes',meta.cotasEquivalentes||'');
+    params.set('idAquisicao',meta.idAquisicao||'');
+    params.set('v','V246_IFRAME_APPS_SCRIPT_RUN');
+    params.set('t',Date.now());
+
+    setProg(1,'Abrindo envio','Fluxo V246 restaurado: iframe interno + google.script.run.','run');
+    frame.src=apiUrl+'?'+params.toString();
+    modal.classList.add('open');
+    return false;
+  }
+
+  window.addEventListener('message',function(ev){
+    var data=ev&&ev.data?ev.data:null;
+    if(!data || data.pssUploadComprovanteApp!==true) return;
+    if(data.tipo==='fechar'){ fecharUploadModalV352(); return; }
+    if(data.tipo==='sucesso'){
+      var r=data.payload||{};
+      setProg(100,'Comprovante enviado',(r.msg||'Comprovante enviado com sucesso.'),'ok');
+      toastSafe(r.msg||'Comprovante enviado com sucesso.','success');
+      try{ cacheDel_(cacheKeyLoteria_('historicoComprovantes', val(['uploadBolao']) || (window.ESTADO&&ESTADO.bolaoSelecionado) || '')); }catch(e){}
+      try{ if(typeof renderComprovante==='function') setTimeout(function(){ renderComprovante(); },900); }catch(e2){}
+      return;
+    }
+    if(data.tipo==='erro'){
+      var msg=(data.payload&&(data.payload.msg||data.payload.erro))||'Falha ao enviar comprovante.';
+      setProg(0,'Falha no envio',msg,'error');
+      toastSafe(msg,'error');
+    }
+  });
+
+  function reamarrarBotoesV352(){
+    var ids=['btnAbrirUploadComprovanteV247','btnEnviarComprovante'];
+    ids.forEach(function(id){
+      var b=byId(id);
+      if(b){
+        b.type='button';
+        b.onclick=function(ev){ if(ev&&ev.preventDefault) ev.preventDefault(); if(ev&&ev.stopPropagation) ev.stopPropagation(); return abrirUploadComprovanteV246V352(); };
+        if(id==='btnEnviarComprovante' && /ENVIAR AGORA/i.test(b.textContent||'')) b.textContent='Carregar comprovante';
+      }
+    });
+    try{
+      var form=(byId('btnAbrirUploadComprovanteV247')||byId('btnEnviarComprovante'));
+      if(form && form.form){ form.form.onsubmit=function(ev){ if(ev&&ev.preventDefault) ev.preventDefault(); return abrirUploadComprovanteV246V352(); }; }
+    }catch(e){}
+  }
+
+  window.PSS_abrirUploadComprovanteV272=abrirUploadComprovanteV246V352;
+  window.abrirUploadComprovanteAppsScriptV245=abrirUploadComprovanteV246V352;
+  window.enviarComprovante=function(ev){ if(ev&&ev.preventDefault) ev.preventDefault(); return abrirUploadComprovanteV246V352(); };
+  try{ enviarComprovante=window.enviarComprovante; }catch(e){}
+
+  var renderComprovanteBaseV352=window.renderComprovante;
+  if(typeof renderComprovanteBaseV352==='function'){
+    window.renderComprovante=function(){
+      var r=renderComprovanteBaseV352.apply(this,arguments);
+      setTimeout(reamarrarBotoesV352,50);
+      setTimeout(reamarrarBotoesV352,450);
+      return r;
+    };
+    try{ renderComprovante=window.renderComprovante; }catch(e){}
+  }
+
+  document.addEventListener('click',function(ev){
+    var b=ev.target&&ev.target.closest?ev.target.closest('button'):null;
+    if(!b) return;
+    if(b.id==='btnAbrirUploadComprovanteV247' || b.id==='btnEnviarComprovante'){
+      ev.preventDefault();
+      ev.stopPropagation();
+      return abrirUploadComprovanteV246V352();
+    }
+  },true);
+
+  setTimeout(reamarrarBotoesV352,120);
+  setTimeout(reamarrarBotoesV352,1000);
+
+  window.diagnosticarIndexV352=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      login:'Firebase preservado da V351',
+      upload:'V246_IFRAME_APPS_SCRIPT_RUN restaurado',
+      abreForaDoSite:false,
+      transporte:'iframe interno mode=upload_app + google.script.run',
+      cacheLocal:'mantido; carregarBoloes/cacheGet/cacheSet não alterados',
+      apiUrl:txt((window.CONFIG&&CONFIG.apiUrl)||''),
+      botaoCarregar:!!(byId('btnAbrirUploadComprovanteV247')||byId('btnEnviarComprovante')),
+      regra:'Não usar V340 direto, não abrir Apps Script em nova aba, não trocar login.'
+    };
+  };
+  window.diagnosticarUploadComprovanteIndexV340=function(){
+    return {sucesso:true, sobrescrito:true, versao:V, upload:'V340 direto desativado; V246 iframe interno ativo'};
   };
 })();
 </script>
