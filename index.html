@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V347_CORRIGE_BUSCA_PARTICIPANTE_TERCEIRO_SEM_WINDOWNAME</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V348_BASE_V347_UPLOAD_V246_NOTIFICACOES</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V335_DIVISAO_COTAS_TELEGRAM_PERFIL_SEGURO',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V348_BASE_V347_UPLOAD_V246_NOTIFICACOES',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -25543,6 +25543,113 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.diagnosticarBuscaParticipanteTerceiroV347=function(q){
     q=q||'';
     return {sucesso:true,versao:V,cacheLocal:usuariosCacheLocal().length,cacheBusca:getCacheParticipantes().length,resultados:filtrarParticipantes(usuariosCacheLocal().concat(getCacheParticipantes()),q).length,regra:'Busca de participante para comprovante de terceiro usa cache local + API rápida JSONP/fetch. Não usa fallback window.name.'};
+  };
+})();
+</script>
+
+
+<script>
+(function(){
+  var V='V348_BASE_V347_UPLOAD_V246_NOTIFICACOES';
+  try{ if(window.CONFIG) CONFIG.versao=V; }catch(e){}
+
+  function reforcarUploadComprovanteV246_(){
+    try{
+      if(typeof window.abrirUploadComprovanteAppsScriptV245 === 'function'){
+        window.enviarComprovante = function(ev){
+          if(ev && ev.preventDefault) ev.preventDefault();
+          return window.abrirUploadComprovanteAppsScriptV245();
+        };
+      }
+    }catch(e){}
+  }
+
+  function reforcarFechamentoModalPublico_(){
+    try{
+      var backdrop=document.getElementById('modalBackdrop');
+      var modal=document.querySelector('#modalBackdrop .modal');
+      if(backdrop && !backdrop.dataset.v348CloseFix){
+        backdrop.dataset.v348CloseFix='1';
+        backdrop.addEventListener('click',function(ev){
+          if(ev && ev.target===backdrop && typeof window.fecharModal==='function') window.fecharModal();
+        },true);
+      }
+      document.querySelectorAll('.close,[data-close-modal],button[aria-label="Fechar"]').forEach(function(btn){
+        if(btn.dataset.v348CloseFix) return;
+        btn.dataset.v348CloseFix='1';
+        btn.addEventListener('click',function(ev){
+          try{ if(ev){ev.preventDefault();ev.stopPropagation();} }catch(e){}
+          if(typeof window.fecharModal==='function') window.fecharModal();
+          else if(backdrop) backdrop.classList.remove('open');
+        },true);
+      });
+    }catch(e){}
+  }
+
+  function reforcarBotoesPublicos_(){
+    try{
+      document.querySelectorAll('button').forEach(function(btn){
+        var tx=(btn.textContent||'').trim().toUpperCase();
+        if(btn.dataset.v348PublicFix) return;
+        if(tx==='ENTRAR NO SISTEMA'){
+          btn.dataset.v348PublicFix='1';
+          btn.addEventListener('click',function(ev){
+            try{ if(ev){ev.preventDefault();ev.stopPropagation();} }catch(e){}
+            if(typeof window.renderLogin==='function') window.renderLogin();
+          },true);
+        }
+        if(tx==='SOLICITAR CADASTRO' || tx==='CADASTRAR'){
+          btn.dataset.v348PublicFix='1';
+          btn.addEventListener('click',function(ev){
+            try{ if(ev){ev.preventDefault();ev.stopPropagation();} }catch(e){}
+            if(typeof window.abrirCadastro==='function') window.abrirCadastro();
+          },true);
+        }
+        if(tx==='VER REGULAMENTO'){
+          btn.dataset.v348PublicFix='1';
+          btn.addEventListener('click',function(ev){
+            try{ if(ev){ev.preventDefault();ev.stopPropagation();} }catch(e){}
+            if(typeof window.abrirRegulamentoPublico==='function') window.abrirRegulamentoPublico();
+          },true);
+        }
+        if(tx==='VER BOLÕES ATIVOS'){
+          btn.dataset.v348PublicFix='1';
+          btn.addEventListener('click',function(ev){
+            try{ if(ev){ev.preventDefault();ev.stopPropagation();} }catch(e){}
+            if(typeof window.scrollHomePublica==='function') window.scrollHomePublica('homeBoloesPublicos');
+            else { var el=document.getElementById('homeBoloesPublicos'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+          },true);
+        }
+      });
+    }catch(e){}
+  }
+
+  function aplicarFixesV348_(){
+    reforcarUploadComprovanteV246_();
+    reforcarFechamentoModalPublico_();
+    reforcarBotoesPublicos_();
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    aplicarFixesV348_();
+    setTimeout(aplicarFixesV348_,300);
+    setTimeout(aplicarFixesV348_,1200);
+  });
+  try{
+    var obs=new MutationObserver(function(){ aplicarFixesV348_(); });
+    obs.observe(document.documentElement,{childList:true,subtree:true});
+  }catch(eObs){}
+
+  window.diagnosticarIndexV348=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      apiUrl:(window.CONFIG&&CONFIG.apiUrl)||'',
+      configVersao:(window.CONFIG&&CONFIG.versao)||'',
+      uploadV246: typeof window.abrirUploadComprovanteAppsScriptV245 === 'function' ? 'OK_IFRAME_INTERNO_GOOGLE_SCRIPT_RUN' : 'AUSENTE',
+      enviarComprovante: typeof window.enviarComprovante === 'function' ? 'OK' : 'AUSENTE',
+      regra:'Base V347 preservada; busca rápida mantida; upload de comprovante usa fluxo V246 dentro do site; sem abertura externa de script.google.com.'
+    };
   };
 })();
 </script>
