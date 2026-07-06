@@ -26190,5 +26190,247 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+<script>
+/* =====================================================================
+ * V353 — LETREIRO ROBUSTO NA HOME PÚBLICA SEM MEXER EM LOGIN/UPLOAD
+ * Base: V352.
+ * Foco exclusivo:
+ * - Letreiro digital somente na home pública.
+ * - Exibe cache local imediatamente quando existir.
+ * - Atualiza em segundo plano pela API V346/V307/V343.
+ * - Não apaga cache válido quando a fonte oscilar.
+ * - Não altera Firebase, login, upload V246, OCR, Telegram/e-mail ou menus.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V353_LETREIRO_ROBUSTO_APLICADO) return;
+  window.PSS_V353_LETREIRO_ROBUSTO_APLICADO = true;
+
+  var V='V353_LETREIRO_ROBUSTO_HOME_PUBLICA';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function byId(id){return document.getElementById(id);}
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
+  function attr(v){try{if(typeof escapeAttr==='function')return escapeAttr(v);}catch(e){}return esc(v).replace(/`/g,'&#96;');}
+  function norm(v){return txt(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');}
+  function agora(){try{if(typeof dataHoraAtualCurta==='function')return dataHoraAtualCurta();}catch(e){}return new Date().toLocaleString('pt-BR');}
+
+  function isHomePublica(){
+    var view=byId('view');
+    if(!view)return false;
+    if(document.body.classList.contains('app-logado'))return false;
+    if(view.querySelector('.login-wrap'))return false;
+    return !!view.querySelector('.home-hero');
+  }
+  function removerForaHome(){
+    try{
+      if(isHomePublica())return;
+      var el=byId('homeResultadosPublicosV213');
+      if(el&&el.parentNode)el.parentNode.removeChild(el);
+    }catch(e){}
+  }
+
+  function unwrap(r){
+    var d=r||{};
+    try{if(d.dados!==undefined && !d.resultados && !d.lista && !d.letreiroTexto && !d.resultadosPublicos)d=d.dados;}catch(e){}
+    try{if(d.result!==undefined && !d.resultados && !d.lista && !d.letreiroTexto && !d.resultadosPublicos)d=d.result;}catch(e){}
+    try{if(d.resultadosPublicos)d=d.resultadosPublicos;}catch(e){}
+    return d||{};
+  }
+  function normalizar(d){
+    d=unwrap(d);
+    var lista=[];
+    if(Array.isArray(d.resultados))lista=d.resultados;
+    else if(Array.isArray(d.ultimosResultados))lista=d.ultimosResultados;
+    else if(Array.isArray(d.lista))lista=d.lista;
+    else if(Array.isArray(d.dados))lista=d.dados;
+    var out={};
+    try{Object.keys(d||{}).forEach(function(k){out[k]=d[k];});}catch(e){}
+    out.resultados=lista;
+    out.letreiroTexto=txt(d.letreiroTexto||d.letreiroResultadosTexto||d.textoLetreiro||'');
+    out.atualizadoEm=txt(d.atualizadoEm||d.leituraEm||d.geradoEm||d.dataHora||d.salvoEm||agora());
+    return out;
+  }
+  function valido(d){d=normalizar(d);return (Array.isArray(d.resultados)&&d.resultados.length>0)||!!txt(d.letreiroTexto);}
+
+  var CACHE_KEYS=[
+    'PSS_RESULTADOS_PUBLICOS_V353',
+    'PSS_RESULTADOS_PUBLICOS_V344',
+    'PSS_RESULTADOS_PUBLICOS_V343',
+    'PSS_RESULTADOS_PUBLICOS_V341',
+    'PSS_RESULTADOS_PUBLICOS_V304',
+    'PSS_RESULTADOS_PUBLICOS_V237',
+    'PSS_RESULTADOS_PUBLICOS_V213'
+  ];
+  function salvarCache(d){
+    d=normalizar(d);
+    if(!valido(d))return;
+    d.salvoEm=agora();
+    var p={ts:Date.now(),dados:d};
+    CACHE_KEYS.forEach(function(k){try{localStorage.setItem(k,JSON.stringify(p));}catch(e){}});
+  }
+  function lerCache(){
+    for(var i=0;i<CACHE_KEYS.length;i++){
+      try{
+        var raw=localStorage.getItem(CACHE_KEYS[i]);
+        if(!raw)continue;
+        var o=JSON.parse(raw);
+        var d=normalizar(o.dados||o);
+        if(valido(d)){d.cacheLocal=true;d.salvoEm=d.salvoEm||((o.dados||{}).salvoEm)||'';return d;}
+      }catch(e){}
+    }
+    return null;
+  }
+
+  function inserirPainel(){
+    if(!isHomePublica()){removerForaHome();return null;}
+    var existe=byId('homeResultadosPublicosV213');
+    if(existe)return existe;
+    var hero=document.querySelector('.home-hero');
+    var html='<section class="home-section resultados-publicos-panel" id="homeResultadosPublicosV213">'+
+      '<div class="resultados-publicos-head"><div><h2>Últimos resultados das loterias</h2><small id="resultadosPublicosAtualizadoV213">Carregando informações...</small></div>'+ 
+      '<button type="button" class="btn btn-light btn-pill" onclick="carregarLetreiroResultadosPublicosV213(true)">Atualizar resultados</button></div>'+ 
+      '<div id="resultadosPublicosTickerV213"><div class="notice info">Carregando últimos resultados...</div></div>'+ 
+      '<div class="resultados-publicos-actions"><span class="hint">Resultados exibidos de forma resumida para consulta rápida.</span>'+ 
+      '<button type="button" class="btn btn-light btn-pill" onclick="abrirModalResultadosPublicosV213&&abrirModalResultadosPublicosV213()">Ver todos os resultados</button></div></section>';
+    if(hero)hero.insertAdjacentHTML('afterend',html);
+    else{var view=byId('view');if(view)view.insertAdjacentHTML('afterbegin',html);}
+    return byId('homeResultadosPublicosV213');
+  }
+
+  function corLoteria(nome){
+    var k=norm(nome);
+    if(k.indexOf('mega')>=0)return '#209869';
+    if(k.indexOf('lotofacil')>=0||k.indexOf('facil')>=0)return '#930089';
+    if(k.indexOf('quina')>=0)return '#260085';
+    if(k.indexOf('dupla')>=0)return '#a61324';
+    if(k.indexOf('federal')>=0)return '#103099';
+    if(k.indexOf('diadesorte')>=0||k.indexOf('sorte')>=0)return '#cb852b';
+    if(k.indexOf('supersete')>=0||k.indexOf('super')>=0&&k.indexOf('sete')>=0)return '#a8cf45';
+    if(k.indexOf('loteca')>=0)return '#f78100';
+    if(k.indexOf('lotomania')>=0)return '#f78100';
+    if(k.indexOf('timemania')>=0)return '#00a651';
+    if(k.indexOf('milionaria')>=0)return '#2e3078';
+    return '#0b6f28';
+  }
+  function itemResultado(r){
+    r=r||{};
+    var nome=txt(r.nome||r.loteria||r.tipoJogo||r.slug||'Loteria').replace(/_/g,' ')||'Loteria';
+    var concurso=txt(r.concurso||r.numero||r.numeroConcurso||'');
+    var data=txt(r.dataApuracao||r.data||r.dataResultado||'');
+    var dezenas=txt(r.dezenas||r.numeros||r.resultado||'').replace(/[,;|]+/g,' • ').replace(/\s*-\s*/g,' • ').replace(/\s+/g,' ');
+    return '<span class="resultado-letreiro-item"><span class="resultado-letreiro-badge" style="background:'+attr(corLoteria(nome))+' !important;color:#fff!important;">'+esc(nome.toUpperCase())+'</span><span class="resultado-letreiro-info">'+(concurso?'<span class="resultado-letreiro-concurso">'+esc(concurso)+'</span>':'')+(data?'<span class="resultado-letreiro-data">'+esc(data)+'</span>':'')+'<span class="resultado-letreiro-sep">:</span><span class="resultado-letreiro-dezenas">'+esc(dezenas)+'</span></span></span>';
+  }
+  function renderLetreiro(d){
+    if(!isHomePublica()){removerForaHome();return;}
+    inserirPainel();
+    d=normalizar(d);
+    var box=byId('resultadosPublicosTickerV213');
+    var atual=byId('resultadosPublicosAtualizadoV213');
+    if(!box)return;
+    window.PSS_RESULTADOS_PUBLICOS_V213=d;
+    if(atual){
+      atual.textContent='Atualizado em '+txt(d.atualizadoEm||d.salvoEm||agora());
+      atual.removeAttribute('title');
+    }
+    var lista=Array.isArray(d.resultados)?d.resultados:[];
+    if(lista.length){
+      var grupo='<span class="resultados-ticker-grupo"><span class="resultados-ticker-prefixo">📢 Últimos resultados</span>'+lista.slice(0,10).map(itemResultado).join('<span class="resultado-letreiro-sep">|</span>')+'</span>';
+      box.innerHTML='<div class="resultados-ticker resultados-ticker-v353" title="Passe o mouse para pausar"><div class="resultados-ticker-track">'+grupo+grupo+'</div></div>';
+    }else if(txt(d.letreiroTexto)){
+      var c=esc(d.letreiroTexto);
+      box.innerHTML='<div class="resultados-ticker resultados-ticker-v353"><div class="resultados-ticker-track"><span class="resultados-ticker-text">'+c+'</span><span aria-hidden="true">'+c+'</span></div></div>';
+    }else{
+      box.innerHTML='<div class="notice warn">Últimos resultados temporariamente indisponíveis.</div>';
+    }
+  }
+
+  async function chamar(action,dados,args,timeout){
+    dados=dados||{};args=args||[];
+    if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados,args,timeout||16000);
+    if(typeof apiMulti==='function')return apiMulti([{action:action,dados:dados,args:args}]);
+    if(typeof api==='function')return api(action,dados,args);
+    throw new Error('API do site não inicializada.');
+  }
+  async function buscarFresh(){
+    var stamp=Date.now();
+    var acts=[
+      ['getResultadosLoteriasPublicos',{cacheBust:stamp},[true,stamp],18000],
+      ['getLetreiroResultadosPublicos',{cacheBust:stamp},[true,stamp],18000],
+      ['ultimosResultadosPublicos',{cacheBust:stamp},[true,stamp],18000],
+      ['PSSAPI_RESULTADOS_LOTERIAS_PUBLICOS_FRESH_V346',{cacheBust:stamp},[true,stamp],18000],
+      ['PSSAPI_RESULTADOS_LOTERIAS_PUBLICOS_FRESH_V307',{cacheBust:stamp},[true,stamp],18000],
+      ['PSSAPI_RESULTADOS_LOTERIAS_PUBLICOS_FRESH_V296',{cacheBust:stamp},[true,stamp],18000],
+      ['PSSAPI_RESULTADOS_LOTERIAS_PUBLICOS_RAPIDO_V343',{cacheBust:stamp},[stamp],16000],
+      ['getConfigPublica',{cacheBust:stamp},[stamp],16000]
+    ];
+    var ultimo=null;
+    for(var i=0;i<acts.length;i++){
+      try{
+        var a=acts[i];
+        var r=await chamar(a[0],a[1],a[2],a[3]);
+        r=normalizar(r);
+        if(valido(r))return r;
+        ultimo=new Error('Sem resultados válidos em '+a[0]);
+      }catch(e){ultimo=e;}
+    }
+    throw ultimo||new Error('Nenhuma rota de resultados retornou dados válidos.');
+  }
+
+  window.carregarLetreiroResultadosPublicosV213=async function(forcar){
+    if(!isHomePublica()){removerForaHome();return {sucesso:true,ignorado:true};}
+    inserirPainel();
+    var box=byId('resultadosPublicosTickerV213');
+    var atual=byId('resultadosPublicosAtualizadoV213');
+    var cache=lerCache();
+    if(cache)renderLetreiro(cache);
+    else if(box)box.innerHTML='<div class="notice info"><span class="loading-fast">Carregando últimos resultados...</span></div>';
+    try{
+      var fresh=await buscarFresh();
+      salvarCache(fresh);
+      renderLetreiro(fresh);
+      return fresh;
+    }catch(e){
+      if(cache){
+        renderLetreiro(cache);
+        if(atual){atual.textContent='Atualizado em '+txt(cache.atualizadoEm||cache.salvoEm||agora());atual.title='Fonte ao vivo oscilou; exibindo cache local válido. '+txt(e&&e.message||e);}
+      }else if(box){
+        box.innerHTML='<div class="notice warn">Não foi possível carregar os últimos resultados agora.</div>';
+        if(atual){atual.textContent='Falha temporária ao atualizar resultados';atual.title=txt(e&&e.message||e);}
+      }
+      return {sucesso:false,erro:txt(e&&e.message||e)};
+    }
+  };
+
+  var renderHomeBaseV353=window.renderHomePublica;
+  if(typeof renderHomeBaseV353==='function'){
+    window.renderHomePublica=function(){
+      var r=renderHomeBaseV353.apply(this,arguments);
+      setTimeout(function(){try{window.carregarLetreiroResultadosPublicosV213(false);}catch(e){}},250);
+      return r;
+    };
+    try{renderHomePublica=window.renderHomePublica;}catch(e){}
+  }
+
+  window.diagnosticarIndexV353=function(){
+    var cache=lerCache();
+    return {
+      sucesso:true,
+      versao:V,
+      homePublica:isHomePublica(),
+      painel:!!byId('homeResultadosPublicosV213'),
+      cacheLocal:!!cache,
+      qtdCache:cache&&cache.resultados?cache.resultados.length:0,
+      apiUrl:(window.CONFIG&&CONFIG.apiUrl)||'',
+      regra:'Letreiro somente na home pública, cache local preservado, sem alterar login Firebase nem upload V246.'
+    };
+  };
+
+  setTimeout(function(){try{window.carregarLetreiroResultadosPublicosV213(false);}catch(e){}},400);
+})();
+</script>
+
 </body>
 </html>
