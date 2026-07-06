@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V348_BASE_V347_UPLOAD_V246_NOTIFICACOES</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V348_BASE_V347_UPLOAD_V246_NOTIFICACOES',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -25550,7 +25550,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 
 <script>
 (function(){
-  var V='V348_BASE_V347_UPLOAD_V246_NOTIFICACOES';
+  var V='V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA';
   try{ if(window.CONFIG) CONFIG.versao=V; }catch(e){}
 
   function reforcarUploadComprovanteV246_(){
@@ -25649,6 +25649,274 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
       uploadV246: typeof window.abrirUploadComprovanteAppsScriptV245 === 'function' ? 'OK_IFRAME_INTERNO_GOOGLE_SCRIPT_RUN' : 'AUSENTE',
       enviarComprovante: typeof window.enviarComprovante === 'function' ? 'OK' : 'AUSENTE',
       regra:'Base V347 preservada; busca rápida mantida; upload de comprovante usa fluxo V246 dentro do site; sem abertura externa de script.google.com.'
+    };
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V351 — FOCO RESTRITO FIREBASE
+ * Base: V348/V347.
+ * Corrige somente:
+ * 1) letreiro digital apenas na home pública;
+ * 2) login da página pública mantido via Firebase, sem interceptar o botão de submit;
+ * 3) fechamento do modal pelo X/clique fora;
+ * 4) URL limpa na barra do navegador.
+ * Não altera upload de comprovante, jogos, OCR, baixa, Telegram/e-mail ou GS.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V351_PUBLICA_LOGIN_FIREBASE_FIX_APLICADO) return;
+  window.PSS_V351_PUBLICA_LOGIN_FIREBASE_FIX_APLICADO = true;
+
+  var V='V351_PUBLICA_FIREBASE_LOGIN_LETREIRO_HOME_URL_LIMPA';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+
+  function byId(id){return document.getElementById(id);}
+  function txt(v){return String(v==null?'':v).trim();}
+  function norm(v){return txt(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();}
+  function esc(v){
+    try{ if(typeof escapeHtml==='function') return escapeHtml(v); }catch(e){}
+    return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function attr(v){
+    try{ if(typeof escapeAttr==='function') return escapeAttr(v); }catch(e){}
+    return esc(v).replace(/`/g,'&#96;');
+  }
+  function view(){return byId('view');}
+  function setViewV350(html){var v=view(); if(v) v.innerHTML=html;}
+  function emailSalvoV350(){return txt((window.ESTADO&&ESTADO.email)||localStorage.getItem('PSS_BOLAO_EMAIL')||'').toLowerCase();}
+
+  function limparUrlV350(){
+    try{
+      var p=new URLSearchParams(location.search||'');
+      if(p.get('pss_bridge_return')==='1') return;
+      if(p.get('mode')) return;
+      if(location.search || location.hash){
+        history.replaceState(null, document.title, location.origin + location.pathname);
+      }
+    }catch(e){}
+  }
+
+  function isHomePublicaV350(){
+    var v=view();
+    if(!v) return false;
+    if(document.body.classList.contains('app-logado')) return false;
+    if(v.querySelector('.login-wrap')) return false;
+    return !!v.querySelector('.home-hero');
+  }
+  function removerLetreiroForaHomeV350(){
+    try{
+      if(isHomePublicaV350()) return;
+      var el=byId('homeResultadosPublicosV213');
+      if(el&&el.parentNode) el.parentNode.removeChild(el);
+    }catch(e){}
+  }
+
+  var carregarLetreiroBaseV350=window.carregarLetreiroResultadosPublicosV213;
+  window.carregarLetreiroResultadosPublicosV213=function(forcar){
+    if(!isHomePublicaV350()){
+      removerLetreiroForaHomeV350();
+      return Promise.resolve({sucesso:true,ignorado:true,regra:'letreiro somente na home publica'});
+    }
+    if(typeof carregarLetreiroBaseV350==='function') return carregarLetreiroBaseV350.apply(this,arguments);
+    return Promise.resolve({sucesso:false,msg:'Função de letreiro não localizada.'});
+  };
+
+  function usuarioNormalizadoV350(u,email){
+    u=u&&typeof u==='object'?u:{};
+    var perfil=txt(u.perfil||u.PERFIL||u.role||u.ROLE||'usuario')||'usuario';
+    var role=txt(u.role||u.ROLE||perfil).toLowerCase();
+    if(norm(perfil).indexOf('ADMIN')>=0 || norm(perfil).indexOf('MESTRE')>=0 || norm(role).indexOf('ADMIN')>=0) role='admin';
+    return {
+      nome:txt(u.nome||u.NOME||u.usuario||u.USUARIO||u.name||email||'Usuário')||'Usuário',
+      email:txt(u.email||u.EMAIL||email||'').toLowerCase(),
+      perfil:perfil,
+      role:role
+    };
+  }
+  function salvarSessaoV350(u){
+    try{ if(typeof salvarSessao==='function') salvarSessao(u); else localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u,{_ts:Date.now(),_versao:V}))); }catch(e){}
+  }
+  function finalizarLoginV350(u,lembrar){
+    u=usuarioNormalizadoV350(u,u&&u.email);
+    if(!u.email) throw new Error('Login retornou sem e-mail.');
+    window.ESTADO=window.ESTADO||{};
+    ESTADO.usuario=u;
+    ESTADO.email=u.email;
+    ESTADO.role=u.role;
+    if(lembrar) localStorage.setItem('PSS_BOLAO_EMAIL',u.email); else localStorage.removeItem('PSS_BOLAO_EMAIL');
+    salvarSessaoV350(u);
+    removerLetreiroForaHomeV350();
+    if(typeof aplicarLayoutLogado==='function') aplicarLayoutLogado();
+    else{
+      try{document.body.classList.add('app-logado');}catch(e){}
+      var ph=byId('publicHeader'); if(ph) ph.classList.add('hidden');
+      var ah=byId('appHeader'); if(ah) ah.classList.remove('hidden');
+      var ud=byId('userDisplay'); if(ud) ud.textContent=(u.nome||'Usuário')+(u.email?' • '+u.email:'');
+    }
+    limparUrlV350();
+    if(typeof navegar==='function') navegar('inicio');
+  }
+
+  async function loginPlanilhaV350(email,senha){
+    var dados={email:email,senha:senha,password:senha,cacheBust:Date.now()};
+    var args=[email,senha];
+    if(typeof apiJsonpDireto_==='function') return apiJsonpDireto_('login',dados,args,18000);
+    if(typeof apiMulti==='function') return apiMulti([{action:'login',dados:dados,args:args},{action:'processarLogin',dados:dados,args:args}]);
+    if(typeof api==='function') return api('login',dados,args);
+    throw new Error('API do site não inicializada para login.');
+  }
+  async function loginFirebaseV350(email,senha,msg){
+    if(typeof inicializarFirebase_!=='function' || !window.firebase) throw new Error('Firebase não carregado.');
+    await inicializarFirebase_();
+    await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);
+    if(msg) msg.innerHTML='<div class="notice info">Verificando aprovação do cadastro...</div>';
+    if(typeof firebaseValidarUsuarioAprovado_==='function') return firebaseValidarUsuarioAprovado_(email);
+    return {nome:email,email:email,perfil:'usuario',role:'usuario'};
+  }
+
+  window.renderLogin=function(){
+    try{document.body.classList.remove('app-logado');}catch(e){}
+    var ph=byId('publicHeader'); if(ph) ph.classList.remove('hidden');
+    var ah=byId('appHeader'); if(ah) ah.classList.add('hidden');
+    setViewV350(
+      '<div class="login-wrap" id="loginWrapV350">'+
+        '<h1>Acesso ao sistema</h1>'+ 
+        '<p>Login via Firebase. A liberação depende da aprovação do cadastro pela administração.</p>'+ 
+        '<div id="loginMsg"></div>'+ 
+        '<form id="formLoginV350" autocomplete="on">'+
+          '<div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="'+attr(emailSalvoV350())+'" required /></div>'+ 
+          '<div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div>'+ 
+          '<label class="checkline"><input type="checkbox" id="lembrarEmail" '+(emailSalvoV350()?'checked':'')+'><span>Lembrar meu e-mail neste aparelho</span></label>'+ 
+          '<button type="submit" id="btnLogin" class="btn btn-block">Entrar</button>'+ 
+        '</form>'+ 
+        '<div class="actions" style="justify-content:center;margin-top:16px;">'+
+          '<button type="button" class="btn btn-light btn-pill" id="btnVoltarInicioV350">Voltar ao início</button>'+ 
+          '<button type="button" class="btn btn-light btn-pill" id="btnCadastroLoginV350">Cadastrar</button>'+ 
+          '<button type="button" class="btn btn-light btn-pill" id="btnResetLoginV350">Esqueci a senha</button>'+ 
+          '<button type="button" class="btn btn-light btn-pill" id="btnLimparLoginV350">Limpar acesso salvo</button>'+ 
+        '</div>'+ 
+      '</div>'
+    );
+    removerLetreiroForaHomeV350();
+    setTimeout(removerLetreiroForaHomeV350,80);
+    setTimeout(limparUrlV350,40);
+    var form=byId('formLoginV350');
+    if(form) form.addEventListener('submit',window.fazerLogin,true);
+    var b1=byId('btnVoltarInicioV350'); if(b1) b1.onclick=function(){ if(typeof renderHomePublica==='function') renderHomePublica(); limparUrlV350(); };
+    var b2=byId('btnCadastroLoginV350'); if(b2) b2.onclick=function(){ if(typeof abrirCadastro==='function') abrirCadastro(); limparUrlV350(); };
+    var b3=byId('btnResetLoginV350'); if(b3) b3.onclick=function(){ if(typeof abrirResetSenha==='function') abrirResetSenha(); limparUrlV350(); };
+    var b4=byId('btnLimparLoginV350'); if(b4) b4.onclick=function(){ try{localStorage.removeItem('PSS_BOLAO_EMAIL');localStorage.removeItem('PSS_BOLAO_SESSAO');sessionStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){} window.renderLogin(); };
+  };
+  try{ renderLogin=window.renderLogin; }catch(e){}
+
+  window.fazerLogin=async function(ev){
+    if(ev&&ev.preventDefault) ev.preventDefault();
+    if(ev&&ev.stopPropagation) ev.stopPropagation();
+    var email=txt(byId('loginEmail')&&byId('loginEmail').value).toLowerCase();
+    var senha=txt(byId('loginSenha')&&byId('loginSenha').value);
+    var lembrar=!!(byId('lembrarEmail')&&byId('lembrarEmail').checked);
+    var btn=byId('btnLogin');
+    var msg=byId('loginMsg');
+    if(!email||!senha){ if(msg) msg.innerHTML='<div class="notice error">Informe e-mail e senha.</div>'; return false; }
+    if(btn){btn.disabled=true;btn.textContent='Entrando...';}
+    if(msg) msg.innerHTML='<div class="notice info">Autenticando no Firebase...</div>';
+    try{
+      var uFb=await loginFirebaseV350(email,senha,msg);
+      finalizarLoginV350(uFb,lembrar);
+      return false;
+    }catch(eFb){
+      try{ if(window.FIREBASE_AUTH) await FIREBASE_AUTH.signOut(); }catch(eOut){}
+      var finalMsg='';
+      try{
+        if(typeof firebaseMensagemErro_==='function') finalMsg=firebaseMensagemErro_(eFb);
+      }catch(eMsg){}
+      finalMsg=finalMsg||txt(eFb&&eFb.message?eFb.message:eFb)||'Não foi possível entrar no sistema pelo Firebase.';
+      if(msg) msg.innerHTML='<div class="notice error">'+esc(finalMsg)+'</div>';
+      try{ if(typeof toast==='function') toast('Falha no login: '+finalMsg,'error'); }catch(eToast){}
+      return false;
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Entrar';}
+    }
+  };
+  try{ fazerLogin=window.fazerLogin; }catch(e){}
+
+  window.fecharModal=function(){
+    try{
+      var m=byId('modalBackdrop');
+      if(m){ m.classList.remove('open'); m.style.display=''; }
+      var c=byId('modalConteudo'); if(c) c.innerHTML='';
+      var t=byId('modalTitulo'); if(t) t.textContent='Aviso';
+    }catch(e){}
+  };
+  try{ fecharModal=window.fecharModal; }catch(e){}
+
+  document.addEventListener('click',function(ev){
+    var t=ev.target;
+    if(!t) return;
+    var inLogin=t.closest&&t.closest('#formLoginV350,.login-wrap');
+    if(inLogin) return;
+    if(t.id==='modalBackdrop'){ ev.preventDefault(); ev.stopPropagation(); window.fecharModal(); return; }
+    var close=t.closest&&t.closest('.close,[data-close-modal],.modal-close,button[aria-label="Fechar"]');
+    if(close){ ev.preventDefault(); ev.stopPropagation(); window.fecharModal(); return; }
+  },true);
+
+  var renderHomeBaseV350=window.renderHomePublica;
+  if(typeof renderHomeBaseV350==='function'){
+    window.renderHomePublica=function(){
+      var r=renderHomeBaseV350.apply(this,arguments);
+      limparUrlV350();
+      setTimeout(function(){
+        if(isHomePublicaV350()){
+          try{ window.carregarLetreiroResultadosPublicosV213(false); }catch(e){}
+        }else{
+          removerLetreiroForaHomeV350();
+        }
+      },220);
+      return r;
+    };
+    try{ renderHomePublica=window.renderHomePublica; }catch(e){}
+  }
+
+  document.addEventListener('click',function(ev){
+    var btn=ev.target&&ev.target.closest?ev.target.closest('button'):null;
+    if(!btn) return;
+    if(btn.closest&&btn.closest('#formLoginV350,.login-wrap')) return;
+    var tx=norm(btn.textContent||'');
+    if(tx==='ENTRAR NO SISTEMA'){
+      ev.preventDefault(); ev.stopPropagation(); window.renderLogin(); return;
+    }
+  },true);
+
+  try{
+    var obs=new MutationObserver(function(){ removerLetreiroForaHomeV350(); });
+    obs.observe(document.documentElement,{childList:true,subtree:true});
+  }catch(eObs){}
+
+  document.addEventListener('DOMContentLoaded',function(){
+    limparUrlV350();
+    setTimeout(removerLetreiroForaHomeV350,80);
+    setTimeout(removerLetreiroForaHomeV350,700);
+    setTimeout(removerLetreiroForaHomeV350,1800);
+  });
+  limparUrlV350();
+  setTimeout(removerLetreiroForaHomeV350,250);
+
+  window.diagnosticarIndexV351=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      apiUrl:(window.CONFIG&&CONFIG.apiUrl)||'',
+      urlLimpa: location.href.indexOf('?')<0 && location.href.indexOf('#')<0,
+      letreiroSomenteHome:isHomePublicaV350(),
+      temLetreiro:!!byId('homeResultadosPublicosV213'),
+      login:'Firebase mantido como fluxo principal; sem API/planilha como alternativa; botão submit não é interceptado pelo patch público',
+      upload:'não alterado',
+      regra:'Letreiro apenas na home pública; login Firebase preservado; modal fecha; URL limpa.'
     };
   };
 })();
