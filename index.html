@@ -26432,5 +26432,68 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * V354 — FIX PONTUAL: CONFIG.apiUrl DISPONÍVEL PARA UPLOAD V246
+ * Base: V353.
+ * Motivo do erro visto no mobile:
+ * - CONFIG foi declarado como const no escopo global léxico.
+ * - Patches recentes conferiam apenas window.CONFIG.
+ * - Em navegador, const global NÃO vira window.CONFIG.
+ * - Resultado: o upload V246 via iframe achava apiUrl vazia.
+ * Correção:
+ * - expõe a mesma CONFIG existente em window.CONFIG.
+ * - não altera login, Firebase, menus, OCR, Telegram/e-mail, letreiro ou GS.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V354_FIX_CONFIG_API_UPLOAD_V246_APLICADO) return;
+  window.PSS_V354_FIX_CONFIG_API_UPLOAD_V246_APLICADO = true;
+
+  var V='V354_FIX_CONFIG_API_UPLOAD_V246';
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function getApiUrlV354(){
+    try{ if(typeof CONFIG!=='undefined' && CONFIG && CONFIG.apiUrl) return txt(CONFIG.apiUrl); }catch(e){}
+    try{ if(window.CONFIG && window.CONFIG.apiUrl) return txt(window.CONFIG.apiUrl); }catch(e2){}
+    return '';
+  }
+
+  try{
+    if(typeof CONFIG!=='undefined' && CONFIG){
+      window.CONFIG = CONFIG;
+      CONFIG.versao = V;
+    }
+  }catch(e){}
+
+  try{ localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e2){}
+
+  var fnUploadOriginal = window.abrirUploadComprovanteAppsScriptV245 || window.PSS_abrirUploadComprovanteV272 || null;
+
+  window.diagnosticarIndexV354=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      apiUrl:getApiUrlV354(),
+      temWindowConfig:!!window.CONFIG,
+      temConstConfig:(function(){try{return typeof CONFIG!=='undefined';}catch(e){return false;}})(),
+      upload:'V246_IFRAME_APPS_SCRIPT_RUN preservado',
+      login:'Firebase preservado',
+      regra:'Correção pontual: expor CONFIG.apiUrl para os patches sem trocar fluxo de upload.'
+    };
+  };
+
+  setTimeout(function(){
+    try{
+      if(!getApiUrlV354()){
+        console.warn('[PSS V354] CONFIG.apiUrl ainda vazio. Verifique o bloco CONFIG no início do index.');
+      }
+    }catch(e){}
+  },300);
+})();
+</script>
+
 </body>
 </html>
