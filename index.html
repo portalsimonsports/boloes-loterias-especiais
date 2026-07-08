@@ -26495,5 +26495,161 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
+<script>
+/* =====================================================================
+ * V355 — FIX PONTUAL: FECHAMENTO DO MODAL DE UPLOAD DE COMPROVANTE
+ * Base: index funcional 08/07/2026 11h.
+ * Foco exclusivo:
+ * - Corrigir X do modal de comprovante no mobile/desktop.
+ * - Aceitar mensagem de fechamento enviada pelo iframe como objeto ou JSON string.
+ * - Fechar também os modais antigos V245/V250, caso ainda existam no DOM.
+ * - Não altera login, Firebase, cache, menus, letreiro, OCR, Drive, Telegram ou API.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V355_FIX_FECHAR_MODAL_UPLOAD_APLICADO) return;
+  window.PSS_V355_FIX_FECHAR_MODAL_UPLOAD_APLICADO = true;
+
+  var V='V355_FIX_FECHAR_MODAL_UPLOAD_COMPROVANTE';
+
+  function byId(id){ return document.getElementById(id); }
+  function safe(fn){ try{ return fn(); }catch(e){ return null; } }
+
+  function limparFrame_(id){
+    var f=byId(id);
+    if(f){
+      try{ f.src='about:blank'; }catch(e){}
+      try{ f.removeAttribute('srcdoc'); }catch(e2){}
+    }
+  }
+
+  function fecharModalUploadComprovanteV355(){
+    limparFrame_('pss-upload-v352-iframe');
+    limparFrame_('pss-upload-v250-iframe');
+    limparFrame_('pss-upload-v245-iframe');
+
+    ['pss-upload-v352-modal','pss-upload-v250-modal','pss-upload-v245-modal'].forEach(function(id){
+      var m=byId(id);
+      if(m){
+        try{ m.classList.remove('open'); }catch(e){}
+        try{ m.setAttribute('aria-hidden','true'); }catch(e2){}
+      }
+    });
+
+    return false;
+  }
+
+  window.fecharModalUploadComprovanteV355 = fecharModalUploadComprovanteV355;
+  window.fecharUploadModalV352 = fecharModalUploadComprovanteV355;
+  window.fecharUploadModalV250 = fecharModalUploadComprovanteV355;
+  window.fecharUploadModalV254_ = fecharModalUploadComprovanteV355;
+
+  function reforcarCssFechamentoV355(){
+    if(byId('pss-v355-fix-fechar-upload-style')) return;
+    var css=document.createElement('style');
+    css.id='pss-v355-fix-fechar-upload-style';
+    css.textContent=''+
+      '.pss-upload-v352-head,.pss-upload-v250-head,.pss-upload-v245-head{position:relative!important;z-index:5!important;flex:0 0 auto!important;}'+
+      '.pss-upload-v352-close,.pss-upload-v250-close,.pss-upload-v245-close{position:relative!important;z-index:6!important;pointer-events:auto!important;touch-action:manipulation!important;}'+
+      '.pss-upload-v352-frame,.pss-upload-v250-frame,.pss-upload-v245-frame{position:relative!important;z-index:1!important;min-height:0!important;}';
+    document.head.appendChild(css);
+  }
+
+  function reamarrarFechamentoV355(){
+    reforcarCssFechamentoV355();
+
+    [
+      '.pss-upload-v352-close',
+      '.pss-upload-v250-close',
+      '.pss-upload-v245-close',
+      '[data-fechar-upload-comprovante]',
+      '[data-close-upload-comprovante]'
+    ].forEach(function(sel){
+      document.querySelectorAll(sel).forEach(function(btn){
+        if(btn.__pssV355CloseBound) return;
+        btn.__pssV355CloseBound=true;
+        btn.addEventListener('click',function(ev){
+          if(ev&&ev.preventDefault) ev.preventDefault();
+          if(ev&&ev.stopPropagation) ev.stopPropagation();
+          fecharModalUploadComprovanteV355();
+          return false;
+        },true);
+      });
+    });
+
+    ['pss-upload-v352-modal','pss-upload-v250-modal','pss-upload-v245-modal'].forEach(function(id){
+      var modal=byId(id);
+      if(!modal || modal.__pssV355BackdropBound) return;
+      modal.__pssV355BackdropBound=true;
+      modal.addEventListener('click',function(ev){
+        if(ev && ev.target===modal){
+          if(ev.preventDefault) ev.preventDefault();
+          fecharModalUploadComprovanteV355();
+        }
+      },true);
+    });
+  }
+
+  function parseMensagemV355(data){
+    if(!data) return null;
+    if(typeof data==='string'){
+      try{ data=JSON.parse(data); }catch(e){ return null; }
+    }
+    if(!data || typeof data!=='object') return null;
+    if(data.pssUploadComprovanteApp===true || data.pssBoloesUpload===true || data.tipo==='fechar' || data.action==='fechar') return data;
+    return null;
+  }
+
+  window.addEventListener('message',function(ev){
+    var data=parseMensagemV355(ev&&ev.data);
+    if(!data) return;
+    var tipo=String(data.tipo||data.action||data.evento||'').toLowerCase();
+    if(tipo==='fechar' || tipo==='close' || tipo==='fechar_modal' || tipo==='fechar_upload'){
+      fecharModalUploadComprovanteV355();
+    }
+  },true);
+
+  var abrirBaseV355 = window.PSS_abrirUploadComprovanteV272 || window.abrirUploadComprovanteAppsScriptV245;
+  if(typeof abrirBaseV355==='function' && !abrirBaseV355.__pssV355Wrapped){
+    var abrirWrapV355=function(){
+      var r=abrirBaseV355.apply(this,arguments);
+      setTimeout(reamarrarFechamentoV355,80);
+      setTimeout(reamarrarFechamentoV355,500);
+      return r;
+    };
+    abrirWrapV355.__pssV355Wrapped=true;
+    window.PSS_abrirUploadComprovanteV272=abrirWrapV355;
+    window.abrirUploadComprovanteAppsScriptV245=abrirWrapV355;
+  }
+
+  document.addEventListener('click',function(ev){
+    var alvo=ev.target&&ev.target.closest?ev.target.closest('.pss-upload-v352-close,.pss-upload-v250-close,.pss-upload-v245-close,[data-fechar-upload-comprovante],[data-close-upload-comprovante]'):null;
+    if(!alvo) return;
+    if(ev.preventDefault) ev.preventDefault();
+    if(ev.stopPropagation) ev.stopPropagation();
+    fecharModalUploadComprovanteV355();
+  },true);
+
+  setTimeout(reamarrarFechamentoV355,120);
+  setTimeout(reamarrarFechamentoV355,800);
+  setTimeout(reamarrarFechamentoV355,1800);
+
+  safe(function(){ localStorage.setItem('PSS_INDEX_UPLOAD_CLOSE_FIX',V); });
+
+  window.diagnosticarFechamentoUploadV355=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      modalV352:!!byId('pss-upload-v352-modal'),
+      modalV250:!!byId('pss-upload-v250-modal'),
+      modalV245:!!byId('pss-upload-v245-modal'),
+      regra:'Correção pontual apenas para fechamento do modal de comprovante.'
+    };
+  };
+})();
+</script>
+
 </body>
 </html>
