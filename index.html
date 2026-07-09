@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V360_PROBABILIDADES_SOB_DEMANDA_SEM_LENTIDAO</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V360_PROBABILIDADES_SOB_DEMANDA_SEM_LENTIDAO',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -26663,7 +26663,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  *   Firebase, cadastro, jogos realizados ou confirmação manual.
  * ===================================================================== */
 (function(){
-  var V='V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE';
+  var V='V360_PROBABILIDADES_SOB_DEMANDA_SEM_LENTIDAO';
 
   try{
     if(window.CONFIG) CONFIG.versao=V;
@@ -27083,7 +27083,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 </style>
 <script>
 (function(){
-  var V357='V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE';
+  var V357='V360_PROBABILIDADES_SOB_DEMANDA_SEM_LENTIDAO';
   try{localStorage.setItem('PSS_INDEX_VERSION',V357);}catch(e){}
 
   function esc357(v){
@@ -27232,12 +27232,14 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
 <!-- =========================================================
-     V359 — PROBABILIDADES INFORMATIVAS DAS LOTERIAS
-     Transparência matemática por faixa de acerto.
-     Não altera OCR, upload, Telegram, Drive, Firebase ou consulta V358.
+     V360 — PROBABILIDADES SOB DEMANDA / SEM LENTIDÃO
+     Mantém campos na Base Loterias e calcula somente ao clicar.
+     Não altera OCR, upload, Telegram, Drive, Firebase ou Consulta V357/V358.
      ========================================================= -->
-<style id="pss-v359-probabilidades-loterias">
+<style id="pss-v360-probabilidades-lazy">
   .pss-prob-box{border:1px solid #d7eadc;background:#f8fffa;border-radius:14px;padding:13px;margin:12px 0;box-shadow:0 4px 14px rgba(0,0,0,.04)}
   .pss-prob-box h4{margin:0 0 8px;color:#003b12;font-size:15px}
   .pss-prob-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}
@@ -27253,133 +27255,93 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 <script>
 (function(){
   'use strict';
-  var V359='V359_PROBABILIDADES_LOTERIAS';
-  try{if(window.CONFIG)CONFIG.versao=V359;localStorage.setItem('PSS_INDEX_VERSION',V359);}catch(e){}
+  var V360='V360_PROBABILIDADES_SOB_DEMANDA_SEM_LENTIDAO';
+  try{if(window.CONFIG)CONFIG.versao=V360;localStorage.setItem('PSS_INDEX_VERSION',V360);}catch(e){}
 
-  function esc359(v){try{return escapeHtml(v===undefined||v===null?'':v);}catch(e){return String(v===undefined||v===null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}}
-  function attr359(v){try{return escapeAttr(v===undefined||v===null?'':v);}catch(e){return esc359(v).replace(/`/g,'&#96;');}}
-  function norm359(v){try{return normalizar(v);}catch(e){return String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}}
-  function key359(v){return norm359(String(v||'').replace(/\s*\(?20\d{2}\)?\s*$/,'')).replace(/[^A-Z0-9]/g,'');}
-  function num359(v){try{return num(v);}catch(e){} var s=String(v==null?'':v).replace(/[R$\s]/g,''); if(s.indexOf(',')>=0&&s.indexOf('.')>=0)s=s.replace(/\./g,'').replace(',','.'); else if(s.indexOf(',')>=0)s=s.replace(',','.'); var n=Number(s); return isNaN(n)?0:n;}
-  function intFmt359(n){n=Number(n||0); if(!isFinite(n)||n<=0)return '0'; try{return Math.round(n).toLocaleString('pt-BR');}catch(e){return String(Math.round(n));}}
-  function arr359(v){if(Array.isArray(v))return v; if(v&&Array.isArray(v.probabilidades))return v.probabilidades; return [];}
-  function sim359(v){var s=norm359(v||'SIM'); return !s||s==='SIM'||s==='S'||s==='TRUE'||s==='ATIVO'||s==='1';}
+  function esc360(v){try{return escapeHtml(v===undefined||v===null?'':v);}catch(e){return String(v===undefined||v===null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}}
+  function attr360(v){try{return escapeAttr(v===undefined||v===null?'':v);}catch(e){return esc360(v).replace(/`/g,'&#96;');}}
+  function num360(v){try{return num(v);}catch(e){} var s=String(v==null?'':v).replace(/[R$\s]/g,''); if(s.indexOf(',')>=0&&s.indexOf('.')>=0)s=s.replace(/\./g,'').replace(',','.'); else if(s.indexOf(',')>=0)s=s.replace(',','.'); var n=Number(s); return isNaN(n)?0:n;}
 
-  function comb359(n,k){n=Math.floor(Number(n||0));k=Math.floor(Number(k||0));if(k<0||n<0||k>n)return 0;if(k===0||k===n)return 1;k=Math.min(k,n-k);var r=1;for(var i=1;i<=k;i++){r=r*(n-k+i)/i;}return r;}
-  function faixas359(v,fallback){var s=String(v||'').trim(); if(!s&&fallback)s=String(fallback||''); return s.split(/[^0-9]+/).map(function(x){return Number(x||0);}).filter(function(n){return n>=0;});}
-
-  function padrao359(nome){
-    var k=key359(nome);
-    var lista=[
-      {k:'MEGADAVIRADA',range:60,qtdPalpite:6,qtdSorteada:6,faixas:'6,5,4',exibir:'SIM'},
-      {k:'MEGASENA30ANOS',range:60,qtdPalpite:6,qtdSorteada:6,faixas:'6,5,4',exibir:'SIM'},
-      {k:'MEGASENA',range:60,qtdPalpite:6,qtdSorteada:6,faixas:'6,5,4',exibir:'SIM'},
-      {k:'QUINADESAJOAO',range:80,qtdPalpite:5,qtdSorteada:5,faixas:'5,4,3,2',exibir:'SIM'},
-      {k:'QUINADESAOJOAO',range:80,qtdPalpite:5,qtdSorteada:5,faixas:'5,4,3,2',exibir:'SIM'},
-      {k:'QUINA',range:80,qtdPalpite:5,qtdSorteada:5,faixas:'5,4,3,2',exibir:'SIM'},
-      {k:'LOTOFACILDAINDEPENDENCIA',range:25,qtdPalpite:15,qtdSorteada:15,faixas:'15,14,13,12,11',exibir:'SIM'},
-      {k:'LOTOFACILMENSAL',range:25,qtdPalpite:15,qtdSorteada:15,faixas:'15,14,13,12,11',exibir:'SIM'},
-      {k:'LOTOFACIL',range:25,qtdPalpite:15,qtdSorteada:15,faixas:'15,14,13,12,11',exibir:'SIM'},
-      {k:'DUPLASENADEPASCOA',range:50,qtdPalpite:6,qtdSorteada:6,faixas:'6,5,4,3',exibir:'SIM'},
-      {k:'DUPLASENA',range:50,qtdPalpite:6,qtdSorteada:6,faixas:'6,5,4,3',exibir:'SIM'},
-      {k:'DIADESORTE',range:31,qtdPalpite:7,qtdSorteada:7,faixas:'7,6,5,4',exibir:'SIM'},
-      {k:'TIMEMANIA',range:80,qtdPalpite:10,qtdSorteada:7,faixas:'7,6,5,4,3',exibir:'SIM'},
-      {k:'LOTOMANIA',range:100,qtdPalpite:50,qtdSorteada:20,faixas:'20,19,18,17,16,15,0',exibir:'SIM'}
-    ];
-    for(var i=0;i<lista.length;i++){if(lista[i].k===k)return lista[i];}
-    return {};
-  }
-
-  function calcular359(b){
-    b=b||{};
-    var direto=arr359(b.probabilidades||b.probabilidadesLoteria||b.probabilidade);
-    if(direto.length)return direto.map(function(p){return {acertos:p.acertos||p.faixa||'',faixa:p.faixa||((p.acertos||'')+' acertos'),umEmTexto:p.umEmTexto||p.probabilidadeTexto||('1 em '+intFmt359(p.umEm||0)),umEm:p.umEm||0};});
-    var p=padrao359(b.loteria||b.nome||b.NOME||'');
-    var range=num359(b.range||b.RANGE||p.range);
-    var qtdApostada=num359(b.qtdPalpite||b.QTD_PALPITE||b.qtdEscolha||p.qtdPalpite);
-    var qtdSorteada=num359(b.qtdSorteada||b.QTD_SORTEADA||p.qtdSorteada);
-    var faixas=faixas359(b.faixasPremiacao||b.FAIXAS_PREMIACAO||b.faixas||p.faixas);
-    var exibir=b.exibirProbabilidade||b.EXIBIR_PROBABILIDADE||p.exibir||'SIM';
-    if(!sim359(exibir)||!range||!qtdApostada||!qtdSorteada||!faixas.length)return [];
-    var total=comb359(range,qtdSorteada); if(!total)return [];
-    var out=[];
-    faixas.forEach(function(a){a=Math.floor(Number(a||0));if(a<0||a>qtdApostada||a>qtdSorteada)return;var err=qtdSorteada-a;if(err>(range-qtdApostada))return;var fav=comb359(qtdApostada,a)*comb359(range-qtdApostada,err);if(!fav)return;var um=total/fav;out.push({acertos:a,faixa:String(a)+' acerto'+(a===1?'':'s'),umEm:um,umEmTexto:'1 em '+intFmt359(um)});});
-    return out;
-  }
-
-  function localizarBolao359(nome){
-    var k=key359(nome);
-    var lista=(window.ESTADO&&Array.isArray(ESTADO.boloes))?ESTADO.boloes:[];
-    for(var i=0;i<lista.length;i++){var b=lista[i]||{};if(key359(b.loteria||b.nome||b.id)===k)return b;}
-    return {loteria:nome,nome:nome};
-  }
-
-  function renderProb359(b,modo){
-    b=b||{};
-    var probs=calcular359(b);
-    if(!probs.length)return '';
-    var nome=b.loteria||b.nome||'Loteria';
-    var qtd=num359(b.qtdPalpite||b.QTD_PALPITE||b.qtdEscolha||padrao359(nome).qtdPalpite||0);
-    var sorteada=num359(b.qtdSorteada||b.QTD_SORTEADA||padrao359(nome).qtdSorteada||0);
-    var titulo=modo==='compacto'?'📊 Probabilidades':'📊 Probabilidades informativas';
-    return '<div class="pss-prob-box"><h4>'+esc359(titulo)+'</h4>'+ 
-      '<div class="pss-prob-note">Jogo considerado: '+esc359(qtd||'-')+' dezena(s) apostada(s), '+esc359(sorteada||'-')+' dezena(s) sorteada(s).</div>'+ 
-      '<div class="pss-prob-grid">'+probs.map(function(p){return '<div class="pss-prob-item"><b>'+esc359(p.faixa)+'</b><span>'+esc359(p.umEmTexto)+'</span></div>';}).join('')+'</div>'+ 
+  function renderProbBox360(d){
+    d=d||{};
+    var probs=Array.isArray(d.probabilidades)?d.probabilidades:[];
+    if(!probs.length){
+      return '<div class="notice warn">Probabilidades não configuradas ou desativadas para esta loteria.</div>'+
+        '<div class="pss-prob-note warn">Quando a loteria tiver regra especial, mantenha EXIBIR_PROBABILIDADE = NAO até validar o cálculo específico.</div>';
+    }
+    return '<div class="pss-prob-box"><h4>📊 Probabilidades informativas</h4>'+ 
+      '<div class="pss-prob-note">Jogo considerado: '+esc360(d.qtdPalpite||'-')+' dezena(s) apostada(s), '+esc360(d.qtdSorteada||'-')+' dezena(s) sorteada(s).</div>'+ 
+      '<div class="pss-prob-grid">'+probs.map(function(p){return '<div class="pss-prob-item"><b>'+esc360(p.faixa||((p.acertos||'')+' acertos'))+'</b><span>'+esc360(p.umEmTexto||('1 em '+(p.umEm||'')))+'</span></div>';}).join('')+'</div>'+ 
       '<div class="pss-prob-note warn">Cálculo matemático meramente informativo. Participar de bolão não garante premiação.</div></div>';
   }
 
-  window.PSS_calcularProbabilidadesV359=calcular359;
-  window.PSS_renderProbabilidadesV359=renderProb359;
-  window.abrirProbabilidadesBolaoV359=function(nome){
-    var b=localizarBolao359(nome);
-    var html=renderProb359(b,'modal')||'<div class="notice warn">Probabilidades não configuradas para esta loteria na Base Loterias.</div>';
-    if(typeof abrirModal==='function')abrirModal('Probabilidades — '+esc359(b.loteria||b.nome||nome),html);
+  window.abrirProbabilidadesBolaoV360=async function(nome){
+    nome=String(nome||'').trim();
+    var titulo='Probabilidades — '+esc360(nome||'Loteria');
+    if(typeof abrirModal==='function')abrirModal(titulo,'<div class="notice info">Calculando probabilidades somente agora...</div>');
+    try{
+      var r=await api('calcularProbabilidadesLoteriaV360',{nome:nome,loteria:nome},[]);
+      var html=renderProbBox360(r||{});
+      if(typeof abrirModal==='function')abrirModal(titulo,html);
+    }catch(err){
+      var msg='<div class="notice error">'+esc360((err&&err.message)||String(err||'Erro ao calcular probabilidades.'))+'</div>';
+      if(typeof abrirModal==='function')abrirModal(titulo,msg);
+    }
   };
 
-  var baseResumoInicio359=window.renderResumoInicioBolao_;
-  if(typeof baseResumoInicio359==='function'){
-    window.renderResumoInicioBolao_=renderResumoInicioBolao_=function(b,total,disponiveis,minhas){
-      var html=baseResumoInicio359(b,total,disponiveis,minhas);
-      return html+renderProb359(b,'resumo');
-    };
-  }
+  window.abrirProbabilidadesBolaoV359=window.abrirProbabilidadesBolaoV360;
 
-  var baseHomeCard359=window.renderCardHomeBolao_;
-  if(typeof baseHomeCard359==='function'){
-    window.renderCardHomeBolao_=renderCardHomeBolao_=function(b){
-      var html=baseHomeCard359(b);
-      if(!calcular359(b).length)return html;
-      var nome=b&&String(b.loteria||b.nome||'').replace(/'/g,'&#39;');
-      return html.replace('</article>','<div class="actions"><button type="button" class="btn btn-light pss-prob-mini-btn" onclick="abrirProbabilidadesBolaoV359(\''+attr359(nome)+'\')">📊 Ver probabilidades</button></div></article>');
-    };
-  }
+  window.renderCardHomeBolao_=renderCardHomeBolao_=function(b){
+    const total=normalizarValorCard_(b.totalCotas||b.cotasTotal);
+    const adquiridas=normalizarValorCard_(b.cotasAdquiridas);
+    let disponiveis=b.cotasDisponiveis;
+    if((disponiveis===''||disponiveis===undefined||disponiveis===null) && total!=='-'){
+      disponiveis=Math.max(0,num(total)-num(adquiridas));
+    }
+    var nome=String((b&& (b.loteria||b.nome))||'Bolão');
+    return `
+      <article class="home-bolao-card">
+        <h3>${escapeHtml(nome)}</h3>
+        <span class="status-pill">${escapeHtml(b.status||'ATIVO')}</span>
+        <div class="mini">
+          <div><b>Sorteio</b>${escapeHtml(formatarDataHoraPtBR(b.dataSorteio||'-'))}</div>
+          <div><b>Valor da cota</b>${escapeHtml(b.valorCota?moeda(b.valorCota):'-')}</div>
+          <div><b>Total de cotas</b>${escapeHtml(total)}</div>
+          <div><b>Cotas disponíveis</b>${escapeHtml(normalizarValorCard_(disponiveis))}</div>
+          <div><b>Pagamento</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPagamento||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPagamento||'-'))}</div>
+          <div><b>Palpites</b>${escapeHtml(formatarDataHoraPtBR(b.inicioPalpite||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPalpite||'-'))}</div>
+          ${b.premiacao?`<div><b>Premiação</b>${escapeHtml(moeda(b.premiacao))}</div>`:''}
+          ${b.premioPorCota?`<div><b>Prêmio por cota</b>${escapeHtml(moeda(b.premioPorCota))}</div>`:''}
+        </div>
+        <div class="actions"><button type="button" class="btn btn-light pss-prob-mini-btn" onclick="abrirProbabilidadesBolaoV360('${escapeAttr(nome)}')">📊 Probabilidades</button></div>
+      </article>
+    `;
+  };
 
-  function aplicarBotoesCards359(){
-    try{
-      var cards=document.querySelectorAll('.bolao-card');
-      cards.forEach(function(card){
-        if(card.querySelector('.pss-prob-mini-btn'))return;
-        var h=card.querySelector('h3'); if(!h)return;
-        var nome=String(h.textContent||'').replace(/^\s*🎯\s*/,'').trim();
-        var b=localizarBolao359(nome);
-        if(!calcular359(b).length)return;
-        var btn=document.createElement('button');
-        btn.type='button';
-        btn.className='btn btn-light pss-prob-mini-btn';
-        btn.textContent='📊 Probabilidades';
-        btn.onclick=function(){window.abrirProbabilidadesBolaoV359(nome);};
-        card.appendChild(btn);
-      });
-    }catch(e){}
-  }
-  var baseRenderBoloes359=window.renderBoloes;
-  if(typeof baseRenderBoloes359==='function'){
-    window.renderBoloes=renderBoloes=async function(tipo){
-      var r=await baseRenderBoloes359(tipo);
-      setTimeout(aplicarBotoesCards359,120);
-      return r;
-    };
-  }
+  window.renderResumoInicioBolao_=renderResumoInicioBolao_=function(b,total,disponiveis,minhas){
+    var nome=(b&&(b.loteria||b.nome))||'';
+    return `
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><th>Loteria</th><td>${escapeHtml(b.loteria||b.nome||'-')}</td></tr>
+            <tr><th>Status</th><td>${escapeHtml(b.status||'-')}</td></tr>
+            <tr><th>Valor da cota</th><td>${escapeHtml(b.valorCota?moeda(b.valorCota):'-')}</td></tr>
+            <tr><th>Total de cotas</th><td>${escapeHtml(total)}</td></tr>
+            <tr><th>Cotas adquiridas no bolão</th><td>${escapeHtml(b.cotasAdquiridas||0)}</td></tr>
+            <tr><th>Cotas disponíveis</th><td>${escapeHtml(disponiveis)}</td></tr>
+            <tr><th>Minhas cotas</th><td>${escapeHtml(minhas)}</td></tr>
+            <tr><th>Data do sorteio</th><td>${escapeHtml(formatarDataHoraPtBR(b.dataSorteio||'-'))}</td></tr>
+            <tr><th>Pagamento</th><td>${escapeHtml(formatarDataHoraPtBR(b.inicioPagamento||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPagamento||'-'))}</td></tr>
+            <tr><th>Palpites</th><td>${escapeHtml(formatarDataHoraPtBR(b.inicioPalpite||'-'))} a ${escapeHtml(formatarDataHoraPtBR(b.fimPalpite||'-'))}</td></tr>
+            ${b.premiacao?`<tr><th>Premiação</th><td>${escapeHtml(moeda(b.premiacao))}</td></tr>`:''}
+            ${b.premioPorCota?`<tr><th>Prêmio por cota</th><td>${escapeHtml(moeda(b.premioPorCota))}</td></tr>`:''}
+          </tbody>
+        </table>
+      </div>
+      <div class="actions"><button type="button" class="btn btn-light pss-prob-mini-btn" onclick="abrirProbabilidadesBolaoV360('${escapeAttr(nome)}')">📊 Ver probabilidades</button></div>
+    `;
+  };
 
   window.renderBaseLoteriasAdmin=renderBaseLoteriasAdmin=async function(){
     if(typeof isAdmin==='function'&&!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
@@ -27387,9 +27349,9 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     try{
       var r=await adminDados('BASE_LOTERIAS');
       var headers=r.headers||[],rows=r.rows||[];
-      var campos=['NOME','QTD_MIN','QTD_MAX','RANGE','QTD_PALPITE','QTD_SORTEADA','FAIXAS_PREMIACAO','EXIBIR_PROBABILIDADE','IMAGEM_ID'];
-      setView('<div class="panel no-left"><h2>BASE LOTERIAS</h2><p>Edite os parâmetros técnicos usados nos palpites e nas probabilidades informativas.</p><div class="pss-prob-admin-help"><strong>Probabilidades:</strong> RANGE é o universo de dezenas; QTD_PALPITE é a quantidade de dezenas do jogo simples; QTD_SORTEADA é a quantidade sorteada; FAIXAS_PREMIACAO usa lista separada por vírgula, exemplo: 5,4,3,2; EXIBIR_PROBABILIDADE pode ser SIM ou NAO.</div><div class="table-wrap"><table class="admin-edit-table"><thead><tr>'+campos.map(function(c){return '<th>'+esc359(c)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row,i){var o=(typeof rowObj==='function'?rowObj(headers,row):{});return '<tr>'+campos.map(function(c){var v='';try{v=cellObj(o,[c]);}catch(e){var ix=headers.indexOf(c);v=ix>=0?row[ix]:'';}return '<td><input data-row="'+i+'" data-campo="'+attr359(c)+'" value="'+attr359(v)+'"></td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div><div class="actions"><button class="btn" onclick="salvarBaseLoteriasGit()">Salvar Base Loterias</button><button class="btn btn-light" onclick="atualizarBaseProbabilidadesV359()">Atualizar padrões de probabilidade</button></div></div>');
-    }catch(err){setView('<div class="panel"><div class="notice error">'+esc359((err&&err.message)||err)+'</div></div>');}
+      var campos=['NOME','QTD_MIN','QTD_MAX','RANGE','QTD_PALPITE','IMAGEM_ID','QTD_SORTEADA','FAIXAS_PREMIACAO','EXIBIR_PROBABILIDADE'];
+      setView('<div class="panel no-left"><h2>BASE LOTERIAS</h2><p>Edite QTD_PALPITE para definir quantos números cada palpite deve ter. RANGE define o universo de números.</p><div class="pss-prob-admin-help"><strong>Probabilidades sob demanda:</strong> os campos QTD_SORTEADA, FAIXAS_PREMIACAO e EXIBIR_PROBABILIDADE ficam cadastrados aqui, mas o cálculo só ocorre quando alguém clicar em “Probabilidades”. Isso evita lentidão no carregamento.</div><div class="table-wrap"><table class="admin-edit-table"><thead><tr>'+campos.map(function(c){return '<th>'+esc360(c)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row,i){var o=(typeof rowObj==='function'?rowObj(headers,row):{});return '<tr>'+campos.map(function(c){var v='';try{v=cellObj(o,[c]);}catch(e){var ix=headers.indexOf(c);v=ix>=0?row[ix]:'';}return '<td><input data-row="'+i+'" data-campo="'+attr360(c)+'" value="'+attr360(v)+'"></td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div><div class="actions"><button class="btn" onclick="salvarBaseLoteriasGit()">Salvar Base Loterias</button><button class="btn btn-light" onclick="atualizarBaseProbabilidadesV360()">Conferir campos de probabilidade</button></div></div>');
+    }catch(err){setView('<div class="panel"><div class="notice error">'+esc360((err&&err.message)||err)+'</div></div>');}
   };
 
   window.salvarBaseLoteriasGit=async function(){
@@ -27401,28 +27363,27 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     catch(err){try{toast((err&&err.message)||'Erro ao salvar Base Loterias.','error');}catch(e){}}
   };
 
-  window.atualizarBaseProbabilidadesV359=async function(){
-    try{var r=await api('atualizarBaseLoteriasProbabilidadesV359',{},[]);try{toast((r&&r.msg)||'Base atualizada com padrões de probabilidade.');}catch(e){}renderBaseLoteriasAdmin();}
-    catch(err){try{toast((err&&err.message)||'Erro ao atualizar padrões.','error');}catch(e){}}
+  window.atualizarBaseProbabilidadesV360=async function(){
+    try{var r=await api('atualizarBaseLoteriasProbabilidadesV360',{},[]);try{toast((r&&r.msg)||'Campos conferidos.');}catch(e){}renderBaseLoteriasAdmin();}
+    catch(err){try{toast((err&&err.message)||'Erro ao conferir campos.','error');}catch(e){}}
   };
 
-  var baseReg359=window.renderRegulamento;
-  if(typeof baseReg359==='function'){
+  var baseReg360=window.renderRegulamento;
+  if(typeof baseReg360==='function'){
     window.renderRegulamento=renderRegulamento=async function(){
-      await baseReg359();
+      await baseReg360();
       setTimeout(function(){
         var view=document.getElementById('view');
-        if(view&&!view.querySelector('#pssRegProbV359')){
-          view.insertAdjacentHTML('beforeend','<div class="panel" id="pssRegProbV359"><h2>Probabilidades de acerto</h2><p>As probabilidades exibidas no sistema são cálculos matemáticos combinatórios, configurados na Base Loterias conforme o universo de dezenas, quantidade apostada, quantidade sorteada e faixas de premiação. A informação é apenas orientativa e não representa garantia de premiação.</p></div>');
+        if(view&&!view.querySelector('#pssRegProbV360')){
+          view.insertAdjacentHTML('beforeend','<div class="panel" id="pssRegProbV360"><h2>Probabilidades de acerto</h2><p>As probabilidades exibidas no sistema são cálculos matemáticos combinatórios, configurados na Base Loterias. A informação é apenas orientativa e não representa garantia de premiação. Para evitar lentidão, o cálculo é feito somente quando o usuário solicita a consulta.</p></div>');
         }
       },150);
     };
   }
 
-  window.diagnosticarProbabilidadesV359=function(nome){var b=localizarBolao359(nome||'Quina-de-Sao-Joao 2026');return {sucesso:true,versao:V359,bolao:b.loteria||b.nome,probabilidades:calcular359(b)};};
+  window.diagnosticarProbabilidadesV360=function(){return {sucesso:true,versao:V360,modo:'sob demanda',desempenho:'sem cálculo automático em Home/Bolões'};};
 })();
 </script>
-
 
 </body>
 </html>
