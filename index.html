@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V356_MES_REFERENCIA_VISUAL_MM_AAAA</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V356_MES_REFERENCIA_VISUAL_MM_AAAA',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -26663,7 +26663,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  *   Firebase, cadastro, jogos realizados ou confirmação manual.
  * ===================================================================== */
 (function(){
-  var V='V356_MES_REFERENCIA_VISUAL_MM_AAAA';
+  var V='V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE';
 
   try{
     if(window.CONFIG) CONFIG.versao=V;
@@ -27043,6 +27043,193 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   };
 })();
 
+</script>
+
+
+<!-- =========================================================
+     V357 — CONSULTA: BOTÕES NA LINHA DO PARTICIPANTE + JOGOS
+     Ajuste pontual: layout do menu Consulta e renderização segura
+     da seção "Jogos realizados disponíveis" quando a API retornar
+     jogos do participante/bolões vinculados.
+     ========================================================= -->
+<style id="pss-v357-consulta-layout">
+  .consulta-actions{
+    display:grid!important;
+    grid-template-columns:minmax(280px,1fr) auto auto!important;
+    gap:10px!important;
+    align-items:end!important;
+    margin:12px 0 16px!important;
+  }
+  .consulta-actions .field{
+    min-width:0!important;
+    width:100%!important;
+    margin:0!important;
+  }
+  .consulta-actions .btn{
+    min-height:38px!important;
+    margin:0!important;
+    white-space:nowrap!important;
+  }
+  @media(max-width:920px) and (min-width:721px){
+    .consulta-actions{
+      grid-template-columns:minmax(260px,1fr) auto auto!important;
+    }
+    .consulta-actions .field{min-width:0!important;}
+  }
+  @media(max-width:720px){
+    .consulta-actions{grid-template-columns:1fr!important;align-items:stretch!important;}
+    .consulta-actions .btn{width:100%!important;}
+  }
+</style>
+<script>
+(function(){
+  var V357='V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE';
+  try{localStorage.setItem('PSS_INDEX_VERSION',V357);}catch(e){}
+
+  function esc357(v){
+    try{return escapeHtml(v===undefined||v===null||v===''?'-':v);}catch(e){
+      return String(v===undefined||v===null||v===''?'-':v)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+  }
+  function attr357(v){
+    try{return escapeAttr(v===undefined||v===null?'':v);}catch(e){return esc357(v).replace(/`/g,'&#96;');}
+  }
+  function moeda357(v){
+    try{return moeda(v||0);}catch(e){
+      var n=Number(String(v||0).replace(/\./g,'').replace(',','.'))||0;
+      return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    }
+  }
+  function arr357(v){
+    if(Array.isArray(v))return v;
+    if(v&&Array.isArray(v.lista))return v.lista;
+    if(v&&Array.isArray(v.rows))return v.rows;
+    if(v&&Array.isArray(v.dados))return v.dados;
+    return [];
+  }
+  function norm357(s){
+    try{return normalizar(s);}catch(e){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();}
+  }
+  function campo357(row,c){
+    if(!row)return '';
+    if(row[c]!==undefined)return row[c];
+    var alvo=norm357(c).replace(/[^A-Z0-9]/g,'');
+    for(var k in row){
+      if(!Object.prototype.hasOwnProperty.call(row,k))continue;
+      var nk=norm357(k).replace(/[^A-Z0-9]/g,'');
+      if(nk===alvo)return row[k];
+    }
+    return '';
+  }
+  function jogosConsulta357(d){
+    d=d||{};
+    var candidatos=[
+      d.jogos,
+      d.jogosRealizados,
+      d.jogosDisponiveis,
+      d.jogosDisponíveis,
+      d.jogosParticipante,
+      d.arquivosJogos,
+      d.perfil&&d.perfil.jogos,
+      d.usuario&&d.usuario.jogos
+    ];
+    for(var i=0;i<candidatos.length;i++){
+      var lista=arr357(candidatos[i]);
+      if(lista.length)return lista;
+    }
+    return [];
+  }
+  function card357(label,value){
+    return '<div class="consulta-card"><small>'+esc357(label)+'</small><strong>'+esc357(value===undefined||value===null||value===''?'-':value)+'</strong></div>';
+  }
+  function label357(c){
+    var map={
+      loteria:'Bolão/Loteria',cotas:'Cotas',partes:'Partes',status:'Status',origem:'Origem',data:'Data',
+      valorTotal:'Valor total',valorAgora:'Valor agora',parcelado:'Parcelado',validadeReserva:'Validade reserva',
+      valor:'Valor',pagador:'Pagador',recebedor:'Recebedor',produto:'Cód. produto',idTransacao:'ID transação',mesReferencia:'Mês referência',urlComprovante:'Comprovante',
+      jogo:'Jogo',numeros:'Números',concurso:'Concurso',arquivo:'Arquivo',nomeArquivo:'Arquivo',url:'Link',tipo:'Tipo',aceiteRegulamento:'Aceite regulamento'
+    };
+    return map[c]||c;
+  }
+  function mesTela357(v){
+    if(typeof formatarMesReferenciaTela356==='function')return formatarMesReferenciaTela356(v);
+    var s=String(v||'').trim();
+    var m=s.match(/^(\d{2})[-\/](\d{4})$/); if(m)return m[1]+'/'+m[2];
+    m=s.match(/^(\d{4})[-\/](\d{2})$/); if(m)return m[2]+'/'+m[1];
+    return s||'-';
+  }
+  function valor357(row,c){
+    var v=campo357(row,c);
+    if(c==='urlComprovante'||c==='url'){
+      if(!v)return '-';
+      return '<a href="'+attr357(v)+'" target="_blank" rel="noopener">Abrir</a>';
+    }
+    if(c==='mesReferencia')return esc357(mesTela357(v));
+    if(c==='valor'||c==='valorTotal'||c==='valorAgora'){
+      if(v===''||v===null||v===undefined)return '-';
+      if(typeof v==='number')return esc357(moeda357(v));
+      return esc357(v);
+    }
+    if(c==='cotas')return esc357(String(v===undefined||v===null||v===''?0:v).replace('.',','));
+    return esc357(v===undefined||v===null||v===''?'-':v);
+  }
+  function secao357(titulo,lista,campos){
+    lista=arr357(lista);
+    if(!lista.length){
+      return '<div class="consulta-section"><h3>'+esc357(titulo)+'</h3><div class="consulta-empty">Nenhum registro localizado.</div></div>';
+    }
+    return '<div class="consulta-section"><h3>'+esc357(titulo)+'</h3><div class="table-wrap consulta-table"><table><thead><tr>'+
+      campos.map(function(c){return '<th>'+esc357(label357(c))+'</th>';}).join('')+
+      '</tr></thead><tbody>'+
+      lista.map(function(row){return '<tr>'+campos.map(function(c){return '<td>'+valor357(row,c)+'</td>';}).join('')+'</tr>';}).join('')+
+      '</tbody></table></div></div>';
+  }
+  function renderConsulta357(d){
+    d=d||{};
+    var u=d.usuario||{};
+    var resumo=d.resumo||{};
+    var jogos=jogosConsulta357(d);
+    return '<div class="consulta-admin-grid">'+
+      card357('Nome',u.nome||'-')+
+      card357('E-mail',u.email||'-')+
+      card357('Status',u.status||'-')+
+      card357('Perfil',u.perfil||'-')+
+      card357('Cotas confirmadas',String(resumo.cotasConfirmadas||0).replace('.',','))+
+      card357('Cotas reservadas',String(resumo.cotasReservadas||0).replace('.',','))+
+      card357('Total pago',moeda357(resumo.totalPago||0))+
+      card357('Em análise',moeda357(resumo.totalAnalise||0))+
+      '</div>'+
+      secao357('Bolões vinculados',d.boloes||[],['loteria','cotas','partes','status','origem','data'])+
+      secao357('Aquisições/reservas de cotas',d.aquisicoes||[],['data','loteria','cotas','valorTotal','valorAgora','parcelado','status','validadeReserva'])+
+      secao357('Pagamentos e comprovantes',d.pagamentos||[],['data','loteria','valor','cotas','partes','status','pagador','recebedor','produto','idTransacao','mesReferencia','urlComprovante'])+
+      secao357('Palpites registrados',d.palpites||[],['data','loteria','jogo','numeros','status'])+
+      secao357('Jogos realizados disponíveis',jogos,['data','loteria','concurso','arquivo','nomeArquivo','url'])+
+      secao357('Solicitações e histórico',d.solicitacoes||[],['data','loteria','cotas','status','tipo','aceiteRegulamento']);
+  }
+
+  window.renderResultadoConsultaParticipanteAdmin_=renderConsulta357;
+
+  window.executarConsultaParticipanteAdmin=async function(){
+    var email=(document.getElementById('consultaAdminEmail')||{}).value||'';
+    var box=document.getElementById('resultadoConsultaParticipanteAdmin');
+    if(!email){
+      try{toast('Selecione um participante.','warn');}catch(e){}
+      return;
+    }
+    if(box)box.innerHTML='<div class="notice info">Carregando dados do participante...</div>';
+    try{
+      var dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email,participanteEmail:email},[{adminEmail:ESTADO.email,participanteEmail:email}]);
+      if(box)box.innerHTML=renderConsulta357(dados);
+    }catch(err){
+      if(box)box.innerHTML='<div class="notice error">'+esc357((err&&err.message)||String(err||'Erro ao consultar participante.'))+'</div>';
+    }
+  };
+
+  window.diagnosticarConsultaV357=function(){
+    return {sucesso:true,versao:V357,layout:'Participante + Consultar + Atualizar lista na mesma linha em desktop/tablet.',jogos:'A seção Jogos realizados disponíveis exibe os jogos retornados pela API para o participante/bolões vinculados.'};
+  };
+})();
 </script>
 
 </body>
