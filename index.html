@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V352_FIREBASE_LOGIN_CACHE_UPLOAD_V246_RESTAURADO</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V356_MES_REFERENCIA_VISUAL_MM_AAAA</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V352_FIREBASE_LOGIN_CACHE_UPLOAD_V246_RESTAURADO',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V356_MES_REFERENCIA_VISUAL_MM_AAAA',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -26649,6 +26649,400 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
     };
   };
 })();
+
+/* =====================================================================
+ * PATCH V356 — MÊS REFERÊNCIA COM EXIBIÇÃO PADRÃO MM/AAAA
+ * Motivo:
+ * - A API V350 passou a gravar corretamente pela data real do comprovante.
+ * - Alguns registros novos chegaram como 06-2026, enquanto registros antigos
+ *   permaneciam como 06/2026.
+ * Ajuste:
+ * - Mantém o valor técnico recebido da API/planilha.
+ * - Na tela, no filtro e no agrupamento visual, exibe sempre MM/AAAA.
+ * - Não altera OCR, upload, Drive, Telegram, pagamentos, fechamento de modal,
+ *   Firebase, cadastro, jogos realizados ou confirmação manual.
+ * ===================================================================== */
+(function(){
+  var V='V356_MES_REFERENCIA_VISUAL_MM_AAAA';
+
+  try{
+    if(window.CONFIG) CONFIG.versao=V;
+    localStorage.setItem('PSS_INDEX_VERSION',V);
+  }catch(e){}
+
+  function esc356(v){
+    try{
+      if(typeof escapeHtml==='function') return escapeHtml(v);
+      return String(v==null?'':v).replace(/[&<>"']/g,function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }catch(e){
+      return String(v==null?'':v);
+    }
+  }
+
+  function norm356(v){
+    return String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+
+  function key356(v){
+    return norm356(String(v||'').replace(/\s*\(?20\d{2}\)?\s*$/,'')).replace(/[^A-Z0-9]/g,'');
+  }
+
+  function num356(v){
+    try{ if(typeof num==='function') return num(v); }catch(e){}
+    var s=String(v==null?'':v).trim();
+    s=s.replace(/[R$\s]/g,'');
+    if(s.indexOf(',')>=0 && s.indexOf('.')>=0) s=s.replace(/\./g,'').replace(',','.');
+    else if(s.indexOf(',')>=0) s=s.replace(',','.');
+    var x=Number(s);
+    return isNaN(x)?0:x;
+  }
+
+  function moeda356(v){
+    try{ if(typeof moeda==='function') return moeda(v); }catch(e){}
+    try{return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+    catch(e){return 'R$ '+Number(v||0).toFixed(2).replace('.',',');}
+  }
+
+  function rowObj356(headers,row){
+    var o={};
+    headers=headers||[];
+    row=row||[];
+    for(var i=0;i<headers.length;i++) o[norm356(headers[i])]=row[i];
+    return o;
+  }
+
+  function cell356(o,aliases){
+    aliases=aliases||[];
+    for(var i=0;i<aliases.length;i++){
+      var k=norm356(aliases[i]);
+      if(Object.prototype.hasOwnProperty.call(o,k)) return o[k];
+    }
+    return '';
+  }
+
+  function statusPago356(s){
+    var st=norm356(s);
+    return st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0 || st.indexOf('CONFIRM')>=0 || st.indexOf('OCR_VALID')>=0 || st.indexOf('BAIXADO')>=0;
+  }
+
+  function mesAnoPorData356(v){
+    var s=String(v||'').trim();
+    var meses={
+      JAN:'01',JANEIRO:'01',
+      FEV:'02',FEVEREIRO:'02',
+      MAR:'03',MARCO:'03','MARÇO':'03',
+      ABR:'04',ABRIL:'04',
+      MAI:'05',MAIO:'05',
+      JUN:'06',JUNHO:'06',
+      JUL:'07',JULHO:'07',
+      AGO:'08',AGOSTO:'08',
+      SET:'09',SETEMBRO:'09',
+      OUT:'10',OUTUBRO:'10',
+      NOV:'11',NOVEMBRO:'11',
+      DEZ:'12',DEZEMBRO:'12'
+    };
+
+    var m=s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if(m) return String(m[2]).padStart(2,'0')+'/'+m[3];
+
+    m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) return String(m[2]).padStart(2,'0')+'/'+m[1];
+
+    var sn=norm356(s).replace(/\./g,' ').replace(/-/g,' ').replace(/\//g,' ');
+    m=sn.match(/(?:^|\s)(\d{1,2})\s+([A-ZÇ]{3,9})\s+(\d{4})(?:\s|$)/);
+    if(m && meses[m[2]]) return meses[m[2]]+'/'+m[3];
+
+    return '';
+  }
+
+  function formatarMesReferenciaTela356(valor){
+    var s=String(valor==null?'':valor).trim();
+    if(!s) return '-';
+
+    var m=s.match(/^(\d{1,2})[-\/](\d{4})$/);
+    if(m) return String(m[1]).padStart(2,'0')+'/'+m[2];
+
+    m=s.match(/^(\d{4})[-\/](\d{1,2})$/);
+    if(m) return String(m[2]).padStart(2,'0')+'/'+m[1];
+
+    var porData=mesAnoPorData356(s);
+    if(porData) return porData;
+
+    return s;
+  }
+
+  function compactMes356(v){
+    return String(v||'').replace(/[^0-9]/g,'');
+  }
+
+  function cotasTexto356(v){
+    var x=Math.round(num356(v)*1000)/1000;
+    if(!x) return '0';
+    var inteiro=Math.abs(x-Math.round(x))<0.0001;
+    return (inteiro?String(Math.round(x)):String(x)).replace('.',',');
+  }
+
+  function bolaoListasPossiveis356(){
+    var out=[];
+    try{ if(window.ESTADO && Array.isArray(ESTADO.boloes)) out=out.concat(ESTADO.boloes); }catch(e){}
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i)||'';
+        if(k.indexOf('PSS_BOLAO_CACHE_')!==0 || k.toLowerCase().indexOf('boloes')<0) continue;
+        var raw=localStorage.getItem(k);
+        if(!raw) continue;
+        var obj=JSON.parse(raw);
+        var d=obj && obj.dados!==undefined ? obj.dados : obj;
+        if(Array.isArray(d)) out=out.concat(d);
+        else if(d && Array.isArray(d.boloes)) out=out.concat(d.boloes);
+        else if(d && Array.isArray(d.ativas)) out=out.concat(d.ativas);
+      }
+    }catch(e){}
+    return out;
+  }
+
+  function valorCotaBolao356(loteria,o){
+    var direto=num356(cell356(o,[
+      'VALOR_COTA','VALOR COTA','VALOR_DA_COTA','VALOR DA COTA',
+      'COTA_VALOR','COTA VALOR','PRECO_COTA','PREÇO_COTA'
+    ]));
+    if(direto>0) return direto;
+
+    var alvo=key356(loteria);
+    if(!alvo) return 0;
+
+    var lista=bolaoListasPossiveis356();
+    for(var i=0;i<lista.length;i++){
+      var b=lista[i]||{};
+      var nome=b.loteria||b.LOTERIA||b.nome||b.NOME||b.id||b.ID||'';
+      var kb=key356(nome);
+      if(!kb) continue;
+      if(kb===alvo || alvo.indexOf(kb)>=0 || kb.indexOf(alvo)>=0){
+        var campos=['valorCota','VALOR_COTA','valor_cota','valorDaCota','VALOR_DA_COTA','cotaValor','COTA_VALOR','precoCota','PRECO_COTA'];
+        for(var c=0;c<campos.length;c++){
+          var v=num356(b[campos[c]]);
+          if(v>0) return v;
+        }
+      }
+    }
+    return 0;
+  }
+
+  function cotasFallback356(o){
+    var ce=num356(cell356(o,['COTAS_CALCULADAS','COTAS EQUIVALENTES','COTAS_EQUIVALENTES','COTA_EQUIVALENTE']));
+    if(ce>0) return ce;
+
+    var c=num356(cell356(o,['QTD_COTAS','QTD COTAS','COTAS','QUANTIDADE_COTAS']));
+    var fr=num356(cell356(o,['FRACAO_COTA','FRACAO COTA','FRAÇÃO_COTA']));
+    if(c>0 && fr>1) return c/fr;
+    if(c>0) return c;
+
+    var partes=String(cell356(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','PARTES'])||'');
+    var m=partes.match(/(\d+(?:[\.]\d+)?)\s*\/\s*(\d+(?:[\.]\d+)?)/);
+    if(m){
+      var a=num356(m[1]), b=num356(m[2]);
+      if(a>0 && b>0) return a/b;
+    }
+
+    var tipo=norm356(cell356(o,['TIPO_COTA','TIPO COTA']));
+    if(tipo.indexOf('UNICA')>=0 || tipo.indexOf('INTEGRAL')>=0) return 1;
+    return 0;
+  }
+
+  function detalhePagamentosMesBolaoV356(headers,rows){
+    headers=headers||[];
+    rows=rows||[];
+    var grupos={};
+
+    rows.forEach(function(row){
+      var o=rowObj356(headers,row);
+      var st=cell356(o,['STATUS','STATUS_PAGAMENTO']);
+      if(!statusPago356(st)) return;
+
+      var lot=cell356(o,['LOTERIA','BOLAO','BOLÃO']) || 'Sem loteria';
+      var data=cell356(o,['DATA_TRANSFERENCIA','DATA TRANSFERENCIA','DATA_PAGAMENTO','DATA PAGAMENTO','DATA','DATA_HORA']);
+      var mesRaw=cell356(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA','MÊS REFERÊNCIA']) || data;
+      var mes=formatarMesReferenciaTela356(mesRaw);
+      if(!mes || mes==='-') mes=formatarMesReferenciaTela356(data) || '-';
+
+      var valor=num356(cell356(o,['VALOR_PAGO','VALOR PAGO','VALOR_TRANSFERIDO','VALOR TRANSFERIDO','VALOR','VALOR_ESPERADO','VALOR_PAGAMENTO_AGORA']));
+      var valorCota=valorCotaBolao356(lot,o);
+      var cotas=(valor>0 && valorCota>0) ? (valor/valorCota) : cotasFallback356(o);
+
+      var k=mes+'|'+key356(lot);
+      if(!grupos[k]) grupos[k]={mes:mes,loteria:lot,valor:0,cotas:0,qtd:0,valorCota:valorCota};
+      grupos[k].valor+=valor;
+      grupos[k].cotas+=cotas;
+      grupos[k].qtd++;
+      if(!grupos[k].valorCota && valorCota>0) grupos[k].valorCota=valorCota;
+    });
+
+    var listaG=Object.keys(grupos).sort().map(function(k){
+      var g=grupos[k];
+      g.valor=Math.round(g.valor*100)/100;
+      g.cotas=Math.round(g.cotas*1000)/1000;
+      return g;
+    });
+
+    if(!listaG.length) return '<div class="notice warn">Nenhum pagamento confirmado para detalhar por mês/loteria.</div>';
+
+    return '<div class="pay-summary-grid">'+listaG.map(function(g){
+      var cotaInfo=g.valorCota>0 ? ' · valor cota '+esc356(moeda356(g.valorCota)) : '';
+      return '<div class="pay-summary-card"><b>'+esc356(formatarMesReferenciaTela356(g.mes))+' · '+esc356(g.loteria)+'</b><strong>'+esc356(moeda356(g.valor))+'</strong><div class="pay-admin-sub">'+esc356(g.qtd)+' comprovante(s) · '+esc356(cotasTexto356(g.cotas))+' cota(s)'+cotaInfo+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  window.PSS_FORMATAR_MES_REFERENCIA_TELA = formatarMesReferenciaTela356;
+  window.detalhePagamentosMesBolaoV356_ = detalhePagamentosMesBolaoV356;
+
+  var baseRenderPagamentoCard356 = window.renderPagamentoCardAdmin_;
+  window.renderPagamentoCardAdmin_ = renderPagamentoCardAdmin_ = function(headers,row,i){
+    try{
+      var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(headers,row) : {};
+      var linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
+      var cls=(typeof pagamentoStatusClasse_==='function') ? pagamentoStatusClasse_(o.status) : {card:'',badge:''};
+      var url=o.urlComprovante||o.arquivoUrl||'';
+      var mesTela=formatarMesReferenciaTela356(o.mesReferencia||'-');
+
+      return ''
+        + '<article class="pay-admin-card-pro '+esc356(cls.card||'')+'" data-pay-row="'+esc356(linha)+'">'
+        + '<div class="pay-admin-head">'
+        + '<div>'
+        + '<div class="pay-admin-title">'+esc356(o.loteria||'Pagamento sem loteria informada')+'</div>'
+        + '<div class="pay-admin-sub">'+esc356(o.email||'-')+' • '+esc356((typeof formatarDataHoraPtBR==='function')?formatarDataHoraPtBR(o.data||'-'):(o.data||'-'))+'</div>'
+        + '</div>'
+        + '<span class="pay-admin-status '+esc356(cls.badge||'')+'">'+esc356(o.status||'Pendente')+'</span>'
+        + '</div>'
+        + '<div class="pay-admin-grid">'
+        + '<div class="pay-admin-info"><b>Valor</b><span>'+esc356(o.valor?moeda356(o.valor):'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Pagador</b><span>'+esc356(o.pagador||'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Recebedor</b><span>'+esc356(o.recebedor||'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Mês referência</b><span>'+esc356(mesTela)+'</span></div>'
+        + '<div class="pay-admin-info"><b>ID transação</b><span>'+esc356(o.idTransacao||'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Autenticação</b><span>'+esc356(o.autenticacao||'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Tipo cota</b><span>'+esc356(o.tipoCota||'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Cód. produto</b><span>'+esc356(o.codigoProduto||'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Partes</b><span>'+esc356((typeof formatarPartesPagamento_==='function')?formatarPartesPagamento_(o.partesCota):(o.partesCota||'-'))+'</span></div>'
+        + '<div class="pay-admin-info full"><b>Validação / observação</b><span>'+esc356(o.validacao||'-')+'</span></div>'
+        + (o.participantesCota?'<div class="pay-admin-info full"><b>Participantes da cota</b><span>'+esc356(o.participantesCota)+'</span></div>':'')
+        + '</div>'
+        + '<div class="pay-card-actions">'
+        + (url?'<button class="btn btn-blue" onclick="abrirComprovanteAdmin(\''+esc356(url).replace(/'/g,'&#039;')+'\')">Ver comprovante</button>':'')
+        + '<button class="btn btn-light" onclick="reprocessarPagamentoAdmin('+esc356(linha)+')">Reprocessar OCR</button>'
+        + (!(norm356(o.status).indexOf('PAGO')>=0)?'<button class="btn" onclick="confirmarPagamentoManualAdmin('+esc356(linha)+')">Confirmar pagamento</button>':'')
+        + '</div>'
+        + '</article>';
+    }catch(e){
+      return baseRenderPagamentoCard356 ? baseRenderPagamentoCard356(headers,row,i) : '<div class="notice error">'+esc356(e.message||e)+'</div>';
+    }
+  };
+
+  window.renderListaPagamentosCardsAdmin_ = renderListaPagamentosCardsAdmin_ = function(headers,rows){
+    rows=rows||[];
+    if(!rows.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+    return '<div class="pay-list">'+rows.map(function(row,i){return window.renderPagamentoCardAdmin_(headers,row,i);}).join('')+'</div>';
+  };
+
+  window.renderPagamentosEfetuadosAdmin_ = renderPagamentosEfetuadosAdmin_ = function(headers,rows){
+    headers=headers||[];
+    rows=rows||[];
+    if(!headers.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+
+    var resumo='';
+    try{ resumo = (typeof renderResumoPagamentosAdmin_==='function') ? renderResumoPagamentosAdmin_(headers,rows) : ''; }catch(e){ resumo=''; }
+
+    var lista='';
+    try{ lista = window.renderListaPagamentosCardsAdmin_(headers,rows); }
+    catch(e){ lista='<div class="notice error">'+esc356(e.message||e)+'</div>'; }
+
+    return ''
+      + '<h3 style="margin-top:4px;">📊 Detalhamento por mês, ano e loteria</h3>'
+      + detalhePagamentosMesBolaoV356(headers,rows)
+      + resumo
+      + '<div class="pay-filterbar">'
+      + '<div class="field"><label>Buscar</label><input id="payBuscaAdmin" placeholder="Buscar por e-mail, loteria, pagador, ID..." oninput="filtrarPagamentosAdmin()"></div>'
+      + '<div class="field"><label>Status</label><select id="payStatusAdmin" onchange="filtrarPagamentosAdmin()"><option value="TODOS">Todos</option><option value="PAGO">Pago</option><option value="ANALISE">Em análise</option><option value="PENDENTE">Pendente</option><option value="ERRO">Erro/Duplicado</option></select></div>'
+      + '<div class="field"><label>Mês</label><input id="payMesAdmin" placeholder="MM/AAAA" oninput="filtrarPagamentosAdmin()"></div>'
+      + '<button class="btn btn-light" onclick="limparFiltrosPagamentosAdmin()">Limpar</button>'
+      + '</div>'
+      + '<div id="pagamentosCardsAdminBox">'+lista+'</div>';
+  };
+
+  window.filtrarPagamentosAdmin = filtrarPagamentosAdmin = function(){
+    var cache=window.ESTADO&&ESTADO.pagamentosAdminCache?ESTADO.pagamentosAdminCache:{headers:[],rows:[]};
+    var termo=norm356(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+    var status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+    var mesDigitado=String(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'').trim();
+    var mesCompacto=compactMes356(mesDigitado);
+    var mesNorm=norm356(mesDigitado);
+
+    var filtradas=(cache.rows||[]).filter(function(row){
+      var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(cache.headers,row) : {};
+      var st=norm356(o.status);
+      var mesTela=formatarMesReferenciaTela356(o.mesReferencia||o.data||'');
+      var texto=norm356(Object.values(o).join(' | ')+' | '+mesTela);
+
+      if(termo && texto.indexOf(termo)<0) return false;
+
+      if(mesDigitado){
+        var linhaCompacta=compactMes356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+        var linhaNorm=norm356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+        if(mesCompacto){
+          if(linhaCompacta.indexOf(mesCompacto)<0) return false;
+        }else if(linhaNorm.indexOf(mesNorm)<0){
+          return false;
+        }
+      }
+
+      if(status==='PAGO' && !(st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0)) return false;
+      if(status==='ANALISE' && !(st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0)) return false;
+      if(status==='PENDENTE' && (st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0 || st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0 || st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+      if(status==='ERRO' && !(st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+      return true;
+    });
+
+    var box=document.getElementById('pagamentosCardsAdminBox');
+    if(box) box.innerHTML=window.renderListaPagamentosCardsAdmin_(cache.headers,filtradas);
+  };
+
+  var baseFormatConsulta356=window.formatConsultaValor_;
+  if(baseFormatConsulta356){
+    window.formatConsultaValor_ = formatConsultaValor_ = function(row,c){
+      if(c==='mesReferencia'){
+        var v=row&&row[c]!==undefined?row[c]:'';
+        return esc356(formatarMesReferenciaTela356(v));
+      }
+      return baseFormatConsulta356(row,c);
+    };
+  }
+
+  var baseValorCampoConsultaV256_356=window.valorCampoConsultaV256_;
+  if(baseValorCampoConsultaV256_356){
+    window.valorCampoConsultaV256_ = valorCampoConsultaV256_ = function(row,c){
+      if(c==='mesReferencia'){
+        var v=row&&row[c]!==undefined?row[c]:'';
+        return esc356(formatarMesReferenciaTela356(v));
+      }
+      return baseValorCampoConsultaV256_356(row,c);
+    };
+  }
+
+  window.diagnosticarMesReferenciaV356=function(){
+    return {
+      sucesso:true,
+      versao:V,
+      regra:'Tela e filtro em MM/AAAA; valor técnico da planilha/API preservado.',
+      exemplos:{
+        antigo:'06/2026 -> '+formatarMesReferenciaTela356('06/2026'),
+        novo:'06-2026 -> '+formatarMesReferenciaTela356('06-2026'),
+        iso:'2026-06 -> '+formatarMesReferenciaTela356('2026-06')
+      }
+    };
+  };
+})();
+
 </script>
 
 </body>
