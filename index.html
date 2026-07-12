@@ -3317,7 +3317,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
             <div class="pay-admin-info"><b>ID transação</b><span>${escapeHtml(o.idTransacao||'-')}</span></div>
             <div class="pay-admin-info"><b>Autenticação</b><span>${escapeHtml(o.autenticacao||'-')}</span></div>
             <div class="pay-admin-info"><b>Tipo cota</b><span>${escapeHtml(o.tipoCota||'-')}</span></div>
-            <div class="pay-admin-info"><b>Cód. produto</b><span>${escapeHtml(o.codigoProduto||'-')}</span></div>
+            <div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>${escapeHtml(o.codigoProduto||'-')}</span></div>
             <div class="pay-admin-info"><b>Partes</b><span>${escapeHtml(formatarPartesPagamento_(o.partesCota))}</span></div>
             <div class="pay-admin-info full"><b>Validação / observação</b><span>${escapeHtml(o.validacao||'-')}</span></div>
             ${o.participantesCota?`<div class="pay-admin-info full"><b>Participantes da cota</b><span>${escapeHtml(o.participantesCota)}</span></div>`:''}
@@ -3349,7 +3349,7 @@ function renderResumoBolao(d){return `<div class="table-wrap"><table><thead><tr>
         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
-        codigoProduto:cellObj(o,['COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+        codigoProduto:cellObj(o,['IDENTIFICADOR','IDENTIFICADOR_PRODUTO','IDENTIFICADOR PRODUTO','COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
@@ -26930,7 +26930,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
         + '<div class="pay-admin-info"><b>ID transação</b><span>'+esc356(o.idTransacao||'-')+'</span></div>'
         + '<div class="pay-admin-info"><b>Autenticação</b><span>'+esc356(o.autenticacao||'-')+'</span></div>'
         + '<div class="pay-admin-info"><b>Tipo cota</b><span>'+esc356(o.tipoCota||'-')+'</span></div>'
-        + '<div class="pay-admin-info"><b>Cód. produto</b><span>'+esc356(o.codigoProduto||'-')+'</span></div>'
+        + '<div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>'+esc356(o.codigoProduto||'-')+'</span></div>'
         + '<div class="pay-admin-info"><b>Partes</b><span>'+esc356((typeof formatarPartesPagamento_==='function')?formatarPartesPagamento_(o.partesCota):(o.partesCota||'-'))+'</span></div>'
         + '<div class="pay-admin-info full"><b>Validação / observação</b><span>'+esc356(o.validacao||'-')+'</span></div>'
         + (o.participantesCota?'<div class="pay-admin-info full"><b>Participantes da cota</b><span>'+esc356(o.participantesCota)+'</span></div>':'')
