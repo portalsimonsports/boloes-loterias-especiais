@@ -1,0 +1,374 @@
+/********************************************************************************
+ * PATCH V363 — EXCLUIR COMPROVANTE DUPLICADO
+ * Portal SimonSports — Bolões de Loterias Especiais
+ * Data: 12/07/2026
+ *
+ * INSTALAÇÃO
+ * 1) Cole TODO este arquivo no FINAL do Code_API.gs atual.
+ * 2) Salve o projeto.
+ * 3) Implante uma NOVA versão do Web App.
+ * 4) Mantenha: Executar como "Eu" e acesso "Qualquer pessoa".
+ *
+ * FUNCIONAMENTO
+ * - Adiciona a action excluirComprovantePagamentoV363 sem alterar o switch atual.
+ * - Confere se o e-mail informado pertence a um administrador cadastrado.
+ * - Localiza o ID do arquivo pelas colunas de ID ou pelas URLs do Drive.
+ * - Envia o arquivo para a lixeira do Google Drive, quando localizado.
+ * - Exclui somente a linha escolhida da aba PAGAMENTOS.
+ * - Invalida caches do sistema após a exclusão.
+ ********************************************************************************/
+
+var PSSAPI_V363_EXCLUIR_COMPROVANTE_VERSION = 'V363_FIX_LOGIN_EXCLUIR_COMPROVANTE';
+
+function PSSAPI_v363NormHeader_(valor) {
+  return String(valor == null ? '' : valor)
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function PSSAPI_v363IndiceHeader_(headers, aliases) {
+  var mapa = {};
+  for (var i = 0; i < headers.length; i++) {
+    mapa[PSSAPI_v363NormHeader_(headers[i])] = i;
+  }
+
+  for (var j = 0; j < aliases.length; j++) {
+    var chave = PSSAPI_v363NormHeader_(aliases[j]);
+    if (Object.prototype.hasOwnProperty.call(mapa, chave)) return mapa[chave];
+  }
+
+  return -1;
+}
+
+function PSSAPI_v363ExtrairIdDrive_(valor) {
+  var texto = String(valor == null ? '' : valor).trim();
+  if (!texto) return '';
+
+  var padroes = [
+    /\/d\/([A-Za-z0-9_-]{20,})/i,
+    /[?&]id=([A-Za-z0-9_-]{20,})/i,
+    /\/folders\/([A-Za-z0-9_-]{20,})/i,
+    /^([A-Za-z0-9_-]{20,})$/
+  ];
+
+  for (var i = 0; i < padroes.length; i++) {
+    var encontrado = texto.match(padroes[i]);
+    if (encontrado && encontrado[1]) return encontrado[1];
+  }
+
+  return '';
+}
+
+function PSSAPI_v363UrlRealCelula_(sh, linha, coluna) {
+  if (!sh || !linha || !coluna) return '';
+  var range = sh.getRange(linha, coluna);
+
+  try {
+    var rich = range.getRichTextValue();
+    if (rich) {
+      var link = rich.getLinkUrl();
+      if (link) return String(link).trim();
+
+      var runs = rich.getRuns ? rich.getRuns() : [];
+      for (var r = 0; r < runs.length; r++) {
+        var linkRun = runs[r].getLinkUrl ? runs[r].getLinkUrl() : '';
+        if (linkRun) return String(linkRun).trim();
+      }
+    }
+  } catch (erroRichText) {}
+
+  try {
+    var formula = String(range.getFormula() || '');
+    var formulaLink = formula.match(/HYPERLINK\s*\(\s*["']([^"']+)["']/i);
+    if (formulaLink && formulaLink[1]) return formulaLink[1];
+  } catch (erroFormula) {}
+
+  try {
+    return String(range.getDisplayValue() || range.getValue() || '').trim();
+  } catch (erroValor) {
+    return '';
+  }
+}
+
+function PSSAPI_v363LocalizarArquivoPagamento_(sh, linha, headers, valores) {
+  var aliasesId = [
+    'ARQUIVO_ID',
+    'ID_ARQUIVO',
+    'FILE_ID',
+    'DRIVE_FILE_ID',
+    'COMPROVANTE_ID',
+    'ID_COMPROVANTE'
+  ];
+
+  var aliasesUrl = [
+    'URL_COMPROVANTE',
+    'COMPROVANTE_URL',
+    'ARQUIVO_URL',
+    'URL_ARQUIVO',
+    'COMPROVANTE',
+    'URL'
+  ];
+
+  var id = '';
+  var url = '';
+  var indiceId = PSSAPI_v363IndiceHeader_(headers, aliasesId);
+  var indiceUrl = PSSAPI_v363IndiceHeader_(headers, aliasesUrl);
+
+  if (indiceId >= 0) {
+    id = PSSAPI_v363ExtrairIdDrive_(valores[indiceId]);
+  }
+
+  if (indiceUrl >= 0) {
+    url = PSSAPI_v363UrlRealCelula_(sh, linha, indiceUrl + 1);
+    if (!id) id = PSSAPI_v363ExtrairIdDrive_(url);
+  }
+
+  if (!id) {
+    for (var i = 0; i < valores.length; i++) {
+      var candidato = String(valores[i] == null ? '' : valores[i]).trim();
+      if (!candidato) continue;
+      if (/drive\.google\.com|docs\.google\.com/i.test(candidato)) {
+        id = PSSAPI_v363ExtrairIdDrive_(candidato);
+        if (id) {
+          url = url || candidato;
+          break;
+        }
+      }
+    }
+  }
+
+  return {
+    id: id,
+    url: url,
+    indiceId: indiceId,
+    indiceUrl: indiceUrl
+  };
+}
+
+function PSSAPI_v363AdminAutorizado_(adminEmail) {
+  adminEmail = String(adminEmail || '').trim().toLowerCase();
+  if (!adminEmail) return false;
+
+  try {
+    if (typeof PSSAPI_isAdminEmail_ === 'function') {
+      return !!PSSAPI_isAdminEmail_(adminEmail);
+    }
+  } catch (erroAdminExistente) {}
+
+  try {
+    var sh = PSSAPI_sheet_(['Usuarios', 'USUARIOS', 'Usuários', 'USUÁRIOS']);
+    if (!sh || sh.getLastRow() < 2) return false;
+
+    var dados = sh.getDataRange().getDisplayValues();
+    var headers = dados[0];
+    var iEmail = PSSAPI_v363IndiceHeader_(headers, ['EMAIL', 'E-MAIL']);
+    var iPerfil = PSSAPI_v363IndiceHeader_(headers, ['PERFIL', 'ROLE', 'TIPO_USUARIO', 'NIVEL']);
+    var iStatus = PSSAPI_v363IndiceHeader_(headers, ['STATUS', 'ATIVO']);
+
+    if (iEmail < 0 || iPerfil < 0) return false;
+
+    for (var i = 1; i < dados.length; i++) {
+      var emailLinha = String(dados[i][iEmail] || '').trim().toLowerCase();
+      if (emailLinha !== adminEmail) continue;
+
+      var perfil = PSSAPI_v363NormHeader_(dados[i][iPerfil]);
+      var status = iStatus >= 0 ? PSSAPI_v363NormHeader_(dados[i][iStatus]) : 'ATIVO';
+      var perfilAdmin = perfil.indexOf('ADMIN') >= 0 || perfil.indexOf('MESTRE') >= 0;
+      var ativo = status.indexOf('INATIV') < 0 && status.indexOf('BLOQUE') < 0 && status.indexOf('RECUS') < 0;
+      return perfilAdmin && ativo;
+    }
+  } catch (erroUsuarios) {}
+
+  return false;
+}
+
+function PSSAPI_excluirComprovantePagamentoV363_(linhaPlanilha, adminEmail) {
+  linhaPlanilha = Number(linhaPlanilha || 0);
+  adminEmail = String(adminEmail || '').trim().toLowerCase();
+
+  if (!PSSAPI_v363AdminAutorizado_(adminEmail)) {
+    throw new Error('Apenas administrador ativo pode excluir comprovantes.');
+  }
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) {
+    throw new Error('Outra alteração está em andamento. Aguarde alguns segundos e tente novamente.');
+  }
+
+  try {
+    var sh = PSSAPI_sheet_(['PAGAMENTOS', 'Pagamentos']);
+    if (!sh) throw new Error('Aba PAGAMENTOS não encontrada.');
+    if (linhaPlanilha < 2 || linhaPlanilha > sh.getLastRow()) {
+      throw new Error('Linha de pagamento inválida: ' + linhaPlanilha);
+    }
+
+    var lastCol = Math.max(1, sh.getLastColumn());
+    var headers = sh.getRange(1, 1, 1, lastCol).getDisplayValues()[0];
+    var valores = sh.getRange(linhaPlanilha, 1, 1, lastCol).getDisplayValues()[0];
+
+    var iEmail = PSSAPI_v363IndiceHeader_(headers, ['EMAIL', 'E-MAIL']);
+    var iLoteria = PSSAPI_v363IndiceHeader_(headers, ['LOTERIA', 'BOLAO', 'BOLÃO']);
+    var iValor = PSSAPI_v363IndiceHeader_(headers, ['VALOR', 'VALOR_PAGO']);
+    var iTransacao = PSSAPI_v363IndiceHeader_(headers, ['ID_TRANSACAO', 'ID TRANSAÇÃO', 'ID TRANSACAO']);
+
+    var emailParticipante = iEmail >= 0 ? String(valores[iEmail] || '').trim().toLowerCase() : '';
+    var loteria = iLoteria >= 0 ? String(valores[iLoteria] || '').trim() : '';
+    var valor = iValor >= 0 ? String(valores[iValor] || '').trim() : '';
+    var idTransacao = iTransacao >= 0 ? String(valores[iTransacao] || '').trim() : '';
+
+    var arquivo = PSSAPI_v363LocalizarArquivoPagamento_(sh, linhaPlanilha, headers, valores);
+    var arquivoEnviadoLixeira = false;
+    var avisoArquivo = '';
+
+    if (arquivo.id) {
+      try {
+        var file = DriveApp.getFileById(arquivo.id);
+        file.setTrashed(true);
+        arquivoEnviadoLixeira = true;
+      } catch (erroArquivo) {
+        avisoArquivo = 'A linha foi excluída, mas o arquivo não pôde ser enviado à lixeira: ' + erroArquivo.message;
+      }
+    } else {
+      avisoArquivo = 'A linha foi excluída, mas nenhum ID de arquivo do Drive foi localizado.';
+    }
+
+    sh.deleteRow(linhaPlanilha);
+
+    try {
+      if (typeof PSSAPI_invalidarCache_ === 'function') PSSAPI_invalidarCache_(sh.getName());
+    } catch (erroCache) {}
+    try {
+      CacheService.getScriptCache().removeAll([
+        'PSS_PAGAMENTOS_ADMIN',
+        'PSS_HOME_ULTRA_V237',
+        'PSS_BOLOES_ATIVOS_V237'
+      ]);
+    } catch (erroCacheDireto) {}
+
+    try {
+      if (typeof PSSAPI_log_ === 'function') {
+        PSSAPI_log_(
+          'PAGAMENTO',
+          'excluirComprovantePagamentoV363',
+          'Administrador=' + adminEmail +
+          ' | linha=' + linhaPlanilha +
+          ' | participante=' + emailParticipante +
+          ' | loteria=' + loteria +
+          ' | valor=' + valor +
+          ' | idTransacao=' + idTransacao +
+          ' | arquivoId=' + arquivo.id +
+          ' | arquivoLixeira=' + arquivoEnviadoLixeira
+        );
+      }
+    } catch (erroLog) {}
+
+    return {
+      sucesso: true,
+      ok: true,
+      versao: PSSAPI_V363_EXCLUIR_COMPROVANTE_VERSION,
+      msg: avisoArquivo
+        ? 'Comprovante excluído da planilha. ' + avisoArquivo
+        : 'Comprovante e arquivo excluídos com sucesso.',
+      linhaExcluida: linhaPlanilha,
+      participante: emailParticipante,
+      loteria: loteria,
+      valor: valor,
+      idTransacao: idTransacao,
+      arquivoId: arquivo.id,
+      arquivoEnviadoLixeira: arquivoEnviadoLixeira,
+      avisoArquivo: avisoArquivo
+    };
+  } finally {
+    try { lock.releaseLock(); } catch (erroRelease) {}
+  }
+}
+
+(function PSSAPI_instalarRotaExclusaoV363_() {
+  var raiz;
+  try { raiz = (function () { return this; })(); } catch (erroRaiz) { raiz = null; }
+  if (raiz && raiz.PSSAPI_V363_ROTA_EXCLUSAO_APLICADA) return;
+  if (raiz) raiz.PSSAPI_V363_ROTA_EXCLUSAO_APLICADA = true;
+
+  if (typeof PSSAPI_processar_ !== 'function') {
+    throw new Error('PSSAPI_processar_ não localizada. Cole o PATCH V363 no final do Code_API.gs completo.');
+  }
+
+  var processarBaseV363 = PSSAPI_processar_;
+
+  PSSAPI_processar_ = function (e) {
+    var p = e && e.parameter ? e.parameter : {};
+    var pay = {};
+    try {
+      pay = typeof PSSAPI_payload_ === 'function' ? PSSAPI_payload_(p) : {};
+    } catch (erroPayload) {
+      pay = {};
+    }
+
+    var action = String(
+      p.action || p.fn || p.fnName ||
+      pay.action || pay.fn || pay.fnName || ''
+    ).trim();
+
+    if (
+      action === 'excluirComprovantePagamentoV363' ||
+      action === 'excluirPagamentoLinhaV363' ||
+      action === 'excluirComprovanteDuplicadoV363'
+    ) {
+      try {
+        var args = Array.isArray(pay.args) ? pay.args : [];
+        var linha = Number(
+          args[0] ||
+          pay.linha || pay.linhaPlanilha || pay.row ||
+          p.linha || p.linhaPlanilha || p.row || 0
+        );
+        var adminEmail = String(
+          pay.adminEmail || pay.emailAdmin || pay.email ||
+          p.adminEmail || p.emailAdmin || p.email || ''
+        ).trim().toLowerCase();
+
+        var resultado = PSSAPI_excluirComprovantePagamentoV363_(linha, adminEmail);
+        return typeof PSSAPI_ok_ === 'function' ? PSSAPI_ok_(resultado) : resultado;
+      } catch (erroExcluir) {
+        if (typeof PSSAPI_log_ === 'function') {
+          try {
+            PSSAPI_log_('ERRO', action, erroExcluir && erroExcluir.stack ? erroExcluir.stack : String(erroExcluir));
+          } catch (erroLog) {}
+        }
+        return typeof PSSAPI_erro_ === 'function'
+          ? PSSAPI_erro_(erroExcluir && erroExcluir.message ? erroExcluir.message : String(erroExcluir))
+          : { sucesso: false, ok: false, erro: String(erroExcluir) };
+      }
+    }
+
+    return processarBaseV363(e);
+  };
+
+  try { PSSAPI_VERSION = PSSAPI_V363_EXCLUIR_COMPROVANTE_VERSION; } catch (erroVersao) {}
+})();
+
+function PSSAPI_DIAGNOSTICAR_EXCLUSAO_COMPROVANTE_V363() {
+  var sh = PSSAPI_sheet_(['PAGAMENTOS', 'Pagamentos']);
+  var headers = [];
+  if (sh && sh.getLastColumn() > 0) {
+    headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
+  }
+
+  var resultado = {
+    sucesso: true,
+    versao: PSSAPI_V363_EXCLUIR_COMPROVANTE_VERSION,
+    rotaInstalada: typeof PSSAPI_processar_ === 'function',
+    funcaoExclusao: typeof PSSAPI_excluirComprovantePagamentoV363_ === 'function',
+    abaPagamentos: sh ? sh.getName() : 'NÃO LOCALIZADA',
+    linhasPagamentos: sh ? Math.max(0, sh.getLastRow() - 1) : 0,
+    colunaUrl: PSSAPI_v363IndiceHeader_(headers, ['URL_COMPROVANTE', 'COMPROVANTE_URL', 'ARQUIVO_URL', 'URL']) + 1,
+    colunaArquivoId: PSSAPI_v363IndiceHeader_(headers, ['ARQUIVO_ID', 'ID_ARQUIVO', 'FILE_ID', 'DRIVE_FILE_ID', 'COMPROVANTE_ID']) + 1,
+    observacao: 'A função de diagnóstico não exclui nenhum registro.'
+  };
+
+  Logger.log(JSON.stringify(resultado, null, 2));
+  return resultado;
+}
