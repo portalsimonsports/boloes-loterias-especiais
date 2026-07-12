@@ -1,0 +1,91 @@
+name: Aplicar V371 pagamentos direto
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/aplicar-v371-pagamentos-direto.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar módulo V371
+        shell: bash
+        run: |
+          test -s assets/pss-v371-pagamentos-pagos.js
+          node --check assets/pss-v371-pagamentos-pagos.js
+          node --check assets/pss-v362-bootstrap.js
+
+      - name: Vincular V371 diretamente ao index
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          versao = 'V371_PAGAMENTOS_PAGOS_DIRETO'
+
+          # Remove vínculos diretos antigos do filtro, quando existirem.
+          text = re.sub(
+              r'\s*<script[^>]+src=["\'][^"\']*pss-v(?:368|369|370|371)[^"\']*["\'][^>]*></script>\s*',
+              '\n',
+              text,
+              flags=re.I
+          )
+
+          # Força nova URL do bootstrap para eliminar cache antigo.
+          text, total_bootstrap = re.subn(
+              r'assets/pss-v362-bootstrap\.js(?:\?v=[^"\']*)?',
+              'assets/pss-v362-bootstrap.js?v=' + versao,
+              text,
+              count=1,
+              flags=re.I
+          )
+          if total_bootstrap != 1:
+              raise SystemExit('Referência única ao bootstrap não localizada.')
+
+          # Atualiza a identificação visível/interna da versão anterior.
+          text = text.replace('V362_SUPER_RAPIDO_SEGURO', versao)
+
+          script = (
+              '  <script src="assets/pss-v371-pagamentos-pagos.js?v=' +
+              versao +
+              '" data-pss-v371-pagamentos-pagos="1"></script>\n'
+          )
+
+          if text.count('</body>') != 1:
+              raise SystemExit('Fechamento </body> inválido.')
+          text = text.replace('</body>', script + '</body>', 1)
+
+          if text.count('assets/pss-v371-pagamentos-pagos.js') != 1:
+              raise SystemExit('Vínculo V371 ausente ou duplicado.')
+          if 'assets/pss-v362-bootstrap.js?v=' + versao not in text:
+              raise SystemExit('Cache bust do bootstrap não aplicado.')
+          if '</html>' not in text:
+              raise SystemExit('Estrutura HTML incompleta.')
+
+          path.write_text(text, encoding='utf-8', newline='')
+          print('V371 vinculada diretamente ao index.html.')
+          PY
+
+      - name: Publicar e remover workflow temporário
+        shell: bash
+        run: |
+          rm -f .github/workflows/aplicar-v371-pagamentos-direto.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html assets/pss-v371-pagamentos-pagos.js assets/pss-v362-bootstrap.js .github/workflows/aplicar-v371-pagamentos-direto.yml
+          git commit -m 'Vincula filtro de pagamentos V371 diretamente ao index [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
