@@ -21,20 +21,36 @@
     html.classList.toggle('pss-v362-hidden', document.hidden);
   }, { passive: true });
 
-  function carregarCorrecaoV363() {
-    if (window.PSS_V363_LOGIN_PAGAMENTOS_APLICADO) return;
-    if (document.querySelector('script[data-pss-v363-login-pagamentos]')) return;
+  function carregarScript(src, atributo, callback) {
+    if (document.querySelector('script[' + atributo + ']')) {
+      if (callback) callback();
+      return;
+    }
 
     var script = document.createElement('script');
-    script.src = 'assets/pss-v363-login-pagamentos.js?v=V363_FIX_LOGIN_EXCLUIR_COMPROVANTE';
+    script.src = src;
     script.async = false;
-    script.setAttribute('data-pss-v363-login-pagamentos', '1');
+    script.setAttribute(atributo, '1');
+    if (callback) script.onload = callback;
     document.head.appendChild(script);
   }
 
+  function carregarCorrecoes() {
+    carregarScript(
+      'assets/pss-v363-login-pagamentos.js?v=V363_FIX_LOGIN_EXCLUIR_COMPROVANTE',
+      'data-pss-v363-login-pagamentos',
+      function () {
+        carregarScript(
+          'assets/pss-v364-exclusao-rapida.js?v=V364_EXCLUSAO_RAPIDA_SEGURA',
+          'data-pss-v364-exclusao-rapida'
+        );
+      }
+    );
+  }
+
   if (document.readyState === 'complete') {
-    setTimeout(carregarCorrecaoV363, 0);
+    setTimeout(carregarCorrecoes, 0);
   } else {
-    window.addEventListener('load', carregarCorrecaoV363, { once: true });
+    window.addEventListener('load', carregarCorrecoes, { once: true });
   }
 })();
