@@ -45,8 +45,8 @@
           'data-pss-v365-corrige-botoes-pagamentos',
           function () {
             carregarScript(
-              'assets/pss-v369-filtro-pagamentos.js?v=V369_FILTRO_PAGAMENTOS_CORRETO',
-              'data-pss-v369-filtro-pagamentos'
+              'assets/pss-v370-filtro-pagamentos.js?v=V370_ABRE_PAGAMENTOS_PAGOS_CORRETAMENTE',
+              'data-pss-v370-filtro-pagamentos'
             );
           }
         );
