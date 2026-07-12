@@ -42,7 +42,13 @@
       function () {
         carregarScript(
           'assets/pss-v365-corrige-botoes-pagamentos.js?v=V365_CORRIGE_BOTOES_PAGAMENTOS',
-          'data-pss-v365-corrige-botoes-pagamentos'
+          'data-pss-v365-corrige-botoes-pagamentos',
+          function () {
+            carregarScript(
+              'assets/pss-v368-pagamentos-pagos-recolhidos.js?v=V368_PAGAMENTOS_PAGOS_RECOLHIDOS',
+              'data-pss-v368-pagamentos-pagos-recolhidos'
+            );
+          }
         );
       }
     );
