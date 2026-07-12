@@ -1,0 +1,68 @@
+name: Diagnosticar login e pagamentos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnosticar-login-pagamentos.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  diagnosticar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extrair trechos relevantes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+          lines = text.splitlines()
+          terms = [
+              'Autenticando no Firebase',
+              'Falha de rede ao acessar o Firebase',
+              'signInWithEmailAndPassword',
+              'onAuthStateChanged',
+              'firebase.auth',
+              'ENTRANDO',
+              'payment-admin-card',
+              'pay-admin-card-pro',
+              'codigoProduto:cellObj',
+              'excluirPagamento',
+              'excluirComprovante',
+              'removerPagamento',
+              'ID transação',
+              'linhaPlanilha'
+          ]
+          out = []
+          for term in terms:
+              hits = [i for i,l in enumerate(lines) if term.lower() in l.lower()]
+              out.append('\n' + '='*100)
+              out.append(f'TERMO: {term} | OCORRÊNCIAS: {len(hits)}')
+              for n,i in enumerate(hits[:12], 1):
+                  out.append('-'*100)
+                  out.append(f'OCORRÊNCIA {n} | LINHA {i+1}')
+                  start=max(0,i-18); end=min(len(lines),i+28)
+                  for j in range(start,end):
+                      out.append(f'{j+1:06d}: {lines[j]}')
+          Path('diagnostico_login_pagamentos.txt').write_text('\n'.join(out), encoding='utf-8')
+          PY
+
+      - name: Publicar diagnóstico temporário
+        shell: bash
+        run: |
+          rm -f .github/workflows/diagnosticar-login-pagamentos.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add diagnostico_login_pagamentos.txt .github/workflows/diagnosticar-login-pagamentos.yml
+          git commit -m 'Gera diagnóstico temporário de login e pagamentos [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
