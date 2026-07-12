@@ -45,8 +45,8 @@
           'data-pss-v365-corrige-botoes-pagamentos',
           function () {
             carregarScript(
-              'assets/pss-v368-pagamentos-pagos-recolhidos.js?v=V368_PAGAMENTOS_PAGOS_RECOLHIDOS',
-              'data-pss-v368-pagamentos-pagos-recolhidos'
+              'assets/pss-v369-filtro-pagamentos.js?v=V369_FILTRO_PAGAMENTOS_CORRETO',
+              'data-pss-v369-filtro-pagamentos'
             );
           }
         );
