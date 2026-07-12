@@ -41,8 +41,8 @@
       'data-pss-v363-login-pagamentos',
       function () {
         carregarScript(
-          'assets/pss-v364-exclusao-rapida.js?v=V365_CORRIGE_BOTOES_PAGAMENTOS',
-          'data-pss-v364-exclusao-rapida'
+          'assets/pss-v365-corrige-botoes-pagamentos.js?v=V365_CORRIGE_BOTOES_PAGAMENTOS',
+          'data-pss-v365-corrige-botoes-pagamentos'
         );
       }
     );
