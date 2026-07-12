@@ -41,13 +41,15 @@ jobs:
               text = text.replace(old, new)
 
           head_marker = '  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />'
-          firebase_links = '''  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
-  <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin />
-  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
-  <link rel="dns-prefetch" href="//identitytoolkit.googleapis.com" />
-  <link rel="dns-prefetch" href="//securetoken.googleapis.com" />
-  <link rel="dns-prefetch" href="//firestore.googleapis.com" />'''
+          firebase_links = '\n'.join([
+              '  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />',
+              '  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />',
+              '  <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin />',
+              '  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />',
+              '  <link rel="dns-prefetch" href="//identitytoolkit.googleapis.com" />',
+              '  <link rel="dns-prefetch" href="//securetoken.googleapis.com" />',
+              '  <link rel="dns-prefetch" href="//firestore.googleapis.com" />'
+          ])
 
           if 'identitytoolkit.googleapis.com' not in text:
               if text.count(head_marker) != 1:
