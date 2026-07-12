@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bolões de Loterias Especiais | Portal SimonSports — V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE</title>
+  <title>Bolões de Loterias Especiais | Portal SimonSports — V361_FIX_CONFIG_MOBILE_JSONP</title>
   <style>
     :root{--v900:#003b12;--v800:#064f1e;--v700:#0b6f28;--v100:#e9f7ed;--am:#ffb300;--txt:#102033;--mut:#546173;--ln:#cfded1;--bg:#efefef;--card:#fff;--danger:#b91c1c;--blue:#1565c0;--shadow:0 8px 24px rgba(0,0,0,.10);--radius:12px}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}button,input,select,textarea{font:inherit}a{color:inherit}.hidden{display:none!important}
@@ -946,7 +946,7 @@
   <script>
     /* V224-MOBILE: detecção mobile global */
     function isMobileV224_(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
-    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE',versaoRegulamento:'AUTO'};
+    const CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbxUkLEyfR76jVncO-HwhfS-yLM7aLXCTf7oG4h-uOGsnFk6Oda3vTm8MQ-OIh2-Ohy8/exec',versao:'V361_FIX_CONFIG_MOBILE_JSONP',versaoRegulamento:'AUTO'};
     const ESTADO={usuario:null,email:localStorage.getItem('PSS_BOLAO_EMAIL')||'',role:'',view:'inicio',boloes:[],bolaoSelecionado:localStorage.getItem('PSS_BOLAO_SELECIONADO')||'',numerosSelecionados:[],qtdEscolha:6,palpiteInfo:null,palpiteStatus:null};
 
     const FIREBASE_CONFIG={
@@ -26663,7 +26663,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
  *   Firebase, cadastro, jogos realizados ou confirmação manual.
  * ===================================================================== */
 (function(){
-  var V='V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE';
+  var V='V361_FIX_CONFIG_MOBILE_JSONP';
 
   try{
     if(window.CONFIG) CONFIG.versao=V;
@@ -27083,7 +27083,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 </style>
 <script>
 (function(){
-  var V357='V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE';
+  var V357='V361_FIX_CONFIG_MOBILE_JSONP';
   try{localStorage.setItem('PSS_INDEX_VERSION',V357);}catch(e){}
 
   function esc357(v){
@@ -27232,107 +27232,104 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
 })();
 </script>
 
+
+
 <script>
-/*******************************************************
- * V359_PROBABILIDADES_OFICIAIS_CAIXA (frontend)
- * Bloco 100% aditivo — não altera nenhuma renderização existente.
- * Adiciona um botão "Probabilidades oficiais" em cada card de bolão
- * (.bolao-card) já renderizado pelo site. A consulta só é feita quando
- * o participante clica no botão (sob demanda), e o resultado fica em
- * cache em memória durante a sessão, então não pesa a listagem inicial
- * nem repete chamadas de API para o mesmo bolão.
- *******************************************************/
+/* =====================================================================
+ * V361 — FIX PONTUAL: CONFIG NO MOBILE SEM FALHA JSONP
+ * Base: V357_CONSULTA_VISUAL_JOGOS_PARTICIPANTE.
+ * Motivo:
+ * - A tela CONFIG chamava carregarConfigV341().
+ * - carregarConfigV341() usava apiJsonpDireto_ diretamente.
+ * - No mobile, quando o JSONP falhava, a tela não usava os fallbacks
+ *   postMessage/window.name já existentes no index.
+ * Correção:
+ * - Sobrescreve somente carregarConfigV341().
+ * - Usa api(), que já tenta JSONP + postMessage + window.name.
+ * - Não altera OCR, upload, Telegram, Firebase, pagamentos ou jogos.
+ * ===================================================================== */
 (function(){
-  var PSS_V359_CACHE = {};
+  'use strict';
 
-  function pssV359NomeDoCard_(card){
-    var h3 = card.querySelector('h3');
-    if(!h3) return '';
-    // Remove emoji/ícone inicial do título do card, mantém só o nome do bolão.
-    return String(h3.textContent||'').replace(/^[^\wÀ-ÿ]+/,'').trim();
-  }
+  if(window.PSS_V361_FIX_CONFIG_MOBILE_JSONP_APLICADO) return;
+  window.PSS_V361_FIX_CONFIG_MOBILE_JSONP_APLICADO = true;
 
-  function pssV359FormatarPercentual_(p){
-    if(p===undefined||p===null||isNaN(p)) return '-';
-    if(p>0 && p<0.0001) return p.toExponential(2)+'%';
-    return (Math.round(p*10000)/10000)+'%';
-  }
+  var V = 'V361_FIX_CONFIG_MOBILE_JSONP';
 
-  async function pssV359AbrirProbabilidades_(nome, container){
-    if(!nome){ container.innerHTML=''; return; }
-    container.innerHTML = '<div class="notice info" style="margin-top:8px;">Consultando probabilidades oficiais...</div>';
-    try{
-      var chave = nome.toLowerCase();
-      var dados = PSS_V359_CACHE[chave];
-      if(!dados){
-        dados = await apiMulti([
-          {action:'getProbabilidadesLoteria', dados:{loteria:nome}, args:[nome]}
-        ]);
-        PSS_V359_CACHE[chave] = dados;
-      }
-      if(!dados || dados.exibir===false || !dados.tabela || !dados.tabela.length){
-        container.innerHTML = '<div class="notice warn" style="margin-top:8px;">Probabilidades oficiais não disponíveis para este bolão no momento.</div>';
-        return;
-      }
-      var linhas = dados.tabela.map(function(f){
-        return '<tr><td>'+escapeHtml(String(f.acertos))+' acertos</td><td>'+escapeHtml(pssV359FormatarPercentual_(f.percentual))+'</td><td>'+escapeHtml(f.umEm||'-')+'</td></tr>';
-      }).join('');
-      container.innerHTML =
-        '<div class="meta-box" style="margin-top:8px;">'+
-          '<b>📊 Probabilidades oficiais (Caixa)</b>'+
-          '<div class="table-wrap" style="margin-top:6px;">'+
-            '<table><thead><tr><th>Faixa</th><th>Chance</th><th>Equivalência</th></tr></thead>'+
-            '<tbody>'+linhas+'</tbody></table>'+
-          '</div>'+
-          '<span style="font-size:11px;color:#667;display:block;margin-top:6px;">'+escapeHtml(dados.fonte||'')+' Caráter meramente informativo — não altera regras nem pagamentos do bolão.</span>'+
-        '</div>';
-    }catch(err){
-      container.innerHTML = '<div class="notice error" style="margin-top:8px;">Não foi possível carregar as probabilidades agora.</div>';
-    }
-  }
-
-  function pssV359ProcessarCard_(card){
-    if(!card || card.getAttribute('data-pss-prob-v359')) return;
-    card.setAttribute('data-pss-prob-v359','1');
-    var nome = pssV359NomeDoCard_(card);
-    if(!nome) return;
-
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-light';
-    btn.style.marginTop = '8px';
-    btn.textContent = '📊 Probabilidades oficiais';
-
-    var painel = document.createElement('div');
-    painel.style.display = 'none';
-
-    btn.addEventListener('click', function(ev){
-      if(ev && ev.stopPropagation) ev.stopPropagation();
-      var aberto = painel.style.display !== 'none';
-      if(aberto){ painel.style.display='none'; return; }
-      painel.style.display='block';
-      pssV359AbrirProbabilidades_(nome, painel);
-    });
-
-    card.appendChild(btn);
-    card.appendChild(painel);
-  }
-
-  function pssV359Varrer_(){
-    try{
-      document.querySelectorAll('.bolao-card').forEach(pssV359ProcessarCard_);
-    }catch(e){}
-  }
-
-  // Observa apenas inserções de novos nós (leve) para reaplicar o botão
-  // quando o site troca de tela/renderiza novos cards de bolão.
   try{
-    var pssV359Observer = new MutationObserver(function(){ pssV359Varrer_(); });
-    pssV359Observer.observe(document.body, {childList:true, subtree:true});
+    if(typeof CONFIG !== 'undefined' && CONFIG){ CONFIG.versao = V; window.CONFIG = CONFIG; }
+    else if(window.CONFIG){ window.CONFIG.versao = V; }
+    localStorage.setItem('PSS_INDEX_VERSION', V);
   }catch(e){}
 
-  document.addEventListener('DOMContentLoaded', pssV359Varrer_);
-  pssV359Varrer_();
+  function emailAtualV361(){
+    try{return (window.ESTADO && ESTADO.email) ? String(ESTADO.email).trim().toLowerCase() : '';}catch(e){return '';}
+  }
+
+  var carregarConfigV361 = async function(){
+    var stamp = Date.now();
+    var email = emailAtualV361();
+    var tentativas = [
+      {action:'getConfigBoloesRapidoV233', dados:{email:email, forcar:true, cacheBust:stamp, origem:'V361'}, args:[email, true, stamp]},
+      {action:'listarConfigBoloesRapidoV233', dados:{email:email, forcar:true, cacheBust:stamp, origem:'V361'}, args:[email, true, stamp]},
+      {action:'listarBoloes', dados:{email:email, forcar:true, cacheBust:stamp, origem:'V361'}, args:[email, true, stamp]}
+    ];
+
+    var ultimo = null;
+
+    for(var i=0; i<tentativas.length; i++){
+      var t = tentativas[i];
+      try{
+        var r;
+
+        /* Preferir api(), pois ela já possui fallback híbrido no index. */
+        if(typeof api === 'function'){
+          r = await api(t.action, t.dados, t.args);
+        }else if(typeof apiMulti === 'function'){
+          r = await apiMulti([t]);
+        }else if(typeof apiJsonpDireto_ === 'function'){
+          r = await apiJsonpDireto_(t.action, t.dados, t.args, 30000);
+        }else{
+          throw new Error('Função de comunicação com a API não localizada.');
+        }
+
+        var lista = [];
+        if(typeof normalizarConfigListaV341 === 'function'){
+          lista = normalizarConfigListaV341(r);
+        }else if(Array.isArray(r)){
+          lista = r;
+        }else if(r && Array.isArray(r.lista)){
+          lista = r.lista;
+        }else if(r && Array.isArray(r.boloes)){
+          lista = r.boloes;
+        }
+
+        if(lista && lista.length){
+          return { origem:'base direta V361 com fallback mobile', lista:lista };
+        }
+
+        ultimo = new Error('Ação '+t.action+' respondeu, mas sem lista de bolões.');
+      }catch(e){
+        ultimo = e;
+      }
+    }
+
+    throw ultimo || new Error('Nenhuma loteria/bolão retornou da base de configuração.');
+  };
+
+  window.carregarConfigV341 = carregarConfigV361;
+  try{ carregarConfigV341 = carregarConfigV361; }catch(e){}
+
+  window.diagnosticarIndexV361 = function(){
+    return {
+      sucesso:true,
+      versao:V,
+      apiUrl:(function(){try{return (typeof CONFIG!=='undefined'&&CONFIG&&CONFIG.apiUrl)||((window.CONFIG&&window.CONFIG.apiUrl)||'');}catch(e){return '';}})(),
+      temApiFallback:typeof api === 'function',
+      temJsonpDireto:typeof apiJsonpDireto_ === 'function',
+      regra:'Correção pontual da tela Config: usar api() com fallback em vez de JSONP direto.'
+    };
+  };
 })();
 </script>
 
