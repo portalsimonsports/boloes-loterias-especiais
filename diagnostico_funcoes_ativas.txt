@@ -1,0 +1,2952 @@
+
+==============================================================================================================
+TERMO: function loginFirebaseV350 | TOTAL: 1
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 1 | LINHA ORIGINAL 25780
+025750:   }
+025751:   function finalizarLoginV350(u,lembrar){
+025752:     u=usuarioNormalizadoV350(u,u&&u.email);
+025753:     if(!u.email) throw new Error('Login retornou sem e-mail.');
+025754:     window.ESTADO=window.ESTADO||{};
+025755:     ESTADO.usuario=u;
+025756:     ESTADO.email=u.email;
+025757:     ESTADO.role=u.role;
+025758:     if(lembrar) localStorage.setItem('PSS_BOLAO_EMAIL',u.email); else localStorage.removeItem('PSS_BOLAO_EMAIL');
+025759:     salvarSessaoV350(u);
+025760:     removerLetreiroForaHomeV350();
+025761:     if(typeof aplicarLayoutLogado==='function') aplicarLayoutLogado();
+025762:     else{
+025763:       try{document.body.classList.add('app-logado');}catch(e){}
+025764:       var ph=byId('publicHeader'); if(ph) ph.classList.add('hidden');
+025765:       var ah=byId('appHeader'); if(ah) ah.classList.remove('hidden');
+025766:       var ud=byId('userDisplay'); if(ud) ud.textContent=(u.nome||'Usuário')+(u.email?' • '+u.email:'');
+025767:     }
+025768:     limparUrlV350();
+025769:     if(typeof navegar==='function') navegar('inicio');
+025770:   }
+025771: 
+025772:   async function loginPlanilhaV350(email,senha){
+025773:     var dados={email:email,senha:senha,password:senha,cacheBust:Date.now()};
+025774:     var args=[email,senha];
+025775:     if(typeof apiJsonpDireto_==='function') return apiJsonpDireto_('login',dados,args,18000);
+025776:     if(typeof apiMulti==='function') return apiMulti([{action:'login',dados:dados,args:args},{action:'processarLogin',dados:dados,args:args}]);
+025777:     if(typeof api==='function') return api('login',dados,args);
+025778:     throw new Error('API do site não inicializada para login.');
+025779:   }
+025780:   async function loginFirebaseV350(email,senha,msg){
+025781:     if(typeof inicializarFirebase_!=='function' || !window.firebase) throw new Error('Firebase não carregado.');
+025782:     await inicializarFirebase_();
+025783:     await FIREBASE_AUTH.signInWithEmailAndPassword(email,senha);
+025784:     if(msg) msg.innerHTML='<div class="notice info">Verificando aprovação do cadastro...</div>';
+025785:     if(typeof firebaseValidarUsuarioAprovado_==='function') return firebaseValidarUsuarioAprovado_(email);
+025786:     return {nome:email,email:email,perfil:'usuario',role:'usuario'};
+025787:   }
+025788: 
+025789:   window.renderLogin=function(){
+025790:     try{document.body.classList.remove('app-logado');}catch(e){}
+025791:     var ph=byId('publicHeader'); if(ph) ph.classList.remove('hidden');
+025792:     var ah=byId('appHeader'); if(ah) ah.classList.add('hidden');
+025793:     setViewV350(
+025794:       '<div class="login-wrap" id="loginWrapV350">'+
+025795:         '<h1>Acesso ao sistema</h1>'+ 
+025796:         '<p>Login via Firebase. A liberação depende da aprovação do cadastro pela administração.</p>'+ 
+025797:         '<div id="loginMsg"></div>'+ 
+025798:         '<form id="formLoginV350" autocomplete="on">'+
+025799:           '<div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="'+attr(emailSalvoV350())+'" required /></div>'+ 
+025800:           '<div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div>'+ 
+025801:           '<label class="checkline"><input type="checkbox" id="lembrarEmail" '+(emailSalvoV350()?'checked':'')+'><span>Lembrar meu e-mail neste aparelho</span></label>'+ 
+025802:           '<button type="submit" id="btnLogin" class="btn btn-block">Entrar</button>'+ 
+025803:         '</form>'+ 
+025804:         '<div class="actions" style="justify-content:center;margin-top:16px;">'+
+025805:           '<button type="button" class="btn btn-light btn-pill" id="btnVoltarInicioV350">Voltar ao início</button>'+ 
+025806:           '<button type="button" class="btn btn-light btn-pill" id="btnCadastroLoginV350">Cadastrar</button>'+ 
+025807:           '<button type="button" class="btn btn-light btn-pill" id="btnResetLoginV350">Esqueci a senha</button>'+ 
+025808:           '<button type="button" class="btn btn-light btn-pill" id="btnLimparLoginV350">Limpar acesso salvo</button>'+ 
+025809:         '</div>'+ 
+025810:       '</div>'
+025811:     );
+025812:     removerLetreiroForaHomeV350();
+025813:     setTimeout(removerLetreiroForaHomeV350,80);
+025814:     setTimeout(limparUrlV350,40);
+025815:     var form=byId('formLoginV350');
+025816:     if(form) form.addEventListener('submit',window.fazerLogin,true);
+025817:     var b1=byId('btnVoltarInicioV350'); if(b1) b1.onclick=function(){ if(typeof renderHomePublica==='function') renderHomePublica(); limparUrlV350(); };
+025818:     var b2=byId('btnCadastroLoginV350'); if(b2) b2.onclick=function(){ if(typeof abrirCadastro==='function') abrirCadastro(); limparUrlV350(); };
+025819:     var b3=byId('btnResetLoginV350'); if(b3) b3.onclick=function(){ if(typeof abrirResetSenha==='function') abrirResetSenha(); limparUrlV350(); };
+025820:     var b4=byId('btnLimparLoginV350'); if(b4) b4.onclick=function(){ try{localStorage.removeItem('PSS_BOLAO_EMAIL');localStorage.removeItem('PSS_BOLAO_SESSAO');sessionStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){} window.renderLogin(); };
+025821:   };
+025822:   try{ renderLogin=window.renderLogin; }catch(e){}
+025823: 
+025824:   window.fazerLogin=async function(ev){
+025825:     if(ev&&ev.preventDefault) ev.preventDefault();
+025826:     if(ev&&ev.stopPropagation) ev.stopPropagation();
+025827:     var email=txt(byId('loginEmail')&&byId('loginEmail').value).toLowerCase();
+025828:     var senha=txt(byId('loginSenha')&&byId('loginSenha').value);
+025829:     var lembrar=!!(byId('lembrarEmail')&&byId('lembrarEmail').checked);
+025830:     var btn=byId('btnLogin');
+025831:     var msg=byId('loginMsg');
+025832:     if(!email||!senha){ if(msg) msg.innerHTML='<div class="notice error">Informe e-mail e senha.</div>'; return false; }
+025833:     if(btn){btn.disabled=true;btn.textContent='Entrando...';}
+025834:     if(msg) msg.innerHTML='<div class="notice info">Autenticando no Firebase...</div>';
+025835:     try{
+025836:       var uFb=await loginFirebaseV350(email,senha,msg);
+025837:       finalizarLoginV350(uFb,lembrar);
+025838:       return false;
+025839:     }catch(eFb){
+025840:       try{ if(window.FIREBASE_AUTH) await FIREBASE_AUTH.signOut(); }catch(eOut){}
+025841:       var finalMsg='';
+025842:       try{
+025843:         if(typeof firebaseMensagemErro_==='function') finalMsg=firebaseMensagemErro_(eFb);
+025844:       }catch(eMsg){}
+025845:       finalMsg=finalMsg||txt(eFb&&eFb.message?eFb.message:eFb)||'Não foi possível entrar no sistema pelo Firebase.';
+025846:       if(msg) msg.innerHTML='<div class="notice error">'+esc(finalMsg)+'</div>';
+025847:       try{ if(typeof toast==='function') toast('Falha no login: '+finalMsg,'error'); }catch(eToast){}
+025848:       return false;
+025849:     }finally{
+025850:       if(btn){btn.disabled=false;btn.textContent='Entrar';}
+025851:     }
+025852:   };
+025853:   try{ fazerLogin=window.fazerLogin; }catch(e){}
+025854: 
+025855:   window.fecharModal=function(){
+025856:     try{
+025857:       var m=byId('modalBackdrop');
+025858:       if(m){ m.classList.remove('open'); m.style.display=''; }
+025859:       var c=byId('modalConteudo'); if(c) c.innerHTML='';
+025860:       var t=byId('modalTitulo'); if(t) t.textContent='Aviso';
+025861:     }catch(e){}
+025862:   };
+025863:   try{ fecharModal=window.fecharModal; }catch(e){}
+025864: 
+025865:   document.addEventListener('click',function(ev){
+025866:     var t=ev.target;
+025867:     if(!t) return;
+025868:     var inLogin=t.closest&&t.closest('#formLoginV350,.login-wrap');
+025869:     if(inLogin) return;
+025870:     if(t.id==='modalBackdrop'){ ev.preventDefault(); ev.stopPropagation(); window.fecharModal(); return; }
+025871:     var close=t.closest&&t.closest('.close,[data-close-modal],.modal-close,button[aria-label="Fechar"]');
+025872:     if(close){ ev.preventDefault(); ev.stopPropagation(); window.fecharModal(); return; }
+025873:   },true);
+025874: 
+025875:   var renderHomeBaseV350=window.renderHomePublica;
+025876:   if(typeof renderHomeBaseV350==='function'){
+025877:     window.renderHomePublica=function(){
+025878:       var r=renderHomeBaseV350.apply(this,arguments);
+025879:       limparUrlV350();
+
+==============================================================================================================
+TERMO: loginFirebaseV350= | TOTAL: 0
+
+==============================================================================================================
+TERMO: window.fazerLogin=async function | TOTAL: 1
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 1 | LINHA ORIGINAL 25824
+025794:       '<div class="login-wrap" id="loginWrapV350">'+
+025795:         '<h1>Acesso ao sistema</h1>'+ 
+025796:         '<p>Login via Firebase. A liberação depende da aprovação do cadastro pela administração.</p>'+ 
+025797:         '<div id="loginMsg"></div>'+ 
+025798:         '<form id="formLoginV350" autocomplete="on">'+
+025799:           '<div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" value="'+attr(emailSalvoV350())+'" required /></div>'+ 
+025800:           '<div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" required /></div>'+ 
+025801:           '<label class="checkline"><input type="checkbox" id="lembrarEmail" '+(emailSalvoV350()?'checked':'')+'><span>Lembrar meu e-mail neste aparelho</span></label>'+ 
+025802:           '<button type="submit" id="btnLogin" class="btn btn-block">Entrar</button>'+ 
+025803:         '</form>'+ 
+025804:         '<div class="actions" style="justify-content:center;margin-top:16px;">'+
+025805:           '<button type="button" class="btn btn-light btn-pill" id="btnVoltarInicioV350">Voltar ao início</button>'+ 
+025806:           '<button type="button" class="btn btn-light btn-pill" id="btnCadastroLoginV350">Cadastrar</button>'+ 
+025807:           '<button type="button" class="btn btn-light btn-pill" id="btnResetLoginV350">Esqueci a senha</button>'+ 
+025808:           '<button type="button" class="btn btn-light btn-pill" id="btnLimparLoginV350">Limpar acesso salvo</button>'+ 
+025809:         '</div>'+ 
+025810:       '</div>'
+025811:     );
+025812:     removerLetreiroForaHomeV350();
+025813:     setTimeout(removerLetreiroForaHomeV350,80);
+025814:     setTimeout(limparUrlV350,40);
+025815:     var form=byId('formLoginV350');
+025816:     if(form) form.addEventListener('submit',window.fazerLogin,true);
+025817:     var b1=byId('btnVoltarInicioV350'); if(b1) b1.onclick=function(){ if(typeof renderHomePublica==='function') renderHomePublica(); limparUrlV350(); };
+025818:     var b2=byId('btnCadastroLoginV350'); if(b2) b2.onclick=function(){ if(typeof abrirCadastro==='function') abrirCadastro(); limparUrlV350(); };
+025819:     var b3=byId('btnResetLoginV350'); if(b3) b3.onclick=function(){ if(typeof abrirResetSenha==='function') abrirResetSenha(); limparUrlV350(); };
+025820:     var b4=byId('btnLimparLoginV350'); if(b4) b4.onclick=function(){ try{localStorage.removeItem('PSS_BOLAO_EMAIL');localStorage.removeItem('PSS_BOLAO_SESSAO');sessionStorage.removeItem('PSS_BOLAO_SESSAO');}catch(e){} window.renderLogin(); };
+025821:   };
+025822:   try{ renderLogin=window.renderLogin; }catch(e){}
+025823: 
+025824:   window.fazerLogin=async function(ev){
+025825:     if(ev&&ev.preventDefault) ev.preventDefault();
+025826:     if(ev&&ev.stopPropagation) ev.stopPropagation();
+025827:     var email=txt(byId('loginEmail')&&byId('loginEmail').value).toLowerCase();
+025828:     var senha=txt(byId('loginSenha')&&byId('loginSenha').value);
+025829:     var lembrar=!!(byId('lembrarEmail')&&byId('lembrarEmail').checked);
+025830:     var btn=byId('btnLogin');
+025831:     var msg=byId('loginMsg');
+025832:     if(!email||!senha){ if(msg) msg.innerHTML='<div class="notice error">Informe e-mail e senha.</div>'; return false; }
+025833:     if(btn){btn.disabled=true;btn.textContent='Entrando...';}
+025834:     if(msg) msg.innerHTML='<div class="notice info">Autenticando no Firebase...</div>';
+025835:     try{
+025836:       var uFb=await loginFirebaseV350(email,senha,msg);
+025837:       finalizarLoginV350(uFb,lembrar);
+025838:       return false;
+025839:     }catch(eFb){
+025840:       try{ if(window.FIREBASE_AUTH) await FIREBASE_AUTH.signOut(); }catch(eOut){}
+025841:       var finalMsg='';
+025842:       try{
+025843:         if(typeof firebaseMensagemErro_==='function') finalMsg=firebaseMensagemErro_(eFb);
+025844:       }catch(eMsg){}
+025845:       finalMsg=finalMsg||txt(eFb&&eFb.message?eFb.message:eFb)||'Não foi possível entrar no sistema pelo Firebase.';
+025846:       if(msg) msg.innerHTML='<div class="notice error">'+esc(finalMsg)+'</div>';
+025847:       try{ if(typeof toast==='function') toast('Falha no login: '+finalMsg,'error'); }catch(eToast){}
+025848:       return false;
+025849:     }finally{
+025850:       if(btn){btn.disabled=false;btn.textContent='Entrar';}
+025851:     }
+025852:   };
+025853:   try{ fazerLogin=window.fazerLogin; }catch(e){}
+025854: 
+025855:   window.fecharModal=function(){
+025856:     try{
+025857:       var m=byId('modalBackdrop');
+025858:       if(m){ m.classList.remove('open'); m.style.display=''; }
+025859:       var c=byId('modalConteudo'); if(c) c.innerHTML='';
+025860:       var t=byId('modalTitulo'); if(t) t.textContent='Aviso';
+025861:     }catch(e){}
+025862:   };
+025863:   try{ fecharModal=window.fecharModal; }catch(e){}
+025864: 
+025865:   document.addEventListener('click',function(ev){
+025866:     var t=ev.target;
+025867:     if(!t) return;
+025868:     var inLogin=t.closest&&t.closest('#formLoginV350,.login-wrap');
+025869:     if(inLogin) return;
+025870:     if(t.id==='modalBackdrop'){ ev.preventDefault(); ev.stopPropagation(); window.fecharModal(); return; }
+025871:     var close=t.closest&&t.closest('.close,[data-close-modal],.modal-close,button[aria-label="Fechar"]');
+025872:     if(close){ ev.preventDefault(); ev.stopPropagation(); window.fecharModal(); return; }
+025873:   },true);
+025874: 
+025875:   var renderHomeBaseV350=window.renderHomePublica;
+025876:   if(typeof renderHomeBaseV350==='function'){
+025877:     window.renderHomePublica=function(){
+025878:       var r=renderHomeBaseV350.apply(this,arguments);
+025879:       limparUrlV350();
+025880:       setTimeout(function(){
+025881:         if(isHomePublicaV350()){
+025882:           try{ window.carregarLetreiroResultadosPublicosV213(false); }catch(e){}
+025883:         }else{
+025884:           removerLetreiroForaHomeV350();
+025885:         }
+025886:       },220);
+025887:       return r;
+025888:     };
+025889:     try{ renderHomePublica=window.renderHomePublica; }catch(e){}
+025890:   }
+025891: 
+025892:   document.addEventListener('click',function(ev){
+025893:     var btn=ev.target&&ev.target.closest?ev.target.closest('button'):null;
+025894:     if(!btn) return;
+025895:     if(btn.closest&&btn.closest('#formLoginV350,.login-wrap')) return;
+025896:     var tx=norm(btn.textContent||'');
+025897:     if(tx==='ENTRAR NO SISTEMA'){
+025898:       ev.preventDefault(); ev.stopPropagation(); window.renderLogin(); return;
+025899:     }
+025900:   },true);
+025901: 
+025902:   try{
+025903:     var obs=new MutationObserver(function(){ removerLetreiroForaHomeV350(); });
+025904:     obs.observe(document.documentElement,{childList:true,subtree:true});
+025905:   }catch(eObs){}
+025906: 
+025907:   document.addEventListener('DOMContentLoaded',function(){
+025908:     limparUrlV350();
+025909:     setTimeout(removerLetreiroForaHomeV350,80);
+025910:     setTimeout(removerLetreiroForaHomeV350,700);
+025911:     setTimeout(removerLetreiroForaHomeV350,1800);
+025912:   });
+025913:   limparUrlV350();
+025914:   setTimeout(removerLetreiroForaHomeV350,250);
+025915: 
+025916:   window.diagnosticarIndexV351=function(){
+025917:     return {
+025918:       sucesso:true,
+025919:       versao:V,
+025920:       apiUrl:(window.CONFIG&&CONFIG.apiUrl)||'',
+025921:       urlLimpa: location.href.indexOf('?')<0 && location.href.indexOf('#')<0,
+025922:       letreiroSomenteHome:isHomePublicaV350(),
+025923:       temLetreiro:!!byId('homeResultadosPublicosV213'),
+
+==============================================================================================================
+TERMO: window.renderPagamentosAdmin | TOTAL: 0
+
+==============================================================================================================
+TERMO: function renderPagamentosAdmin | TOTAL: 2
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 1 | LINHA ORIGINAL 3062
+003032:       window.PSS_SOLICITACAO_ACAO={action,linha};
+003033:       abrirModal('Confirmar ação',`
+003034:         <div class="notice warn">${escapeHtml(msg||'Confirma esta ação?')}</div>
+003035:         <p style="margin:8px 0 16px;color:#546173;">
+003036:           Linha da solicitação: <strong>${escapeHtml(linha)}</strong>
+003037:         </p>
+003038:         <div class="actions" style="justify-content:flex-end;">
+003039:           <button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003040:           <button type="button" class="btn" onclick="executarAcaoSolicitacaoAdmin()">Confirmar</button>
+003041:         </div>
+003042:       `);
+003043:     }
+003044: 
+003045:     async function executarAcaoSolicitacaoAdmin(){
+003046:       const cfg=window.PSS_SOLICITACAO_ACAO||{};
+003047:       window.PSS_SOLICITACAO_ACAO=null;
+003048:       fecharModal();
+003049: 
+003050:       if(!cfg.action||!cfg.linha)return;
+003051: 
+003052:       try{
+003053:         toast('Processando solicitação...','info');
+003054:         await apiMulti([{action:cfg.action,dados:{linha:cfg.linha},args:[cfg.linha]}]);
+003055:         toast('Ação realizada com sucesso.');
+003056:         await renderSolicitacoesAdmin();
+003057:       }catch(err){
+003058:         toast(err.message,'error');
+003059:       }
+003060:     }
+003061: 
+003062:     async function renderPagamentosAdmin(tab='efetuados'){
+003063:       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+003064:       await renderPagamentosAdminTab(tab||'efetuados');
+003065:     }
+003066: 
+003067:     async function renderPagamentosAdminTab(tab){
+003068:       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+003069:       ESTADO.pagamentosSubView=tab||'efetuados';
+003070:       loading('Carregando pagamentos');
+003071: 
+003072:       try{
+003073:         const dados=await carregarDadosPagamentosAdmin_();
+003074:         const subtabs=renderSubmenuPagamentosAdmin_(ESTADO.pagamentosSubView);
+003075: 
+003076:         if(ESTADO.pagamentosSubView==='dados'){
+003077:           setView(`
+003078:             <div class="panel">
+003079:               <div class="payment-clean-header">
+003080:                 <div>
+003081:                   <h2>Dados para pagamento</h2>
+003082:                   <p>Cadastre os meios de recebimento disponíveis por bolão/loteria. Estes dados alimentam a geração de Pix, QR Code e instruções de pagamento.</p>
+003083:                 </div>
+003084:                 <button class="btn" onclick="adicionarRecebimentoAdmin()">Adicionar meio</button>
+003085:               </div>
+003086:               ${subtabs}
+003087:               <div class="notice info">Use <strong>PIX</strong> para chave Pix/QR Code, <strong>Dados bancários</strong> para transferência, ou <strong>Pix + dados bancários</strong> quando quiser deixar as duas opções cadastradas.</div>
+003088:               <div id="dadosRecebimentoAdminBox">
+003089:                 ${renderDadosRecebimentoAdmin_()}
+003090:               </div>
+003091:             </div>
+003092:           `);
+003093:           setTimeout(()=>{(ESTADO.dadosRecebimentoAdmin||[]).forEach((_,i)=>atualizarCamposRecebimentoAdmin(i));},80);
+003094:         }else{
+003095:           setView(`
+003096:             <div class="panel">
+003097:               <div class="payment-clean-header">
+003098:                 <div>
+003099:                   <h2>Pagamentos efetuados</h2>
+003100:                   <p>Acompanhe comprovantes enviados, status do OCR, validações e confirme manualmente quando necessário.</p>
+003101:                 </div>
+003102:                 <button class="btn btn-light" onclick="renderPagamentosAdminTab('efetuados')">Atualizar</button>
+003103:               </div>
+003104:               ${subtabs}
+003105:               ${renderPagamentosEfetuadosAdmin_(dados.pag.headers||[],dados.pag.rows||[])}
+003106:             </div>
+003107:           `);
+003108:         }
+003109:       }catch(err){
+003110:         setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+003111:       }
+003112:     }
+003113: 
+003114:     async function carregarDadosPagamentosAdmin_(){
+003115:       const pag=await adminDados('PAGAMENTOS').catch(()=>({headers:[],rows:[]}));
+003116:       const rec=await apiMulti([{action:'getDadosRecebimentoAdmin',args:[]}]).catch(()=>({dados:[]}));
+003117:       ESTADO.dadosRecebimentoAdmin=rec.dados||[];
+003118:       ESTADO.pagamentosAdminCache={headers:pag.headers||[],rows:pag.rows||[]};
+003119:       return {pag,rec};
+003120:     }
+003121: 
+003122:     function renderSubmenuPagamentosAdmin_(tab){
+003123:       return `
+003124:         <div class="admin-subtabs">
+003125:           <button type="button" class="btn-tab ${tab==='efetuados'?'active':''}" onclick="renderPagamentosAdminTab('efetuados')">Pagamentos efetuados</button>
+003126:           <button type="button" class="btn-tab ${tab==='dados'?'active':''}" onclick="renderPagamentosAdminTab('dados')">Dados para pagamento</button>
+003127:         </div>
+003128:       `;
+003129:     }
+003130: 
+003131:     function renderDadosRecebimentoAdmin_(){
+003132:       const lista=ESTADO.dadosRecebimentoAdmin||[];
+003133:       if(!lista.length){
+003134:         return '<div class="notice warn">Nenhum meio de recebimento cadastrado.</div>';
+003135:       }
+003136:       return lista.map((m,i)=>renderRecebimentoCardAdmin_(m,i)).join('');
+003137:     }
+003138: 
+003139:     function renderRecebimentoCardAdmin_(m,i){
+003140:       const tipo=normalizar(m.tipoRecebimento||'PIX');
+003141:       const tipoValue=tipo.includes('DADOS')&&!tipo.includes('PIX')?'DADOS_BANCARIOS':(tipo.includes('DADOS')&&tipo.includes('PIX')?'PIX_E_DADOS_BANCARIOS':'PIX');
+003142:       return `
+003143:         <div class="recebimento-card compact" data-rec-index="${i}">
+003144:           <div class="recebimento-head">
+003145:             <div>
+003146:               <h3 style="margin:0;color:#003b12;">${escapeHtml(m.loteria||'Novo meio de recebimento')}</h3>
+003147:               <div class="rec-hint">Configure somente os campos necessários para o tipo escolhido.</div>
+003148:             </div>
+003149:             <span class="recebimento-type-pill" id="rec_tipo_pill_${i}">${escapeHtml(tipoValue.replace(/_/g,' '))}</span>
+003150:           </div>
+003151: 
+003152:           <div class="recebimento-grid pro">
+003153:             <div class="field"><label>Loteria</label><input id="rec_loteria_${i}" value="${escapeAttr(m.loteria||'')}"></div>
+003154:             <div class="field"><label>Tipo recebimento</label><select id="rec_tipo_${i}" onchange="atualizarCamposRecebimentoAdmin(${i})"><option value="PIX" ${tipoValue==='PIX'?'selected':''}>PIX</option><option value="DADOS_BANCARIOS" ${tipoValue==='DADOS_BANCARIOS'?'selected':''}>Dados bancários</option><option value="PIX_E_DADOS_BANCARIOS" ${tipoValue==='PIX_E_DADOS_BANCARIOS'?'selected':''}>Pix + dados bancários</option></select></div>
+003155:             <div class="field"><label>Nome completo / Recebedor</label><input id="rec_nome_${i}" value="${escapeAttr(m.nomeCompleto||'')}"></div>
+003156:             <div class="field"><label>Ativo</label><select id="rec_ativo_${i}"><option ${normalizar(m.ativo).includes('SIM')||normalizar(m.ativo).includes('ATIVO')?'selected':''}>SIM</option><option ${normalizar(m.ativo).includes('NAO')||normalizar(m.ativo).includes('NÃO')?'selected':''}>NÃO</option></select></div>
+003157: 
+003158:             <div class="rec-section-label" data-rec-pix="${i}">Dados PIX</div>
+003159:             <div class="field" data-rec-pix="${i}"><label>Tipo Pix</label><select id="rec_tipoPix_${i}"><option ${normalizar(m.tipoPix).includes('CELULAR')?'selected':''}>CELULAR</option><option ${normalizar(m.tipoPix).includes('CPF')?'selected':''}>CPF</option><option ${normalizar(m.tipoPix).includes('CNPJ')?'selected':''}>CNPJ</option><option ${normalizar(m.tipoPix).includes('EMAIL')||normalizar(m.tipoPix).includes('E-MAIL')?'selected':''}>E-MAIL</option><option ${normalizar(m.tipoPix).includes('ALEATORIA')||normalizar(m.tipoPix).includes('ALEATÓRIA')?'selected':''}>ALEATÓRIA</option></select></div>
+003160:             <div class="field" data-rec-pix="${i}"><label>Chave Pix</label><input id="rec_chave_${i}" value="${escapeAttr(m.chavePix||'')}"></div>
+003161: 
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 2 | LINHA ORIGINAL 3067
+003037:         </p>
+003038:         <div class="actions" style="justify-content:flex-end;">
+003039:           <button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003040:           <button type="button" class="btn" onclick="executarAcaoSolicitacaoAdmin()">Confirmar</button>
+003041:         </div>
+003042:       `);
+003043:     }
+003044: 
+003045:     async function executarAcaoSolicitacaoAdmin(){
+003046:       const cfg=window.PSS_SOLICITACAO_ACAO||{};
+003047:       window.PSS_SOLICITACAO_ACAO=null;
+003048:       fecharModal();
+003049: 
+003050:       if(!cfg.action||!cfg.linha)return;
+003051: 
+003052:       try{
+003053:         toast('Processando solicitação...','info');
+003054:         await apiMulti([{action:cfg.action,dados:{linha:cfg.linha},args:[cfg.linha]}]);
+003055:         toast('Ação realizada com sucesso.');
+003056:         await renderSolicitacoesAdmin();
+003057:       }catch(err){
+003058:         toast(err.message,'error');
+003059:       }
+003060:     }
+003061: 
+003062:     async function renderPagamentosAdmin(tab='efetuados'){
+003063:       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+003064:       await renderPagamentosAdminTab(tab||'efetuados');
+003065:     }
+003066: 
+003067:     async function renderPagamentosAdminTab(tab){
+003068:       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+003069:       ESTADO.pagamentosSubView=tab||'efetuados';
+003070:       loading('Carregando pagamentos');
+003071: 
+003072:       try{
+003073:         const dados=await carregarDadosPagamentosAdmin_();
+003074:         const subtabs=renderSubmenuPagamentosAdmin_(ESTADO.pagamentosSubView);
+003075: 
+003076:         if(ESTADO.pagamentosSubView==='dados'){
+003077:           setView(`
+003078:             <div class="panel">
+003079:               <div class="payment-clean-header">
+003080:                 <div>
+003081:                   <h2>Dados para pagamento</h2>
+003082:                   <p>Cadastre os meios de recebimento disponíveis por bolão/loteria. Estes dados alimentam a geração de Pix, QR Code e instruções de pagamento.</p>
+003083:                 </div>
+003084:                 <button class="btn" onclick="adicionarRecebimentoAdmin()">Adicionar meio</button>
+003085:               </div>
+003086:               ${subtabs}
+003087:               <div class="notice info">Use <strong>PIX</strong> para chave Pix/QR Code, <strong>Dados bancários</strong> para transferência, ou <strong>Pix + dados bancários</strong> quando quiser deixar as duas opções cadastradas.</div>
+003088:               <div id="dadosRecebimentoAdminBox">
+003089:                 ${renderDadosRecebimentoAdmin_()}
+003090:               </div>
+003091:             </div>
+003092:           `);
+003093:           setTimeout(()=>{(ESTADO.dadosRecebimentoAdmin||[]).forEach((_,i)=>atualizarCamposRecebimentoAdmin(i));},80);
+003094:         }else{
+003095:           setView(`
+003096:             <div class="panel">
+003097:               <div class="payment-clean-header">
+003098:                 <div>
+003099:                   <h2>Pagamentos efetuados</h2>
+003100:                   <p>Acompanhe comprovantes enviados, status do OCR, validações e confirme manualmente quando necessário.</p>
+003101:                 </div>
+003102:                 <button class="btn btn-light" onclick="renderPagamentosAdminTab('efetuados')">Atualizar</button>
+003103:               </div>
+003104:               ${subtabs}
+003105:               ${renderPagamentosEfetuadosAdmin_(dados.pag.headers||[],dados.pag.rows||[])}
+003106:             </div>
+003107:           `);
+003108:         }
+003109:       }catch(err){
+003110:         setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+003111:       }
+003112:     }
+003113: 
+003114:     async function carregarDadosPagamentosAdmin_(){
+003115:       const pag=await adminDados('PAGAMENTOS').catch(()=>({headers:[],rows:[]}));
+003116:       const rec=await apiMulti([{action:'getDadosRecebimentoAdmin',args:[]}]).catch(()=>({dados:[]}));
+003117:       ESTADO.dadosRecebimentoAdmin=rec.dados||[];
+003118:       ESTADO.pagamentosAdminCache={headers:pag.headers||[],rows:pag.rows||[]};
+003119:       return {pag,rec};
+003120:     }
+003121: 
+003122:     function renderSubmenuPagamentosAdmin_(tab){
+003123:       return `
+003124:         <div class="admin-subtabs">
+003125:           <button type="button" class="btn-tab ${tab==='efetuados'?'active':''}" onclick="renderPagamentosAdminTab('efetuados')">Pagamentos efetuados</button>
+003126:           <button type="button" class="btn-tab ${tab==='dados'?'active':''}" onclick="renderPagamentosAdminTab('dados')">Dados para pagamento</button>
+003127:         </div>
+003128:       `;
+003129:     }
+003130: 
+003131:     function renderDadosRecebimentoAdmin_(){
+003132:       const lista=ESTADO.dadosRecebimentoAdmin||[];
+003133:       if(!lista.length){
+003134:         return '<div class="notice warn">Nenhum meio de recebimento cadastrado.</div>';
+003135:       }
+003136:       return lista.map((m,i)=>renderRecebimentoCardAdmin_(m,i)).join('');
+003137:     }
+003138: 
+003139:     function renderRecebimentoCardAdmin_(m,i){
+003140:       const tipo=normalizar(m.tipoRecebimento||'PIX');
+003141:       const tipoValue=tipo.includes('DADOS')&&!tipo.includes('PIX')?'DADOS_BANCARIOS':(tipo.includes('DADOS')&&tipo.includes('PIX')?'PIX_E_DADOS_BANCARIOS':'PIX');
+003142:       return `
+003143:         <div class="recebimento-card compact" data-rec-index="${i}">
+003144:           <div class="recebimento-head">
+003145:             <div>
+003146:               <h3 style="margin:0;color:#003b12;">${escapeHtml(m.loteria||'Novo meio de recebimento')}</h3>
+003147:               <div class="rec-hint">Configure somente os campos necessários para o tipo escolhido.</div>
+003148:             </div>
+003149:             <span class="recebimento-type-pill" id="rec_tipo_pill_${i}">${escapeHtml(tipoValue.replace(/_/g,' '))}</span>
+003150:           </div>
+003151: 
+003152:           <div class="recebimento-grid pro">
+003153:             <div class="field"><label>Loteria</label><input id="rec_loteria_${i}" value="${escapeAttr(m.loteria||'')}"></div>
+003154:             <div class="field"><label>Tipo recebimento</label><select id="rec_tipo_${i}" onchange="atualizarCamposRecebimentoAdmin(${i})"><option value="PIX" ${tipoValue==='PIX'?'selected':''}>PIX</option><option value="DADOS_BANCARIOS" ${tipoValue==='DADOS_BANCARIOS'?'selected':''}>Dados bancários</option><option value="PIX_E_DADOS_BANCARIOS" ${tipoValue==='PIX_E_DADOS_BANCARIOS'?'selected':''}>Pix + dados bancários</option></select></div>
+003155:             <div class="field"><label>Nome completo / Recebedor</label><input id="rec_nome_${i}" value="${escapeAttr(m.nomeCompleto||'')}"></div>
+003156:             <div class="field"><label>Ativo</label><select id="rec_ativo_${i}"><option ${normalizar(m.ativo).includes('SIM')||normalizar(m.ativo).includes('ATIVO')?'selected':''}>SIM</option><option ${normalizar(m.ativo).includes('NAO')||normalizar(m.ativo).includes('NÃO')?'selected':''}>NÃO</option></select></div>
+003157: 
+003158:             <div class="rec-section-label" data-rec-pix="${i}">Dados PIX</div>
+003159:             <div class="field" data-rec-pix="${i}"><label>Tipo Pix</label><select id="rec_tipoPix_${i}"><option ${normalizar(m.tipoPix).includes('CELULAR')?'selected':''}>CELULAR</option><option ${normalizar(m.tipoPix).includes('CPF')?'selected':''}>CPF</option><option ${normalizar(m.tipoPix).includes('CNPJ')?'selected':''}>CNPJ</option><option ${normalizar(m.tipoPix).includes('EMAIL')||normalizar(m.tipoPix).includes('E-MAIL')?'selected':''}>E-MAIL</option><option ${normalizar(m.tipoPix).includes('ALEATORIA')||normalizar(m.tipoPix).includes('ALEATÓRIA')?'selected':''}>ALEATÓRIA</option></select></div>
+003160:             <div class="field" data-rec-pix="${i}"><label>Chave Pix</label><input id="rec_chave_${i}" value="${escapeAttr(m.chavePix||'')}"></div>
+003161: 
+003162:             <div class="rec-section-label" data-rec-bank="${i}">Dados bancários</div>
+003163:             <div class="field" data-rec-bank="${i}"><label>Banco</label><input id="rec_banco_${i}" value="${escapeAttr(m.banco||'')}"></div>
+003164:             <div class="field" data-rec-bank="${i}"><label>Agência</label><input id="rec_agencia_${i}" value="${escapeAttr(m.agencia||'')}"></div>
+003165:             <div class="field" data-rec-bank="${i}"><label>Conta</label><input id="rec_conta_${i}" value="${escapeAttr(m.conta||'')}"></div>
+003166:             <div class="field" data-rec-bank="${i}"><label>Operação / Tipo de conta</label><input id="rec_operacao_${i}" value="${escapeAttr(m.operacao||'')}"></div>
+
+==============================================================================================================
+TERMO: pay-card-actions | TOTAL: 4
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 1 | LINHA ORIGINAL 162
+000132:     .sol-info{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;margin:10px 0}
+000133:     .sol-info div{background:#f7fbf8;border:1px solid #e0ebe3;border-radius:10px;padding:8px;color:#263445;font-size:12px;word-break:break-word}
+000134:     .sol-info b{display:block;color:#0b4b1d;font-size:10px;text-transform:uppercase;margin-bottom:4px}
+000135:     .sol-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+000136:     .sol-actions .btn{min-height:36px;padding:8px 12px;border-radius:10px;font-size:12px}
+000137:     .btn-muted{background:#e9eef2;color:#43556a}
+000138:     .btn-muted:disabled{opacity:.5}
+000139:     .btn-outline-danger{background:#fff;color:#b91c1c;border:1px solid #f1b7b7}
+000140:     .sol-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+000141:     .sol-toolbar .field{margin:0;min-width:240px}
+000142:     @media(max-width:920px){.sol-info{grid-template-columns:1fr}.sol-card{padding:12px}.sol-actions .btn{width:100%}.sol-toolbar{align-items:stretch}.sol-toolbar .field{width:100%;min-width:0}}
+000143: 
+000144: 
+000145:     .upload-progress-fill.indeterminate{position:relative;min-width:8%;animation:uploadPulse 1.1s ease-in-out infinite}
+000146:     @keyframes uploadPulse{0%{filter:brightness(.95)}50%{filter:brightness(1.25)}100%{filter:brightness(.95)}}
+000147: 
+000148: 
+000149:     .admin-subtabs{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 18px;padding:8px;background:#f4f8f5;border:1px solid #dceae0;border-radius:14px}
+000150:     .admin-subtabs .btn-tab{min-height:40px;border-radius:10px;text-transform:uppercase}
+000151:     .payment-clean-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+000152:     .payment-clean-header p{margin:6px 0 0;color:#43556a}
+000153:     .pay-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin:12px 0 18px}
+000154:     .pay-summary-card{border:1px solid #dfe8e2;background:#fff;border-radius:12px;padding:13px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+000155:     .pay-summary-card b{display:block;text-transform:uppercase;color:#5a6879;font-size:10px;margin-bottom:6px;letter-spacing:.3px}.pay-summary-card strong{font-size:22px;color:#003b12;line-height:1.1}.pay-summary-card.warn strong{color:#cc6a00}.pay-summary-card.danger strong{color:#b91c1c}
+000156:     .pay-filterbar{display:grid;grid-template-columns:1.6fr .8fr .8fr auto;gap:10px;align-items:end;margin:12px 0 16px;background:#fbfdfb;border:1px solid #dfe8e2;border-radius:12px;padding:12px}
+000157:     .pay-filterbar .field{margin:0}.pay-list{display:grid;gap:12px;margin-top:12px}
+000158:     .pay-admin-card-pro{background:#fff;border:1px solid #dce6df;border-left:5px solid #0b6f28;border-radius:13px;padding:14px;box-shadow:0 5px 15px rgba(0,0,0,.06)}
+000159:     .pay-admin-card-pro.warn{border-left-color:#ff8a00}.pay-admin-card-pro.danger{border-left-color:#c1121f}.pay-admin-card-pro.muted{border-left-color:#7c8794}
+000160:     .pay-admin-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}.pay-admin-title{font-size:15px;font-weight:950;color:#0b2f12}.pay-admin-sub{font-size:12px;color:#5d6b7d;font-weight:800;margin-top:4px}.pay-admin-status{font-weight:950;text-transform:uppercase;font-size:12px;padding:7px 12px;border-radius:999px;background:#d9f5df;color:#064d1a}.pay-admin-status.warn{background:#fff4d8;color:#a15c00}.pay-admin-status.danger{background:#fee2e2;color:#a21818}.pay-admin-status.muted{background:#eef2f7;color:#465567}
+000161:     .pay-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.pay-admin-info{background:#f9fbfa;border:1px solid #e1e9e4;border-radius:9px;padding:9px;min-height:56px;word-break:break-word}.pay-admin-info b{display:block;color:#596879;text-transform:uppercase;font-size:10px;margin-bottom:5px}.pay-admin-info span{font-size:12px;color:#111;font-weight:700}.pay-admin-info.full{grid-column:1/-1}
+000162:     .pay-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pay-card-actions .btn{min-height:34px;padding:8px 12px;border-radius:8px;font-size:11px}.recebimento-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}.recebimento-type-pill{display:inline-flex;border-radius:999px;background:#e8f5ed;color:#064d1a;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase}.rec-section-label{grid-column:1/-1;font-weight:950;color:#0b4b1d;border-bottom:1px solid #dbe9df;padding:7px 0 2px;margin-top:4px}.recebimento-card.compact{box-shadow:0 6px 20px rgba(0,0,0,.05)}.recebimento-grid.pro{grid-template-columns:repeat(4,minmax(180px,1fr))}.rec-hidden{display:none!important}.rec-hint{font-size:12px;color:#596879;margin:6px 0 0}
+000163:     .pag-recorrente-box{border:1px solid #dce8e1;background:#f8fcf9;border-radius:14px;padding:12px;margin:12px 0}.pag-recorrente-box h4{margin:0 0 8px;color:#003b12}.pag-recorrente-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.pay-copy-label{font-size:11px;font-weight:900;color:#526070;text-transform:uppercase;margin:8px 0 4px}
+000164:     @media(max-width:920px){.pay-summary-grid,.pay-admin-grid,.recebimento-grid.pro,.pay-filterbar,.pag-recorrente-inline{grid-template-columns:1fr}.payment-clean-header{display:block}.pay-card-actions .btn{width:100%}}
+000165: 
+000166: 
+000167:     .acq-box{border:1px solid #d7e7dc;background:#f8fcf9;border-radius:16px;padding:14px;margin:12px 0}
+000168:     .acq-box h4{margin:0 0 8px;color:#003b12}
+000169:     .acq-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+000170:     .acq-value{font-weight:950;background:#f3f8f4!important;color:#003b12!important}
+000171:     .acq-help{font-size:12px;color:#516274;line-height:1.45;margin-top:8px}
+000172:     .locked-action{opacity:.72}
+000173:     .status-pill.locked{background:#fff3cd;color:#8a5a00;border:1px solid #f3d37a}
+000174:     @media(max-width:920px){.acq-row{grid-template-columns:1fr}.acq-box .btn{width:100%}}
+000175: 
+000176: 
+000177:     .pay-loading-soft{border:1px solid #bfdbfe;background:#eff6ff;color:#123c74;border-radius:14px;padding:12px;font-weight:900;margin:10px 0}
+000178:     .pay-cache-hint{font-size:12px;color:#516274;margin-top:8px;line-height:1.35}
+000179:     .pay-method-grid.loading-dim{opacity:.72}
+000180: 
+000181: 
+000182:     .cotas-alerta{border:1px solid #f3d37a;background:#fff8e5;color:#7a4b00;border-radius:12px;padding:10px 12px;font-weight:800;margin-top:10px}
+000183:     .cotas-esgotadas{border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:12px;padding:10px 12px;font-weight:900;margin:10px 0}
+000184:     .btn[disabled], .btn.disabled{opacity:.55!important;cursor:not-allowed!important;filter:grayscale(.2)}
+000185:     .acq-limite-info{font-size:12px;color:#334155;margin-top:6px;font-weight:800}
+000186: 
+000187: 
+000188:     /* =========================================================
+000189:      * V177 — MENU SUPERIOR FIXO/STICKY
+000190:      * Mantém data/hora, usuário e navegação visíveis durante a rolagem.
+000191:      * O conteúdo passa por baixo da barra, sem sumir o menu.
+000192:      * ========================================================= */
+000193:     :root{
+000194:       --pss-topbar-offset: 0px;
+000195:     }
+000196: 
+000197:     header,
+000198:     .topbar,
+000199:     .pss-topbar,
+000200:     #topbar,
+000201:     #appHeader,
+000202:     .app-header{
+000203:       position: sticky !important;
+000204:       top: 0 !important;
+000205:       z-index: 9990 !important;
+000206:       box-shadow: 0 2px 10px rgba(0,0,0,.12);
+000207:     }
+000208: 
+000209:     .menu,
+000210:     .nav,
+000211:     nav,
+000212:     #menuPrincipal,
+000213:     .menu-principal,
+000214:     .navbar,
+000215:     .nav-wrap{
+000216:       position: sticky !important;
+000217:       top: var(--pss-topbar-offset) !important;
+000218:       z-index: 9989 !important;
+000219:     }
+000220: 
+000221:     .menu,
+000222:     #menuPrincipal,
+000223:     .menu-principal,
+000224:     .navbar{
+000225:       backdrop-filter: blur(8px);
+000226:       -webkit-backdrop-filter: blur(8px);
+000227:     }
+000228: 
+000229:     main,
+000230:     .main,
+000231:     #app,
+000232:     #view,
+000233:     .content,
+000234:     .page{
+000235:       scroll-margin-top: 120px;
+000236:     }
+000237: 
+000238:     .modal-backdrop,
+000239:     #modalBackdrop{
+000240:       z-index: 10050 !important;
+000241:     }
+000242: 
+000243:     .modal,
+000244:     .dialog,
+000245:     .modal-content{
+000246:       z-index: 10060 !important;
+000247:     }
+000248: 
+000249:     @media (max-width: 920px){
+000250:       header,
+000251:       .topbar,
+000252:       .pss-topbar,
+000253:       #topbar,
+000254:       #appHeader,
+000255:       .app-header{
+000256:         position: sticky !important;
+000257:         top: 0 !important;
+000258:       }
+000259: 
+000260:       .menu,
+000261:       .nav,
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 2 | LINHA ORIGINAL 164
+000134:     .sol-info b{display:block;color:#0b4b1d;font-size:10px;text-transform:uppercase;margin-bottom:4px}
+000135:     .sol-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+000136:     .sol-actions .btn{min-height:36px;padding:8px 12px;border-radius:10px;font-size:12px}
+000137:     .btn-muted{background:#e9eef2;color:#43556a}
+000138:     .btn-muted:disabled{opacity:.5}
+000139:     .btn-outline-danger{background:#fff;color:#b91c1c;border:1px solid #f1b7b7}
+000140:     .sol-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+000141:     .sol-toolbar .field{margin:0;min-width:240px}
+000142:     @media(max-width:920px){.sol-info{grid-template-columns:1fr}.sol-card{padding:12px}.sol-actions .btn{width:100%}.sol-toolbar{align-items:stretch}.sol-toolbar .field{width:100%;min-width:0}}
+000143: 
+000144: 
+000145:     .upload-progress-fill.indeterminate{position:relative;min-width:8%;animation:uploadPulse 1.1s ease-in-out infinite}
+000146:     @keyframes uploadPulse{0%{filter:brightness(.95)}50%{filter:brightness(1.25)}100%{filter:brightness(.95)}}
+000147: 
+000148: 
+000149:     .admin-subtabs{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 18px;padding:8px;background:#f4f8f5;border:1px solid #dceae0;border-radius:14px}
+000150:     .admin-subtabs .btn-tab{min-height:40px;border-radius:10px;text-transform:uppercase}
+000151:     .payment-clean-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+000152:     .payment-clean-header p{margin:6px 0 0;color:#43556a}
+000153:     .pay-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin:12px 0 18px}
+000154:     .pay-summary-card{border:1px solid #dfe8e2;background:#fff;border-radius:12px;padding:13px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+000155:     .pay-summary-card b{display:block;text-transform:uppercase;color:#5a6879;font-size:10px;margin-bottom:6px;letter-spacing:.3px}.pay-summary-card strong{font-size:22px;color:#003b12;line-height:1.1}.pay-summary-card.warn strong{color:#cc6a00}.pay-summary-card.danger strong{color:#b91c1c}
+000156:     .pay-filterbar{display:grid;grid-template-columns:1.6fr .8fr .8fr auto;gap:10px;align-items:end;margin:12px 0 16px;background:#fbfdfb;border:1px solid #dfe8e2;border-radius:12px;padding:12px}
+000157:     .pay-filterbar .field{margin:0}.pay-list{display:grid;gap:12px;margin-top:12px}
+000158:     .pay-admin-card-pro{background:#fff;border:1px solid #dce6df;border-left:5px solid #0b6f28;border-radius:13px;padding:14px;box-shadow:0 5px 15px rgba(0,0,0,.06)}
+000159:     .pay-admin-card-pro.warn{border-left-color:#ff8a00}.pay-admin-card-pro.danger{border-left-color:#c1121f}.pay-admin-card-pro.muted{border-left-color:#7c8794}
+000160:     .pay-admin-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}.pay-admin-title{font-size:15px;font-weight:950;color:#0b2f12}.pay-admin-sub{font-size:12px;color:#5d6b7d;font-weight:800;margin-top:4px}.pay-admin-status{font-weight:950;text-transform:uppercase;font-size:12px;padding:7px 12px;border-radius:999px;background:#d9f5df;color:#064d1a}.pay-admin-status.warn{background:#fff4d8;color:#a15c00}.pay-admin-status.danger{background:#fee2e2;color:#a21818}.pay-admin-status.muted{background:#eef2f7;color:#465567}
+000161:     .pay-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.pay-admin-info{background:#f9fbfa;border:1px solid #e1e9e4;border-radius:9px;padding:9px;min-height:56px;word-break:break-word}.pay-admin-info b{display:block;color:#596879;text-transform:uppercase;font-size:10px;margin-bottom:5px}.pay-admin-info span{font-size:12px;color:#111;font-weight:700}.pay-admin-info.full{grid-column:1/-1}
+000162:     .pay-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pay-card-actions .btn{min-height:34px;padding:8px 12px;border-radius:8px;font-size:11px}.recebimento-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}.recebimento-type-pill{display:inline-flex;border-radius:999px;background:#e8f5ed;color:#064d1a;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase}.rec-section-label{grid-column:1/-1;font-weight:950;color:#0b4b1d;border-bottom:1px solid #dbe9df;padding:7px 0 2px;margin-top:4px}.recebimento-card.compact{box-shadow:0 6px 20px rgba(0,0,0,.05)}.recebimento-grid.pro{grid-template-columns:repeat(4,minmax(180px,1fr))}.rec-hidden{display:none!important}.rec-hint{font-size:12px;color:#596879;margin:6px 0 0}
+000163:     .pag-recorrente-box{border:1px solid #dce8e1;background:#f8fcf9;border-radius:14px;padding:12px;margin:12px 0}.pag-recorrente-box h4{margin:0 0 8px;color:#003b12}.pag-recorrente-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.pay-copy-label{font-size:11px;font-weight:900;color:#526070;text-transform:uppercase;margin:8px 0 4px}
+000164:     @media(max-width:920px){.pay-summary-grid,.pay-admin-grid,.recebimento-grid.pro,.pay-filterbar,.pag-recorrente-inline{grid-template-columns:1fr}.payment-clean-header{display:block}.pay-card-actions .btn{width:100%}}
+000165: 
+000166: 
+000167:     .acq-box{border:1px solid #d7e7dc;background:#f8fcf9;border-radius:16px;padding:14px;margin:12px 0}
+000168:     .acq-box h4{margin:0 0 8px;color:#003b12}
+000169:     .acq-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+000170:     .acq-value{font-weight:950;background:#f3f8f4!important;color:#003b12!important}
+000171:     .acq-help{font-size:12px;color:#516274;line-height:1.45;margin-top:8px}
+000172:     .locked-action{opacity:.72}
+000173:     .status-pill.locked{background:#fff3cd;color:#8a5a00;border:1px solid #f3d37a}
+000174:     @media(max-width:920px){.acq-row{grid-template-columns:1fr}.acq-box .btn{width:100%}}
+000175: 
+000176: 
+000177:     .pay-loading-soft{border:1px solid #bfdbfe;background:#eff6ff;color:#123c74;border-radius:14px;padding:12px;font-weight:900;margin:10px 0}
+000178:     .pay-cache-hint{font-size:12px;color:#516274;margin-top:8px;line-height:1.35}
+000179:     .pay-method-grid.loading-dim{opacity:.72}
+000180: 
+000181: 
+000182:     .cotas-alerta{border:1px solid #f3d37a;background:#fff8e5;color:#7a4b00;border-radius:12px;padding:10px 12px;font-weight:800;margin-top:10px}
+000183:     .cotas-esgotadas{border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:12px;padding:10px 12px;font-weight:900;margin:10px 0}
+000184:     .btn[disabled], .btn.disabled{opacity:.55!important;cursor:not-allowed!important;filter:grayscale(.2)}
+000185:     .acq-limite-info{font-size:12px;color:#334155;margin-top:6px;font-weight:800}
+000186: 
+000187: 
+000188:     /* =========================================================
+000189:      * V177 — MENU SUPERIOR FIXO/STICKY
+000190:      * Mantém data/hora, usuário e navegação visíveis durante a rolagem.
+000191:      * O conteúdo passa por baixo da barra, sem sumir o menu.
+000192:      * ========================================================= */
+000193:     :root{
+000194:       --pss-topbar-offset: 0px;
+000195:     }
+000196: 
+000197:     header,
+000198:     .topbar,
+000199:     .pss-topbar,
+000200:     #topbar,
+000201:     #appHeader,
+000202:     .app-header{
+000203:       position: sticky !important;
+000204:       top: 0 !important;
+000205:       z-index: 9990 !important;
+000206:       box-shadow: 0 2px 10px rgba(0,0,0,.12);
+000207:     }
+000208: 
+000209:     .menu,
+000210:     .nav,
+000211:     nav,
+000212:     #menuPrincipal,
+000213:     .menu-principal,
+000214:     .navbar,
+000215:     .nav-wrap{
+000216:       position: sticky !important;
+000217:       top: var(--pss-topbar-offset) !important;
+000218:       z-index: 9989 !important;
+000219:     }
+000220: 
+000221:     .menu,
+000222:     #menuPrincipal,
+000223:     .menu-principal,
+000224:     .navbar{
+000225:       backdrop-filter: blur(8px);
+000226:       -webkit-backdrop-filter: blur(8px);
+000227:     }
+000228: 
+000229:     main,
+000230:     .main,
+000231:     #app,
+000232:     #view,
+000233:     .content,
+000234:     .page{
+000235:       scroll-margin-top: 120px;
+000236:     }
+000237: 
+000238:     .modal-backdrop,
+000239:     #modalBackdrop{
+000240:       z-index: 10050 !important;
+000241:     }
+000242: 
+000243:     .modal,
+000244:     .dialog,
+000245:     .modal-content{
+000246:       z-index: 10060 !important;
+000247:     }
+000248: 
+000249:     @media (max-width: 920px){
+000250:       header,
+000251:       .topbar,
+000252:       .pss-topbar,
+000253:       #topbar,
+000254:       #appHeader,
+000255:       .app-header{
+000256:         position: sticky !important;
+000257:         top: 0 !important;
+000258:       }
+000259: 
+000260:       .menu,
+000261:       .nav,
+000262:       nav,
+000263:       #menuPrincipal,
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 3 | LINHA ORIGINAL 3325
+003295:       return `<div class="pay-list">${rows.map((row,i)=>renderPagamentoCardAdmin_(headers,row,i)).join('')}</div>`;
+003296:     }
+003297: 
+003298:     function renderPagamentoCardAdmin_(headers,row,i){
+003299:       const o=pagamentoObj_(headers,row);
+003300:       const linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
+003301:       const cls=pagamentoStatusClasse_(o.status);
+003302:       const url=o.urlComprovante||o.arquivoUrl||'';
+003303:       return `
+003304:         <article class="pay-admin-card-pro ${cls.card}" data-pay-row="${linha}">
+003305:           <div class="pay-admin-head">
+003306:             <div>
+003307:               <div class="pay-admin-title">${escapeHtml(o.loteria||'Pagamento sem loteria informada')}</div>
+003308:               <div class="pay-admin-sub">${escapeHtml(o.email||'-')} • ${escapeHtml(formatarDataHoraPtBR(o.data||'-'))}</div>
+003309:             </div>
+003310:             <span class="pay-admin-status ${cls.badge}">${escapeHtml(o.status||'Pendente')}</span>
+003311:           </div>
+003312:           <div class="pay-admin-grid">
+003313:             <div class="pay-admin-info"><b>Valor</b><span>${escapeHtml(o.valor?moeda(o.valor):'-')}</span></div>
+003314:             <div class="pay-admin-info"><b>Pagador</b><span>${escapeHtml(o.pagador||'-')}</span></div>
+003315:             <div class="pay-admin-info"><b>Recebedor</b><span>${escapeHtml(o.recebedor||'-')}</span></div>
+003316:             <div class="pay-admin-info"><b>Mês referência</b><span>${escapeHtml(o.mesReferencia||'-')}</span></div>
+003317:             <div class="pay-admin-info"><b>ID transação</b><span>${escapeHtml(o.idTransacao||'-')}</span></div>
+003318:             <div class="pay-admin-info"><b>Autenticação</b><span>${escapeHtml(o.autenticacao||'-')}</span></div>
+003319:             <div class="pay-admin-info"><b>Tipo cota</b><span>${escapeHtml(o.tipoCota||'-')}</span></div>
+003320:             <div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>${escapeHtml(o.codigoProduto||'-')}</span></div>
+003321:             <div class="pay-admin-info"><b>Partes</b><span>${escapeHtml(formatarPartesPagamento_(o.partesCota))}</span></div>
+003322:             <div class="pay-admin-info full"><b>Validação / observação</b><span>${escapeHtml(o.validacao||'-')}</span></div>
+003323:             ${o.participantesCota?`<div class="pay-admin-info full"><b>Participantes da cota</b><span>${escapeHtml(o.participantesCota)}</span></div>`:''}
+003324:           </div>
+003325:           <div class="pay-card-actions">
+003326:             ${url?`<button class="btn btn-blue" onclick="abrirComprovanteAdmin('${escapeAttr(url)}')">Ver comprovante</button>`:''}
+003327:             <button class="btn btn-light" onclick="reprocessarPagamentoAdmin(${linha})">Reprocessar OCR</button>
+003328:             ${!normalizar(o.status).includes('PAGO')?`<button class="btn" onclick="confirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>`:''}
+003329:           </div>
+003330:         </article>
+003331:       `;
+003332:     }
+003333: 
+003334:     function pagamentoObj_(headers,row){
+003335:       const o=rowObj(headers,row);
+003336:       return {
+003337:         data:cellObj(o,['DATA']),
+003338:         email:cellObj(o,['EMAIL','E-MAIL']),
+003339:         loteria:cellObj(o,['LOTERIA','BOLAO','BOLÃO']),
+003340:         urlComprovante:cellObj(o,['URL_COMPROVANTE','URL COMPROVANTE']),
+003341:         status:cellObj(o,['STATUS']),
+003342:         pagador:cellObj(o,['PAGADOR']),
+003343:         valor:cellObj(o,['VALOR']),
+003344:         idTransacao:cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO','ID TRANSACAO']),
+003345:         autenticacao:cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO']),
+003346:         arquivoUrl:cellObj(o,['ARQUIVO_URL','ARQUIVO URL']),
+003347:         recebedor:cellObj(o,['RECEBEDOR']),
+003348:         pixDestino:cellObj(o,['PIX_DESTINO','PIX DESTINO']),
+003349:         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
+003350:         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
+003351:         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
+003352:         codigoProduto:cellObj(o,['IDENTIFICADOR','IDENTIFICADOR_PRODUTO','IDENTIFICADOR PRODUTO','COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+003353:         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+003354:         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
+003355:         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
+003356:         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
+003357:       };
+003358:     }
+003359: 
+003360:     function pagamentoStatusClasse_(status){
+003361:       const st=normalizar(status);
+003362:       if(st.includes('PAGO')||st.includes('APROV'))return {card:'',badge:''};
+003363:       if(st.includes('ANALISE')||st.includes('ANÁLISE'))return {card:'warn',badge:'warn'};
+003364:       if(st.includes('ERRO')||st.includes('DUPLIC')||st.includes('RECUS'))return {card:'danger',badge:'danger'};
+003365:       return {card:'muted',badge:'muted'};
+003366:     }
+003367: 
+003368:     function formatarPartesPagamento_(v){
+003369:       if(v===undefined||v===null||String(v).trim()==='')return '-';
+003370:       const raw=String(v).trim();
+003371:       if(!raw)return '-';
+003372:       if(raw.includes('/'))return raw;
+003373:       if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+003374:       if(/^integral$/i.test(raw))return '1/1';
+003375:       const n=num(raw);
+003376:       if(!n)return raw;
+003377:       if(Math.abs(n-1)<0.0001)return '1/1';
+003378:       if(n>0&&n<1){
+003379:         const partes=Math.round(1/n);
+003380:         return partes>1?'1/'+partes:String(n).replace('.',',');
+003381:       }
+003382:       return '1/'+n;
+003383:     }
+003384: 
+003385:     function abrirComprovanteAdmin(url){
+003386:       if(!url)return toast('Comprovante não localizado.','warn');
+003387:       window.open(url,'_blank','noopener');
+003388:     }
+003389: 
+003390:     function confirmarPagamentoManualAdmin(linha){
+003391:       abrirModal('Confirmar pagamento',`
+003392:         <div class="notice warn">Deseja marcar este pagamento como <strong>Pago</strong>?</div>
+003393:         <p>Essa ação registra a confirmação manual do administrador na linha ${escapeHtml(linha)}.</p>
+003394:         <div class="actions" style="justify-content:flex-end;">
+003395:           <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003396:           <button class="btn" onclick="executarConfirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>
+003397:         </div>
+003398:       `);
+003399:     }
+003400: 
+003401:     async function executarConfirmarPagamentoManualAdmin(linha){
+003402:       linha=Number(linha||0);
+003403:       fecharModal();
+003404:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003405:       try{
+003406:         await api('confirmarPagamentoManual',{linha:linha},[linha]);
+003407:         toast('Pagamento confirmado.');
+003408:         renderPagamentosAdminTab('efetuados');
+003409:       }catch(err){toast(err.message,'error')}
+003410:     }
+003411: 
+003412:     async function reprocessarPagamentoAdmin(linha){
+003413:       linha=Number(linha||0);
+003414:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003415:       try{
+003416:         toast('Solicitando reprocessamento OCR da linha '+linha+'...','info');
+003417:         await api('reprocessarPagamentoLinha',{linha:linha},[linha]);
+003418:         toast('Reprocessamento concluído/solicitado.');
+003419:         renderPagamentosAdminTab('efetuados');
+003420:       }catch(err){toast(err.message,'error')}
+003421:     }
+003422: 
+003423:     function filtrarPagamentosAdmin(){
+003424:       const cache=ESTADO.pagamentosAdminCache||{headers:[],rows:[]};
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 4 | LINHA ORIGINAL 26938
+026908:   window.renderPagamentoCardAdmin_ = renderPagamentoCardAdmin_ = function(headers,row,i){
+026909:     try{
+026910:       var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(headers,row) : {};
+026911:       var linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
+026912:       var cls=(typeof pagamentoStatusClasse_==='function') ? pagamentoStatusClasse_(o.status) : {card:'',badge:''};
+026913:       var url=o.urlComprovante||o.arquivoUrl||'';
+026914:       var mesTela=formatarMesReferenciaTela356(o.mesReferencia||'-');
+026915: 
+026916:       return ''
+026917:         + '<article class="pay-admin-card-pro '+esc356(cls.card||'')+'" data-pay-row="'+esc356(linha)+'">'
+026918:         + '<div class="pay-admin-head">'
+026919:         + '<div>'
+026920:         + '<div class="pay-admin-title">'+esc356(o.loteria||'Pagamento sem loteria informada')+'</div>'
+026921:         + '<div class="pay-admin-sub">'+esc356(o.email||'-')+' • '+esc356((typeof formatarDataHoraPtBR==='function')?formatarDataHoraPtBR(o.data||'-'):(o.data||'-'))+'</div>'
+026922:         + '</div>'
+026923:         + '<span class="pay-admin-status '+esc356(cls.badge||'')+'">'+esc356(o.status||'Pendente')+'</span>'
+026924:         + '</div>'
+026925:         + '<div class="pay-admin-grid">'
+026926:         + '<div class="pay-admin-info"><b>Valor</b><span>'+esc356(o.valor?moeda356(o.valor):'-')+'</span></div>'
+026927:         + '<div class="pay-admin-info"><b>Pagador</b><span>'+esc356(o.pagador||'-')+'</span></div>'
+026928:         + '<div class="pay-admin-info"><b>Recebedor</b><span>'+esc356(o.recebedor||'-')+'</span></div>'
+026929:         + '<div class="pay-admin-info"><b>Mês referência</b><span>'+esc356(mesTela)+'</span></div>'
+026930:         + '<div class="pay-admin-info"><b>ID transação</b><span>'+esc356(o.idTransacao||'-')+'</span></div>'
+026931:         + '<div class="pay-admin-info"><b>Autenticação</b><span>'+esc356(o.autenticacao||'-')+'</span></div>'
+026932:         + '<div class="pay-admin-info"><b>Tipo cota</b><span>'+esc356(o.tipoCota||'-')+'</span></div>'
+026933:         + '<div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>'+esc356(o.codigoProduto||'-')+'</span></div>'
+026934:         + '<div class="pay-admin-info"><b>Partes</b><span>'+esc356((typeof formatarPartesPagamento_==='function')?formatarPartesPagamento_(o.partesCota):(o.partesCota||'-'))+'</span></div>'
+026935:         + '<div class="pay-admin-info full"><b>Validação / observação</b><span>'+esc356(o.validacao||'-')+'</span></div>'
+026936:         + (o.participantesCota?'<div class="pay-admin-info full"><b>Participantes da cota</b><span>'+esc356(o.participantesCota)+'</span></div>':'')
+026937:         + '</div>'
+026938:         + '<div class="pay-card-actions">'
+026939:         + (url?'<button class="btn btn-blue" onclick="abrirComprovanteAdmin(\''+esc356(url).replace(/'/g,'&#039;')+'\')">Ver comprovante</button>':'')
+026940:         + '<button class="btn btn-light" onclick="reprocessarPagamentoAdmin('+esc356(linha)+')">Reprocessar OCR</button>'
+026941:         + (!(norm356(o.status).indexOf('PAGO')>=0)?'<button class="btn" onclick="confirmarPagamentoManualAdmin('+esc356(linha)+')">Confirmar pagamento</button>':'')
+026942:         + '</div>'
+026943:         + '</article>';
+026944:     }catch(e){
+026945:       return baseRenderPagamentoCard356 ? baseRenderPagamentoCard356(headers,row,i) : '<div class="notice error">'+esc356(e.message||e)+'</div>';
+026946:     }
+026947:   };
+026948: 
+026949:   window.renderListaPagamentosCardsAdmin_ = renderListaPagamentosCardsAdmin_ = function(headers,rows){
+026950:     rows=rows||[];
+026951:     if(!rows.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+026952:     return '<div class="pay-list">'+rows.map(function(row,i){return window.renderPagamentoCardAdmin_(headers,row,i);}).join('')+'</div>';
+026953:   };
+026954: 
+026955:   window.renderPagamentosEfetuadosAdmin_ = renderPagamentosEfetuadosAdmin_ = function(headers,rows){
+026956:     headers=headers||[];
+026957:     rows=rows||[];
+026958:     if(!headers.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+026959: 
+026960:     var resumo='';
+026961:     try{ resumo = (typeof renderResumoPagamentosAdmin_==='function') ? renderResumoPagamentosAdmin_(headers,rows) : ''; }catch(e){ resumo=''; }
+026962: 
+026963:     var lista='';
+026964:     try{ lista = window.renderListaPagamentosCardsAdmin_(headers,rows); }
+026965:     catch(e){ lista='<div class="notice error">'+esc356(e.message||e)+'</div>'; }
+026966: 
+026967:     return ''
+026968:       + '<h3 style="margin-top:4px;">📊 Detalhamento por mês, ano e loteria</h3>'
+026969:       + detalhePagamentosMesBolaoV356(headers,rows)
+026970:       + resumo
+026971:       + '<div class="pay-filterbar">'
+026972:       + '<div class="field"><label>Buscar</label><input id="payBuscaAdmin" placeholder="Buscar por e-mail, loteria, pagador, ID..." oninput="filtrarPagamentosAdmin()"></div>'
+026973:       + '<div class="field"><label>Status</label><select id="payStatusAdmin" onchange="filtrarPagamentosAdmin()"><option value="TODOS">Todos</option><option value="PAGO">Pago</option><option value="ANALISE">Em análise</option><option value="PENDENTE">Pendente</option><option value="ERRO">Erro/Duplicado</option></select></div>'
+026974:       + '<div class="field"><label>Mês</label><input id="payMesAdmin" placeholder="MM/AAAA" oninput="filtrarPagamentosAdmin()"></div>'
+026975:       + '<button class="btn btn-light" onclick="limparFiltrosPagamentosAdmin()">Limpar</button>'
+026976:       + '</div>'
+026977:       + '<div id="pagamentosCardsAdminBox">'+lista+'</div>';
+026978:   };
+026979: 
+026980:   window.filtrarPagamentosAdmin = filtrarPagamentosAdmin = function(){
+026981:     var cache=window.ESTADO&&ESTADO.pagamentosAdminCache?ESTADO.pagamentosAdminCache:{headers:[],rows:[]};
+026982:     var termo=norm356(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+026983:     var status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+026984:     var mesDigitado=String(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'').trim();
+026985:     var mesCompacto=compactMes356(mesDigitado);
+026986:     var mesNorm=norm356(mesDigitado);
+026987: 
+026988:     var filtradas=(cache.rows||[]).filter(function(row){
+026989:       var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(cache.headers,row) : {};
+026990:       var st=norm356(o.status);
+026991:       var mesTela=formatarMesReferenciaTela356(o.mesReferencia||o.data||'');
+026992:       var texto=norm356(Object.values(o).join(' | ')+' | '+mesTela);
+026993: 
+026994:       if(termo && texto.indexOf(termo)<0) return false;
+026995: 
+026996:       if(mesDigitado){
+026997:         var linhaCompacta=compactMes356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+026998:         var linhaNorm=norm356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+026999:         if(mesCompacto){
+027000:           if(linhaCompacta.indexOf(mesCompacto)<0) return false;
+027001:         }else if(linhaNorm.indexOf(mesNorm)<0){
+027002:           return false;
+027003:         }
+027004:       }
+027005: 
+027006:       if(status==='PAGO' && !(st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0)) return false;
+027007:       if(status==='ANALISE' && !(st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0)) return false;
+027008:       if(status==='PENDENTE' && (st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0 || st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0 || st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+027009:       if(status==='ERRO' && !(st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+027010:       return true;
+027011:     });
+027012: 
+027013:     var box=document.getElementById('pagamentosCardsAdminBox');
+027014:     if(box) box.innerHTML=window.renderListaPagamentosCardsAdmin_(cache.headers,filtradas);
+027015:   };
+027016: 
+027017:   var baseFormatConsulta356=window.formatConsultaValor_;
+027018:   if(baseFormatConsulta356){
+027019:     window.formatConsultaValor_ = formatConsultaValor_ = function(row,c){
+027020:       if(c==='mesReferencia'){
+027021:         var v=row&&row[c]!==undefined?row[c]:'';
+027022:         return esc356(formatarMesReferenciaTela356(v));
+027023:       }
+027024:       return baseFormatConsulta356(row,c);
+027025:     };
+027026:   }
+027027: 
+027028:   var baseValorCampoConsultaV256_356=window.valorCampoConsultaV256_;
+027029:   if(baseValorCampoConsultaV256_356){
+027030:     window.valorCampoConsultaV256_ = valorCampoConsultaV256_ = function(row,c){
+027031:       if(c==='mesReferencia'){
+027032:         var v=row&&row[c]!==undefined?row[c]:'';
+027033:         return esc356(formatarMesReferenciaTela356(v));
+027034:       }
+027035:       return baseValorCampoConsultaV256_356(row,c);
+027036:     };
+027037:   }
+
+==============================================================================================================
+TERMO: onclick="aprovarPagamento | TOTAL: 0
+
+==============================================================================================================
+TERMO: onclick="rejeitarPagamento | TOTAL: 0
+
+==============================================================================================================
+TERMO: onclick="excluirPagamento | TOTAL: 0
+
+==============================================================================================================
+TERMO: onclick="excluirComprovante | TOTAL: 0
+
+==============================================================================================================
+TERMO: action:'excluir | TOTAL: 4
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 1 | LINHA ORIGINAL 7314
+007284: 
+007285: 
+007286: /* =====================================================================
+007287:  * PATCH V209 — EXCLUIR BOLÃO NO MENU CONFIG CORRIGIDO
+007288:  * Motivo:
+007289:  * - O botão Excluir da tela CONFIG podia usar índice da lista bruta em vez
+007290:  *   da lista filtrada exibida.
+007291:  * - Backend anterior buscava só EVENTOS_ESPECIAIS; agora aceita também
+007292:  *   BOLOES_EVENTOS e outras abas possíveis.
+007293:  * ===================================================================== */
+007294: (function(){
+007295:   function pssV209BolaoConfigPorIndice_(i){
+007296:     const lista=window.PSS_CONFIG_BOLOES_LISTA||[];
+007297:     return lista[i] || (ESTADO.boloes||[])[i] || null;
+007298:   }
+007299: 
+007300:   window.excluirBolaoGit = async function(i){
+007301:     const b=pssV209BolaoConfigPorIndice_(i);
+007302:     if(!b){
+007303:       toast('Bolão não localizado na lista exibida. Atualize a tela e tente novamente.','error');
+007304:       return;
+007305:     }
+007306: 
+007307:     const nome=b.loteria||b.nome||b.id||'';
+007308:     if(!nome){
+007309:       toast('Nome do bolão não localizado para exclusão.','error');
+007310:       return;
+007311:     }
+007312: 
+007313:     window.PSS_CONFIRMACAO_ADMIN={
+007314:       action:'excluirBolaoAdmin',
+007315:       arg:nome,
+007316:       nomeBolao:nome,
+007317:       reloadView:'config'
+007318:     };
+007319: 
+007320:     abrirModal('Confirmar exclusão',`
+007321:       <div class="notice warn">
+007322:         <strong>Excluir bolão?</strong><br>
+007323:         ${escapeHtml(nome)}
+007324:       </div>
+007325:       <p style="margin:8px 0 16px;color:#546173;">
+007326:         Esta ação remove o bolão da configuração ativa. Use apenas para registros criados por engano ou testes.
+007327:       </p>
+007328:       <div class="actions" style="justify-content:flex-end;">
+007329:         <button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+007330:         <button type="button" class="btn btn-danger" id="btnConfirmarExcluirBolaoV209" onclick="executarConfirmacaoAdmin()">Confirmar exclusão</button>
+007331:       </div>
+007332:     `);
+007333:   };
+007334: 
+007335:   window.executarConfirmacaoAdmin = async function(){
+007336:     const cfg=window.PSS_CONFIRMACAO_ADMIN||{};
+007337:     window.PSS_CONFIRMACAO_ADMIN=null;
+007338: 
+007339:     const btn=document.getElementById('btnConfirmarExcluirBolaoV209');
+007340:     if(btn){
+007341:       btn.disabled=true;
+007342:       btn.textContent='Excluindo...';
+007343:     }
+007344: 
+007345:     if(!cfg.action){
+007346:       fecharModal();
+007347:       return;
+007348:     }
+007349: 
+007350:     try{
+007351:       const r=await api(cfg.action,{},[cfg.arg]);
+007352: 
+007353:       // Limpeza de caches locais para não reaparecer logo após excluir.
+007354:       try{
+007355:         Object.keys(localStorage).forEach(function(k){
+007356:           if(/^PSS_|^boloes_|^public_boloes|^home_|^dashboard_/i.test(k)) localStorage.removeItem(k);
+007357:         });
+007358:       }catch(e){}
+007359: 
+007360:       toast((r&&r.msg)||'Bolão excluído.');
+007361:       fecharModal();
+007362: 
+007363:       await carregarBoloes(true);
+007364:       if(ESTADO.view==='config') renderConfigBoloesAdmin();
+007365:       else if(ESTADO.view==='boloes') renderBoloes('ativos');
+007366:       else navegar('config');
+007367:     }catch(err){
+007368:       toast((err&&err.message)||String(err),'error');
+007369:       if(btn){
+007370:         btn.disabled=false;
+007371:         btn.textContent='Confirmar exclusão';
+007372:       }
+007373:     }
+007374:   };
+007375: 
+007376:   // Salvar/Inativar também passam a usar a lista filtrada exibida quando existir.
+007377:   const salvarConfigBolaoGitBaseV209=window.salvarConfigBolaoGit;
+007378:   window.salvarConfigBolaoGit = async function(i){
+007379:     if(window.PSS_CONFIG_BOLOES_LISTA && window.PSS_CONFIG_BOLOES_LISTA[i]){
+007380:       const bruto=ESTADO.boloes;
+007381:       try{
+007382:         ESTADO.boloes=window.PSS_CONFIG_BOLOES_LISTA;
+007383:         return await salvarConfigBolaoGitBaseV209(i);
+007384:       }finally{
+007385:         ESTADO.boloes=bruto;
+007386:       }
+007387:     }
+007388:     return await salvarConfigBolaoGitBaseV209(i);
+007389:   };
+007390: 
+007391:   const inativarBolaoGitBaseV209=window.inativarBolaoGit;
+007392:   window.inativarBolaoGit = async function(i){
+007393:     if(window.PSS_CONFIG_BOLOES_LISTA && window.PSS_CONFIG_BOLOES_LISTA[i]){
+007394:       const bruto=ESTADO.boloes;
+007395:       try{
+007396:         ESTADO.boloes=window.PSS_CONFIG_BOLOES_LISTA;
+007397:         return await inativarBolaoGitBaseV209(i);
+007398:       }finally{
+007399:         ESTADO.boloes=bruto;
+007400:       }
+007401:     }
+007402:     return await inativarBolaoGitBaseV209(i);
+007403:   };
+007404: })();
+007405: 
+007406: 
+007407: 
+007408: /* =====================================================================
+007409:  * PATCH V210 — SOLICITAÇÕES CADASTRO: TELEGRAM + CAMPOS NÃO APLICÁVEIS
+007410:  * ===================================================================== */
+007411: (function(){
+007412:   window.renderSolicitacaoCard_ = renderSolicitacaoCard_ = function(headers,row,linha){
+007413:     const nome=getCelulaPorAlias_(headers,row,['NOME','NOME_COMPLETO','PARTICIPANTE'])||'Participante';
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 2 | LINHA ORIGINAL 16824
+016794:   };
+016795: 
+016796:   window.executarAcaoUsuarioAdminV286 = async function(){
+016797:     var cfg=window.PSS_USUARIO_ACAO_V286||{};
+016798:     window.PSS_USUARIO_ACAO_V286=null;
+016799:     try{fecharModal();}catch(e){}
+016800: 
+016801:     var tipo=cfg.tipo, linha=Number(cfg.linha||0), email=txtV286(cfg.email), nome=txtV286(cfg.nome);
+016802:     if(!tipo||!linha) return toast('Ação inválida.','error');
+016803: 
+016804:     if((tipo==='inativar'||tipo==='excluir') && isSelfV286(email)){
+016805:       return toast('Por segurança, não é permitido alterar o próprio usuário logado.','error');
+016806:     }
+016807: 
+016808:     try{
+016809:       toast('Processando usuário...','info');
+016810: 
+016811:       var r=null;
+016812:       if(tipo==='email'){
+016813:         r=await apiMulti([
+016814:           {action:'enviarEmailConfirmacaoSenhaUsuarioV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]},
+016815:           {action:'enviarEmailSenhaUsuarioLinhaV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]}
+016816:         ]);
+016817:       }else if(tipo==='inativar'){
+016818:         r=await apiMulti([{action:'inativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+016819:         try{ await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false},'inativarUsuarioLinha'); }catch(eSync){}
+016820:       }else if(tipo==='ativar'){
+016821:         r=await apiMulti([{action:'ativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+016822:         try{ await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'APROVADO',perfil:'USUARIO',ativo:true},'ativarUsuarioLinha'); }catch(eSync2){}
+016823:       }else if(tipo==='excluir'){
+016824:         r=await apiMulti([{action:'excluirUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+016825:         try{ await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false},'excluirUsuarioLinha'); }catch(eSync3){}
+016826:       }
+016827: 
+016828:       toast((r&&r.msg)||'Ação realizada com sucesso.');
+016829:       await renderUsuariosAdmin();
+016830:     }catch(err){
+016831:       toast((err&&err.message)||String(err||'Erro ao processar usuário.'),'error');
+016832:     }
+016833:   };
+016834: 
+016835:   async function enviarSolicitacaoCadastroApiV286_(dados,args){
+016836:     // Usa rota direta da V284/V285. Evita cadeia longa de actions antigas quando possível.
+016837:     try{
+016838:       return await apiJsonpDireto_('registrarSolicitacaoCadastroV284',dados,args,16000);
+016839:     }catch(e1){
+016840:       try{
+016841:         return await apiPostMessageBridge_('registrarSolicitacaoCadastroV284',dados,args,22000);
+016842:       }catch(e2){
+016843:         return await apiMulti([
+016844:           {action:'registrarSolicitacaoCadastroV284',dados:dados,args:args},
+016845:           {action:'registrarSolicitacao',dados:dados,args:args}
+016846:         ]);
+016847:       }
+016848:     }
+016849:   }
+016850: 
+016851:   window.enviarCadastro = enviarCadastro = async function(ev){
+016852:     ev.preventDefault();
+016853: 
+016854:     var form=ev.target;
+016855:     var btn=document.getElementById('btnEnviarCadastro');
+016856:     var msgId='cadastroFeedbackV286';
+016857: 
+016858:     try{
+016859:       if(form && form.reportValidity && !form.reportValidity()) return;
+016860: 
+016861:       var nome=typeof textoLimpoV216_==='function'?textoLimpoV216_(document.getElementById('cadNome').value):txtV286(document.getElementById('cadNome').value);
+016862:       var nomePublico=typeof nomePublicoSeguroV216_==='function'
+016863:         ? nomePublicoSeguroV216_(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:'',nome)
+016864:         : firstNameV286(document.getElementById('cadNomePublico')?document.getElementById('cadNomePublico').value:nome,'');
+016865:       var email=txtV286(document.getElementById('cadEmail').value).toLowerCase();
+016866:       var senha=txtV286(document.getElementById('cadSenha').value);
+016867:       var senha2=txtV286(document.getElementById('cadSenha2').value);
+016868:       var cpf=document.getElementById('cadCpf')?document.getElementById('cadCpf').value:'';
+016869:       var telefone=document.getElementById('cadTelefone')?document.getElementById('cadTelefone').value:'';
+016870:       var receberAvisoNovoBolao=document.getElementById('cadAvisoNovoBolao')&&document.getElementById('cadAvisoNovoBolao').checked?'SIM':'NÃO';
+016871:       var aceite=document.getElementById('cadAceite')&&document.getElementById('cadAceite').checked;
+016872:       var cotas=0;
+016873:       var loteria='';
+016874: 
+016875:       var antigo=document.getElementById(msgId);
+016876:       if(antigo) antigo.remove();
+016877: 
+016878:       if(!nome) return toast('Informe o nome completo.','error');
+016879:       if(!nomePublico) return toast('Informe o nome para divulgação no Telegram.','error');
+016880:       if(!email) return toast('Informe o e-mail.','error');
+016881:       if(!senha || senha.length<6) return toast('Informe uma senha com pelo menos 6 caracteres.','error');
+016882:       if(senha!==senha2) return toast('As senhas não conferem.','error');
+016883:       if(!aceite) return toast('É necessário aceitar o regulamento.','error');
+016884: 
+016885:       if(btn){
+016886:         btn.disabled=true;
+016887:         btn.textContent='Enviando solicitação...';
+016888:       }
+016889: 
+016890:       var feedback=document.createElement('div');
+016891:       feedback.id=msgId;
+016892:       feedback.className='notice info';
+016893:       feedback.innerHTML='<span class="loading-fast">Enviando solicitação. Aguarde a confirmação...</span>';
+016894:       if(form) form.insertBefore(feedback, form.firstChild);
+016895: 
+016896:       var dadosCadastro={
+016897:         nome:nome,
+016898:         nomePublico:nomePublico,
+016899:         email:email,
+016900:         cotas:cotas,
+016901:         loteria:loteria,
+016902:         cpf:cpf,
+016903:         telefone:telefone,
+016904:         telegram:telefone,
+016905:         receberAvisoNovoBolao:receberAvisoNovoBolao,
+016906:         aceitouRegulamento:aceite,
+016907:         aceiteRegulamento:aceite,
+016908:         versaoRegulamento:CONFIG.versaoRegulamento,
+016909:         senha:senha,
+016910:         senhaCadastro:senha,
+016911:         senhaAcesso:senha,
+016912:         password:senha,
+016913:         confirmarSenha:senha2,
+016914:         confirmacaoSenha:senha2,
+016915:         senhaConfirmacao:senha2,
+016916:         senha2:senha2,
+016917:         status:'Pendente'
+016918:       };
+016919:       var argsCadastro=[nome,email,cotas,aceite,CONFIG.versaoRegulamento,loteria,cpf,telefone,receberAvisoNovoBolao,nomePublico,senha,senha2];
+016920: 
+016921:       // Firebase cria apenas credencial pendente. Não aprova usuário.
+016922:       try{
+016923:         await inicializarFirebase_();
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 3 | LINHA ORIGINAL 18132
+018102:     if(tipo==='inativar'){titulo='Inativar usuário';texto='Inativar este usuário? Ele deverá perder acesso após a sincronização do status.';}
+018103:     if(tipo==='ativar'){titulo='Ativar usuário';texto='Ativar novamente este usuário?';classe='info';}
+018104:     if(tipo==='excluir'){titulo='Excluir usuário';texto='Excluir definitivamente esta linha da aba Usuarios? Use somente quando tiver certeza de que o cadastro é excedente ou inválido.';classe='warn';}
+018105:     window.PSS_USUARIO_ACAO_V286={tipo:tipo,linha:linha,nome:nome,email:email};
+018106:     abrirModal(titulo,'<div class="notice '+classe+'">'+esc(texto)+'</div><div class="usuarios-admin-info" style="grid-template-columns:1fr 1fr;margin-top:10px;"><div><b>Linha</b>'+esc(linha)+'</div><div><b>Usuário</b>'+esc(nome)+'</div><div style="grid-column:1/-1;"><b>E-mail</b>'+esc(email)+'</div></div><div class="actions" style="justify-content:flex-end;"><button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button><button type="button" class="btn '+(tipo==='excluir'?'btn-danger':'')+'" onclick="executarAcaoUsuarioAdminV286()">Confirmar</button></div>');
+018107:   };
+018108: 
+018109:   window.executarAcaoUsuarioAdminV286 = async function(){
+018110:     var cfg=window.PSS_USUARIO_ACAO_V286||{}; window.PSS_USUARIO_ACAO_V286=null;
+018111:     try{fecharModal();}catch(e){}
+018112:     var tipo=cfg.tipo, linha=Number(cfg.linha||0), email=txt(cfg.email), nome=txt(cfg.nome);
+018113:     if(!tipo||!linha) return toast('Ação inválida.','error');
+018114:     if((tipo==='inativar'||tipo==='excluir') && isSelf(email)) return toast('Por segurança, não é permitido alterar o próprio usuário logado.','error');
+018115:     try{
+018116:       toast('Processando usuário...','info');
+018117:       var r=null;
+018118:       if(tipo==='email'){
+018119:         r=await apiMulti([{action:'enviarEmailConfirmacaoSenhaUsuarioV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]},{action:'enviarEmailSenhaUsuarioLinhaV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]}]);
+018120:       }else if(tipo==='sync'){
+018121:         r=await apiMulti([{action:'sincronizarFirebaseUsuarioLinhaV291',dados:{linha:linha},args:[linha]},{action:'sincronizarUsuarioFirebaseLinhaV291',dados:{linha:linha},args:[linha]}]);
+018122:         var u=r&&r.usuarioFirebase?r.usuarioFirebase:{email:email,nome:nome,perfil:'USUARIO',status:'APROVADO',ativo:true};
+018123:         await setFirestoreAprovadoV291(u);
+018124:         if(r&&r.firebaseAuth&&r.firebaseAuth.jaExistia) toast('Firestore atualizado. O Firebase Auth já existia; se a senha não conferir, use Recuperar senha.','warn');
+018125:       }else if(tipo==='inativar'){
+018126:         r=await apiMulti([{action:'inativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+018127:         try{await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false},'inativarUsuarioLinha');}catch(eSync){}
+018128:       }else if(tipo==='ativar'){
+018129:         r=await apiMulti([{action:'ativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+018130:         try{await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'APROVADO',perfil:'USUARIO',ativo:true},'ativarUsuarioLinha');}catch(eSync2){}
+018131:       }else if(tipo==='excluir'){
+018132:         r=await apiMulti([{action:'excluirUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+018133:         try{await firebaseSincronizarUsuarioAdmin_({email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false},'excluirUsuarioLinha');}catch(eSync3){}
+018134:       }
+018135:       toast((r&&r.msg)||'Ação realizada com sucesso.');
+018136:       await renderUsuariosAdmin();
+018137:     }catch(err){toast(erroMsg(err),'error');}
+018138:   };
+018139: })();
+018140: /* =========================================================
+018141:  * V293 — DUPLICADO ABRE LOGIN IMEDIATO + EXCLUIR REFLETE NO FIREBASE
+018142:  * - Solicitação pública não cria Auth antes da aprovação manual.
+018143:  * - E-mail existente abre login com aviso claro.
+018144:  * - Excluir usuário chama exclusão completa no GS, remove Firestore e libera recadastro.
+018145:  * - Inativar/ativar refletem status no Firestore.
+018146:  * ========================================================= */
+018147: (function(){
+018148:   try{ if(typeof CONFIG==='object') CONFIG.versao='V293_DUPLICADO_ABRE_LOGIN_IMEDIATO'; }catch(e){}
+018149: 
+018150:   function txt(v){return String(v==null?'':v).trim();}
+018151:   function normEmail(v){return txt(v).toLowerCase();}
+018152:   function esc(v){
+018153:     if(typeof escapeHtml==='function') return escapeHtml(v);
+018154:     return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+018155:   }
+018156:   function attr(v){
+018157:     if(typeof escapeAttr==='function') return escapeAttr(v);
+018158:     return esc(v).replace(/`/g,'&#96;');
+018159:   }
+018160:   function erroMsg(err){
+018161:     var msg=(err&&err.message)?err.message:String(err||'Erro.');
+018162:     try{ if(typeof firebaseMensagemErro_==='function') msg=firebaseMensagemErro_(err); }catch(e){}
+018163:     return msg;
+018164:   }
+018165:   function isSelfEmail(email){
+018166:     try{return normEmail(email)===normEmail(ESTADO&&ESTADO.email);}catch(e){return false;}
+018167:   }
+018168:   function setBtnCadastro(disabled,texto){
+018169:     var btn=document.getElementById('btnEnviarCadastro');
+018170:     if(btn){btn.disabled=!!disabled;btn.textContent=texto||'Enviar solicitação de acesso';}
+018171:   }
+018172:   function feedbackCadastro(tipo,msg,email,abrirLogin){
+018173:     var form=document.getElementById('cadForm');
+018174:     var box=document.getElementById('cadastroFeedbackV292') || document.getElementById('cadastroFeedbackV291') || document.getElementById('cadastroFeedbackV290') || document.getElementById('cadastroFeedbackV287') || document.getElementById('cadastroFeedbackV286');
+018175:     if(!box){
+018176:       box=document.createElement('div');
+018177:       box.id='cadastroFeedbackV292';
+018178:       if(form) form.insertBefore(box,form.firstChild);
+018179:     }
+018180:     box.className='notice '+(tipo||'info');
+018181:     var extra='';
+018182:     if((tipo==='error'||tipo==='warn') && email){
+018183:       extra='<div class="actions" style="margin-top:10px;">'+
+018184:         '<button type="button" class="btn" onclick="PSS_irLoginCadastroV292(\''+attr(email)+'\')">Ir para login</button>'+
+018185:         '<button type="button" class="btn btn-light" onclick="PSS_irResetSenhaCadastroV292(\''+attr(email)+'\')">Recuperar senha</button>'+ 
+018186:         '</div>';
+018187:     }
+018188:     var avisoLogin = abrirLogin && email
+018189:       ? '<div class="notice info" style="margin-top:10px;">E-mail já localizado. Abrindo a tela de login para este endereço...</div>'
+018190:       : '';
+018191:     box.innerHTML='<strong>'+esc(msg)+'</strong>'+extra+avisoLogin;
+018192:     if(abrirLogin && email){
+018193:       try{toast(msg||'E-mail já cadastrado. Abrindo login.','warn');}catch(eToast){}
+018194:       setTimeout(function(){ window.PSS_irLoginCadastroV292(email,msg); },80);
+018195:     }
+018196:     return box;
+018197:   }
+018198: 
+018199:   window.PSS_irLoginCadastroV292=function(email,msg){
+018200:     email=normEmail(email);
+018201:     try{fecharModal();}catch(e){}
+018202:     try{ESTADO.email=email;}catch(e2){}
+018203:     renderLogin();
+018204:     setTimeout(function(){
+018205:       var el=document.getElementById('loginEmail');
+018206:       if(el) el.value=email;
+018207:       var box=document.getElementById('loginMsg');
+018208:       if(box) box.innerHTML='<div class="notice warn">'+esc(msg||'Este e-mail já possui cadastro. Use a senha cadastrada ou a recuperação de senha.')+'</div>';
+018209:       var s=document.getElementById('loginSenha');
+018210:       if(s) s.focus();
+018211:     },120);
+018212:   };
+018213: 
+018214:   window.PSS_irResetSenhaCadastroV292=function(email){
+018215:     email=normEmail(email);
+018216:     try{fecharModal();}catch(e){}
+018217:     abrirResetSenha();
+018218:     setTimeout(function(){var el=document.getElementById('resetEmail');if(el)el.value=email;},120);
+018219:   };
+018220: 
+018221:   async function verificarEmailCadastroPublico(email){
+018222:     try{
+018223:       return await apiMulti([
+018224:         {action:'verificarEmailCadastroPublicoV290',dados:{email:email},args:[email]},
+018225:         {action:'verificarCadastroEmailPublicoV290',dados:{email:email},args:[email]},
+018226:         {action:'buscarCadastroEmailV290',dados:{email:email},args:[email]}
+018227:       ]);
+018228:     }catch(e){
+018229:       return {existe:false, indisponivel:true, erro:e.message};
+018230:     }
+018231:   }
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 4 | LINHA ORIGINAL 18415
+018385:     abrirModal(titulo,'<div class="notice '+classe+'">'+esc(texto)+'</div><div class="usuarios-admin-info" style="grid-template-columns:1fr 1fr;margin-top:10px;"><div><b>Linha</b>'+esc(linha)+'</div><div><b>Usuário</b>'+esc(nome)+'</div><div style="grid-column:1/-1;"><b>E-mail</b>'+esc(email)+'</div></div><div class="actions" style="justify-content:flex-end;"><button type="button" class="btn btn-light" onclick="fecharModal()">Cancelar</button><button type="button" class="btn '+(tipo==='excluir'?'btn-danger':'')+'" onclick="executarAcaoUsuarioAdminV286()">Confirmar</button></div>');
+018386:   };
+018387: 
+018388:   window.executarAcaoUsuarioAdminV286 = async function(){
+018389:     var cfg=window.PSS_USUARIO_ACAO_V286||{}; window.PSS_USUARIO_ACAO_V286=null;
+018390:     try{fecharModal();}catch(e){}
+018391:     var tipo=cfg.tipo, linha=Number(cfg.linha||0), email=normEmail(cfg.email), nome=txt(cfg.nome);
+018392:     if(!tipo||!linha) return toast('Ação inválida.','error');
+018393:     if((tipo==='inativar'||tipo==='excluir') && isSelfEmail(email)) return toast('Por segurança, não é permitido alterar o próprio usuário logado.','error');
+018394:     try{
+018395:       toast('Processando usuário...','info');
+018396:       var r=null;
+018397:       if(tipo==='email'){
+018398:         r=await apiMulti([{action:'enviarEmailConfirmacaoSenhaUsuarioV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]},{action:'enviarEmailSenhaUsuarioLinhaV281',dados:{linha:linha,email:email},args:[{linha:linha,email:email}]}]);
+018399:       }else if(tipo==='sync'){
+018400:         r=await apiMulti([{action:'sincronizarFirebaseUsuarioLinhaV291',dados:{linha:linha},args:[linha]},{action:'sincronizarUsuarioFirebaseLinhaV291',dados:{linha:linha},args:[linha]}]);
+018401:         var uSync=r&&r.usuarioFirebase?r.usuarioFirebase:{email:email,nome:nome,perfil:'USUARIO',status:'APROVADO',ativo:true};
+018402:         if(typeof setFirestoreAprovadoV291==='function') await setFirestoreAprovadoV291(uSync);
+018403:         else await firebaseSincronizarUsuarioAdmin_(uSync,'sincronizarFirebaseUsuarioLinhaV291');
+018404:         if(r&&r.firebaseAuth&&r.firebaseAuth.jaExistia) toast('Firestore atualizado. O Firebase Auth já existia; se a senha não conferir, use Recuperar senha.','warn');
+018405:       }else if(tipo==='inativar'){
+018406:         r=await apiMulti([{action:'inativarUsuarioCompletoLinhaV292',dados:{linha:linha},args:[linha]},{action:'inativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+018407:         var uIn=r&&r.usuarioFirebase?r.usuarioFirebase:{email:email,nome:nome,status:'INATIVO',perfil:'USUARIO',ativo:false};
+018408:         try{await firebaseSincronizarUsuarioAdmin_(uIn,'inativarUsuarioCompletoLinhaV292');}catch(eSync){toast('Usuário inativado na planilha, mas o Firestore não confirmou: '+erroMsg(eSync),'warn');}
+018409:       }else if(tipo==='ativar'){
+018410:         r=await apiMulti([{action:'ativarUsuarioCompletoLinhaV292',dados:{linha:linha},args:[linha]},{action:'ativarUsuarioLinha',dados:{linha:linha},args:[linha]}]);
+018411:         var uAt=r&&r.usuarioFirebase?r.usuarioFirebase:{email:email,nome:nome,status:'APROVADO',perfil:'USUARIO',ativo:true};
+018412:         if(typeof setFirestoreAprovadoV291==='function') await setFirestoreAprovadoV291(uAt);
+018413:         else await firebaseSincronizarUsuarioAdmin_(uAt,'ativarUsuarioCompletoLinhaV292');
+018414:       }else if(tipo==='excluir'){
+018415:         r=await apiMulti([{action:'excluirUsuarioCompletoLinhaV292',dados:{linha:linha},args:[linha]},{action:'excluirUsuarioFirebaseLinhaV292',dados:{linha:linha},args:[linha]}]);
+018416:         var delDoc=await deletarFirestoreUsuarioV292(email);
+018417:         if(!delDoc.ok) toast('Usuário excluído na planilha, mas não consegui excluir o documento Firestore: '+(delDoc.erro||'verifique regras.'),'warn');
+018418:         if(r&&r.firebaseAuthExclusao&&r.firebaseAuthExclusao.ok===false){
+018419:           toast('A linha foi excluída, mas o Firebase Auth não foi confirmado: '+(r.firebaseAuthExclusao.erro||'verifique manualmente.'),'warn');
+018420:         }
+018421:       }
+018422:       toast((r&&r.msg)||'Ação realizada com sucesso.');
+018423:       await renderUsuariosAdmin();
+018424:     }catch(err){
+018425:       toast(erroMsg(err),'error');
+018426:     }
+018427:   };
+018428: })();
+018429: 
+018430: 
+018431: 
+018432: /* =========================================================
+018433:  * V294 — DUPLICIDADE COM MODAL PROFISSIONAL + LOGIN/EXCLUSÃO
+018434:  * - E-mail com solicitação pendente mostra aviso claro dentro do cadastro.
+018435:  * - E-mail aprovado/Firebase mostra aviso e abre login preenchido.
+018436:  * - Usuário pode solicitar exclusão/liberação do e-mail para análise do admin.
+018437:  * ========================================================= */
+018438: (function(){
+018439:   try{ if(typeof CONFIG==='object') CONFIG.versao='V294_DUPLICIDADE_MODAL_LOGIN_EXCLUSAO'; }catch(e){}
+018440: 
+018441:   function t(v){return String(v==null?'':v).trim();}
+018442:   function emailNorm(v){return t(v).toLowerCase();}
+018443:   function ehtml(v){
+018444:     if(typeof escapeHtml==='function') return escapeHtml(v);
+018445:     return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+018446:   }
+018447:   function eattr(v){
+018448:     if(typeof escapeAttr==='function') return escapeAttr(v);
+018449:     return ehtml(v).replace(/`/g,'&#96;');
+018450:   }
+018451:   function msgErro(err){
+018452:     var msg=(err&&err.message)?err.message:String(err||'Erro.');
+018453:     try{ if(typeof firebaseMensagemErro_==='function') msg=firebaseMensagemErro_(err); }catch(e){}
+018454:     return msg;
+018455:   }
+018456:   function norm(v){try{return typeof normalizar==='function'?normalizar(v):String(v||'').toUpperCase();}catch(e){return String(v||'').toUpperCase();}}
+018457: 
+018458:   function setBotaoCadastroV294(disabled,texto){
+018459:     var btn=document.getElementById('btnEnviarCadastro');
+018460:     if(btn){btn.disabled=!!disabled;btn.textContent=texto||'Enviar solicitação de acesso';}
+018461:   }
+018462: 
+018463:   function feedbackBoxCadastroV294(){
+018464:     var form=document.getElementById('cadForm');
+018465:     var box=document.getElementById('cadastroFeedbackV294');
+018466:     ['cadastroFeedbackV292','cadastroFeedbackV291','cadastroFeedbackV290','cadastroFeedbackV287','cadastroFeedbackV286'].forEach(function(id){var old=document.getElementById(id); if(old) old.remove();});
+018467:     if(!box){
+018468:       box=document.createElement('div');
+018469:       box.id='cadastroFeedbackV294';
+018470:       if(form) form.insertBefore(box,form.firstChild);
+018471:     }
+018472:     return box;
+018473:   }
+018474: 
+018475:   function renderBloqueioCadastroV294(tipo,msg,email,detalhe){
+018476:     email=emailNorm(email);
+018477:     tipo=t(tipo||'').toUpperCase();
+018478:     var box=feedbackBoxCadastroV294();
+018479:     var classe='warn';
+018480:     var titulo='Cadastro já localizado';
+018481:     var corpo='';
+018482:     var acoes='';
+018483: 
+018484:     if(tipo==='SOLICITACAO_PENDENTE'){
+018485:       classe='warn';
+018486:       titulo='Solicitação já enviada';
+018487:       corpo='Este e-mail já possui uma solicitação pendente de análise. Aguarde a aprovação da administração. Não é necessário enviar outra solicitação.';
+018488:       acoes='<button type="button" class="btn btn-light" onclick="PSS_focarEmailCadastroV294()">Trocar e-mail</button>'+ 
+018489:             '<button type="button" class="btn btn-light" onclick="fecharModal();renderHomePublica()">Voltar ao início</button>';
+018490:     }else{
+018491:       classe='error';
+018492:       titulo='E-mail já cadastrado';
+018493:       corpo='Este e-mail já possui cadastro ou credencial no sistema. Use o login com a senha cadastrada ou solicite recuperação de senha. Verifique também sua caixa de entrada e spam/lixo eletrônico.';
+018494:       acoes='<button type="button" class="btn" onclick="PSS_irLoginCadastroV294(\''+eattr(email)+'\',\''+eattr(corpo)+'\')">Ir para login</button>'+ 
+018495:             '<button type="button" class="btn btn-light" onclick="PSS_irResetSenhaCadastroV294(\''+eattr(email)+'\')">Recuperar senha</button>'+ 
+018496:             '<button type="button" class="btn btn-light" onclick="PSS_solicitarExclusaoCadastroV294(\''+eattr(email)+'\')">Solicitar exclusão/liberação</button>';
+018497:     }
+018498: 
+018499:     box.className='notice '+classe;
+018500:     box.innerHTML='<div style="font-size:15px;font-weight:950;margin-bottom:6px;">'+ehtml(titulo)+'</div>'+ 
+018501:       '<div style="line-height:1.45;">'+ehtml(msg||corpo)+'</div>'+ 
+018502:       (detalhe?'<div style="margin-top:8px;font-size:12px;color:#546173;">'+ehtml(detalhe)+'</div>':'')+
+018503:       '<div class="actions" style="margin-top:12px;">'+acoes+'</div>';
+018504:     try{box.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+018505: 
+018506:     if(tipo!=='SOLICITACAO_PENDENTE'){
+018507:       try{toast('E-mail já cadastrado. Abrindo tela de login.','warn');}catch(eToast){}
+018508:       setTimeout(function(){ PSS_irLoginCadastroV294(email,msg||corpo); },950);
+018509:     }else{
+018510:       try{toast('Este e-mail já possui solicitação pendente de aprovação.','warn');}catch(eToast2){}
+018511:     }
+018512:     return box;
+018513:   }
+018514: 
+
+==============================================================================================================
+TERMO: linhaPlanilha | TOTAL: 7
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 1 | LINHA ORIGINAL 3300
+003270: 
+003271:     function renderResumoPagamentosAdmin_(headers,rows){
+003272:       let totalPago=0,totalAnalise=0,totalPendente=0,totalErro=0,qtdPago=0,qtdAnalise=0,qtdPendente=0,qtdErro=0;
+003273:       (rows||[]).forEach(row=>{
+003274:         const o=pagamentoObj_(headers,row);
+003275:         const st=normalizar(o.status);
+003276:         const valor=num(o.valor);
+003277:         if(st.includes('PAGO')||st.includes('APROV')){totalPago+=valor;qtdPago++;}
+003278:         else if(st.includes('ANALISE')||st.includes('ANÁLISE')){totalAnalise+=valor;qtdAnalise++;}
+003279:         else if(st.includes('ERRO')||st.includes('DUPLIC')){totalErro+=valor;qtdErro++;}
+003280:         else {totalPendente+=valor;qtdPendente++;}
+003281:       });
+003282:       return `
+003283:         <div class="pay-summary-grid">
+003284:           <div class="pay-summary-card"><b>Pago confirmado</b><strong>${escapeHtml(moeda(totalPago))}</strong><div class="pay-admin-sub">${qtdPago} registro(s)</div></div>
+003285:           <div class="pay-summary-card warn"><b>Em análise</b><strong>${escapeHtml(moeda(totalAnalise))}</strong><div class="pay-admin-sub">${qtdAnalise} registro(s)</div></div>
+003286:           <div class="pay-summary-card warn"><b>Pendente</b><strong>${escapeHtml(moeda(totalPendente))}</strong><div class="pay-admin-sub">${qtdPendente} registro(s)</div></div>
+003287:           <div class="pay-summary-card danger"><b>Erro/Duplicado</b><strong>${escapeHtml(moeda(totalErro))}</strong><div class="pay-admin-sub">${qtdErro} registro(s)</div></div>
+003288:         </div>
+003289:       `;
+003290:     }
+003291: 
+003292:     function renderListaPagamentosCardsAdmin_(headers,rows){
+003293:       rows=rows||[];
+003294:       if(!rows.length)return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+003295:       return `<div class="pay-list">${rows.map((row,i)=>renderPagamentoCardAdmin_(headers,row,i)).join('')}</div>`;
+003296:     }
+003297: 
+003298:     function renderPagamentoCardAdmin_(headers,row,i){
+003299:       const o=pagamentoObj_(headers,row);
+003300:       const linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
+003301:       const cls=pagamentoStatusClasse_(o.status);
+003302:       const url=o.urlComprovante||o.arquivoUrl||'';
+003303:       return `
+003304:         <article class="pay-admin-card-pro ${cls.card}" data-pay-row="${linha}">
+003305:           <div class="pay-admin-head">
+003306:             <div>
+003307:               <div class="pay-admin-title">${escapeHtml(o.loteria||'Pagamento sem loteria informada')}</div>
+003308:               <div class="pay-admin-sub">${escapeHtml(o.email||'-')} • ${escapeHtml(formatarDataHoraPtBR(o.data||'-'))}</div>
+003309:             </div>
+003310:             <span class="pay-admin-status ${cls.badge}">${escapeHtml(o.status||'Pendente')}</span>
+003311:           </div>
+003312:           <div class="pay-admin-grid">
+003313:             <div class="pay-admin-info"><b>Valor</b><span>${escapeHtml(o.valor?moeda(o.valor):'-')}</span></div>
+003314:             <div class="pay-admin-info"><b>Pagador</b><span>${escapeHtml(o.pagador||'-')}</span></div>
+003315:             <div class="pay-admin-info"><b>Recebedor</b><span>${escapeHtml(o.recebedor||'-')}</span></div>
+003316:             <div class="pay-admin-info"><b>Mês referência</b><span>${escapeHtml(o.mesReferencia||'-')}</span></div>
+003317:             <div class="pay-admin-info"><b>ID transação</b><span>${escapeHtml(o.idTransacao||'-')}</span></div>
+003318:             <div class="pay-admin-info"><b>Autenticação</b><span>${escapeHtml(o.autenticacao||'-')}</span></div>
+003319:             <div class="pay-admin-info"><b>Tipo cota</b><span>${escapeHtml(o.tipoCota||'-')}</span></div>
+003320:             <div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>${escapeHtml(o.codigoProduto||'-')}</span></div>
+003321:             <div class="pay-admin-info"><b>Partes</b><span>${escapeHtml(formatarPartesPagamento_(o.partesCota))}</span></div>
+003322:             <div class="pay-admin-info full"><b>Validação / observação</b><span>${escapeHtml(o.validacao||'-')}</span></div>
+003323:             ${o.participantesCota?`<div class="pay-admin-info full"><b>Participantes da cota</b><span>${escapeHtml(o.participantesCota)}</span></div>`:''}
+003324:           </div>
+003325:           <div class="pay-card-actions">
+003326:             ${url?`<button class="btn btn-blue" onclick="abrirComprovanteAdmin('${escapeAttr(url)}')">Ver comprovante</button>`:''}
+003327:             <button class="btn btn-light" onclick="reprocessarPagamentoAdmin(${linha})">Reprocessar OCR</button>
+003328:             ${!normalizar(o.status).includes('PAGO')?`<button class="btn" onclick="confirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>`:''}
+003329:           </div>
+003330:         </article>
+003331:       `;
+003332:     }
+003333: 
+003334:     function pagamentoObj_(headers,row){
+003335:       const o=rowObj(headers,row);
+003336:       return {
+003337:         data:cellObj(o,['DATA']),
+003338:         email:cellObj(o,['EMAIL','E-MAIL']),
+003339:         loteria:cellObj(o,['LOTERIA','BOLAO','BOLÃO']),
+003340:         urlComprovante:cellObj(o,['URL_COMPROVANTE','URL COMPROVANTE']),
+003341:         status:cellObj(o,['STATUS']),
+003342:         pagador:cellObj(o,['PAGADOR']),
+003343:         valor:cellObj(o,['VALOR']),
+003344:         idTransacao:cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO','ID TRANSACAO']),
+003345:         autenticacao:cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO']),
+003346:         arquivoUrl:cellObj(o,['ARQUIVO_URL','ARQUIVO URL']),
+003347:         recebedor:cellObj(o,['RECEBEDOR']),
+003348:         pixDestino:cellObj(o,['PIX_DESTINO','PIX DESTINO']),
+003349:         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
+003350:         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
+003351:         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
+003352:         codigoProduto:cellObj(o,['IDENTIFICADOR','IDENTIFICADOR_PRODUTO','IDENTIFICADOR PRODUTO','COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+003353:         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+003354:         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
+003355:         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
+003356:         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
+003357:       };
+003358:     }
+003359: 
+003360:     function pagamentoStatusClasse_(status){
+003361:       const st=normalizar(status);
+003362:       if(st.includes('PAGO')||st.includes('APROV'))return {card:'',badge:''};
+003363:       if(st.includes('ANALISE')||st.includes('ANÁLISE'))return {card:'warn',badge:'warn'};
+003364:       if(st.includes('ERRO')||st.includes('DUPLIC')||st.includes('RECUS'))return {card:'danger',badge:'danger'};
+003365:       return {card:'muted',badge:'muted'};
+003366:     }
+003367: 
+003368:     function formatarPartesPagamento_(v){
+003369:       if(v===undefined||v===null||String(v).trim()==='')return '-';
+003370:       const raw=String(v).trim();
+003371:       if(!raw)return '-';
+003372:       if(raw.includes('/'))return raw;
+003373:       if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+003374:       if(/^integral$/i.test(raw))return '1/1';
+003375:       const n=num(raw);
+003376:       if(!n)return raw;
+003377:       if(Math.abs(n-1)<0.0001)return '1/1';
+003378:       if(n>0&&n<1){
+003379:         const partes=Math.round(1/n);
+003380:         return partes>1?'1/'+partes:String(n).replace('.',',');
+003381:       }
+003382:       return '1/'+n;
+003383:     }
+003384: 
+003385:     function abrirComprovanteAdmin(url){
+003386:       if(!url)return toast('Comprovante não localizado.','warn');
+003387:       window.open(url,'_blank','noopener');
+003388:     }
+003389: 
+003390:     function confirmarPagamentoManualAdmin(linha){
+003391:       abrirModal('Confirmar pagamento',`
+003392:         <div class="notice warn">Deseja marcar este pagamento como <strong>Pago</strong>?</div>
+003393:         <p>Essa ação registra a confirmação manual do administrador na linha ${escapeHtml(linha)}.</p>
+003394:         <div class="actions" style="justify-content:flex-end;">
+003395:           <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003396:           <button class="btn" onclick="executarConfirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>
+003397:         </div>
+003398:       `);
+003399:     }
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 2 | LINHA ORIGINAL 3355
+003325:           <div class="pay-card-actions">
+003326:             ${url?`<button class="btn btn-blue" onclick="abrirComprovanteAdmin('${escapeAttr(url)}')">Ver comprovante</button>`:''}
+003327:             <button class="btn btn-light" onclick="reprocessarPagamentoAdmin(${linha})">Reprocessar OCR</button>
+003328:             ${!normalizar(o.status).includes('PAGO')?`<button class="btn" onclick="confirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>`:''}
+003329:           </div>
+003330:         </article>
+003331:       `;
+003332:     }
+003333: 
+003334:     function pagamentoObj_(headers,row){
+003335:       const o=rowObj(headers,row);
+003336:       return {
+003337:         data:cellObj(o,['DATA']),
+003338:         email:cellObj(o,['EMAIL','E-MAIL']),
+003339:         loteria:cellObj(o,['LOTERIA','BOLAO','BOLÃO']),
+003340:         urlComprovante:cellObj(o,['URL_COMPROVANTE','URL COMPROVANTE']),
+003341:         status:cellObj(o,['STATUS']),
+003342:         pagador:cellObj(o,['PAGADOR']),
+003343:         valor:cellObj(o,['VALOR']),
+003344:         idTransacao:cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO','ID TRANSACAO']),
+003345:         autenticacao:cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO']),
+003346:         arquivoUrl:cellObj(o,['ARQUIVO_URL','ARQUIVO URL']),
+003347:         recebedor:cellObj(o,['RECEBEDOR']),
+003348:         pixDestino:cellObj(o,['PIX_DESTINO','PIX DESTINO']),
+003349:         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
+003350:         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
+003351:         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
+003352:         codigoProduto:cellObj(o,['IDENTIFICADOR','IDENTIFICADOR_PRODUTO','IDENTIFICADOR PRODUTO','COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+003353:         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+003354:         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
+003355:         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
+003356:         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
+003357:       };
+003358:     }
+003359: 
+003360:     function pagamentoStatusClasse_(status){
+003361:       const st=normalizar(status);
+003362:       if(st.includes('PAGO')||st.includes('APROV'))return {card:'',badge:''};
+003363:       if(st.includes('ANALISE')||st.includes('ANÁLISE'))return {card:'warn',badge:'warn'};
+003364:       if(st.includes('ERRO')||st.includes('DUPLIC')||st.includes('RECUS'))return {card:'danger',badge:'danger'};
+003365:       return {card:'muted',badge:'muted'};
+003366:     }
+003367: 
+003368:     function formatarPartesPagamento_(v){
+003369:       if(v===undefined||v===null||String(v).trim()==='')return '-';
+003370:       const raw=String(v).trim();
+003371:       if(!raw)return '-';
+003372:       if(raw.includes('/'))return raw;
+003373:       if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+003374:       if(/^integral$/i.test(raw))return '1/1';
+003375:       const n=num(raw);
+003376:       if(!n)return raw;
+003377:       if(Math.abs(n-1)<0.0001)return '1/1';
+003378:       if(n>0&&n<1){
+003379:         const partes=Math.round(1/n);
+003380:         return partes>1?'1/'+partes:String(n).replace('.',',');
+003381:       }
+003382:       return '1/'+n;
+003383:     }
+003384: 
+003385:     function abrirComprovanteAdmin(url){
+003386:       if(!url)return toast('Comprovante não localizado.','warn');
+003387:       window.open(url,'_blank','noopener');
+003388:     }
+003389: 
+003390:     function confirmarPagamentoManualAdmin(linha){
+003391:       abrirModal('Confirmar pagamento',`
+003392:         <div class="notice warn">Deseja marcar este pagamento como <strong>Pago</strong>?</div>
+003393:         <p>Essa ação registra a confirmação manual do administrador na linha ${escapeHtml(linha)}.</p>
+003394:         <div class="actions" style="justify-content:flex-end;">
+003395:           <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003396:           <button class="btn" onclick="executarConfirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>
+003397:         </div>
+003398:       `);
+003399:     }
+003400: 
+003401:     async function executarConfirmarPagamentoManualAdmin(linha){
+003402:       linha=Number(linha||0);
+003403:       fecharModal();
+003404:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003405:       try{
+003406:         await api('confirmarPagamentoManual',{linha:linha},[linha]);
+003407:         toast('Pagamento confirmado.');
+003408:         renderPagamentosAdminTab('efetuados');
+003409:       }catch(err){toast(err.message,'error')}
+003410:     }
+003411: 
+003412:     async function reprocessarPagamentoAdmin(linha){
+003413:       linha=Number(linha||0);
+003414:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003415:       try{
+003416:         toast('Solicitando reprocessamento OCR da linha '+linha+'...','info');
+003417:         await api('reprocessarPagamentoLinha',{linha:linha},[linha]);
+003418:         toast('Reprocessamento concluído/solicitado.');
+003419:         renderPagamentosAdminTab('efetuados');
+003420:       }catch(err){toast(err.message,'error')}
+003421:     }
+003422: 
+003423:     function filtrarPagamentosAdmin(){
+003424:       const cache=ESTADO.pagamentosAdminCache||{headers:[],rows:[]};
+003425:       const termo=normalizar(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+003426:       const status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+003427:       const mes=normalizar(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'');
+003428:       const filtradas=(cache.rows||[]).filter(row=>{
+003429:         const o=pagamentoObj_(cache.headers,row);
+003430:         const texto=normalizar(Object.values(o).join(' | '));
+003431:         const st=normalizar(o.status);
+003432:         const mesLinha=normalizar(o.mesReferencia||o.data||'');
+003433:         if(termo&&!texto.includes(termo))return false;
+003434:         if(mes&&!mesLinha.includes(mes))return false;
+003435:         if(status==='PAGO'&&!(st.includes('PAGO')||st.includes('APROV')))return false;
+003436:         if(status==='ANALISE'&&!(st.includes('ANALISE')||st.includes('ANÁLISE')))return false;
+003437:         if(status==='PENDENTE'&&(st.includes('PAGO')||st.includes('APROV')||st.includes('ANALISE')||st.includes('ANÁLISE')||st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003438:         if(status==='ERRO'&&!(st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003439:         return true;
+003440:       });
+003441:       const box=document.getElementById('pagamentosCardsAdminBox');
+003442:       if(box)box.innerHTML=renderListaPagamentosCardsAdmin_(cache.headers,filtradas);
+003443:     }
+003444: 
+003445:     function limparFiltrosPagamentosAdmin(){
+003446:       if(document.getElementById('payBuscaAdmin'))document.getElementById('payBuscaAdmin').value='';
+003447:       if(document.getElementById('payStatusAdmin'))document.getElementById('payStatusAdmin').value='TODOS';
+003448:       if(document.getElementById('payMesAdmin'))document.getElementById('payMesAdmin').value='';
+003449:       filtrarPagamentosAdmin();
+003450:     }
+003451: 
+003452:     function rowObj(headers,row){const o={};(headers||[]).forEach((h,i)=>o[normalizar(h)]=row[i]);return o}
+003453:     function cellObj(o,names){for(const n of names){const k=normalizar(n);if(Object.prototype.hasOwnProperty.call(o,k))return o[k]}return ''}
+003454:     function linhaPlanilha(i){return Number(i)+2}
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 3 | LINHA ORIGINAL 3356
+003326:             ${url?`<button class="btn btn-blue" onclick="abrirComprovanteAdmin('${escapeAttr(url)}')">Ver comprovante</button>`:''}
+003327:             <button class="btn btn-light" onclick="reprocessarPagamentoAdmin(${linha})">Reprocessar OCR</button>
+003328:             ${!normalizar(o.status).includes('PAGO')?`<button class="btn" onclick="confirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>`:''}
+003329:           </div>
+003330:         </article>
+003331:       `;
+003332:     }
+003333: 
+003334:     function pagamentoObj_(headers,row){
+003335:       const o=rowObj(headers,row);
+003336:       return {
+003337:         data:cellObj(o,['DATA']),
+003338:         email:cellObj(o,['EMAIL','E-MAIL']),
+003339:         loteria:cellObj(o,['LOTERIA','BOLAO','BOLÃO']),
+003340:         urlComprovante:cellObj(o,['URL_COMPROVANTE','URL COMPROVANTE']),
+003341:         status:cellObj(o,['STATUS']),
+003342:         pagador:cellObj(o,['PAGADOR']),
+003343:         valor:cellObj(o,['VALOR']),
+003344:         idTransacao:cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO','ID TRANSACAO']),
+003345:         autenticacao:cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO']),
+003346:         arquivoUrl:cellObj(o,['ARQUIVO_URL','ARQUIVO URL']),
+003347:         recebedor:cellObj(o,['RECEBEDOR']),
+003348:         pixDestino:cellObj(o,['PIX_DESTINO','PIX DESTINO']),
+003349:         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
+003350:         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
+003351:         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
+003352:         codigoProduto:cellObj(o,['IDENTIFICADOR','IDENTIFICADOR_PRODUTO','IDENTIFICADOR PRODUTO','COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+003353:         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+003354:         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
+003355:         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
+003356:         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
+003357:       };
+003358:     }
+003359: 
+003360:     function pagamentoStatusClasse_(status){
+003361:       const st=normalizar(status);
+003362:       if(st.includes('PAGO')||st.includes('APROV'))return {card:'',badge:''};
+003363:       if(st.includes('ANALISE')||st.includes('ANÁLISE'))return {card:'warn',badge:'warn'};
+003364:       if(st.includes('ERRO')||st.includes('DUPLIC')||st.includes('RECUS'))return {card:'danger',badge:'danger'};
+003365:       return {card:'muted',badge:'muted'};
+003366:     }
+003367: 
+003368:     function formatarPartesPagamento_(v){
+003369:       if(v===undefined||v===null||String(v).trim()==='')return '-';
+003370:       const raw=String(v).trim();
+003371:       if(!raw)return '-';
+003372:       if(raw.includes('/'))return raw;
+003373:       if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+003374:       if(/^integral$/i.test(raw))return '1/1';
+003375:       const n=num(raw);
+003376:       if(!n)return raw;
+003377:       if(Math.abs(n-1)<0.0001)return '1/1';
+003378:       if(n>0&&n<1){
+003379:         const partes=Math.round(1/n);
+003380:         return partes>1?'1/'+partes:String(n).replace('.',',');
+003381:       }
+003382:       return '1/'+n;
+003383:     }
+003384: 
+003385:     function abrirComprovanteAdmin(url){
+003386:       if(!url)return toast('Comprovante não localizado.','warn');
+003387:       window.open(url,'_blank','noopener');
+003388:     }
+003389: 
+003390:     function confirmarPagamentoManualAdmin(linha){
+003391:       abrirModal('Confirmar pagamento',`
+003392:         <div class="notice warn">Deseja marcar este pagamento como <strong>Pago</strong>?</div>
+003393:         <p>Essa ação registra a confirmação manual do administrador na linha ${escapeHtml(linha)}.</p>
+003394:         <div class="actions" style="justify-content:flex-end;">
+003395:           <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003396:           <button class="btn" onclick="executarConfirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>
+003397:         </div>
+003398:       `);
+003399:     }
+003400: 
+003401:     async function executarConfirmarPagamentoManualAdmin(linha){
+003402:       linha=Number(linha||0);
+003403:       fecharModal();
+003404:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003405:       try{
+003406:         await api('confirmarPagamentoManual',{linha:linha},[linha]);
+003407:         toast('Pagamento confirmado.');
+003408:         renderPagamentosAdminTab('efetuados');
+003409:       }catch(err){toast(err.message,'error')}
+003410:     }
+003411: 
+003412:     async function reprocessarPagamentoAdmin(linha){
+003413:       linha=Number(linha||0);
+003414:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003415:       try{
+003416:         toast('Solicitando reprocessamento OCR da linha '+linha+'...','info');
+003417:         await api('reprocessarPagamentoLinha',{linha:linha},[linha]);
+003418:         toast('Reprocessamento concluído/solicitado.');
+003419:         renderPagamentosAdminTab('efetuados');
+003420:       }catch(err){toast(err.message,'error')}
+003421:     }
+003422: 
+003423:     function filtrarPagamentosAdmin(){
+003424:       const cache=ESTADO.pagamentosAdminCache||{headers:[],rows:[]};
+003425:       const termo=normalizar(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+003426:       const status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+003427:       const mes=normalizar(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'');
+003428:       const filtradas=(cache.rows||[]).filter(row=>{
+003429:         const o=pagamentoObj_(cache.headers,row);
+003430:         const texto=normalizar(Object.values(o).join(' | '));
+003431:         const st=normalizar(o.status);
+003432:         const mesLinha=normalizar(o.mesReferencia||o.data||'');
+003433:         if(termo&&!texto.includes(termo))return false;
+003434:         if(mes&&!mesLinha.includes(mes))return false;
+003435:         if(status==='PAGO'&&!(st.includes('PAGO')||st.includes('APROV')))return false;
+003436:         if(status==='ANALISE'&&!(st.includes('ANALISE')||st.includes('ANÁLISE')))return false;
+003437:         if(status==='PENDENTE'&&(st.includes('PAGO')||st.includes('APROV')||st.includes('ANALISE')||st.includes('ANÁLISE')||st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003438:         if(status==='ERRO'&&!(st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003439:         return true;
+003440:       });
+003441:       const box=document.getElementById('pagamentosCardsAdminBox');
+003442:       if(box)box.innerHTML=renderListaPagamentosCardsAdmin_(cache.headers,filtradas);
+003443:     }
+003444: 
+003445:     function limparFiltrosPagamentosAdmin(){
+003446:       if(document.getElementById('payBuscaAdmin'))document.getElementById('payBuscaAdmin').value='';
+003447:       if(document.getElementById('payStatusAdmin'))document.getElementById('payStatusAdmin').value='TODOS';
+003448:       if(document.getElementById('payMesAdmin'))document.getElementById('payMesAdmin').value='';
+003449:       filtrarPagamentosAdmin();
+003450:     }
+003451: 
+003452:     function rowObj(headers,row){const o={};(headers||[]).forEach((h,i)=>o[normalizar(h)]=row[i]);return o}
+003453:     function cellObj(o,names){for(const n of names){const k=normalizar(n);if(Object.prototype.hasOwnProperty.call(o,k))return o[k]}return ''}
+003454:     function linhaPlanilha(i){return Number(i)+2}
+003455:     async function chamarAcaoAdmin(action,args,okMsg){try{const r=await api(action,{},args||[]);await firebaseSincronizarResultadoAdmin_(action,r);toast((r&&r.msg)||okMsg||'Ação executada.');if(ESTADO.view==='solicitacoes')renderSolicitacoesAdmin();else if(ESTADO.view==='pagamentos')renderPagamentosAdmin();else if(ESTADO.view==='usuarios')renderUsuariosAdmin();else if(ESTADO.view==='config')renderConfigBoloesAdmin();else if(ESTADO.view==='baseLoterias')renderBaseLoteriasAdmin();else if(ESTADO.view==='participantes')renderParticipantesBolaoAdmin();else if(ESTADO.view==='boloes')renderBoloes('ativos')}catch(err){toast(firebaseMensagemErro_(err),'error')}}
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 4 | LINHA ORIGINAL 3454
+003424:       const cache=ESTADO.pagamentosAdminCache||{headers:[],rows:[]};
+003425:       const termo=normalizar(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+003426:       const status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+003427:       const mes=normalizar(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'');
+003428:       const filtradas=(cache.rows||[]).filter(row=>{
+003429:         const o=pagamentoObj_(cache.headers,row);
+003430:         const texto=normalizar(Object.values(o).join(' | '));
+003431:         const st=normalizar(o.status);
+003432:         const mesLinha=normalizar(o.mesReferencia||o.data||'');
+003433:         if(termo&&!texto.includes(termo))return false;
+003434:         if(mes&&!mesLinha.includes(mes))return false;
+003435:         if(status==='PAGO'&&!(st.includes('PAGO')||st.includes('APROV')))return false;
+003436:         if(status==='ANALISE'&&!(st.includes('ANALISE')||st.includes('ANÁLISE')))return false;
+003437:         if(status==='PENDENTE'&&(st.includes('PAGO')||st.includes('APROV')||st.includes('ANALISE')||st.includes('ANÁLISE')||st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003438:         if(status==='ERRO'&&!(st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003439:         return true;
+003440:       });
+003441:       const box=document.getElementById('pagamentosCardsAdminBox');
+003442:       if(box)box.innerHTML=renderListaPagamentosCardsAdmin_(cache.headers,filtradas);
+003443:     }
+003444: 
+003445:     function limparFiltrosPagamentosAdmin(){
+003446:       if(document.getElementById('payBuscaAdmin'))document.getElementById('payBuscaAdmin').value='';
+003447:       if(document.getElementById('payStatusAdmin'))document.getElementById('payStatusAdmin').value='TODOS';
+003448:       if(document.getElementById('payMesAdmin'))document.getElementById('payMesAdmin').value='';
+003449:       filtrarPagamentosAdmin();
+003450:     }
+003451: 
+003452:     function rowObj(headers,row){const o={};(headers||[]).forEach((h,i)=>o[normalizar(h)]=row[i]);return o}
+003453:     function cellObj(o,names){for(const n of names){const k=normalizar(n);if(Object.prototype.hasOwnProperty.call(o,k))return o[k]}return ''}
+003454:     function linhaPlanilha(i){return Number(i)+2}
+003455:     async function chamarAcaoAdmin(action,args,okMsg){try{const r=await api(action,{},args||[]);await firebaseSincronizarResultadoAdmin_(action,r);toast((r&&r.msg)||okMsg||'Ação executada.');if(ESTADO.view==='solicitacoes')renderSolicitacoesAdmin();else if(ESTADO.view==='pagamentos')renderPagamentosAdmin();else if(ESTADO.view==='usuarios')renderUsuariosAdmin();else if(ESTADO.view==='config')renderConfigBoloesAdmin();else if(ESTADO.view==='baseLoterias')renderBaseLoteriasAdmin();else if(ESTADO.view==='participantes')renderParticipantesBolaoAdmin();else if(ESTADO.view==='boloes')renderBoloes('ativos')}catch(err){toast(firebaseMensagemErro_(err),'error')}}
+003456: 
+003457:     async function renderBaseLoteriasAdmin(){
+003458:       if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}
+003459:       loading('Carregando Base Loterias');
+003460:       try{
+003461:         const r=await adminDados('BASE_LOTERIAS'),headers=r.headers||[],rows=r.rows||[];
+003462:         const campos=['NOME','QTD_MIN','QTD_MAX','RANGE','QTD_PALPITE','IMAGEM_ID'];
+003463:         setView(`<div class="panel no-left"><h2>BASE LOTERIAS</h2><p>Edite QTD_PALPITE para definir quantos números cada palpite deve ter. RANGE define o universo de números.</p><div class="table-wrap"><table class="admin-edit-table"><thead><tr>${campos.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>${rows.map((row,i)=>{const o=rowObj(headers,row);return `<tr>${campos.map(c=>`<td><input data-row="${i}" data-campo="${escapeAttr(c)}" value="${escapeAttr(cellObj(o,[c]))}"></td>`).join('')}</tr>`}).join('')}</tbody></table></div><div class="actions"><button class="btn" onclick="salvarBaseLoteriasGit()">Salvar Base Loterias</button></div></div>`)
+003464:       }catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}
+003465:     }
+003466:     async function salvarBaseLoteriasGit(){
+003467:       const inputs=document.querySelectorAll('.admin-edit-table input');
+003468:       const map={};
+003469:       inputs.forEach(inp=>{
+003470:         const r=inp.dataset.row;
+003471:         if(!map[r]) map[r]={linha:Number(r)+2};
+003472:         map[r][inp.dataset.campo]=inp.value;
+003473:       });
+003474:       const lista=Object.values(map);
+003475: 
+003476:       try{
+003477:         const r = await api('salvarBaseLoteriasAdmin',{},[lista]);
+003478:         toast((r&&r.msg)||'Base Loterias salva.');
+003479:         renderBaseLoteriasAdmin();
+003480:       }catch(err1){
+003481:         try{
+003482:           const r2 = await api('salvarBaseLoterias',{},[lista]);
+003483:           toast((r2&&r2.msg)||'Base Loterias salva.');
+003484:           renderBaseLoteriasAdmin();
+003485:         }catch(err2){
+003486:           toast(err2.message || err1.message || 'Erro ao salvar Base Loterias.','error');
+003487:         }
+003488:       }
+003489:     }
+003490: 
+003491:     async function renderConfigBoloesAdmin(){if(!isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return}loading('Carregando configurações');try{const todosBoloes=listaSegura_(await carregarBoloes());const lista=todosBoloes.filter(b=>!isHistorico(b)&&normalizar(b.status).includes('ATIVO'));window.PSS_CONFIG_BOLOES_LISTA=lista;setView(`<div class="panel"><h2>⚙️ Configurações dos bolões ativos</h2><p>Gerencie valores, prazos, cotas e regras de palpites dos bolões em andamento.</p>${lista.length?lista.map((b,i)=>`<div class="config-card"><h3>${escapeHtml(b.nome||b.loteria)} (2026)</h3><div class="config-grid"><div class="field"><label>Status</label><select id="cfg_status_${i}"><option ${normalizar(b.status).includes('ATIVO')?'selected':''}>ATIVO</option><option ${normalizar(b.status).includes('INATIVO')?'selected':''}>INATIVO</option><option ${normalizar(b.status).includes('HISTORICO')?'selected':''}>HISTORICO</option></select></div><div class="field"><label>Valor da cota</label><input id="cfg_valor_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.valorCota))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this)"></div><div class="field"><label>Total de cotas</label><input id="cfg_total_${i}" value="${escapeAttr(valorNumeroConfig(b.totalCotas||b.cotasTotal,''))}"></div><div class="field"><label>Cotas totais adquiridas</label><input id="cfg_cotas_${i}" value="${escapeAttr(valorNumeroConfig(b.cotasAdquiridas,'0'))}" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Qtd parcelas</label><input id="cfg_parc_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdParcelas,'1'))}"></div><div class="field"><label>Premiação</label><input id="cfg_premio_${i}" value="${escapeAttr(formatarMoedaCampoConfig(b.premiacao))}" onfocus="limparMoedaCampoConfig(this)" onblur="formatarMoedaInputConfig(this);atualizarPremioPorCotaConfig(${i})" oninput="atualizarPremioPorCotaConfig(${i})"></div><div class="field"><label>Premiação por cota</label><input id="cfg_premioCota_${i}" value="${escapeAttr(calcularPremioPorCotaValor(b.premiacao,b.cotasAdquiridas))}" readonly style="background:#f3f6f4;font-weight:900;color:#003b12;"></div><div class="field"><label>Data sorteio</label><input id="cfg_sorteio_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.dataSorteio||''))}"></div><div class="field"><label>Início pagamento</label><input id="cfg_iniBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPagamento||''))}"></div><div class="field"><label>Fim pagamento</label><input id="cfg_fimBol_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPagamento||''))}"></div><div class="field"><label>Início palpites</label><input id="cfg_iniPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.inicioPalpite||''))}"></div><div class="field"><label>Fim palpites</label><input id="cfg_fimPal_${i}" value="${escapeAttr(formatarDataHoraPtBR(b.fimPalpite||''))}"></div><div class="field"><label>Range</label><input id="cfg_range_${i}" value="${escapeAttr(valorNumeroConfig(b.range,''))}"></div><div class="field"><label>Qtd mínima</label><input id="cfg_min_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMin,''))}"></div><div class="field"><label>Qtd máxima</label><input id="cfg_max_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdMax,''))}"></div><div class="field"><label>Qtd por palpite</label><input id="cfg_qtdPal_${i}" value="${escapeAttr(valorNumeroConfig(b.qtdPalpite,''))}"></div></div><div class="actions" style="margin-top:14px;"><button class="btn" onclick="salvarConfigBolaoGit(${i})">Salvar este bolão</button><button class="btn btn-light" onclick="inativarBolaoGit(${i})">Inativar</button><button class="btn btn-danger" onclick="excluirBolaoGit(${i})">Excluir</button></div></div>`).join(''):'<div class="notice warn">Nenhum bolão ativo localizado para configuração.</div>'}</div>`)}catch(err){setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`)}}
+003492: 
+003493:     function calcularPremioPorCotaValor(premiacao,cotasAdquiridas){
+003494:       const premio=num(premiacao);
+003495:       const cotas=num(cotasAdquiridas);
+003496:       if(!isFinite(premio)||!isFinite(cotas)||cotas<=0)return moeda(0);
+003497:       return moeda(premio/cotas);
+003498:     }
+003499: 
+003500:     function atualizarPremioPorCotaConfig(i){
+003501:       const elPremio=document.getElementById('cfg_premio_'+i);
+003502:       const elCotas=document.getElementById('cfg_cotas_'+i);
+003503:       const elResultado=document.getElementById('cfg_premioCota_'+i);
+003504:       if(!elPremio||!elCotas||!elResultado)return;
+003505:       elResultado.value=calcularPremioPorCotaValor(elPremio.value,elCotas.value);
+003506:     }
+003507: 
+003508: 
+003509:     function formatarMoedaCampoConfig(valor){
+003510:       if(valor===undefined||valor===null||valor==='')return '';
+003511:       return moeda(valor);
+003512:     }
+003513: 
+003514:     function limparMoedaCampoConfig(el){
+003515:       if(!el)return;
+003516:       const n=num(el.value);
+003517:       el.value=n?String(n).replace('.',','):'';
+003518:       setTimeout(()=>{try{el.select()}catch(e){}},10);
+003519:     }
+003520: 
+003521:     function formatarMoedaInputConfig(el){
+003522:       if(!el)return;
+003523:       el.value=moeda(num(el.value));
+003524:     }
+003525: 
+003526:     function valorMoedaSalvarConfig(valor){
+003527:       const n=num(valor);
+003528:       if(!isFinite(n)||isNaN(n))return '0';
+003529:       return String(Math.round(n*100)/100).replace('.',',');
+003530:     }
+003531: 
+003532:     function formatarNumeroCampoConfig_(valor){
+003533:       const n=Number(valor);
+003534:       if(!isFinite(n)||isNaN(n))return '0';
+003535:       const arred=Math.round(n*100)/100;
+003536:       return arred.toLocaleString('pt-BR',{minimumFractionDigits:Number.isInteger(arred)?0:2,maximumFractionDigits:2});
+003537:     }
+003538:     async function salvarConfigBolaoGit(i){const b=ESTADO.boloes[i];if(!b)return;atualizarPremioPorCotaConfig(i);const d={nome:b.nome||b.loteria,loteria:b.loteria||b.nome,status:document.getElementById('cfg_status_'+i).value,valorCota:valorMoedaSalvarConfig(document.getElementById('cfg_valor_'+i).value),totalCotas:valorNumeroConfig(document.getElementById('cfg_total_'+i).value,''),cotasTotaisAdquiridas:valorNumeroConfig(document.getElementById('cfg_cotas_'+i).value,'0'),qtdParcelas:valorNumeroConfig(document.getElementById('cfg_parc_'+i).value,'1'),premiacao:valorMoedaSalvarConfig(document.getElementById('cfg_premio_'+i).value),premioPorCota:valorMoedaSalvarConfig(document.getElementById('cfg_premioCota_'+i).value),premiacaoPorCota:valorMoedaSalvarConfig(document.getElementById('cfg_premioCota_'+i).value),dataSorteio:normalizarDataPtBRParaSalvar(document.getElementById('cfg_sorteio_'+i).value),iniBol:normalizarDataPtBRParaSalvar(document.getElementById('cfg_iniBol_'+i).value),fimBol:normalizarDataPtBRParaSalvar(document.getElementById('cfg_fimBol_'+i).value),iniPal:normalizarDataPtBRParaSalvar(document.getElementById('cfg_iniPal_'+i).value),fimPal:normalizarDataPtBRParaSalvar(document.getElementById('cfg_fimPal_'+i).value),range:valorNumeroConfig(document.getElementById('cfg_range_'+i).value,''),qtdMin:valorNumeroConfig(document.getElementById('cfg_min_'+i).value,''),qtdMax:valorNumeroConfig(document.getElementById('cfg_max_'+i).value,''),qtdPalpite:valorNumeroConfig(document.getElementById('cfg_qtdPal_'+i).value,'')};chamarAcaoAdmin('salvarConfigBolaoAtivoAdmin',[d],'Bolão salvo.')}
+003539: 
+003540: 
+003541:     async function renderParticipantesBolaoAdmin(){
+003542:       if(!isAdmin()){
+003543:         setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');
+003544:         return;
+003545:       }
+003546: 
+003547:       loading('Carregando Participantes Bolão');
+003548: 
+003549:       try{
+003550:         let r = await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES_BOLAO'},args:['PARTICIPANTES_BOLAO']}]);
+003551: 
+003552:         if((!r.headers || !r.headers.length) && (!r.rows || !r.rows.length)){
+003553:           r = await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES'},args:['PARTICIPANTES']}]);
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 5 | LINHA ORIGINAL 21281
+021251:     }
+021252:     ativarMenu('participantes');
+021253:     if(typeof loading==='function')loading('Carregando Participantes Bolão');
+021254:     try{
+021255:       var r=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES_BOLAO'},args:['PARTICIPANTES_BOLAO']},{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES'},args:['PARTICIPANTES']}]);
+021256:       var headers=r.headers||[];
+021257:       var rows=r.rows||[];
+021258:       if(typeof setView==='function')setView('<div class="panel"><h2>Participantes Bolão</h2><p>Participantes vinculados aos bolões cadastrados.</p><div class="actions"><button class="btn" onclick="sincronizarAbasParticipantesAdmin()">Sincronizar abas individuais</button><button class="btn btn-light" onclick="renderParticipantesBolaoAdmin()">Atualizar lista</button></div><div id="syncAbasParticipantesResultado"></div>'+(headers.length?'<div class="table-wrap"><table><thead><tr>'+headers.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(c){return '<td>'+(typeof formatarCelula==='function'?formatarCelula(c):esc(c))+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>':'<div class="notice warn">Nenhum dado localizado na aba PARTICIPANTES_BOLAO.</div>')+'</div>');
+021259:     }catch(err){
+021260:       if(typeof setView==='function')setView('<div class="panel"><div class="notice error">'+esc((err&&err.message)||err)+'</div></div>');
+021261:     }
+021262:   }
+021263: 
+021264:   window.renderParticipantesBolaoAdmin=renderParticipantesBolaoAdmin=renderParticipantesV311;
+021265: 
+021266:   var navegarAnterior=window.navegar;
+021267:   window.navegar=navegar=function(v){
+021268:     reforcarSessao();
+021269:     if(v==='participantes')return renderParticipantesV311();
+021270:     if(typeof navegarAnterior==='function')return navegarAnterior.apply(this,arguments);
+021271:   };
+021272: 
+021273:   function getCacheSolicitacao(linha){
+021274:     try{if(typeof getSolicitacaoCachePorLinhaV290_==='function')return getSolicitacaoCachePorLinhaV290_(linha)||{};}catch(e){}
+021275:     return {};
+021276:   }
+021277: 
+021278:   async function chamarAprovacaoRapida(action,linha){
+021279:     var acao=String(action||'');
+021280:     var args=[linha];
+021281:     var dados={linha:linha,linhaPlanilha:linha,row:linha,email:emailAtual()};
+021282:     if(acao.toLowerCase().indexOf('aprovar')>=0)acao='aprovarSolicitacaoCadastroV311';
+021283:     if(typeof apiJsonpDireto_==='function'){
+021284:       return await apiJsonpDireto_(acao,dados,args,65000);
+021285:     }
+021286:     return await api(acao,dados,args);
+021287:   }
+021288: 
+021289:   window.executarAcaoSolicitacaoAdmin=executarAcaoSolicitacaoAdmin=async function(){
+021290:     var cfg=window.PSS_SOLICITACAO_ACAO||{};
+021291:     window.PSS_SOLICITACAO_ACAO=null;
+021292:     try{if(typeof fecharModal==='function')fecharModal();}catch(e){}
+021293:     if(!cfg.action||!cfg.linha)return;
+021294: 
+021295:     var card=document.getElementById('sol-card-'+cfg.linha);
+021296:     try{
+021297:       if(card){
+021298:         card.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+021299:         var box=document.createElement('div');
+021300:         box.className='notice info';
+021301:         box.id='sol-processando-v311-'+cfg.linha;
+021302:         box.innerHTML='<span class="loading-fast">Processando aprovação. Aguarde sem clicar novamente...</span>';
+021303:         card.appendChild(box);
+021304:       }
+021305:     }catch(eCard){}
+021306: 
+021307:     try{
+021308:       if(typeof toast==='function')toast('Processando solicitação...','info');
+021309:       var antes=getCacheSolicitacao(cfg.linha);
+021310:       var r=await chamarAprovacaoRapida(cfg.action,cfg.linha);
+021311: 
+021312:       if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
+021313:         var uf=(r&&r.usuarioFirebase)||{};
+021314:         var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
+021315:         if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
+021316:           try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+021317:         }
+021318:       }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
+021319:         var rec=antes||{};
+021320:         if(rec.email&&typeof firebaseSincronizarUsuarioAdmin_==='function'){
+021321:           try{await firebaseSincronizarUsuarioAdmin_({email:rec.email,nome:rec.nome,status:'RECUSADO',perfil:'USUARIO',ativo:false});}catch(eRec){}
+021322:         }
+021323:       }
+021324: 
+021325:       if(card){
+021326:         var p=document.getElementById('sol-processando-v311-'+cfg.linha);
+021327:         if(p){p.className='notice';p.innerHTML=esc((r&&r.msg)||'Ação realizada com sucesso.');}
+021328:       }
+021329:       if(typeof toast==='function')toast((r&&r.msg)||'Ação realizada com sucesso.');
+021330:       setTimeout(function(){try{if(typeof renderSolicitacoesAdmin==='function')renderSolicitacoesAdmin();}catch(e){}},500);
+021331:       setTimeout(function(){try{if(typeof carregarBadgeInscritosTopo==='function')carregarBadgeInscritosTopo();}catch(e){}},900);
+021332:     }catch(err){
+021333:       try{if(card)card.querySelectorAll('button').forEach(function(b){b.disabled=false;});}catch(eBtn){}
+021334:       var msg=(err&&err.message)||String(err||'Erro ao processar solicitação.');
+021335:       if(typeof toast==='function')toast(msg,'error');
+021336:       var p2=document.getElementById('sol-processando-v311-'+cfg.linha);
+021337:       if(p2){p2.className='notice error';p2.innerHTML=esc(msg);}
+021338:     }
+021339:   };
+021340: 
+021341:   setTimeout(function(){try{reforcarSessao();if(window.ESTADO&&ESTADO.usuario&&typeof aplicarLayoutLogado==='function')aplicarLayoutLogado();}catch(e){}},150);
+021342: })();
+021343: </script>
+021344: 
+021345: 
+021346: 
+021347: <script>
+021348: /* =====================================================================
+021349:  * PATCH V312 — APROVAÇÃO SEM CONFLITO COM PUBLICADOR JSON
+021350:  * Projeto: Portal SimonSports — Bolões Loterias Especiais
+021351:  *
+021352:  * Motivo:
+021353:  * A V311 ainda podia receber "Outra aprovação está em andamento" porque
+021354:  * o Code_API usava LockService.getScriptLock(), o mesmo lock global usado
+021355:  * por outras rotinas do projeto, inclusive publicador JSON/cache.
+021356:  *
+021357:  * Correção:
+021358:  * - Aprovação usa rota V312.
+021359:  * - Botão fica protegido apenas na tela atual.
+021360:  * - API não usa mais ScriptLock global para aprovação.
+021361:  * ===================================================================== */
+021362: (function(){
+021363:   'use strict';
+021364: 
+021365:   var V='V313_FIREBASE_SYNC_FIX';
+021366:   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+021367:   var processando={};
+021368: 
+021369:   function txt(v){return String(v===undefined||v===null?'':v).trim();}
+021370:   function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+021371:   function emailAtual(){
+021372:     try{if(window.ESTADO&&ESTADO.email)return String(ESTADO.email).trim().toLowerCase();}catch(e){}
+021373:     try{if(window.ESTADO&&ESTADO.usuario&&ESTADO.usuario.email)return String(ESTADO.usuario.email).trim().toLowerCase();}catch(e){}
+021374:     try{return String(localStorage.getItem('PSS_BOLAO_EMAIL')||'').trim().toLowerCase();}catch(e){}
+021375:     return '';
+021376:   }
+021377:   function getCacheSolicitacao(linha){
+021378:     try{if(typeof getSolicitacaoCachePorLinhaV290_==='function')return getSolicitacaoCachePorLinhaV290_(linha)||{};}catch(e){}
+021379:     return {};
+021380:   }
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 6 | LINHA ORIGINAL 21384
+021354:  * o Code_API usava LockService.getScriptLock(), o mesmo lock global usado
+021355:  * por outras rotinas do projeto, inclusive publicador JSON/cache.
+021356:  *
+021357:  * Correção:
+021358:  * - Aprovação usa rota V312.
+021359:  * - Botão fica protegido apenas na tela atual.
+021360:  * - API não usa mais ScriptLock global para aprovação.
+021361:  * ===================================================================== */
+021362: (function(){
+021363:   'use strict';
+021364: 
+021365:   var V='V313_FIREBASE_SYNC_FIX';
+021366:   try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+021367:   var processando={};
+021368: 
+021369:   function txt(v){return String(v===undefined||v===null?'':v).trim();}
+021370:   function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+021371:   function emailAtual(){
+021372:     try{if(window.ESTADO&&ESTADO.email)return String(ESTADO.email).trim().toLowerCase();}catch(e){}
+021373:     try{if(window.ESTADO&&ESTADO.usuario&&ESTADO.usuario.email)return String(ESTADO.usuario.email).trim().toLowerCase();}catch(e){}
+021374:     try{return String(localStorage.getItem('PSS_BOLAO_EMAIL')||'').trim().toLowerCase();}catch(e){}
+021375:     return '';
+021376:   }
+021377:   function getCacheSolicitacao(linha){
+021378:     try{if(typeof getSolicitacaoCachePorLinhaV290_==='function')return getSolicitacaoCachePorLinhaV290_(linha)||{};}catch(e){}
+021379:     return {};
+021380:   }
+021381:   async function aprovarRapidoV312(action,linha){
+021382:     var acao=String(action||'');
+021383:     var args=[linha];
+021384:     var dados={linha:linha,linhaPlanilha:linha,row:linha,email:emailAtual(),origem:'INDEX_V312'};
+021385:     if(acao.toLowerCase().indexOf('aprovar')>=0)acao='aprovarSolicitacaoCadastroV312';
+021386:     else if(acao.toLowerCase().indexOf('recusar')>=0)acao='recusarSolicitacaoCadastro';
+021387:     else if(acao.toLowerCase().indexOf('tornar')>=0||acao.toLowerCase().indexOf('promover')>=0)acao='tornarUsuarioAdministradorLinha';
+021388:     if(typeof apiJsonpDireto_==='function')return await apiJsonpDireto_(acao,dados,args,90000);
+021389:     return await api(acao,dados,args);
+021390:   }
+021391: 
+021392:   window.executarAcaoSolicitacaoAdmin=executarAcaoSolicitacaoAdmin=async function(){
+021393:     var cfg=window.PSS_SOLICITACAO_ACAO||{};
+021394:     window.PSS_SOLICITACAO_ACAO=null;
+021395:     try{if(typeof fecharModal==='function')fecharModal();}catch(e){}
+021396:     if(!cfg.action||!cfg.linha)return;
+021397: 
+021398:     var chave=String(cfg.action)+'_'+String(cfg.linha);
+021399:     if(processando[chave]){
+021400:       try{if(typeof toast==='function')toast('Esta solicitação já está sendo processada nesta tela. Aguarde a conclusão.','warn');}catch(e){}
+021401:       return;
+021402:     }
+021403:     processando[chave]=true;
+021404: 
+021405:     var card=document.getElementById('sol-card-'+cfg.linha);
+021406:     var aviso=null;
+021407:     try{
+021408:       if(card){
+021409:         card.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+021410:         aviso=document.getElementById('sol-processando-v312-'+cfg.linha);
+021411:         if(!aviso){
+021412:           aviso=document.createElement('div');
+021413:           aviso.className='notice info';
+021414:           aviso.id='sol-processando-v312-'+cfg.linha;
+021415:           card.appendChild(aviso);
+021416:         }
+021417:         aviso.innerHTML='<span class="loading-fast">Processando solicitação. Aguarde sem clicar novamente...</span>';
+021418:       }
+021419:     }catch(eCard){}
+021420: 
+021421:     try{
+021422:       if(typeof toast==='function')toast('Processando solicitação...','info');
+021423:       var antes=getCacheSolicitacao(cfg.linha);
+021424:       var r=await aprovarRapidoV312(cfg.action,cfg.linha);
+021425: 
+021426:       if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
+021427:         var uf=(r&&r.usuarioFirebase)||{};
+021428:         var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
+021429:         if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
+021430:           try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+021431:         }
+021432:       }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
+021433:         var rec=antes||{};
+021434:         if(rec.email&&typeof firebaseSincronizarUsuarioAdmin_==='function'){
+021435:           try{await firebaseSincronizarUsuarioAdmin_({email:rec.email,nome:rec.nome,status:'RECUSADO',perfil:'USUARIO',ativo:false});}catch(eRec){}
+021436:         }
+021437:       }
+021438: 
+021439:       if(aviso){aviso.className='notice';aviso.innerHTML=esc((r&&r.msg)||'Ação realizada com sucesso.');}
+021440:       if(typeof toast==='function')toast((r&&r.msg)||'Ação realizada com sucesso.');
+021441:       setTimeout(function(){try{if(typeof renderSolicitacoesAdmin==='function')renderSolicitacoesAdmin();}catch(e){}},450);
+021442:       setTimeout(function(){try{if(typeof carregarBadgeInscritosTopo==='function')carregarBadgeInscritosTopo();}catch(e){}},900);
+021443:     }catch(err){
+021444:       var msg=(err&&err.message)||String(err||'Erro ao processar solicitação.');
+021445:       try{if(card)card.querySelectorAll('button').forEach(function(b){b.disabled=false;});}catch(eBtn){}
+021446:       if(aviso){aviso.className='notice error';aviso.innerHTML=esc(msg);}
+021447:       if(typeof toast==='function')toast(msg,'error');
+021448:     }finally{
+021449:       delete processando[chave];
+021450:     }
+021451:   };
+021452: })();
+021453: </script>
+021454: 
+021455: 
+021456: <script>
+021457: /* =====================================================================
+021458:  * V317 — CORREÇÃO DEFINITIVA DO ENVIO DE JOGOS REALIZADOS PELO INDEX
+021459:  * Problema corrigido: tela de detalhe exibia "Jogos realizados — Loteria",
+021460:  * mas a função final sobrescrita buscava apenas #jogosBolao e bloqueava
+021461:  * com "Selecione a loteria/bolão" antes de chamar a API.
+021462:  *
+021463:  * Regra V317:
+021464:  * 1) Mantém o fluxo de upload já existente no index;
+021465:  * 2) Resolve a loteria/bolão por múltiplos fallbacks;
+021466:  * 3) Injeta #jogosBolao oculto quando a tela de detalhe não tem select;
+021467:  * 4) Repassa para a função anterior, preservando chunk/upload seguro.
+021468:  * ===================================================================== */
+021469: (function(){
+021470:   'use strict';
+021471: 
+021472:   if(window.PSS_INDEX_V317_JOGOS_FIX_APLICADO) return;
+021473:   window.PSS_INDEX_V317_JOGOS_FIX_APLICADO = true;
+021474: 
+021475:   try{
+021476:     if(typeof CONFIG === 'object' && CONFIG){
+021477:       CONFIG.versao = 'V318_JOGOS_REALIZADOS_DIRETO_SEM_CHUNKS';
+021478:     }
+021479:   }catch(e){}
+021480: 
+021481:   var envioAnteriorV317 = window.enviarJogoRealizadoBolaoV232 || window.enviarJogoRealizadoBolao;
+021482: 
+021483:   function textoLimpoV317_(v){
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 7 | LINHA ORIGINAL 26911
+026881:       var k=mes+'|'+key356(lot);
+026882:       if(!grupos[k]) grupos[k]={mes:mes,loteria:lot,valor:0,cotas:0,qtd:0,valorCota:valorCota};
+026883:       grupos[k].valor+=valor;
+026884:       grupos[k].cotas+=cotas;
+026885:       grupos[k].qtd++;
+026886:       if(!grupos[k].valorCota && valorCota>0) grupos[k].valorCota=valorCota;
+026887:     });
+026888: 
+026889:     var listaG=Object.keys(grupos).sort().map(function(k){
+026890:       var g=grupos[k];
+026891:       g.valor=Math.round(g.valor*100)/100;
+026892:       g.cotas=Math.round(g.cotas*1000)/1000;
+026893:       return g;
+026894:     });
+026895: 
+026896:     if(!listaG.length) return '<div class="notice warn">Nenhum pagamento confirmado para detalhar por mês/loteria.</div>';
+026897: 
+026898:     return '<div class="pay-summary-grid">'+listaG.map(function(g){
+026899:       var cotaInfo=g.valorCota>0 ? ' · valor cota '+esc356(moeda356(g.valorCota)) : '';
+026900:       return '<div class="pay-summary-card"><b>'+esc356(formatarMesReferenciaTela356(g.mes))+' · '+esc356(g.loteria)+'</b><strong>'+esc356(moeda356(g.valor))+'</strong><div class="pay-admin-sub">'+esc356(g.qtd)+' comprovante(s) · '+esc356(cotasTexto356(g.cotas))+' cota(s)'+cotaInfo+'</div></div>';
+026901:     }).join('')+'</div>';
+026902:   }
+026903: 
+026904:   window.PSS_FORMATAR_MES_REFERENCIA_TELA = formatarMesReferenciaTela356;
+026905:   window.detalhePagamentosMesBolaoV356_ = detalhePagamentosMesBolaoV356;
+026906: 
+026907:   var baseRenderPagamentoCard356 = window.renderPagamentoCardAdmin_;
+026908:   window.renderPagamentoCardAdmin_ = renderPagamentoCardAdmin_ = function(headers,row,i){
+026909:     try{
+026910:       var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(headers,row) : {};
+026911:       var linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
+026912:       var cls=(typeof pagamentoStatusClasse_==='function') ? pagamentoStatusClasse_(o.status) : {card:'',badge:''};
+026913:       var url=o.urlComprovante||o.arquivoUrl||'';
+026914:       var mesTela=formatarMesReferenciaTela356(o.mesReferencia||'-');
+026915: 
+026916:       return ''
+026917:         + '<article class="pay-admin-card-pro '+esc356(cls.card||'')+'" data-pay-row="'+esc356(linha)+'">'
+026918:         + '<div class="pay-admin-head">'
+026919:         + '<div>'
+026920:         + '<div class="pay-admin-title">'+esc356(o.loteria||'Pagamento sem loteria informada')+'</div>'
+026921:         + '<div class="pay-admin-sub">'+esc356(o.email||'-')+' • '+esc356((typeof formatarDataHoraPtBR==='function')?formatarDataHoraPtBR(o.data||'-'):(o.data||'-'))+'</div>'
+026922:         + '</div>'
+026923:         + '<span class="pay-admin-status '+esc356(cls.badge||'')+'">'+esc356(o.status||'Pendente')+'</span>'
+026924:         + '</div>'
+026925:         + '<div class="pay-admin-grid">'
+026926:         + '<div class="pay-admin-info"><b>Valor</b><span>'+esc356(o.valor?moeda356(o.valor):'-')+'</span></div>'
+026927:         + '<div class="pay-admin-info"><b>Pagador</b><span>'+esc356(o.pagador||'-')+'</span></div>'
+026928:         + '<div class="pay-admin-info"><b>Recebedor</b><span>'+esc356(o.recebedor||'-')+'</span></div>'
+026929:         + '<div class="pay-admin-info"><b>Mês referência</b><span>'+esc356(mesTela)+'</span></div>'
+026930:         + '<div class="pay-admin-info"><b>ID transação</b><span>'+esc356(o.idTransacao||'-')+'</span></div>'
+026931:         + '<div class="pay-admin-info"><b>Autenticação</b><span>'+esc356(o.autenticacao||'-')+'</span></div>'
+026932:         + '<div class="pay-admin-info"><b>Tipo cota</b><span>'+esc356(o.tipoCota||'-')+'</span></div>'
+026933:         + '<div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>'+esc356(o.codigoProduto||'-')+'</span></div>'
+026934:         + '<div class="pay-admin-info"><b>Partes</b><span>'+esc356((typeof formatarPartesPagamento_==='function')?formatarPartesPagamento_(o.partesCota):(o.partesCota||'-'))+'</span></div>'
+026935:         + '<div class="pay-admin-info full"><b>Validação / observação</b><span>'+esc356(o.validacao||'-')+'</span></div>'
+026936:         + (o.participantesCota?'<div class="pay-admin-info full"><b>Participantes da cota</b><span>'+esc356(o.participantesCota)+'</span></div>':'')
+026937:         + '</div>'
+026938:         + '<div class="pay-card-actions">'
+026939:         + (url?'<button class="btn btn-blue" onclick="abrirComprovanteAdmin(\''+esc356(url).replace(/'/g,'&#039;')+'\')">Ver comprovante</button>':'')
+026940:         + '<button class="btn btn-light" onclick="reprocessarPagamentoAdmin('+esc356(linha)+')">Reprocessar OCR</button>'
+026941:         + (!(norm356(o.status).indexOf('PAGO')>=0)?'<button class="btn" onclick="confirmarPagamentoManualAdmin('+esc356(linha)+')">Confirmar pagamento</button>':'')
+026942:         + '</div>'
+026943:         + '</article>';
+026944:     }catch(e){
+026945:       return baseRenderPagamentoCard356 ? baseRenderPagamentoCard356(headers,row,i) : '<div class="notice error">'+esc356(e.message||e)+'</div>';
+026946:     }
+026947:   };
+026948: 
+026949:   window.renderListaPagamentosCardsAdmin_ = renderListaPagamentosCardsAdmin_ = function(headers,rows){
+026950:     rows=rows||[];
+026951:     if(!rows.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+026952:     return '<div class="pay-list">'+rows.map(function(row,i){return window.renderPagamentoCardAdmin_(headers,row,i);}).join('')+'</div>';
+026953:   };
+026954: 
+026955:   window.renderPagamentosEfetuadosAdmin_ = renderPagamentosEfetuadosAdmin_ = function(headers,rows){
+026956:     headers=headers||[];
+026957:     rows=rows||[];
+026958:     if(!headers.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+026959: 
+026960:     var resumo='';
+026961:     try{ resumo = (typeof renderResumoPagamentosAdmin_==='function') ? renderResumoPagamentosAdmin_(headers,rows) : ''; }catch(e){ resumo=''; }
+026962: 
+026963:     var lista='';
+026964:     try{ lista = window.renderListaPagamentosCardsAdmin_(headers,rows); }
+026965:     catch(e){ lista='<div class="notice error">'+esc356(e.message||e)+'</div>'; }
+026966: 
+026967:     return ''
+026968:       + '<h3 style="margin-top:4px;">📊 Detalhamento por mês, ano e loteria</h3>'
+026969:       + detalhePagamentosMesBolaoV356(headers,rows)
+026970:       + resumo
+026971:       + '<div class="pay-filterbar">'
+026972:       + '<div class="field"><label>Buscar</label><input id="payBuscaAdmin" placeholder="Buscar por e-mail, loteria, pagador, ID..." oninput="filtrarPagamentosAdmin()"></div>'
+026973:       + '<div class="field"><label>Status</label><select id="payStatusAdmin" onchange="filtrarPagamentosAdmin()"><option value="TODOS">Todos</option><option value="PAGO">Pago</option><option value="ANALISE">Em análise</option><option value="PENDENTE">Pendente</option><option value="ERRO">Erro/Duplicado</option></select></div>'
+026974:       + '<div class="field"><label>Mês</label><input id="payMesAdmin" placeholder="MM/AAAA" oninput="filtrarPagamentosAdmin()"></div>'
+026975:       + '<button class="btn btn-light" onclick="limparFiltrosPagamentosAdmin()">Limpar</button>'
+026976:       + '</div>'
+026977:       + '<div id="pagamentosCardsAdminBox">'+lista+'</div>';
+026978:   };
+026979: 
+026980:   window.filtrarPagamentosAdmin = filtrarPagamentosAdmin = function(){
+026981:     var cache=window.ESTADO&&ESTADO.pagamentosAdminCache?ESTADO.pagamentosAdminCache:{headers:[],rows:[]};
+026982:     var termo=norm356(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+026983:     var status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+026984:     var mesDigitado=String(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'').trim();
+026985:     var mesCompacto=compactMes356(mesDigitado);
+026986:     var mesNorm=norm356(mesDigitado);
+026987: 
+026988:     var filtradas=(cache.rows||[]).filter(function(row){
+026989:       var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(cache.headers,row) : {};
+026990:       var st=norm356(o.status);
+026991:       var mesTela=formatarMesReferenciaTela356(o.mesReferencia||o.data||'');
+026992:       var texto=norm356(Object.values(o).join(' | ')+' | '+mesTela);
+026993: 
+026994:       if(termo && texto.indexOf(termo)<0) return false;
+026995: 
+026996:       if(mesDigitado){
+026997:         var linhaCompacta=compactMes356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+026998:         var linhaNorm=norm356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+026999:         if(mesCompacto){
+027000:           if(linhaCompacta.indexOf(mesCompacto)<0) return false;
+027001:         }else if(linhaNorm.indexOf(mesNorm)<0){
+027002:           return false;
+027003:         }
+027004:       }
+027005: 
+027006:       if(status==='PAGO' && !(st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0)) return false;
+027007:       if(status==='ANALISE' && !(st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0)) return false;
+027008:       if(status==='PENDENTE' && (st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0 || st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0 || st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+027009:       if(status==='ERRO' && !(st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+027010:       return true;
+
+==============================================================================================================
+TERMO: _linhaPlanilha | TOTAL: 3
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 1 | LINHA ORIGINAL 3300
+003270: 
+003271:     function renderResumoPagamentosAdmin_(headers,rows){
+003272:       let totalPago=0,totalAnalise=0,totalPendente=0,totalErro=0,qtdPago=0,qtdAnalise=0,qtdPendente=0,qtdErro=0;
+003273:       (rows||[]).forEach(row=>{
+003274:         const o=pagamentoObj_(headers,row);
+003275:         const st=normalizar(o.status);
+003276:         const valor=num(o.valor);
+003277:         if(st.includes('PAGO')||st.includes('APROV')){totalPago+=valor;qtdPago++;}
+003278:         else if(st.includes('ANALISE')||st.includes('ANÁLISE')){totalAnalise+=valor;qtdAnalise++;}
+003279:         else if(st.includes('ERRO')||st.includes('DUPLIC')){totalErro+=valor;qtdErro++;}
+003280:         else {totalPendente+=valor;qtdPendente++;}
+003281:       });
+003282:       return `
+003283:         <div class="pay-summary-grid">
+003284:           <div class="pay-summary-card"><b>Pago confirmado</b><strong>${escapeHtml(moeda(totalPago))}</strong><div class="pay-admin-sub">${qtdPago} registro(s)</div></div>
+003285:           <div class="pay-summary-card warn"><b>Em análise</b><strong>${escapeHtml(moeda(totalAnalise))}</strong><div class="pay-admin-sub">${qtdAnalise} registro(s)</div></div>
+003286:           <div class="pay-summary-card warn"><b>Pendente</b><strong>${escapeHtml(moeda(totalPendente))}</strong><div class="pay-admin-sub">${qtdPendente} registro(s)</div></div>
+003287:           <div class="pay-summary-card danger"><b>Erro/Duplicado</b><strong>${escapeHtml(moeda(totalErro))}</strong><div class="pay-admin-sub">${qtdErro} registro(s)</div></div>
+003288:         </div>
+003289:       `;
+003290:     }
+003291: 
+003292:     function renderListaPagamentosCardsAdmin_(headers,rows){
+003293:       rows=rows||[];
+003294:       if(!rows.length)return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+003295:       return `<div class="pay-list">${rows.map((row,i)=>renderPagamentoCardAdmin_(headers,row,i)).join('')}</div>`;
+003296:     }
+003297: 
+003298:     function renderPagamentoCardAdmin_(headers,row,i){
+003299:       const o=pagamentoObj_(headers,row);
+003300:       const linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
+003301:       const cls=pagamentoStatusClasse_(o.status);
+003302:       const url=o.urlComprovante||o.arquivoUrl||'';
+003303:       return `
+003304:         <article class="pay-admin-card-pro ${cls.card}" data-pay-row="${linha}">
+003305:           <div class="pay-admin-head">
+003306:             <div>
+003307:               <div class="pay-admin-title">${escapeHtml(o.loteria||'Pagamento sem loteria informada')}</div>
+003308:               <div class="pay-admin-sub">${escapeHtml(o.email||'-')} • ${escapeHtml(formatarDataHoraPtBR(o.data||'-'))}</div>
+003309:             </div>
+003310:             <span class="pay-admin-status ${cls.badge}">${escapeHtml(o.status||'Pendente')}</span>
+003311:           </div>
+003312:           <div class="pay-admin-grid">
+003313:             <div class="pay-admin-info"><b>Valor</b><span>${escapeHtml(o.valor?moeda(o.valor):'-')}</span></div>
+003314:             <div class="pay-admin-info"><b>Pagador</b><span>${escapeHtml(o.pagador||'-')}</span></div>
+003315:             <div class="pay-admin-info"><b>Recebedor</b><span>${escapeHtml(o.recebedor||'-')}</span></div>
+003316:             <div class="pay-admin-info"><b>Mês referência</b><span>${escapeHtml(o.mesReferencia||'-')}</span></div>
+003317:             <div class="pay-admin-info"><b>ID transação</b><span>${escapeHtml(o.idTransacao||'-')}</span></div>
+003318:             <div class="pay-admin-info"><b>Autenticação</b><span>${escapeHtml(o.autenticacao||'-')}</span></div>
+003319:             <div class="pay-admin-info"><b>Tipo cota</b><span>${escapeHtml(o.tipoCota||'-')}</span></div>
+003320:             <div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>${escapeHtml(o.codigoProduto||'-')}</span></div>
+003321:             <div class="pay-admin-info"><b>Partes</b><span>${escapeHtml(formatarPartesPagamento_(o.partesCota))}</span></div>
+003322:             <div class="pay-admin-info full"><b>Validação / observação</b><span>${escapeHtml(o.validacao||'-')}</span></div>
+003323:             ${o.participantesCota?`<div class="pay-admin-info full"><b>Participantes da cota</b><span>${escapeHtml(o.participantesCota)}</span></div>`:''}
+003324:           </div>
+003325:           <div class="pay-card-actions">
+003326:             ${url?`<button class="btn btn-blue" onclick="abrirComprovanteAdmin('${escapeAttr(url)}')">Ver comprovante</button>`:''}
+003327:             <button class="btn btn-light" onclick="reprocessarPagamentoAdmin(${linha})">Reprocessar OCR</button>
+003328:             ${!normalizar(o.status).includes('PAGO')?`<button class="btn" onclick="confirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>`:''}
+003329:           </div>
+003330:         </article>
+003331:       `;
+003332:     }
+003333: 
+003334:     function pagamentoObj_(headers,row){
+003335:       const o=rowObj(headers,row);
+003336:       return {
+003337:         data:cellObj(o,['DATA']),
+003338:         email:cellObj(o,['EMAIL','E-MAIL']),
+003339:         loteria:cellObj(o,['LOTERIA','BOLAO','BOLÃO']),
+003340:         urlComprovante:cellObj(o,['URL_COMPROVANTE','URL COMPROVANTE']),
+003341:         status:cellObj(o,['STATUS']),
+003342:         pagador:cellObj(o,['PAGADOR']),
+003343:         valor:cellObj(o,['VALOR']),
+003344:         idTransacao:cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO','ID TRANSACAO']),
+003345:         autenticacao:cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO']),
+003346:         arquivoUrl:cellObj(o,['ARQUIVO_URL','ARQUIVO URL']),
+003347:         recebedor:cellObj(o,['RECEBEDOR']),
+003348:         pixDestino:cellObj(o,['PIX_DESTINO','PIX DESTINO']),
+003349:         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
+003350:         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
+003351:         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
+003352:         codigoProduto:cellObj(o,['IDENTIFICADOR','IDENTIFICADOR_PRODUTO','IDENTIFICADOR PRODUTO','COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+003353:         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+003354:         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
+003355:         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
+003356:         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
+003357:       };
+003358:     }
+003359: 
+003360:     function pagamentoStatusClasse_(status){
+003361:       const st=normalizar(status);
+003362:       if(st.includes('PAGO')||st.includes('APROV'))return {card:'',badge:''};
+003363:       if(st.includes('ANALISE')||st.includes('ANÁLISE'))return {card:'warn',badge:'warn'};
+003364:       if(st.includes('ERRO')||st.includes('DUPLIC')||st.includes('RECUS'))return {card:'danger',badge:'danger'};
+003365:       return {card:'muted',badge:'muted'};
+003366:     }
+003367: 
+003368:     function formatarPartesPagamento_(v){
+003369:       if(v===undefined||v===null||String(v).trim()==='')return '-';
+003370:       const raw=String(v).trim();
+003371:       if(!raw)return '-';
+003372:       if(raw.includes('/'))return raw;
+003373:       if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+003374:       if(/^integral$/i.test(raw))return '1/1';
+003375:       const n=num(raw);
+003376:       if(!n)return raw;
+003377:       if(Math.abs(n-1)<0.0001)return '1/1';
+003378:       if(n>0&&n<1){
+003379:         const partes=Math.round(1/n);
+003380:         return partes>1?'1/'+partes:String(n).replace('.',',');
+003381:       }
+003382:       return '1/'+n;
+003383:     }
+003384: 
+003385:     function abrirComprovanteAdmin(url){
+003386:       if(!url)return toast('Comprovante não localizado.','warn');
+003387:       window.open(url,'_blank','noopener');
+003388:     }
+003389: 
+003390:     function confirmarPagamentoManualAdmin(linha){
+003391:       abrirModal('Confirmar pagamento',`
+003392:         <div class="notice warn">Deseja marcar este pagamento como <strong>Pago</strong>?</div>
+003393:         <p>Essa ação registra a confirmação manual do administrador na linha ${escapeHtml(linha)}.</p>
+003394:         <div class="actions" style="justify-content:flex-end;">
+003395:           <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003396:           <button class="btn" onclick="executarConfirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>
+003397:         </div>
+003398:       `);
+003399:     }
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 2 | LINHA ORIGINAL 3356
+003326:             ${url?`<button class="btn btn-blue" onclick="abrirComprovanteAdmin('${escapeAttr(url)}')">Ver comprovante</button>`:''}
+003327:             <button class="btn btn-light" onclick="reprocessarPagamentoAdmin(${linha})">Reprocessar OCR</button>
+003328:             ${!normalizar(o.status).includes('PAGO')?`<button class="btn" onclick="confirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>`:''}
+003329:           </div>
+003330:         </article>
+003331:       `;
+003332:     }
+003333: 
+003334:     function pagamentoObj_(headers,row){
+003335:       const o=rowObj(headers,row);
+003336:       return {
+003337:         data:cellObj(o,['DATA']),
+003338:         email:cellObj(o,['EMAIL','E-MAIL']),
+003339:         loteria:cellObj(o,['LOTERIA','BOLAO','BOLÃO']),
+003340:         urlComprovante:cellObj(o,['URL_COMPROVANTE','URL COMPROVANTE']),
+003341:         status:cellObj(o,['STATUS']),
+003342:         pagador:cellObj(o,['PAGADOR']),
+003343:         valor:cellObj(o,['VALOR']),
+003344:         idTransacao:cellObj(o,['ID_TRANSACAO','ID TRANSAÇÃO','ID TRANSACAO']),
+003345:         autenticacao:cellObj(o,['AUTENTICACAO','AUTENTICAÇÃO']),
+003346:         arquivoUrl:cellObj(o,['ARQUIVO_URL','ARQUIVO URL']),
+003347:         recebedor:cellObj(o,['RECEBEDOR']),
+003348:         pixDestino:cellObj(o,['PIX_DESTINO','PIX DESTINO']),
+003349:         validacao:cellObj(o,['VALIDACAO','VALIDAÇÃO','OBS']),
+003350:         mesReferencia:cellObj(o,['MES_REFERENCIA','MÊS_REFERENCIA','MES REFERENCIA']),
+003351:         tipoCota:cellObj(o,['TIPO_COTA','TIPO COTA']),
+003352:         codigoProduto:cellObj(o,['IDENTIFICADOR','IDENTIFICADOR_PRODUTO','IDENTIFICADOR PRODUTO','COD_PRODUTO','CÓD_PRODUTO','CODIGO_PRODUTO','CÓDIGO_PRODUTO','PRODUTO_CODIGO','PRODUTO CÓDIGO']),
+003353:         partesCota:cellObj(o,['PARTES_COTA','PARTES COTA','PARTES_EQUIVALENTES','PARTES EQUIVALENTES','QTD_PARTES','QTD PARTES','PARTES','FRACAO_COTA','FRAÇÃO_COTA']),
+003354:         participantesCota:cellObj(o,['PARTICIPANTES_COTA','PARTICIPANTES COTA','PARTICIPANTES_DIVISAO','PARTICIPANTES DIVISAO','NOMES_PARTES','NOMES PARTES']),
+003355:         linhaPlanilha:cellObj(o,['_LINHA_PLANILHA','LINHA_PLANILHA','LINHA PLANILHA']),
+003356:         _linhaPlanilha:cellObj(o,['_LINHA_PLANILHA'])
+003357:       };
+003358:     }
+003359: 
+003360:     function pagamentoStatusClasse_(status){
+003361:       const st=normalizar(status);
+003362:       if(st.includes('PAGO')||st.includes('APROV'))return {card:'',badge:''};
+003363:       if(st.includes('ANALISE')||st.includes('ANÁLISE'))return {card:'warn',badge:'warn'};
+003364:       if(st.includes('ERRO')||st.includes('DUPLIC')||st.includes('RECUS'))return {card:'danger',badge:'danger'};
+003365:       return {card:'muted',badge:'muted'};
+003366:     }
+003367: 
+003368:     function formatarPartesPagamento_(v){
+003369:       if(v===undefined||v===null||String(v).trim()==='')return '-';
+003370:       const raw=String(v).trim();
+003371:       if(!raw)return '-';
+003372:       if(raw.includes('/'))return raw;
+003373:       if(/[A-Za-zÀ-ÿ]/.test(raw) && !/^integral$/i.test(raw))return raw;
+003374:       if(/^integral$/i.test(raw))return '1/1';
+003375:       const n=num(raw);
+003376:       if(!n)return raw;
+003377:       if(Math.abs(n-1)<0.0001)return '1/1';
+003378:       if(n>0&&n<1){
+003379:         const partes=Math.round(1/n);
+003380:         return partes>1?'1/'+partes:String(n).replace('.',',');
+003381:       }
+003382:       return '1/'+n;
+003383:     }
+003384: 
+003385:     function abrirComprovanteAdmin(url){
+003386:       if(!url)return toast('Comprovante não localizado.','warn');
+003387:       window.open(url,'_blank','noopener');
+003388:     }
+003389: 
+003390:     function confirmarPagamentoManualAdmin(linha){
+003391:       abrirModal('Confirmar pagamento',`
+003392:         <div class="notice warn">Deseja marcar este pagamento como <strong>Pago</strong>?</div>
+003393:         <p>Essa ação registra a confirmação manual do administrador na linha ${escapeHtml(linha)}.</p>
+003394:         <div class="actions" style="justify-content:flex-end;">
+003395:           <button class="btn btn-light" onclick="fecharModal()">Cancelar</button>
+003396:           <button class="btn" onclick="executarConfirmarPagamentoManualAdmin(${linha})">Confirmar pagamento</button>
+003397:         </div>
+003398:       `);
+003399:     }
+003400: 
+003401:     async function executarConfirmarPagamentoManualAdmin(linha){
+003402:       linha=Number(linha||0);
+003403:       fecharModal();
+003404:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003405:       try{
+003406:         await api('confirmarPagamentoManual',{linha:linha},[linha]);
+003407:         toast('Pagamento confirmado.');
+003408:         renderPagamentosAdminTab('efetuados');
+003409:       }catch(err){toast(err.message,'error')}
+003410:     }
+003411: 
+003412:     async function reprocessarPagamentoAdmin(linha){
+003413:       linha=Number(linha||0);
+003414:       if(!linha){toast('Linha real do pagamento não localizada. Atualize a página e tente novamente.','error');return;}
+003415:       try{
+003416:         toast('Solicitando reprocessamento OCR da linha '+linha+'...','info');
+003417:         await api('reprocessarPagamentoLinha',{linha:linha},[linha]);
+003418:         toast('Reprocessamento concluído/solicitado.');
+003419:         renderPagamentosAdminTab('efetuados');
+003420:       }catch(err){toast(err.message,'error')}
+003421:     }
+003422: 
+003423:     function filtrarPagamentosAdmin(){
+003424:       const cache=ESTADO.pagamentosAdminCache||{headers:[],rows:[]};
+003425:       const termo=normalizar(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+003426:       const status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+003427:       const mes=normalizar(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'');
+003428:       const filtradas=(cache.rows||[]).filter(row=>{
+003429:         const o=pagamentoObj_(cache.headers,row);
+003430:         const texto=normalizar(Object.values(o).join(' | '));
+003431:         const st=normalizar(o.status);
+003432:         const mesLinha=normalizar(o.mesReferencia||o.data||'');
+003433:         if(termo&&!texto.includes(termo))return false;
+003434:         if(mes&&!mesLinha.includes(mes))return false;
+003435:         if(status==='PAGO'&&!(st.includes('PAGO')||st.includes('APROV')))return false;
+003436:         if(status==='ANALISE'&&!(st.includes('ANALISE')||st.includes('ANÁLISE')))return false;
+003437:         if(status==='PENDENTE'&&(st.includes('PAGO')||st.includes('APROV')||st.includes('ANALISE')||st.includes('ANÁLISE')||st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003438:         if(status==='ERRO'&&!(st.includes('ERRO')||st.includes('DUPLIC')))return false;
+003439:         return true;
+003440:       });
+003441:       const box=document.getElementById('pagamentosCardsAdminBox');
+003442:       if(box)box.innerHTML=renderListaPagamentosCardsAdmin_(cache.headers,filtradas);
+003443:     }
+003444: 
+003445:     function limparFiltrosPagamentosAdmin(){
+003446:       if(document.getElementById('payBuscaAdmin'))document.getElementById('payBuscaAdmin').value='';
+003447:       if(document.getElementById('payStatusAdmin'))document.getElementById('payStatusAdmin').value='TODOS';
+003448:       if(document.getElementById('payMesAdmin'))document.getElementById('payMesAdmin').value='';
+003449:       filtrarPagamentosAdmin();
+003450:     }
+003451: 
+003452:     function rowObj(headers,row){const o={};(headers||[]).forEach((h,i)=>o[normalizar(h)]=row[i]);return o}
+003453:     function cellObj(o,names){for(const n of names){const k=normalizar(n);if(Object.prototype.hasOwnProperty.call(o,k))return o[k]}return ''}
+003454:     function linhaPlanilha(i){return Number(i)+2}
+003455:     async function chamarAcaoAdmin(action,args,okMsg){try{const r=await api(action,{},args||[]);await firebaseSincronizarResultadoAdmin_(action,r);toast((r&&r.msg)||okMsg||'Ação executada.');if(ESTADO.view==='solicitacoes')renderSolicitacoesAdmin();else if(ESTADO.view==='pagamentos')renderPagamentosAdmin();else if(ESTADO.view==='usuarios')renderUsuariosAdmin();else if(ESTADO.view==='config')renderConfigBoloesAdmin();else if(ESTADO.view==='baseLoterias')renderBaseLoteriasAdmin();else if(ESTADO.view==='participantes')renderParticipantesBolaoAdmin();else if(ESTADO.view==='boloes')renderBoloes('ativos')}catch(err){toast(firebaseMensagemErro_(err),'error')}}
+--------------------------------------------------------------------------------------------------------------
+OCORRÊNCIA 3 | LINHA ORIGINAL 26911
+026881:       var k=mes+'|'+key356(lot);
+026882:       if(!grupos[k]) grupos[k]={mes:mes,loteria:lot,valor:0,cotas:0,qtd:0,valorCota:valorCota};
+026883:       grupos[k].valor+=valor;
+026884:       grupos[k].cotas+=cotas;
+026885:       grupos[k].qtd++;
+026886:       if(!grupos[k].valorCota && valorCota>0) grupos[k].valorCota=valorCota;
+026887:     });
+026888: 
+026889:     var listaG=Object.keys(grupos).sort().map(function(k){
+026890:       var g=grupos[k];
+026891:       g.valor=Math.round(g.valor*100)/100;
+026892:       g.cotas=Math.round(g.cotas*1000)/1000;
+026893:       return g;
+026894:     });
+026895: 
+026896:     if(!listaG.length) return '<div class="notice warn">Nenhum pagamento confirmado para detalhar por mês/loteria.</div>';
+026897: 
+026898:     return '<div class="pay-summary-grid">'+listaG.map(function(g){
+026899:       var cotaInfo=g.valorCota>0 ? ' · valor cota '+esc356(moeda356(g.valorCota)) : '';
+026900:       return '<div class="pay-summary-card"><b>'+esc356(formatarMesReferenciaTela356(g.mes))+' · '+esc356(g.loteria)+'</b><strong>'+esc356(moeda356(g.valor))+'</strong><div class="pay-admin-sub">'+esc356(g.qtd)+' comprovante(s) · '+esc356(cotasTexto356(g.cotas))+' cota(s)'+cotaInfo+'</div></div>';
+026901:     }).join('')+'</div>';
+026902:   }
+026903: 
+026904:   window.PSS_FORMATAR_MES_REFERENCIA_TELA = formatarMesReferenciaTela356;
+026905:   window.detalhePagamentosMesBolaoV356_ = detalhePagamentosMesBolaoV356;
+026906: 
+026907:   var baseRenderPagamentoCard356 = window.renderPagamentoCardAdmin_;
+026908:   window.renderPagamentoCardAdmin_ = renderPagamentoCardAdmin_ = function(headers,row,i){
+026909:     try{
+026910:       var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(headers,row) : {};
+026911:       var linha=Number(o.linhaPlanilha||o._linhaPlanilha||o.linha||0)||i+2;
+026912:       var cls=(typeof pagamentoStatusClasse_==='function') ? pagamentoStatusClasse_(o.status) : {card:'',badge:''};
+026913:       var url=o.urlComprovante||o.arquivoUrl||'';
+026914:       var mesTela=formatarMesReferenciaTela356(o.mesReferencia||'-');
+026915: 
+026916:       return ''
+026917:         + '<article class="pay-admin-card-pro '+esc356(cls.card||'')+'" data-pay-row="'+esc356(linha)+'">'
+026918:         + '<div class="pay-admin-head">'
+026919:         + '<div>'
+026920:         + '<div class="pay-admin-title">'+esc356(o.loteria||'Pagamento sem loteria informada')+'</div>'
+026921:         + '<div class="pay-admin-sub">'+esc356(o.email||'-')+' • '+esc356((typeof formatarDataHoraPtBR==='function')?formatarDataHoraPtBR(o.data||'-'):(o.data||'-'))+'</div>'
+026922:         + '</div>'
+026923:         + '<span class="pay-admin-status '+esc356(cls.badge||'')+'">'+esc356(o.status||'Pendente')+'</span>'
+026924:         + '</div>'
+026925:         + '<div class="pay-admin-grid">'
+026926:         + '<div class="pay-admin-info"><b>Valor</b><span>'+esc356(o.valor?moeda356(o.valor):'-')+'</span></div>'
+026927:         + '<div class="pay-admin-info"><b>Pagador</b><span>'+esc356(o.pagador||'-')+'</span></div>'
+026928:         + '<div class="pay-admin-info"><b>Recebedor</b><span>'+esc356(o.recebedor||'-')+'</span></div>'
+026929:         + '<div class="pay-admin-info"><b>Mês referência</b><span>'+esc356(mesTela)+'</span></div>'
+026930:         + '<div class="pay-admin-info"><b>ID transação</b><span>'+esc356(o.idTransacao||'-')+'</span></div>'
+026931:         + '<div class="pay-admin-info"><b>Autenticação</b><span>'+esc356(o.autenticacao||'-')+'</span></div>'
+026932:         + '<div class="pay-admin-info"><b>Tipo cota</b><span>'+esc356(o.tipoCota||'-')+'</span></div>'
+026933:         + '<div class="pay-admin-info"><b>Identificador / Cód. produto</b><span>'+esc356(o.codigoProduto||'-')+'</span></div>'
+026934:         + '<div class="pay-admin-info"><b>Partes</b><span>'+esc356((typeof formatarPartesPagamento_==='function')?formatarPartesPagamento_(o.partesCota):(o.partesCota||'-'))+'</span></div>'
+026935:         + '<div class="pay-admin-info full"><b>Validação / observação</b><span>'+esc356(o.validacao||'-')+'</span></div>'
+026936:         + (o.participantesCota?'<div class="pay-admin-info full"><b>Participantes da cota</b><span>'+esc356(o.participantesCota)+'</span></div>':'')
+026937:         + '</div>'
+026938:         + '<div class="pay-card-actions">'
+026939:         + (url?'<button class="btn btn-blue" onclick="abrirComprovanteAdmin(\''+esc356(url).replace(/'/g,'&#039;')+'\')">Ver comprovante</button>':'')
+026940:         + '<button class="btn btn-light" onclick="reprocessarPagamentoAdmin('+esc356(linha)+')">Reprocessar OCR</button>'
+026941:         + (!(norm356(o.status).indexOf('PAGO')>=0)?'<button class="btn" onclick="confirmarPagamentoManualAdmin('+esc356(linha)+')">Confirmar pagamento</button>':'')
+026942:         + '</div>'
+026943:         + '</article>';
+026944:     }catch(e){
+026945:       return baseRenderPagamentoCard356 ? baseRenderPagamentoCard356(headers,row,i) : '<div class="notice error">'+esc356(e.message||e)+'</div>';
+026946:     }
+026947:   };
+026948: 
+026949:   window.renderListaPagamentosCardsAdmin_ = renderListaPagamentosCardsAdmin_ = function(headers,rows){
+026950:     rows=rows||[];
+026951:     if(!rows.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+026952:     return '<div class="pay-list">'+rows.map(function(row,i){return window.renderPagamentoCardAdmin_(headers,row,i);}).join('')+'</div>';
+026953:   };
+026954: 
+026955:   window.renderPagamentosEfetuadosAdmin_ = renderPagamentosEfetuadosAdmin_ = function(headers,rows){
+026956:     headers=headers||[];
+026957:     rows=rows||[];
+026958:     if(!headers.length) return '<div class="notice warn">Nenhum pagamento localizado.</div>';
+026959: 
+026960:     var resumo='';
+026961:     try{ resumo = (typeof renderResumoPagamentosAdmin_==='function') ? renderResumoPagamentosAdmin_(headers,rows) : ''; }catch(e){ resumo=''; }
+026962: 
+026963:     var lista='';
+026964:     try{ lista = window.renderListaPagamentosCardsAdmin_(headers,rows); }
+026965:     catch(e){ lista='<div class="notice error">'+esc356(e.message||e)+'</div>'; }
+026966: 
+026967:     return ''
+026968:       + '<h3 style="margin-top:4px;">📊 Detalhamento por mês, ano e loteria</h3>'
+026969:       + detalhePagamentosMesBolaoV356(headers,rows)
+026970:       + resumo
+026971:       + '<div class="pay-filterbar">'
+026972:       + '<div class="field"><label>Buscar</label><input id="payBuscaAdmin" placeholder="Buscar por e-mail, loteria, pagador, ID..." oninput="filtrarPagamentosAdmin()"></div>'
+026973:       + '<div class="field"><label>Status</label><select id="payStatusAdmin" onchange="filtrarPagamentosAdmin()"><option value="TODOS">Todos</option><option value="PAGO">Pago</option><option value="ANALISE">Em análise</option><option value="PENDENTE">Pendente</option><option value="ERRO">Erro/Duplicado</option></select></div>'
+026974:       + '<div class="field"><label>Mês</label><input id="payMesAdmin" placeholder="MM/AAAA" oninput="filtrarPagamentosAdmin()"></div>'
+026975:       + '<button class="btn btn-light" onclick="limparFiltrosPagamentosAdmin()">Limpar</button>'
+026976:       + '</div>'
+026977:       + '<div id="pagamentosCardsAdminBox">'+lista+'</div>';
+026978:   };
+026979: 
+026980:   window.filtrarPagamentosAdmin = filtrarPagamentosAdmin = function(){
+026981:     var cache=window.ESTADO&&ESTADO.pagamentosAdminCache?ESTADO.pagamentosAdminCache:{headers:[],rows:[]};
+026982:     var termo=norm356(document.getElementById('payBuscaAdmin')?document.getElementById('payBuscaAdmin').value:'');
+026983:     var status=document.getElementById('payStatusAdmin')?document.getElementById('payStatusAdmin').value:'TODOS';
+026984:     var mesDigitado=String(document.getElementById('payMesAdmin')?document.getElementById('payMesAdmin').value:'').trim();
+026985:     var mesCompacto=compactMes356(mesDigitado);
+026986:     var mesNorm=norm356(mesDigitado);
+026987: 
+026988:     var filtradas=(cache.rows||[]).filter(function(row){
+026989:       var o=(typeof pagamentoObj_==='function') ? pagamentoObj_(cache.headers,row) : {};
+026990:       var st=norm356(o.status);
+026991:       var mesTela=formatarMesReferenciaTela356(o.mesReferencia||o.data||'');
+026992:       var texto=norm356(Object.values(o).join(' | ')+' | '+mesTela);
+026993: 
+026994:       if(termo && texto.indexOf(termo)<0) return false;
+026995: 
+026996:       if(mesDigitado){
+026997:         var linhaCompacta=compactMes356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+026998:         var linhaNorm=norm356(mesTela+' '+(o.mesReferencia||'')+' '+(o.data||''));
+026999:         if(mesCompacto){
+027000:           if(linhaCompacta.indexOf(mesCompacto)<0) return false;
+027001:         }else if(linhaNorm.indexOf(mesNorm)<0){
+027002:           return false;
+027003:         }
+027004:       }
+027005: 
+027006:       if(status==='PAGO' && !(st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0)) return false;
+027007:       if(status==='ANALISE' && !(st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0)) return false;
+027008:       if(status==='PENDENTE' && (st.indexOf('PAGO')>=0 || st.indexOf('APROV')>=0 || st.indexOf('ANALISE')>=0 || st.indexOf('ANÁLISE')>=0 || st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+027009:       if(status==='ERRO' && !(st.indexOf('ERRO')>=0 || st.indexOf('DUPLIC')>=0)) return false;
+027010:       return true;
+
+==============================================================================================================
+TERMO: comprovanteUrl | TOTAL: 0
+
+==============================================================================================================
+TERMO: driveFileId | TOTAL: 0
+
+==============================================================================================================
+TERMO: arquivoId | TOTAL: 0
