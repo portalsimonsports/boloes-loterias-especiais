@@ -4,7 +4,7 @@
   if (window.PSS_V364_EXCLUSAO_RAPIDA_APLICADA) return;
   window.PSS_V364_EXCLUSAO_RAPIDA_APLICADA = true;
 
-  var VERSAO = 'V364_EXCLUSAO_RAPIDA_SEGURA';
+  var VERSAO = 'V365_CORRIGE_BOTOES_PAGAMENTOS';
   var exclusaoPendente = null;
   var timerBotoes = 0;
 
@@ -178,6 +178,44 @@
   };
   window.executarExcluirComprovanteV363 = window.executarExcluirComprovanteV364;
 
+  function ehConfirmacaoManual(botao) {
+    if (!botao) return false;
+    var onclick = txt(botao.getAttribute('onclick'));
+    return /confirmarPagamentoManualAdmin\s*\(/i.test(onclick);
+  }
+
+  function restaurarConfirmacaoManual(botao) {
+    if (!ehConfirmacaoManual(botao)) return;
+    botao.textContent = 'Confirmar pagamento';
+    botao.classList.remove('btn-danger', 'pss-v363-excluir-comprovante', 'pss-v364-excluir-comprovante');
+    botao.classList.add('btn');
+    botao.removeAttribute('data-linha-pagamento');
+  }
+
+  function ehExclusaoReal(botao) {
+    if (!botao || ehConfirmacaoManual(botao)) return false;
+    var onclick = txt(botao.getAttribute('onclick'));
+    return botao.classList.contains('pss-v363-excluir-comprovante') ||
+      botao.classList.contains('pss-v364-excluir-comprovante') ||
+      /abrirExcluirComprovanteV36[34]\s*\(|executarExcluirComprovanteV36[34]\s*\(/i.test(onclick) ||
+      botao.hasAttribute('data-linha-pagamento');
+  }
+
+  function configurarExclusao(botao, card, linha) {
+    botao.type = 'button';
+    botao.classList.add('btn', 'btn-danger', 'pss-v363-excluir-comprovante', 'pss-v364-excluir-comprovante');
+    botao.textContent = 'Excluir comprovante';
+    botao.setAttribute('data-linha-pagamento', String(linha));
+    botao.removeAttribute('onclick');
+    botao.onclick = function (evento) {
+      if (evento) {
+        evento.preventDefault();
+        evento.stopPropagation();
+      }
+      abrir(dadosCard(card));
+    };
+  }
+
   function preparar() {
     document.querySelectorAll('.pay-admin-card-pro, .payment-admin-card').forEach(function (card) {
       var linha = linhaCard(card);
@@ -185,17 +223,34 @@
       var acoes = card.querySelector('.pay-card-actions');
       if (!acoes) return;
 
-      var antigo = card.querySelector('.pss-v363-excluir-comprovante');
-      if (antigo) antigo.remove();
-      if (card.querySelector('.pss-v364-excluir-comprovante')) return;
+      var botoes = Array.prototype.slice.call(acoes.querySelectorAll('button'));
+      botoes.forEach(restaurarConfirmacaoManual);
 
-      var botao = document.createElement('button');
-      botao.type = 'button';
-      botao.className = 'btn btn-danger pss-v364-excluir-comprovante';
-      botao.textContent = 'Excluir comprovante';
-      botao.setAttribute('data-linha-pagamento', String(linha));
-      botao.addEventListener('click', function () { abrir(dadosCard(card)); });
-      acoes.appendChild(botao);
+      var exclusoes = botoes.filter(ehExclusaoReal);
+      var botaoExcluir = null;
+
+      for (var i = exclusoes.length - 1; i >= 0; i--) {
+        if (exclusoes[i].classList.contains('pss-v364-excluir-comprovante')) {
+          botaoExcluir = exclusoes[i];
+          break;
+        }
+      }
+      if (!botaoExcluir && exclusoes.length) botaoExcluir = exclusoes[exclusoes.length - 1];
+
+      exclusoes.forEach(function (botao) {
+        if (botao !== botaoExcluir && botao.parentNode) botao.parentNode.removeChild(botao);
+      });
+
+      if (!botaoExcluir) {
+        botaoExcluir = document.createElement('button');
+        acoes.appendChild(botaoExcluir);
+      }
+
+      configurarExclusao(botaoExcluir, card, linha);
+
+      if (acoes.lastElementChild !== botaoExcluir) {
+        acoes.appendChild(botaoExcluir);
+      }
     });
   }
 
@@ -218,7 +273,9 @@
       action: 'excluirComprovantePagamentoV364',
       timeoutMs: 60000,
       assinaturaRegistro: true,
-      leituraBackend: 'em bloco'
+      leituraBackend: 'em bloco',
+      confirmarPagamentoPreservado: true,
+      umBotaoExcluirPorCartao: true
     };
   };
 })();
