@@ -46,7 +46,13 @@
           function () {
             carregarScript(
               'assets/pss-v371-pagamentos-pagos.js?v=V371_PAGAMENTOS_PAGOS_DIRETO',
-              'data-pss-v371-pagamentos-pagos'
+              'data-pss-v371-pagamentos-pagos',
+              function () {
+                carregarScript(
+                  'assets/pss-v381-cotas-vivas.js?v=V381_COTAS_VIVAS',
+                  'data-pss-v381-cotas-vivas'
+                );
+              }
             );
           }
         );
