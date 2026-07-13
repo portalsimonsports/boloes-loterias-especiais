@@ -8,6 +8,8 @@
   var INTERVALO = 20000;
   var timer = 0;
   var ultimaAssinatura = '';
+  var aplicando = false;
+  var reagendarObserver = 0;
 
   function numero(valor) {
     if (typeof valor === 'number') return isFinite(valor) ? valor : 0;
@@ -92,8 +94,14 @@
       if (!rotulo || !valor) return;
 
       var texto = normalizar(rotulo.textContent);
-      if (texto === 'COTAS DISPONIVEIS') valor.textContent = formatar(resumo.disponiveis);
-      if (texto === 'TOTAL DE COTAS' || texto === 'TOTAL COTAS') valor.textContent = formatar(resumo.totalCotas);
+      var novo = '';
+
+      if (texto === 'COTAS DISPONIVEIS') novo = formatar(resumo.disponiveis);
+      if (texto === 'TOTAL DE COTAS' || texto === 'TOTAL COTAS') novo = formatar(resumo.totalCotas);
+
+      if (novo && String(valor.textContent || '').trim() !== novo) {
+        valor.textContent = novo;
+      }
     });
   }
 
@@ -133,37 +141,57 @@
       Array.prototype.forEach.call(card.querySelectorAll('*'), function (el) {
         if (el.children.length) return;
         var texto = String(el.textContent || '').trim();
+        var novo = '';
+
         if (/^Dispon[ií]veis\s*:\s*[-0-9.,]+$/i.test(texto)) {
-          el.textContent = 'Disponíveis: ' + formatar(saldo);
+          novo = 'Disponíveis: ' + formatar(saldo);
         }
         if (/^Cotas\s+dispon[ií]veis\s*:\s*[-0-9.,]+$/i.test(texto)) {
-          el.textContent = 'Cotas disponíveis: ' + formatar(saldo);
+          novo = 'Cotas disponíveis: ' + formatar(saldo);
         }
+
+        if (novo && texto !== novo) el.textContent = novo;
       });
 
-      card.setAttribute('data-pss-v381-cotas', formatar(confirmadas));
-      card.setAttribute('data-pss-v381-disponiveis', formatar(saldo));
+      var cotasTexto = formatar(confirmadas);
+      var saldoTexto = formatar(saldo);
+
+      if (card.getAttribute('data-pss-v381-cotas') !== cotasTexto) {
+        card.setAttribute('data-pss-v381-cotas', cotasTexto);
+      }
+      if (card.getAttribute('data-pss-v381-disponiveis') !== saldoTexto) {
+        card.setAttribute('data-pss-v381-disponiveis', saldoTexto);
+      }
     });
   }
 
   function aplicar(dados) {
+    if (aplicando) return;
+
     var resumo = totais(dados);
     if (!resumo.lista.length) return;
 
-    var assinatura = resumo.lista.map(function (b) {
-      return [
-        b.id || b.ID || '',
-        b.cotasConfirmadas || b.cotasAdquiridas || b.COTAS_CONFIRMADAS || '',
-        b.cotasDisponiveis || b.COTAS_DISPONIVEIS || ''
-      ].join(':');
-    }).join('|');
+    aplicando = true;
+    try {
+      var assinatura = resumo.lista.map(function (b) {
+        return [
+          b.id || b.ID || '',
+          b.cotasConfirmadas || b.cotasAdquiridas || b.COTAS_CONFIRMADAS || '',
+          b.cotasDisponiveis || b.COTAS_DISPONIVEIS || ''
+        ].join(':');
+      }).join('|');
 
-    atualizarStatCards(resumo);
-    atualizarCardsBoloes(resumo);
+      atualizarStatCards(resumo);
+      atualizarCardsBoloes(resumo);
 
-    ultimaAssinatura = assinatura;
-    window.PSS_V381_ULTIMAS_COTAS = resumo;
-    document.documentElement.setAttribute('data-pss-v381-cotas-vivas', '1');
+      ultimaAssinatura = assinatura;
+      window.PSS_V381_ULTIMAS_COTAS = resumo;
+      if (document.documentElement.getAttribute('data-pss-v381-cotas-vivas') !== '1') {
+        document.documentElement.setAttribute('data-pss-v381-cotas-vivas', '1');
+      }
+    } finally {
+      aplicando = false;
+    }
   }
 
   function carregar() {
@@ -191,9 +219,12 @@
   }
 
   var observador = new MutationObserver(function () {
-    if (window.PSS_V381_ULTIMAS_COTAS) aplicar({
-      boloesAtivos: window.PSS_V381_ULTIMAS_COTAS.lista
-    });
+    if (aplicando || !window.PSS_V381_ULTIMAS_COTAS) return;
+
+    clearTimeout(reagendarObserver);
+    reagendarObserver = setTimeout(function () {
+      aplicar({ boloesAtivos: window.PSS_V381_ULTIMAS_COTAS.lista });
+    }, 60);
   });
 
   function observar() {
