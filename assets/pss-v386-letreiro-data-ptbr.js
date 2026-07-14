@@ -5,8 +5,18 @@
   window.PSS_V387_LETREIRO_DATA_PTBR = true;
 
   var RAF_PENDENTE = false;
-  var OBSERVADOR = null;
+  var OBSERVADOR_TICKER = null;
+  var OBSERVADOR_PAGINA = null;
   var TICKER_ATUAL = null;
+  var TENTATIVAS = [0, 400, 1200, 3000, 7000, 15000];
+  var SELETOR = [
+    '#resultadosPublicosTickerV213',
+    '[id*="resultadosPublicosTicker"]',
+    '[id*="resultados"][class*="ticker"]',
+    '.resultados-ticker',
+    '.resultados-ticker-track',
+    '.ticker-track'
+  ].join(',');
 
   function dois(valor) {
     return String(Number(valor) || 0).padStart(2, '0');
@@ -55,7 +65,6 @@
   function corrigirTexto(texto) {
     var saida = String(texto == null ? '' : texto);
 
-    /* Concurso e data vieram colados: 373407/13/2026. */
     saida = saida.replace(
       /(\d{3,6})(\d{2})\/(\d{2})\/(\d{4})/g,
       function (_, concurso, primeiro, segundo, ano) {
@@ -63,7 +72,6 @@
       }
     );
 
-    /* Data isolada em formato americano ou brasileiro. */
     saida = saida.replace(
       /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g,
       function (_, primeiro, segundo, ano) {
@@ -71,7 +79,6 @@
       }
     );
 
-    /* Data ISO. */
     saida = saida.replace(
       /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g,
       function (_, ano, mes, dia) {
@@ -85,33 +92,10 @@
     return saida;
   }
 
-  function localizarTicker() {
-    var seletores = [
-      '#resultadosPublicosTickerV213',
-      '[id*="resultadosPublicosTicker"]',
-      '[id*="resultados"][class*="ticker"]',
-      '.resultados-ticker',
-      '.ticker-track'
-    ];
-
-    for (var i = 0; i < seletores.length; i += 1) {
-      var encontrado = document.querySelector(seletores[i]);
-      if (encontrado) return encontrado;
-    }
-
-    var candidatos = document.querySelectorAll('[id], [class]');
-    for (var j = 0; j < candidatos.length; j += 1) {
-      var texto = String(candidatos[j].textContent || '');
-      if (
-        /LOTOF[AÁ]CIL|QUINA|DUPLA SENA|LOTERIA FEDERAL/i.test(texto) &&
-        /\d{1,2}\/\d{1,2}\/\d{4}/.test(texto) &&
-        texto.length < 5000
-      ) {
-        return candidatos[j];
-      }
-    }
-
-    return null;
+  function localizarTicker(raiz) {
+    var escopo = raiz && raiz.querySelector ? raiz : document;
+    if (escopo.matches && escopo.matches(SELETOR)) return escopo;
+    return escopo.querySelector ? escopo.querySelector(SELETOR) : null;
   }
 
   function corrigirTicker(ticker) {
@@ -126,7 +110,9 @@
           if (!pai || /^(SCRIPT|STYLE|NOSCRIPT)$/i.test(pai.tagName)) {
             return NodeFilter.FILTER_REJECT;
           }
-          return NodeFilter.FILTER_ACCEPT;
+          return /\d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{4}-\d{1,2}-\d{1,2}/.test(node.nodeValue || '')
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_SKIP;
         }
       }
     );
@@ -160,13 +146,33 @@
     });
 
     ticker.setAttribute('lang', 'pt-BR');
-    ticker.setAttribute('data-pss-v387-data-ptbr', '1');
+    ticker.setAttribute('data-pss-v390-data-ptbr', '1');
     return mudou;
+  }
+
+  function observarTicker(ticker) {
+    if (OBSERVADOR_TICKER) OBSERVADOR_TICKER.disconnect();
+
+    OBSERVADOR_TICKER = new MutationObserver(function (registros) {
+      var relevante = registros.some(function (registro) {
+        if (registro.type === 'characterData') return true;
+        return registro.addedNodes && registro.addedNodes.length > 0;
+      });
+      if (relevante) agendar();
+    });
+
+    OBSERVADOR_TICKER.observe(ticker, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
   }
 
   function executar() {
     RAF_PENDENTE = false;
-    var ticker = localizarTicker();
+    if (document.hidden) return;
+
+    var ticker = localizarTicker(document);
     if (!ticker) return;
 
     if (ticker !== TICKER_ATUAL) {
@@ -183,42 +189,45 @@
     window.requestAnimationFrame(executar);
   }
 
-  function observarTicker(ticker) {
-    if (OBSERVADOR) OBSERVADOR.disconnect();
+  function nodePodeConterTicker(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (node.matches && node.matches(SELETOR)) return true;
+    return !!(node.querySelector && node.querySelector(SELETOR));
+  }
 
-    OBSERVADOR = new MutationObserver(function () {
-      agendar();
+  function observarPagina() {
+    if (!document.body || OBSERVADOR_PAGINA) return;
+
+    OBSERVADOR_PAGINA = new MutationObserver(function (registros) {
+      var tickerNovo = null;
+
+      registros.some(function (registro) {
+        return Array.prototype.some.call(registro.addedNodes || [], function (node) {
+          if (!nodePodeConterTicker(node)) return false;
+          tickerNovo = localizarTicker(node) || localizarTicker(document);
+          return !!tickerNovo;
+        });
+      });
+
+      if (tickerNovo && tickerNovo !== TICKER_ATUAL) agendar();
     });
 
-    OBSERVADOR.observe(ticker, {
+    OBSERVADOR_PAGINA.observe(document.body, {
       childList: true,
-      subtree: true,
-      characterData: true
+      subtree: true
     });
   }
 
   function iniciar() {
-    agendar();
-
-    /* Captura o ticker quando ele for criado ou substituído. */
-    var observadorPagina = new MutationObserver(function () {
-      var ticker = localizarTicker();
-      if (ticker && ticker !== TICKER_ATUAL) agendar();
+    observarPagina();
+    TENTATIVAS.forEach(function (atraso) {
+      window.setTimeout(agendar, atraso);
     });
-
-    observadorPagina.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    /* Reforço leve para atualizações assíncronas do letreiro. */
-    var repeticoes = 0;
-    var intervalo = window.setInterval(function () {
-      repeticoes += 1;
-      if (!document.hidden) agendar();
-      if (repeticoes >= 90) window.clearInterval(intervalo);
-    }, 2000);
   }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) agendar();
+  }, { passive: true });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciar, { once: true });
@@ -229,5 +238,14 @@
   window.PSS_V387_CORRIGIR_LETREIRO = agendar;
   window.PSS_V387_FORMATAR_DATA_PTBR = function (valor) {
     return corrigirTexto(String(valor == null ? '' : valor));
+  };
+  window.PSS_V390_DIAGNOSTICAR_LETREIRO = function () {
+    return {
+      sucesso: true,
+      versao: 'V390_LETREIRO_OBSERVER_OTIMIZADO',
+      tickerLocalizado: !!TICKER_ATUAL,
+      buscaGlobalPorTodosElementos: false,
+      intervaloContinuo: false
+    };
   };
 })();
