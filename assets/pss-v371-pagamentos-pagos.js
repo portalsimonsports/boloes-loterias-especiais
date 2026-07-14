@@ -4,14 +4,15 @@
   if (window.PSS_V371_PAGAMENTOS_PAGOS_APLICADO) return;
   window.PSS_V371_PAGAMENTOS_PAGOS_APLICADO = true;
 
-  /* Impede que filtros antigos sejam reinstalados nesta mesma página. */
   window.PSS_V368_PAGAMENTOS_PAGOS_RECOLHIDOS = true;
   window.PSS_V369_FILTRO_PAGAMENTOS_APLICADO = true;
   window.PSS_V370_FILTRO_PAGAMENTOS_APLICADO = true;
 
-  var VERSAO = 'V371_PAGAMENTOS_PAGOS_DIRETO';
+  var VERSAO = 'V390_PAGAMENTOS_OBSERVER_OTIMIZADO';
   var grupoAberto = '';
   var timer = 0;
+  var observer = null;
+  var ultimaAssinaturaDom = '';
 
   function texto(valor) {
     return String(valor == null ? '' : valor).replace(/\s+/g, ' ').trim();
@@ -126,7 +127,7 @@
 
   function limparVersoesAntigas(elemento) {
     elemento.classList.remove(
-      'pss-v368-resumo-toggle',
+      'pss-v368-resumo',
       'pss-v368-pago-oculto',
       'pss-v368-pago-aberto',
       'pss-v369-resumo',
@@ -161,11 +162,34 @@
     cartao.style.removeProperty('display');
   }
 
-  function aplicar() {
+  function assinaturaDom(listaResumos, cartoes) {
+    return [
+      grupoAberto,
+      listaResumos.map(function (resumo) {
+        var d = dadosResumo(resumo);
+        return d ? d.chave : '';
+      }).join(','),
+      cartoes.map(function (cartao) {
+        return [statusCartao(cartao), mesCartao(cartao), normalizar(tituloCartao(cartao))].join(':');
+      }).join(',')
+    ].join('|');
+  }
+
+  function aplicar(forcar) {
     instalarCss();
+
+    if (!document.querySelector('.pay-summary-card,.pay-admin-card-pro,.payment-admin-card')) {
+      ultimaAssinaturaDom = '';
+      return;
+    }
 
     var mapaGrupos = {};
     var listaResumos = resumos();
+    var cartoes = cartoesPagamento();
+    var assinatura = assinaturaDom(listaResumos, cartoes);
+
+    if (!forcar && assinatura === ultimaAssinaturaDom) return;
+    ultimaAssinaturaDom = assinatura;
 
     listaResumos.forEach(function (resumo) {
       var dados = dadosResumo(resumo);
@@ -182,7 +206,7 @@
 
     var selecionado = grupoAberto ? mapaGrupos[grupoAberto] : null;
 
-    cartoesPagamento().forEach(function (cartao) {
+    cartoes.forEach(function (cartao) {
       if (statusCartao(cartao) !== 'PAGO') {
         liberarNaoPago(cartao);
         return;
@@ -198,7 +222,8 @@
     if (!chave) return;
 
     grupoAberto = grupoAberto === chave ? '' : chave;
-    aplicar();
+    ultimaAssinaturaDom = '';
+    aplicar(true);
 
     if (grupoAberto) {
       setTimeout(function () {
@@ -227,21 +252,37 @@
     alternar(resumo);
   }, true);
 
-  function programar() {
+  function programar(forcar) {
     clearTimeout(timer);
-    timer = setTimeout(aplicar, 80);
+    timer = setTimeout(function () { aplicar(!!forcar); }, 140);
   }
 
-  var observer = new MutationObserver(function (registros) {
-    var mudou = registros.some(function (registro) {
-      return registro.addedNodes && registro.addedNodes.length;
-    });
-    if (mudou) programar();
-  });
+  function nodeRelevante(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (node.matches && node.matches('.pay-summary-card,.pay-admin-card-pro,.payment-admin-card,[data-view="pagamentos"]')) return true;
+    return !!(node.querySelector && node.querySelector('.pay-summary-card,.pay-admin-card-pro,.payment-admin-card,[data-view="pagamentos"]'));
+  }
 
-  observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
-  document.addEventListener('input', programar, true);
-  document.addEventListener('change', programar, true);
+  function iniciarObserver() {
+    if (observer) observer.disconnect();
+    var raiz = document.querySelector('.content') || document.querySelector('main') || document.body;
+    if (!raiz) return;
+
+    observer = new MutationObserver(function (registros) {
+      var relevante = registros.some(function (registro) {
+        return Array.prototype.some.call(registro.addedNodes || [], nodeRelevante);
+      });
+      if (relevante) programar(true);
+    });
+
+    observer.observe(raiz, { childList: true, subtree: true });
+  }
+
+  document.addEventListener('change', function (evento) {
+    var alvo = evento.target;
+    if (!alvo || !document.querySelector('.pay-summary-card,.pay-admin-card-pro,.payment-admin-card')) return;
+    programar(true);
+  }, true);
 
   try {
     if (typeof CONFIG !== 'undefined' && CONFIG) CONFIG.versao = VERSAO;
@@ -249,10 +290,19 @@
     localStorage.setItem('PSS_INDEX_VERSION', VERSAO);
   } catch (erroVersao) {}
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicar, { once: true });
-  else aplicar();
+  function iniciar() {
+    iniciarObserver();
+    aplicar(true);
+  }
 
-  window.PSS_V371_REAPLICAR = aplicar;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar, { once: true });
+  else iniciar();
+
+  window.PSS_V371_REAPLICAR = function () {
+    ultimaAssinaturaDom = '';
+    aplicar(true);
+  };
+
   window.PSS_V371_DIAGNOSTICAR = function () {
     var cartoes = cartoesPagamento();
     return {
@@ -267,7 +317,8 @@
       naoPagosVisiveis: cartoes.filter(function (cartao) {
         return statusCartao(cartao) !== 'PAGO' && cartao.style.display !== 'none';
       }).length,
-      regra: 'Todos os PAGO ocultos; somente o grupo clicado abre; não-PAGO permanece visível.'
+      observerRestrito: true,
+      listenerInputGlobal: false
     };
   };
 })();
