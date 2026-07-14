@@ -50,7 +50,13 @@
               function () {
                 carregarScript(
                   'assets/pss-v381-cotas-vivas.js?v=V381_COTAS_VIVAS',
-                  'data-pss-v381-cotas-vivas'
+                  'data-pss-v381-cotas-vivas',
+                  function () {
+                    carregarScript(
+                      'assets/pss-v386-letreiro-data-ptbr.js?v=V386_LETREIRO_DATA_PTBR',
+                      'data-pss-v386-letreiro-data-ptbr'
+                    );
+                  }
                 );
               }
             );
