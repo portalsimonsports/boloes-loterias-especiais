@@ -53,8 +53,8 @@
                   'data-pss-v381-cotas-vivas',
                   function () {
                     carregarScript(
-                      'assets/pss-v386-letreiro-data-ptbr.js?v=V386_LETREIRO_DATA_PTBR',
-                      'data-pss-v386-letreiro-data-ptbr'
+                      'assets/pss-v386-letreiro-data-ptbr.js?v=V387_LETREIRO_DATA_PTBR_DIRETO',
+                      'data-pss-v387-letreiro-data-ptbr'
                     );
                   }
                 );
