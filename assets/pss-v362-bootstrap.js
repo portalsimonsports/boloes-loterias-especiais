@@ -5,6 +5,7 @@
   window.PSS_V362_BOOTSTRAP = true;
 
   var html = document.documentElement;
+  var carregamentos = {};
 
   try {
     var memoria = Number(navigator.deviceMemory || 0);
@@ -21,54 +22,83 @@
     html.classList.toggle('pss-v362-hidden', document.hidden);
   }, { passive: true });
 
-  function carregarScript(src, atributo, callback) {
-    if (document.querySelector('script[' + atributo + ']')) {
-      if (callback) callback();
-      return;
+  function idle(callback, timeout) {
+    if (typeof window.PSS_V390_IDLE === 'function') {
+      return window.PSS_V390_IDLE(callback, timeout || 1200);
     }
 
-    var script = document.createElement('script');
-    script.src = src;
-    script.async = false;
-    script.setAttribute(atributo, '1');
-    if (callback) script.onload = callback;
-    document.head.appendChild(script);
+    if ('requestIdleCallback' in window) {
+      return window.requestIdleCallback(callback, { timeout: timeout || 1200 });
+    }
+
+    return window.setTimeout(callback, Math.min(timeout || 1200, 250));
   }
 
-  function carregarCorrecoes() {
-    carregarScript(
-      'assets/pss-v363-login-pagamentos.js?v=V363_FIX_LOGIN_EXCLUIR_COMPROVANTE',
-      'data-pss-v363-login-pagamentos',
-      function () {
-        carregarScript(
-          'assets/pss-v365-corrige-botoes-pagamentos.js?v=V365_CORRIGE_BOTOES_PAGAMENTOS',
-          'data-pss-v365-corrige-botoes-pagamentos',
-          function () {
-            carregarScript(
-              'assets/pss-v371-pagamentos-pagos.js?v=V371_PAGAMENTOS_PAGOS_DIRETO',
-              'data-pss-v371-pagamentos-pagos',
-              function () {
-                carregarScript(
-                  'assets/pss-v381-cotas-vivas.js?v=V381_COTAS_VIVAS',
-                  'data-pss-v381-cotas-vivas',
-                  function () {
-                    carregarScript(
-                      'assets/pss-v386-letreiro-data-ptbr.js?v=V387_LETREIRO_DATA_PTBR_DIRETO',
-                      'data-pss-v387-letreiro-data-ptbr'
-                    );
-                  }
-                );
-              }
-            );
-          }
-        );
-      }
-    );
+  function carregarScript(src, atributo) {
+    if (carregamentos[atributo]) return carregamentos[atributo];
+
+    var existente = document.querySelector('script[' + atributo + ']');
+    if (existente) {
+      carregamentos[atributo] = Promise.resolve(existente);
+      return carregamentos[atributo];
+    }
+
+    carregamentos[atributo] = new Promise(function (resolve) {
+      var script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.setAttribute(atributo, '1');
+      script.onload = function () { resolve(script); };
+      script.onerror = function () { resolve(null); };
+      document.head.appendChild(script);
+    });
+
+    return carregamentos[atributo];
   }
 
-  if (document.readyState === 'complete') {
-    setTimeout(carregarCorrecoes, 0);
+  function carregarEssenciais() {
+    return Promise.all([
+      carregarScript(
+        'assets/pss-v390-performance-runtime.js?v=V390_CARREGAMENTO_RAPIDO',
+        'data-pss-v390-performance-runtime'
+      ),
+      carregarScript(
+        'assets/pss-v363-login-pagamentos.js?v=V363_FIX_LOGIN_EXCLUIR_COMPROVANTE',
+        'data-pss-v363-login-pagamentos'
+      ),
+      carregarScript(
+        'assets/pss-v371-pagamentos-pagos.js?v=V390_PAGAMENTOS_OBSERVER_OTIMIZADO',
+        'data-pss-v371-pagamentos-pagos'
+      )
+    ]);
+  }
+
+  function carregarSecundarios() {
+    Promise.all([
+      carregarScript(
+        'assets/pss-v365-corrige-botoes-pagamentos.js?v=V365_CORRIGE_BOTOES_PAGAMENTOS',
+        'data-pss-v365-corrige-botoes-pagamentos'
+      ),
+      carregarScript(
+        'assets/pss-v381-cotas-vivas.js?v=V390_COTAS_VIVAS_EFICIENTE',
+        'data-pss-v381-cotas-vivas'
+      ),
+      carregarScript(
+        'assets/pss-v386-letreiro-data-ptbr.js?v=V390_LETREIRO_OBSERVER_OTIMIZADO',
+        'data-pss-v390-letreiro-data-ptbr'
+      )
+    ]).catch(function () {});
+  }
+
+  function iniciar() {
+    carregarEssenciais().finally(function () {
+      idle(carregarSecundarios, 1000);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciar, { once: true });
   } else {
-    window.addEventListener('load', carregarCorrecoes, { once: true });
+    iniciar();
   }
 })();
