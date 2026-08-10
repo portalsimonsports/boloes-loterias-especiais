@@ -1,0 +1,39 @@
+name: PSS inject navigation instant V1
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-inject-navigation-instant-v1.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Injetar navegação instantânea
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/pss-navigation-instant-v1.js?v=V1_20260810_1008"></script>'
+          if tag not in s:
+              if '</body>' not in s: raise SystemExit('ERRO: body nao localizado')
+              s=s.replace('</body>',tag+'\n</body>',1)
+          if s.count(tag)!=1: raise SystemExit('ERRO: tag nao unica')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s: raise SystemExit('ERRO: HTML invalido')
+          p.write_text(s,encoding='utf-8',newline='')
+          print('OK')
+          PY
+      - name: Publicar
+        run: |
+          rm -f .github/workflows/pss-inject-navigation-instant-v1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html .github/workflows/pss-inject-navigation-instant-v1.yml
+          git commit -m 'Frontend: navegação instantânea nos menus pesados [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
