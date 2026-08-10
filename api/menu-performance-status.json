@@ -1,8 +1,9 @@
 {
   "ok": true,
-  "version": "UNIVERSAL_MENU_CACHE_V3",
-  "allMenus": true,
-  "strategy": "stale-while-revalidate",
-  "skeletonBlockedWhenCacheExists": true,
-  "updatedAt": "2026-08-10T17:58:00-03:00"
+  "version": "ROLLBACK_PRE_CUTOVER",
+  "allMenus": false,
+  "strategy": "frontend-restored",
+  "skeletonBlockedWhenCacheExists": false,
+  "rollbackCommit": "fb9df0f84e84af18fe6e387697ecc79ded2f64da",
+  "updatedAt": "2026-08-10T18:17:00-03:00"
 }
