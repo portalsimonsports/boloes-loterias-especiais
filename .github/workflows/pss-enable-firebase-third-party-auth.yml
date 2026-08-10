@@ -13,10 +13,10 @@ permissions:
 
 jobs:
   firebase_claims:
-    name: Firebase claims com GOOGLE_SERVICE_JSON
+    name: Firebase claims com service account existente
     runs-on: ubuntu-latest
     env:
-      GOOGLE_SERVICE_JSON: ${{ secrets.GOOGLE_SERVICE_JSON }}
+      GOOGLE_SERVICE_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
       FIREBASE_TARGET_PROJECT_ID: boloes-loterias-especiais
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           if [ -z "$GOOGLE_SERVICE_JSON" ]; then
-            echo 'ERRO: secret GOOGLE_SERVICE_JSON ausente'
+            echo 'ERRO: secret GOOGLE_SERVICE_ACCOUNT_JSON ausente'
             exit 2
           fi
 
@@ -52,17 +52,16 @@ jobs:
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             echo 'available=false' >> "$GITHUB_OUTPUT"
-            echo 'AVISO: SUPABASE_ACCESS_TOKEN ainda não configurado; etapa Supabase será ignorada.'
+            echo 'ERRO: SUPABASE_ACCESS_TOKEN ausente.'
+            exit 2
           else
             echo 'available=true' >> "$GITHUB_OUTPUT"
           fi
 
       - name: Instalar Supabase CLI
-        if: steps.token.outputs.available == 'true'
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
       - name: Aplicar configuração Auth no Supabase hospedado
-        if: steps.token.outputs.available == 'true'
         run: supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
