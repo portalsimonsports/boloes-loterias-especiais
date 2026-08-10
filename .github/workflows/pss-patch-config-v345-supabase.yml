@@ -1,3 +1,4 @@
+# trigger 10/08/2026 08:49
 name: PSS patch CONFIG V345 Supabase
 on:
   push:
@@ -21,21 +22,14 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           pattern=r"  async function carregarCfgV342\(\)\{.*?\n  \}\n\n  function cardCfg"
-          m=re.search(pattern,s,flags=re.S)
-          if not m:
-              raise SystemExit('ERRO: carregarCfgV342 nao localizado')
           if len(re.findall(r'async function carregarCfgV342\(\)',s)) != 1:
               raise SystemExit('ERRO: quantidade inesperada de carregarCfgV342')
           novo=r'''  async function carregarCfgV342(){
-    /* V345 SUPABASE-FIRST: CONFIG nao espera mais Apps Script/JSONP. */
-    var dados=null, origem='';
-
-    /* 1) Snapshot local: retorno praticamente imediato. */
+    /* V345 SUPABASE-FIRST REAL: CONFIG nao espera Apps Script/JSONP. */
     try{
       var raw=localStorage.getItem('PSS_SUPABASE_PUBLIC_SNAPSHOT_V1');
       if(raw){
-        var snap=JSON.parse(raw);
-        dados=snap&&snap.data?snap.data:null;
+        var snap=JSON.parse(raw), dados=snap&&snap.data?snap.data:null;
         var lc=normalizarCfg(dados&&dados.boloes?dados.boloes:dados);
         if(lc.length){
           try{if(window.PSS_SUPABASE_BRIDGE)window.PSS_SUPABASE_BRIDGE.carregarPublico({forcar:true}).catch(function(){});}catch(e){}
@@ -43,24 +37,18 @@ jobs:
         }
       }
     }catch(e){}
-
-    /* 2) Bootstrap leve do GitHub: primeira abertura sem aguardar RPC/JSONP. */
     try{
       var rb=await fetch('./api/bootstrap.json?v=V345_20260810',{cache:'force-cache'});
       if(rb.ok){
         var jb=await rb.json();
         var lb=normalizarCfg(jb&&jb.boloes?jb.boloes:jb);
         if(lb.length){
-          try{
-            localStorage.setItem('PSS_SUPABASE_PUBLIC_SNAPSHOT_V1',JSON.stringify({ts:Date.now(),data:{boloes:jb.boloes||lb,resultadosPublicos:jb.resultadosPublicos||[],configPublica:jb.configPublica||[]}}));
-          }catch(e){}
+          try{localStorage.setItem('PSS_SUPABASE_PUBLIC_SNAPSHOT_V1',JSON.stringify({ts:Date.now(),data:{boloes:jb.boloes||lb,resultadosPublicos:jb.resultadosPublicos||[],configPublica:jb.configPublica||[]}}));}catch(e){}
           try{if(window.PSS_SUPABASE_BRIDGE)window.PSS_SUPABASE_BRIDGE.carregarPublico({forcar:true}).catch(function(){});}catch(e){}
           return {origem:'Supabase / bootstrap',lista:lb,acao:'bootstrap'};
         }
       }
     }catch(e){}
-
-    /* 3) Supabase direto pela bridge, caso bootstrap nao esteja disponivel. */
     try{
       if(window.PSS_SUPABASE_BRIDGE&&typeof window.PSS_SUPABASE_BRIDGE.carregarPublico==='function'){
         var sr=await window.PSS_SUPABASE_BRIDGE.carregarPublico({forcar:true});
@@ -68,8 +56,6 @@ jobs:
         if(ls.length)return {origem:'Supabase PostgreSQL',lista:ls,acao:'supabase'};
       }
     }catch(e){}
-
-    /* 4) Compatibilidade: Apps Script somente como ultimo fallback. */
     var stamp=Date.now(), email=(window.ESTADO&&ESTADO.email)||'';
     var actions=[
       ['PSSAPI_CONFIG_LOTERIAS_ADMIN_V342',{email:email,forcar:true,semCache:true,cacheBust:stamp},[email,true,stamp]],
@@ -86,23 +72,14 @@ jobs:
   }
 
   function cardCfg'''
-          s2=re.sub(pattern,novo,s,count=1,flags=re.S)
-          if 'V345 SUPABASE-FIRST' not in s2:
-              raise SystemExit('ERRO: marcador V345 ausente')
-          if 'Carregando diretamente da base, sem cache local...' in s2:
-              s2=s2.replace('Carregando diretamente da base, sem cache local...','Carregando configurações...',1)
-          if '<!DOCTYPE html>' not in s2 or '</html>' not in s2:
-              raise SystemExit('ERRO: HTML invalido')
+          s2,n=re.subn(pattern,novo,s,count=1,flags=re.S)
+          if n!=1: raise SystemExit('ERRO: substituicao nao realizada')
+          s2=s2.replace('Carregando diretamente da base, sem cache local...','Carregando configurações...',1)
+          if 'V345 SUPABASE-FIRST REAL' not in s2 or '<!DOCTYPE html>' not in s2 or '</html>' not in s2:
+              raise SystemExit('ERRO: validacao final falhou')
           p.write_text(s2,encoding='utf-8',newline='')
           Path('api').mkdir(exist_ok=True)
-          Path('api/config-loader-version.json').write_text(json.dumps({
-            'ok':True,
-            'versao':'V345_SUPABASE_FIRST_REAL',
-            'fluxo':'localStorage -> bootstrap.json -> Supabase -> Apps Script fallback',
-            'funcao':'carregarCfgV342',
-            'atualizadoEm':'10/08/2026 08:47:00'
-          },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          print('OK: carregarCfgV342 substituido diretamente no index.html')
+          Path('api/config-loader-version.json').write_text(json.dumps({'ok':True,'versao':'V345_SUPABASE_FIRST_REAL','fluxo':'localStorage -> bootstrap.json -> Supabase -> Apps Script fallback','funcao':'carregarCfgV342','atualizadoEm':'10/08/2026 08:49:00'},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           PY
       - name: Publicar alteração validada
         run: |
