@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "frontend_restored_from": "0ab5927e0d3a41fa22721c5c1ac18b80c3b27b27",
+  "database_migration_preserved": true,
+  "supabase_data_preserved": true,
+  "reason": "rollback dos patches de frontend/cutover que degradaram navegacao"
+}
