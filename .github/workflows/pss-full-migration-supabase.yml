@@ -1,0 +1,123 @@
+name: PSS Full Migration Supabase
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260810161700_backend_supabase_definitivo.sql'
+      - 'scripts/migrate-google-sheets-to-supabase.mjs'
+      - '.github/workflows/pss-full-migration-supabase.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      GOOGLE_SERVICE_JSON: ${{ secrets.GOOGLE_SERVICE_JSON }}
+      SUPABASE_PROJECT_REF: nsaoekahczonljpozyvy
+      SUPABASE_URL: https://nsaoekahczonljpozyvy.supabase.co
+      LEGACY_SHEET_ID: 1SZ5Kv2toGL340kzZX_c_mM8_eK-L352nQmYDbUZdo2M
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar credenciais existentes
+        shell: bash
+        run: |
+          missing=0
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo 'ERRO: SUPABASE_ACCESS_TOKEN não está cadastrado nos Actions Secrets.'; missing=1; fi
+          if [ -z "$GOOGLE_SERVICE_JSON" ]; then echo 'ERRO: GOOGLE_SERVICE_JSON não está cadastrado nos Actions Secrets.'; missing=1; fi
+          if [ "$missing" -ne 0 ]; then exit 2; fi
+
+      - name: Aplicar schema e RPCs diretamente no PostgreSQL
+        shell: bash
+        run: |
+          jq -Rs '{query:.,read_only:false}' supabase/migrations/20260810161700_backend_supabase_definitivo.sql > /tmp/pss-query.json
+          HTTP=$(curl -sS -o /tmp/pss-query-response.json -w '%{http_code}' \
+            -X POST "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/pss-query.json)
+          if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then
+            echo "Falha ao aplicar SQL. HTTP=$HTTP"
+            cat /tmp/pss-query-response.json
+            exit 3
+          fi
+          echo 'OK: schema/RPCs aplicados diretamente no projeto.'
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Ativar Firebase Third-Party Auth do config.toml
+        run: supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
+
+      - name: Obter chave administrativa somente em memória
+        shell: bash
+        run: |
+          curl -sS "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/api-keys?reveal=true" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" > /tmp/pss-keys.json
+          KEY=$(jq -r '[.[] | select(.name=="service_role" or .name=="secret" or .type=="secret")][0] | .api_key // .key // empty' /tmp/pss-keys.json)
+          if [ -z "$KEY" ]; then
+            echo 'ERRO: chave administrativa não localizada pela Management API.'
+            exit 4
+          fi
+          echo "::add-mask::$KEY"
+          echo "SUPABASE_ADMIN_KEY=$KEY" >> "$GITHUB_ENV"
+          rm -f /tmp/pss-keys.json
+          echo 'OK: chave administrativa carregada em memória e mascarada.'
+
+      - name: Instalar cliente Google Sheets
+        shell: bash
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install googleapis@latest --no-audit --no-fund
+
+      - name: Migrar dados da planilha para PostgreSQL
+        run: node scripts/migrate-google-sheets-to-supabase.mjs
+
+      - name: Verificar nova base
+        id: verify
+        shell: bash
+        run: |
+          api(){ curl -fsS "$SUPABASE_URL/rest/v1/$1" -H "apikey: $SUPABASE_ADMIN_KEY" -H "Authorization: Bearer $SUPABASE_ADMIN_KEY"; }
+          BASE=$(api 'base_loterias?select=nome' | jq 'length')
+          REC=$(api 'dados_recebimento?select=id' | jq 'length')
+          SOL=$(api 'solicitacoes_cadastro?select=id' | jq 'length')
+          USERS=$(api 'usuarios?select=id' | jq 'length')
+          PAYS=$(api 'pagamentos?select=id' | jq 'length')
+          BOLS=$(api 'boloes?select=id' | jq 'length')
+          PART=$(api 'participacoes?select=id' | jq 'length')
+          SNAP=$(api 'legacy_migracao_snapshot?select=origem,legacy_row' | jq 'length')
+          REG=$(curl -fsS -X POST "$SUPABASE_URL/rest/v1/rpc/pss_regulamento_atual" -H "apikey: $SUPABASE_ADMIN_KEY" -H 'Content-Type: application/json' -d '{}' | jq -r '.versao // empty')
+          printf 'USERS=%s\nPAYS=%s\nBOLS=%s\nPART=%s\nBASE=%s\nREC=%s\nSOL=%s\nSNAP=%s\nREG=%s\n' "$USERS" "$PAYS" "$BOLS" "$PART" "$BASE" "$REC" "$SOL" "$SNAP" "$REG" >> "$GITHUB_ENV"
+          test "$USERS" -ge 37
+          test "$PAYS" -ge 46
+          test "$BOLS" -ge 5
+          test "$BASE" -ge 16
+          test "$REC" -ge 17
+          test -n "$REG"
+          echo "OK: usuários=$USERS pagamentos=$PAYS bolões=$BOLS participações=$PART base_loterias=$BASE recebimento=$REC solicitações=$SOL snapshot=$SNAP regulamento=$REG"
+
+      - name: Registrar prova pública sem dados pessoais
+        shell: bash
+        run: |
+          mkdir -p api
+          TS=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          jq -n \
+            --arg ts "$TS" --arg reg "$REG" \
+            --argjson users "$USERS" --argjson pays "$PAYS" --argjson bols "$BOLS" --argjson part "$PART" \
+            --argjson base "$BASE" --argjson rec "$REC" --argjson sol "$SOL" --argjson snap "$SNAP" \
+            '{version:"SUPABASE_FULL_V1",status:"MIGRATED_AND_VERIFIED",verified_at:$ts,backend:"Supabase/PostgreSQL",apps_script_runtime:false,counts:{usuarios:$users,pagamentos:$pays,boloes:$bols,participacoes:$part,base_loterias:$base,dados_recebimento:$rec,solicitacoes:$sol,legacy_snapshot:$snap},regulamento:$reg}' \
+            > api/migration-status.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/migration-status.json
+          if git diff --cached --quiet; then echo 'Marker já atualizado.'; else git commit -m 'Migração Supabase integral validada [skip ci]' && git push; fi
+
+      - name: Conclusão
+        run: echo 'MIGRACAO_SUPABASE_INTEGRAL_OK'
