@@ -1,15 +1,16 @@
-/* Portal SimonSports - Supabase First Bridge V1
- * Camada compatível: tenta Supabase quando configurado e mantém o backend legado intacto.
- * Nenhuma chave service_role deve ser usada aqui.
+/* Portal SimonSports - Supabase First Bridge V2
+ * Supabase primeiro para leitura pública; backend legado permanece como fallback.
+ * Nenhuma chave service_role deve ser usada neste arquivo.
  */
 (function () {
   'use strict';
 
-  if (window.PSS_SUPABASE_BRIDGE) return;
+  if (window.PSS_SUPABASE_BRIDGE && window.PSS_SUPABASE_BRIDGE.versao === 'V2_CONFIG_SUPABASE_FIRST') return;
 
   var CACHE_KEY = 'PSS_SUPABASE_PUBLIC_SNAPSHOT_V1';
   var CACHE_TTL_MS = 5 * 60 * 1000;
   var configPromise = null;
+  var prefetchPromise = null;
 
   function agora() { return Date.now(); }
 
@@ -37,7 +38,7 @@
     };
   }
 
-  function carregarConfig() {
+  function carregarConfigSupabase() {
     if (configPromise) return configPromise;
     configPromise = (async function () {
       var inline = normalizarConfig(window.PSS_SUPABASE_PUBLIC || {});
@@ -54,7 +55,7 @@
   }
 
   async function rpc(nome) {
-    var c = await carregarConfig();
+    var c = await carregarConfigSupabase();
     if (!c.url || !c.key) throw new Error('Supabase público ainda não configurado');
     var controller = new AbortController();
     var timer = setTimeout(function () { controller.abort(); }, 4500);
@@ -95,7 +96,8 @@
         configPublica: partes[2] || []
       };
       salvarCache(dados);
-      window.dispatchEvent(new CustomEvent('pss:supabase-public-ready', { detail: dados }));
+      try { window.PSS_SUPABASE_PUBLIC_DATA = dados; } catch (e) {}
+      try { window.dispatchEvent(new CustomEvent('pss:supabase-public-ready', { detail: dados })); } catch (e) {}
       return { fonte: 'supabase', dados: dados };
     } catch (erro) {
       if (cache && cache.data) return { fonte: 'cache-stale', dados: cache.data, erro: erro };
@@ -103,13 +105,83 @@
     }
   }
 
+  function listaConfigCompat(dados) {
+    var lista = dados && Array.isArray(dados.boloes) ? dados.boloes : [];
+    return lista.map(function (b) {
+      return Object.assign({}, b, {
+        ID: b.id,
+        ID_BOLAO: b.id,
+        idBolao: b.id,
+        NOME: b.nome,
+        NOME_BOLAO: b.nome,
+        LOTERIA: b.loteria || b.nome,
+        STATUS: b.status,
+        DATA_SORTEIO: b.data_sorteio,
+        INI_BOL: b.inicio_pagamento,
+        FIM_BOL: b.fim_pagamento,
+        INI_PAL: b.inicio_palpite,
+        FIM_PAL: b.fim_palpite,
+        VALOR_COTA: b.valor_cota,
+        TOTAL_COTAS: b.total_cotas,
+        COTAS_CONFIRMADAS: b.cotas_adquiridas,
+        COTAS_RESTANTES: b.cotas_disponiveis,
+        PREMIACAO: b.premiacao,
+        PREMIO_POR_COTA: b.premio_por_cota,
+        RANGE: b.faixa_numeros,
+        QTD_MIN: b.qtd_min,
+        QTD_MAX: b.qtd_max,
+        QTD_PALPITE: b.qtd_palpite,
+        NUMEROS_SORTEADOS: b.numeros_sorteados
+      });
+    });
+  }
+
+  function instalarConfigSupabaseFirst() {
+    var legado = null;
+    try { legado = window.carregarConfigV341; } catch (e) {}
+    if (typeof legado !== 'function' || legado.__PSS_SUPABASE_FIRST__) return false;
+
+    var nova = async function () {
+      var r = await carregarPublico({ forcar: false });
+      if (r && r.dados && Array.isArray(r.dados.boloes) && r.dados.boloes.length) {
+        return {
+          origem: r.fonte === 'supabase' ? 'Supabase PostgreSQL' : 'cache Supabase',
+          lista: listaConfigCompat(r.dados),
+          supabase: true
+        };
+      }
+      return legado.apply(this, arguments);
+    };
+    nova.__PSS_SUPABASE_FIRST__ = true;
+    nova.__PSS_LEGACY__ = legado;
+
+    window.carregarConfigV341 = nova;
+    try { carregarConfigV341 = nova; } catch (e) {}
+    return true;
+  }
+
+  function iniciar() {
+    instalarConfigSupabaseFirst();
+    if (!prefetchPromise) {
+      prefetchPromise = carregarPublico({ forcar: false }).catch(function () { return null; });
+    }
+    /* Alguns patches legados são definidos muito perto do fim do HTML. Garante a substituição. */
+    setTimeout(instalarConfigSupabaseFirst, 0);
+    setTimeout(instalarConfigSupabaseFirst, 250);
+    setTimeout(instalarConfigSupabaseFirst, 1000);
+  }
+
   window.PSS_SUPABASE_BRIDGE = {
-    versao: 'V1_SUPABASE_FIRST_FALLBACK_LEGACY',
+    versao: 'V2_CONFIG_SUPABASE_FIRST',
     carregarPublico: carregarPublico,
+    instalarConfigSupabaseFirst: instalarConfigSupabaseFirst,
     limparCache: function () { try { localStorage.removeItem(CACHE_KEY); } catch (e) {} },
     status: async function () {
-      var c = await carregarConfig();
-      return { configurado: !!(c.url && c.key), cache: !!lerCache() };
+      var c = await carregarConfigSupabase();
+      return { configurado: !!(c.url && c.key), cache: !!lerCache(), configInterceptada: !!(window.carregarConfigV341 && window.carregarConfigV341.__PSS_SUPABASE_FIRST__) };
     }
   };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar, { once: true });
+  else iniciar();
 })();
