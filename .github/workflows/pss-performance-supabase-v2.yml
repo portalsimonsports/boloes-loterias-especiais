@@ -1,0 +1,64 @@
+name: PSS Performance Supabase V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-performance-supabase-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ativar cliente Supabase V2 e bust de cache da navegacao
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, json
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old=s
+          # troca qualquer referencia antiga do admin fast pelo V2
+          s,n1=re.subn(r'<script\s+src="assets/pss-supabase-admin-fast-v1\.js\?v=[^"]+"\s*></script>',
+                       '<script src="assets/pss-supabase-admin-fast-v2.js?v=V2_CACHE_PREFETCH_20260810_1745"></script>',s,count=1)
+          if n1==0 and 'pss-supabase-admin-fast-v2.js' not in s:
+              if '</body>' not in s: raise SystemExit('ERRO: </body> nao encontrado')
+              s=s.replace('</body>','<script src="assets/pss-supabase-admin-fast-v2.js?v=V2_CACHE_PREFETCH_20260810_1745"></script>\n</body>',1)
+          # atualiza querystring da navegacao V2 para forcar browser a receber a versao sem atraso
+          s,n2=re.subn(r'assets/pss-navigation-instant-v2\.js\?v=[^"\']+',
+                       'assets/pss-navigation-instant-v2.js?v=V21_NO_DELAY_20260810_1745',s,count=1)
+          if n2==0 and 'assets/pss-navigation-instant-v2.js' not in s:
+              if '</body>' not in s: raise SystemExit('ERRO: </body> nao encontrado para nav')
+              s=s.replace('</body>','<script src="assets/pss-navigation-instant-v2.js?v=V21_NO_DELAY_20260810_1745"></script>\n</body>',1)
+          # remove referencia V1 duplicada caso exista alem da primeira substituida
+          s=re.sub(r'\s*<script\s+src="assets/pss-supabase-admin-fast-v1\.js\?v=[^"]+"\s*></script>','',s)
+          if s.count('pss-supabase-admin-fast-v2.js')!=1: raise SystemExit('ERRO: admin V2 nao ficou unico')
+          if s.count('pss-navigation-instant-v2.js')!=1: raise SystemExit('ERRO: nav V2 nao ficou unica')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s: raise SystemExit('ERRO: HTML invalido')
+          p.write_text(s,encoding='utf-8',newline='')
+          Path('api').mkdir(exist_ok=True)
+          Path('api/performance-status.json').write_text(json.dumps({
+            'ok':True,
+            'version':'SUPABASE_PERFORMANCE_V2',
+            'adminClient':'V2_CACHE_PREFETCH',
+            'navigation':'V21_NO_DELAY',
+            'strategy':'stale-while-revalidate + session cache + firebase token reuse + prefetch',
+            'legacyDelayRemoved':True
+          },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('PERFORMANCE_PATCH_OK')
+          PY
+      - name: Publicar
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html api/performance-status.json
+          git commit -m 'Performance: Supabase V2 cacheado e navegacao sem atraso [skip ci]' || true
+          git pull --rebase origin main
+          git push origin HEAD:main
