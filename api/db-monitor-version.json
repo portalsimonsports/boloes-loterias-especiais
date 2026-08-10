@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "versao": "V1",
+  "asset": "assets/pss-db-usage-monitor-v1.js?v=V1_20260810_0944",
+  "rpc": "pss_database_usage",
+  "alertas": [
+    50,
+    70,
+    80,
+    90
+  ],
+  "atualizacaoMinutos": 5,
+  "atualizadoEm": "10/08/2026 09:44:00"
+}
