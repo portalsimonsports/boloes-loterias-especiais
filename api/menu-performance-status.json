@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "version": "UNIVERSAL_MENU_CACHE_V3",
+  "allMenus": true,
+  "strategy": "stale-while-revalidate",
+  "skeletonBlockedWhenCacheExists": true,
+  "updatedAt": "2026-08-10T17:58:00-03:00"
+}
