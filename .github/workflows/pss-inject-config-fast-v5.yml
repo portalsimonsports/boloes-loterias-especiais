@@ -1,0 +1,47 @@
+name: PSS inject CONFIG Fast V5
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-inject-config-fast-v5.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Injetar V5
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          alvo='  async function carregarCfgV342(){\n'
+          inj="  async function carregarCfgV342(){\n    /* V5: Supabase/bootstrap antes do Apps Script. */\n    try{if(window.PSS_CONFIG_FAST_LOADER){var fastV5=await window.PSS_CONFIG_FAST_LOADER();if(fastV5&&fastV5.lista&&fastV5.lista.length)return fastV5;}}catch(e){}\n"
+          if 'V5: Supabase/bootstrap antes do Apps Script.' not in s:
+            if s.count(alvo)!=1: raise SystemExit('ERRO carregarCfgV342: '+str(s.count(alvo)))
+            s=s.replace(alvo,inj,1)
+          tag='<script src="assets/pss-config-fast-v5.js?v=V5_20260810_0852"></script>'
+          if tag not in s:
+            pos=s.lower().rfind('</body>')
+            if pos<0: raise SystemExit('ERRO sem </body>')
+            s=s[:pos]+tag+'\n'+s[pos:]
+          s=s.replace('Carregando diretamente da base, sem cache local...','Carregando configurações...',1)
+          if 'PSS_CONFIG_FAST_LOADER' not in s or tag not in s or '<!DOCTYPE html>' not in s or '</html>' not in s:
+            raise SystemExit('ERRO validacao')
+          p.write_text(s,encoding='utf-8',newline='')
+          Path('api/config-loader-version.json').write_text(json.dumps({'ok':True,'versao':'V5_CONFIG_FAST_REAL','fluxo':'cache/bootstrap/Supabase -> Apps Script somente fallback','funcao':'carregarCfgV342','asset':'assets/pss-config-fast-v5.js?v=V5_20260810_0852'},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Publicar
+        run: |
+          rm -f .github/workflows/pss-inject-config-fast-v5.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html api/config-loader-version.json .github/workflows/pss-inject-config-fast-v5.yml
+          git commit -m 'CONFIG V5: Supabase direto no fluxo real [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
