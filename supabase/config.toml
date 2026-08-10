@@ -1,1 +1,5 @@
 project_id = "boloes-loterias-especiais"
+
+[auth.third_party.firebase]
+enabled = true
+project_id = "boloes-loterias-especiais"
