@@ -1,0 +1,41 @@
+name: PSS rollback DB monitor V1
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-rollback-db-monitor-v1.yml'
+permissions:
+  contents: write
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remover monitor global do index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/pss-db-usage-monitor-v1.js?v=V1_20260810_0944"></script>'
+          if tag not in s:
+              raise SystemExit('ERRO: tag do monitor não localizada')
+          s=s.replace(tag+'\n','',1).replace(tag,'',1)
+          if tag in s:
+              raise SystemExit('ERRO: tag do monitor ainda presente')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s:
+              raise SystemExit('ERRO: HTML inválido')
+          p.write_text(s,encoding='utf-8',newline='')
+          print('OK: monitor global removido')
+          PY
+      - name: Publicar rollback
+        run: |
+          rm -f .github/workflows/pss-rollback-db-monitor-v1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html .github/workflows/pss-rollback-db-monitor-v1.yml
+          git commit -m 'Rollback: remove monitor global da CONFIG [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
