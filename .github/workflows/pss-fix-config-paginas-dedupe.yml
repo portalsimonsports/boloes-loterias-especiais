@@ -1,0 +1,34 @@
+name: PSS Fix Config Paginas Dedupe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-fix-config-paginas-dedupe.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deduplicar Config_Paginas no migrador
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('scripts/migrate-google-sheets-to-supabase.mjs')
+          s=p.read_text(encoding='utf-8')
+          old="if(sheetNames.includes('Config_Paginas')){const rows=rowsToObjects(await get('Config_Paginas')).map(r=>({pagina:norm(r.PAGINA),admin:yes(r.ADMIN),usuario:yes(r.USUARIO),privado:yes(r.PRIVADO)})).filter(r=>r.pagina);await insertMany('permissoes_paginas',rows,'pagina');console.log(`Permissões: ${rows.length}`)}"
+          new="if(sheetNames.includes('Config_Paginas')){const raw=rowsToObjects(await get('Config_Paginas')).map(r=>({pagina:norm(r.PAGINA),admin:yes(r.ADMIN),usuario:yes(r.USUARIO),privado:yes(r.PRIVADO)})).filter(r=>r.pagina),map=new Map();for(const r of raw)map.set(normText(r.pagina),r);const rows=[...map.values()];await insertMany('permissoes_paginas',rows,'pagina');console.log(`Permissões: ${rows.length} únicas de ${raw.length} linhas`)}"
+          if old not in s:
+              raise SystemExit('Trecho esperado não localizado; patch abortado com segurança.')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+      - name: Commit da correção
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/migrate-google-sheets-to-supabase.mjs
+          git commit -m 'Migração: deduplica Config_Paginas antes do upsert'
+          git push
