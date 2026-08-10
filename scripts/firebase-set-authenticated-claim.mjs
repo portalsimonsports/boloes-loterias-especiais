@@ -1,14 +1,19 @@
 import admin from 'firebase-admin';
 
-const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '';
-if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON não configurado.');
+const raw = process.env.GOOGLE_SERVICE_JSON || process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '';
+const targetProjectId = process.env.FIREBASE_TARGET_PROJECT_ID || 'boloes-loterias-especiais';
+
+if (!raw) throw new Error('GOOGLE_SERVICE_JSON não configurado.');
 
 let serviceAccount;
 try { serviceAccount = JSON.parse(raw); }
-catch { throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON inválido.'); }
+catch { throw new Error('GOOGLE_SERVICE_JSON inválido.'); }
 
 if (!admin.apps.length) {
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId: targetProjectId
+  });
 }
 
 const auth = admin.auth();
@@ -33,4 +38,11 @@ for (;;) {
   if (!nextPageToken) break;
 }
 
-console.log(JSON.stringify({ ok: true, total, alterados, preservados }));
+console.log(JSON.stringify({
+  ok: true,
+  targetProjectId,
+  credentialProjectId: serviceAccount.project_id || null,
+  total,
+  alterados,
+  preservados
+}));
