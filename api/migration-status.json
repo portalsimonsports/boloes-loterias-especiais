@@ -1,0 +1,18 @@
+{
+  "version": "SUPABASE_FULL_V1",
+  "status": "MIGRATED_AND_VERIFIED",
+  "verified_at": "2026-08-10T20:22:28Z",
+  "backend": "Supabase/PostgreSQL",
+  "apps_script_runtime": false,
+  "counts": {
+    "usuarios": 41,
+    "pagamentos": 46,
+    "boloes": 5,
+    "participacoes": 42,
+    "base_loterias": 16,
+    "dados_recebimento": 17,
+    "solicitacoes": 37,
+    "legacy_snapshot": 1000
+  },
+  "regulamento": "2026.2"
+}
