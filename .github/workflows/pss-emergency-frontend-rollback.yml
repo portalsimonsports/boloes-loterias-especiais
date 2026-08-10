@@ -1,0 +1,62 @@
+name: PSS Emergency Frontend Rollback
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-emergency-frontend-rollback.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restaurar somente o frontend seguro
+        shell: bash
+        run: |
+          set -euo pipefail
+          SAFE_COMMIT='0ab5927e0d3a41fa22721c5c1ac18b80c3b27b27'
+          git cat-file -e "${SAFE_COMMIT}^{commit}"
+          git checkout "$SAFE_COMMIT" -- index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s:
+              raise SystemExit('ERRO: index restaurado invalido')
+          bad=[
+            'pss-universal-menu-cache-v3.js',
+            'pss-supabase-admin-fast-v2.js'
+          ]
+          for x in bad:
+              if x in s:
+                  raise SystemExit('ERRO: referencia de performance ruim ainda presente: '+x)
+          print('OK: index restaurado do ponto seguro antes do cutover.')
+          PY
+
+      - name: Registrar rollback
+        shell: bash
+        run: |
+          mkdir -p api
+          cat > api/frontend-rollback-status.json <<'JSON'
+          {
+            "ok": true,
+            "frontend_restored_from": "0ab5927e0d3a41fa22721c5c1ac18b80c3b27b27",
+            "database_migration_preserved": true,
+            "supabase_data_preserved": true,
+            "reason": "rollback dos patches de frontend/cutover que degradaram navegacao"
+          }
+          JSON
+          rm -f .github/workflows/pss-emergency-frontend-rollback.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html api/frontend-rollback-status.json .github/workflows/pss-emergency-frontend-rollback.yml
+          git commit -m 'Rollback: restaura frontend pre-cutover mantendo Supabase [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
