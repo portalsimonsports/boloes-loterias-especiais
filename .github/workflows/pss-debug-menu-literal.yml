@@ -1,0 +1,45 @@
+name: PSS debug menu literal
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-debug-menu-literal.yml'
+permissions:
+  contents: write
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Extrair ocorrencias literais
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          low=s.lower()
+          termos=['navegar','comprovante','pagamentos','usuarios','solicitacoes','baseloterias','consulta','participantes','boloes']
+          out=[]
+          for termo in termos:
+            pos=[]; start=0
+            while True:
+              i=low.find(termo.lower(),start)
+              if i<0: break
+              pos.append(i); start=i+len(termo)
+            # preferir ocorrencias depois do início do JS (>60000) e últimas 20
+            pos=[i for i in pos if i>60000][-25:]
+            for n,i in enumerate(pos,1):
+              out.append('\n===== %s %d @%d =====\n%s'%(termo,n,i,s[max(0,i-1400):min(len(s),i+2600)]))
+          Path('api/menu-literal-debug.txt').write_text('\n'.join(out),encoding='utf-8')
+          print('OK')
+          PY
+      - name: Publicar debug
+        run: |
+          rm -f .github/workflows/pss-debug-menu-literal.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/menu-literal-debug.txt .github/workflows/pss-debug-menu-literal.yml
+          git commit -m 'Debug: chamadas literais dos menus [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
