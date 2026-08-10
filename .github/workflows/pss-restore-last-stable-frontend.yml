@@ -1,0 +1,46 @@
+name: PSS Restore Last Stable Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-restore-last-stable-frontend.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restaurar index anterior a qualquer ativacao Supabase no frontend
+        run: |
+          git checkout 9273a53e05f1d08981541becd53a259da40201c1 -- index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          proibidos=[
+            'pss-supabase-admin-fast-v1.js',
+            'pss-supabase-admin-fast-v2.js',
+            'pss-navigation-instant-v2.js',
+            'pss-navigation-universal-v3.js'
+          ]
+          achados=[x for x in proibidos if x in s]
+          if achados:
+              raise SystemExit('ERRO: frontend restaurado ainda contem patches novos: '+','.join(achados))
+          if '<!DOCTYPE html>' not in s or '</html>' not in s:
+              raise SystemExit('ERRO: index restaurado invalido')
+          print('INDEX_ESTAVEL_RESTAURADO')
+          PY
+      - name: Publicar restauracao
+        run: |
+          rm -f .github/workflows/pss-restore-last-stable-frontend.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html .github/workflows/pss-restore-last-stable-frontend.yml
+          git commit -m 'Restauracao: frontend estavel anterior ao Supabase [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
