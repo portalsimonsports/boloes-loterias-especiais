@@ -1,0 +1,60 @@
+name: PSS bootstrap publico
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dados-publicos.json'
+      - '.github/workflows/pss-bootstrap-publico.yml'
+permissions:
+  contents: write
+concurrency:
+  group: pss-bootstrap-publico
+  cancel-in-progress: true
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gerar bootstrap pequeno
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          src=Path('dados-publicos.json')
+          d=json.loads(src.read_text(encoding='utf-8'))
+          campos=[
+            'id','nome','loteria','status','dataSorteio','data_sorteio',
+            'inicioPagamento','inicio_pagamento','fimPagamento','fim_pagamento',
+            'inicioPalpite','inicio_palpite','fimPalpite','fim_palpite',
+            'valorCota','valor_cota','totalCotas','total_cotas','cotasTotal',
+            'cotasAdquiridas','cotas_adquiridas','cotasDisponiveis','cotas_disponiveis',
+            'premiacao','premioPorCota','premio_por_cota','faixaNumeros','faixa_numeros',
+            'qtdMin','qtd_min','qtdMax','qtd_max','qtdPalpite','qtd_palpite',
+            'numerosSorteados','numeros_sorteados'
+          ]
+          boloes=[]
+          for b in d.get('boloes',[]):
+            if isinstance(b,dict):
+              boloes.append({k:b[k] for k in campos if k in b})
+          out={
+            'ok': bool(d.get('ok',True)),
+            'geradoEm': d.get('geradoEm'),
+            'geradoTs': d.get('geradoTs'),
+            'versao': d.get('versao'),
+            'boloes': boloes
+          }
+          Path('api').mkdir(exist_ok=True)
+          Path('api/bootstrap.json').write_text(json.dumps(out,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+          print('bootstrap boloes=',len(boloes),'bytes=',Path('api/bootstrap.json').stat().st_size)
+          PY
+      - name: Publicar bootstrap
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/bootstrap.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Dados: atualiza bootstrap publico [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
