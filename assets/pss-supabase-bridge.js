@@ -1,32 +1,29 @@
-/* Portal SimonSports - Supabase First Bridge V3
- * CONFIG abre imediatamente pelo snapshot/local JSON.
- * Supabase atualiza em segundo plano; backend legado fica apenas como ultimo fallback.
- * Nenhuma chave service_role deve ser usada neste arquivo.
+/* Portal SimonSports - Public Data Bridge V4
+ * CONFIG abre pelo api/bootstrap.json (leve).
+ * Snapshot local abre instantaneamente nas visitas seguintes.
+ * Dados completos/Supabase atualizam em segundo plano.
  */
 (function () {
   'use strict';
 
-  if (window.PSS_SUPABASE_BRIDGE && window.PSS_SUPABASE_BRIDGE.versao === 'V3_CONFIG_INSTANT') return;
+  if (window.PSS_SUPABASE_BRIDGE && window.PSS_SUPABASE_BRIDGE.versao === 'V4_BOOTSTRAP_FAST') return;
 
-  var CACHE_KEY = 'PSS_SUPABASE_PUBLIC_SNAPSHOT_V1';
+  var CACHE_KEY = 'PSS_PUBLIC_BOOTSTRAP_V4';
   var configPromise = null;
-  var prefetchPromise = null;
   var refreshPromise = null;
-
-  function agora() { return Date.now(); }
+  var prefetchPromise = null;
 
   function lerCache() {
     try {
       var raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       var obj = JSON.parse(raw);
-      if (!obj || !obj.data) return null;
-      return obj;
+      return obj && obj.data ? obj : null;
     } catch (e) { return null; }
   }
 
   function salvarCache(data) {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: agora(), data: data })); } catch (e) {}
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data })); } catch (e) {}
   }
 
   function normalizarDados(raw) {
@@ -38,9 +35,32 @@
     };
   }
 
-  function publicarDados(dados) {
+  function publicarDados(dados, fonte) {
     try { window.PSS_SUPABASE_PUBLIC_DATA = dados; } catch (e) {}
+    try { window.PSS_PUBLIC_DATA_SOURCE = fonte || ''; } catch (e) {}
     try { window.dispatchEvent(new CustomEvent('pss:supabase-public-ready', { detail: dados })); } catch (e) {}
+  }
+
+  async function carregarBootstrap() {
+    var r = await fetch('./api/bootstrap.json', { cache: 'force-cache' });
+    if (!r.ok) throw new Error('bootstrap HTTP ' + r.status);
+    var dados = normalizarDados(await r.json());
+    if (!dados.boloes.length) throw new Error('bootstrap sem boloes');
+    salvarCache(dados);
+    publicarDados(dados, 'bootstrap');
+    return dados;
+  }
+
+  async function carregarJsonCompletoSegundoPlano() {
+    try {
+      var r = await fetch('./dados-publicos.json', { cache: 'default' });
+      if (!r.ok) return null;
+      var dados = normalizarDados(await r.json());
+      if (!dados.boloes.length) return null;
+      salvarCache(dados);
+      publicarDados(dados, 'github-json-completo');
+      return dados;
+    } catch (e) { return null; }
   }
 
   function normalizarConfig(c) {
@@ -57,7 +77,7 @@
       var inline = normalizarConfig(window.PSS_SUPABASE_PUBLIC || {});
       if (inline.url && inline.key) return inline;
       try {
-        var r = await fetch('./api/supabase-public.json', { cache: 'default' });
+        var r = await fetch('./api/supabase-public.json', { cache: 'force-cache' });
         if (!r.ok) throw new Error('config HTTP ' + r.status);
         var c = normalizarConfig(await r.json());
         if (c.url && c.key) return c;
@@ -71,31 +91,19 @@
     var c = await carregarConfigSupabase();
     if (!c.url || !c.key) throw new Error('Supabase publico ainda nao configurado');
     var controller = new AbortController();
-    var timer = setTimeout(function () { controller.abort(); }, 3500);
+    var timer = setTimeout(function () { controller.abort(); }, 2500);
     try {
       var r = await fetch(c.url + '/rest/v1/rpc/' + encodeURIComponent(nome), {
         method: 'POST',
         headers: { 'apikey': c.key, 'Content-Type': 'application/json' },
-        body: '{}',
-        signal: controller.signal,
-        cache: 'no-store'
+        body: '{}', signal: controller.signal, cache: 'no-store'
       });
       if (!r.ok) throw new Error('Supabase HTTP ' + r.status);
       return await r.json();
     } finally { clearTimeout(timer); }
   }
 
-  async function carregarJsonEstatico() {
-    var r = await fetch('./dados-publicos.json', { cache: 'default' });
-    if (!r.ok) throw new Error('dados-publicos HTTP ' + r.status);
-    var dados = normalizarDados(await r.json());
-    if (!dados.boloes.length) throw new Error('dados-publicos sem boloes');
-    salvarCache(dados);
-    publicarDados(dados);
-    return dados;
-  }
-
-  function atualizarSegundoPlano() {
+  function atualizarSupabaseSegundoPlano() {
     if (refreshPromise) return refreshPromise;
     refreshPromise = (async function () {
       try {
@@ -107,11 +115,9 @@
         var dados = normalizarDados({ boloes: partes[0], resultadosPublicos: partes[1], configPublica: partes[2] });
         if (!dados.boloes.length) throw new Error('Supabase sem boloes');
         salvarCache(dados);
-        publicarDados(dados);
-        return { fonte: 'supabase', dados: dados };
-      } finally {
-        refreshPromise = null;
-      }
+        publicarDados(dados, 'supabase');
+        return dados;
+      } finally { refreshPromise = null; }
     })();
     return refreshPromise;
   }
@@ -120,23 +126,30 @@
     opcoes = opcoes || {};
     var cache = lerCache();
 
-    /* STALE-WHILE-REVALIDATE REAL: qualquer snapshot abre imediatamente. */
     if (!opcoes.forcar && cache && cache.data && Array.isArray(cache.data.boloes) && cache.data.boloes.length) {
-      atualizarSegundoPlano().catch(function () {});
+      setTimeout(function () { carregarBootstrap().catch(function () {}); }, 0);
+      setTimeout(function () { carregarJsonCompletoSegundoPlano(); }, 100);
+      setTimeout(function () { atualizarSupabaseSegundoPlano().catch(function () {}); }, 250);
       return { fonte: 'cache-imediato', dados: cache.data };
     }
 
-    /* Primeira visita: GitHub JSON e muito mais rapido que bloquear em RPC/JSONP. */
     if (!opcoes.forcar) {
       try {
-        var estatico = await carregarJsonEstatico();
-        atualizarSegundoPlano().catch(function () {});
-        return { fonte: 'github-json', dados: estatico };
+        var boot = await carregarBootstrap();
+        setTimeout(function () { carregarJsonCompletoSegundoPlano(); }, 50);
+        setTimeout(function () { atualizarSupabaseSegundoPlano().catch(function () {}); }, 200);
+        return { fonte: 'bootstrap', dados: boot };
       } catch (e) {}
     }
 
     try {
-      return await atualizarSegundoPlano();
+      var full = await carregarJsonCompletoSegundoPlano();
+      if (full) return { fonte: 'github-json', dados: full };
+    } catch (e2) {}
+
+    try {
+      var sb = await atualizarSupabaseSegundoPlano();
+      return { fonte: 'supabase', dados: sb };
     } catch (erro) {
       if (cache && cache.data) return { fonte: 'cache-stale', dados: cache.data, erro: erro };
       return { fonte: 'legacy', dados: null, erro: erro };
@@ -177,7 +190,7 @@
     });
   }
 
-  function instalarConfigSupabaseFirst() {
+  function instalarConfigFast() {
     var legado = null;
     try { legado = window.carregarConfigV341; } catch (e) {}
     if (typeof legado !== 'function' || legado.__PSS_SUPABASE_FIRST__) return false;
@@ -186,7 +199,7 @@
       var r = await carregarPublico({ forcar: false });
       if (r && r.dados && Array.isArray(r.dados.boloes) && r.dados.boloes.length) {
         return {
-          origem: r.fonte === 'supabase' ? 'Supabase PostgreSQL' : (r.fonte === 'github-json' ? 'GitHub JSON' : 'cache local'),
+          origem: r.fonte === 'supabase' ? 'Supabase PostgreSQL' : (r.fonte === 'bootstrap' ? 'Bootstrap GitHub' : (r.fonte === 'github-json' ? 'GitHub JSON' : 'cache local')),
           lista: listaConfigCompat(r.dados),
           supabase: true
         };
@@ -202,18 +215,15 @@
   }
 
   function iniciar() {
-    instalarConfigSupabaseFirst();
+    instalarConfigFast();
     if (!prefetchPromise) prefetchPromise = carregarPublico({ forcar: false }).catch(function () { return null; });
-    setTimeout(instalarConfigSupabaseFirst, 0);
-    setTimeout(instalarConfigSupabaseFirst, 100);
-    setTimeout(instalarConfigSupabaseFirst, 400);
-    setTimeout(instalarConfigSupabaseFirst, 1000);
+    [0,25,75,150,300,600,1000].forEach(function (ms) { setTimeout(instalarConfigFast, ms); });
   }
 
   window.PSS_SUPABASE_BRIDGE = {
-    versao: 'V3_CONFIG_INSTANT',
+    versao: 'V4_BOOTSTRAP_FAST',
     carregarPublico: carregarPublico,
-    instalarConfigSupabaseFirst: instalarConfigSupabaseFirst,
+    instalarConfigSupabaseFirst: instalarConfigFast,
     limparCache: function () { try { localStorage.removeItem(CACHE_KEY); } catch (e) {} },
     status: async function () {
       var c = await carregarConfigSupabase();
@@ -222,11 +232,12 @@
         configurado: !!(c.url && c.key),
         cache: !!(cache && cache.data),
         configInterceptada: !!(window.carregarConfigV341 && window.carregarConfigV341.__PSS_SUPABASE_FIRST__),
-        versao: 'V3_CONFIG_INSTANT'
+        versao: 'V4_BOOTSTRAP_FAST',
+        fonte: window.PSS_PUBLIC_DATA_SOURCE || ''
       };
     }
   };
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar, { once: true });
-  else iniciar();
+  /* Inicia imediatamente, sem aguardar DOMContentLoaded. */
+  iniciar();
 })();
