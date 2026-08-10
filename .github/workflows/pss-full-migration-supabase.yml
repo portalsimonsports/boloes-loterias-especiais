@@ -85,6 +85,29 @@ jobs:
           fi
           echo 'OK: schema/RPCs aplicados diretamente no projeto.'
 
+      - name: Garantir privilégios da service_role para a migração
+        shell: bash
+        run: |
+          cat > /tmp/pss-grants.sql <<'SQL'
+          grant usage on schema public to service_role;
+          grant select, insert, update, delete on all tables in schema public to service_role;
+          grant usage, select, update on all sequences in schema public to service_role;
+          alter default privileges in schema public grant select, insert, update, delete on tables to service_role;
+          alter default privileges in schema public grant usage, select, update on sequences to service_role;
+          SQL
+          jq -Rs '{query:.,read_only:false}' /tmp/pss-grants.sql > /tmp/pss-grants.json
+          HTTP=$(curl -sS -o /tmp/pss-grants-response.json -w '%{http_code}' \
+            -X POST "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/pss-grants.json)
+          if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then
+            echo "Falha ao garantir privilégios da service_role. HTTP=$HTTP"
+            cat /tmp/pss-grants-response.json
+            exit 4
+          fi
+          echo 'OK: privilégios administrativos da service_role garantidos.'
+
       - name: Instalar Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -93,15 +116,18 @@ jobs:
       - name: Ativar Firebase Third-Party Auth do config.toml
         run: supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
 
-      - name: Obter chave administrativa somente em memória
+      - name: Obter chave service_role somente em memória
         shell: bash
         run: |
           curl -sS "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/api-keys?reveal=true" \
             -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" > /tmp/pss-keys.json
-          KEY=$(jq -r '[.[] | select(.name=="service_role" or .name=="secret" or .type=="secret")][0] | .api_key // .key // empty' /tmp/pss-keys.json)
+          KEY=$(jq -r '([.[] | select(.name=="service_role")][0] | .api_key // .key // empty) // empty' /tmp/pss-keys.json)
           if [ -z "$KEY" ]; then
-            echo 'ERRO: chave administrativa não localizada pela Management API.'
-            exit 4
+            KEY=$(jq -r '([.[] | select(.name=="secret" or .type=="secret")][0] | .api_key // .key // empty) // empty' /tmp/pss-keys.json)
+          fi
+          if [ -z "$KEY" ]; then
+            echo 'ERRO: chave service_role/secret não localizada pela Management API.'
+            exit 5
           fi
           echo "::add-mask::$KEY"
           echo "SUPABASE_ADMIN_KEY=$KEY" >> "$GITHUB_ENV"
