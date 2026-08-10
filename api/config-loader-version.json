@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "versao": "V5_CONFIG_FAST_REAL",
+  "fluxo": "cache/bootstrap/Supabase -> Apps Script somente fallback",
+  "funcao": "carregarCfgV342",
+  "asset": "assets/pss-config-fast-v5.js?v=V5_20260810_0852"
+}
