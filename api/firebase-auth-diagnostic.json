@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "targetProjectId": "boloes-loterias-especiais",
+  "credentialProjectId": "portal-simonsports",
+  "code": null,
+  "message": "Cannot read properties of undefined (reading 'cert')"
+}
