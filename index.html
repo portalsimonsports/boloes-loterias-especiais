@@ -24369,8 +24369,6 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   }
 
   async function carregarCfgV342(){
-    /* V5: Supabase/bootstrap antes do Apps Script. */
-    try{if(window.PSS_CONFIG_FAST_LOADER){var fastV5=await window.PSS_CONFIG_FAST_LOADER();if(fastV5&&fastV5.lista&&fastV5.lista.length)return fastV5;}}catch(e){}
     var stamp=Date.now(), email=(window.ESTADO&&ESTADO.email)||'';
     var actions=[
       ['PSSAPI_CONFIG_LOTERIAS_ADMIN_V342',{email:email,forcar:true,semCache:true,cacheBust:stamp},[email,true,stamp]],
@@ -24416,7 +24414,7 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   window.renderConfigBoloesAdmin = async function(forcar){
     if(typeof isAdmin==='function' && !isAdmin()){setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>');return;}
     /* V343: cache local preservado para velocidade. */
-    setView('<div class="panel"><h2>⚙️ Configurações das loterias/bolões criados</h2><div class="notice info">Carregando configurações...</div></div>');
+    setView('<div class="panel"><h2>⚙️ Configurações das loterias/bolões criados</h2><div class="notice info">Carregando diretamente da base, sem cache local...</div></div>');
     try{
       var r=await carregarCfgV342();
       var l=normalizarCfg(r.lista);
@@ -27345,9 +27343,5 @@ try{ window.PSS_INDEX_PERFORMANCE_PATCH='V301_LETREIRO_LEITURA_ATUALIZADA'; }cat
   <script src="assets/pss-v362-performance.js?v=V371_PAGAMENTOS_PAGOS_DIRETO"></script>
   <script src="assets/pss-v364-exclusao-rapida.js?v=V364_EXCLUSAO_RAPIDA_SEGURA"></script>
   <script src="assets/pss-v371-pagamentos-pagos.js?v=V371_PAGAMENTOS_PAGOS_DIRETO" data-pss-v371-pagamentos-pagos="1"></script>
-  <script src="assets/pss-supabase-bridge.js?v=V4_BOOTSTRAP_FAST_20260810_0840"></script>
-<script src="assets/pss-config-fast-v5.js?v=V5_20260810_0852"></script>
-<script src="assets/pss-db-usage-monitor-v2.js?v=V2_20260810_1004"></script>
-<script src="assets/pss-navigation-instant-v2.js?v=V2_20260810_1036"></script>
 </body>
 </html>
