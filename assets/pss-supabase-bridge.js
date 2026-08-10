@@ -25,9 +25,7 @@
   }
 
   function salvarCache(data) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: agora(), data: data }));
-    } catch (e) {}
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: agora(), data: data })); } catch (e) {}
   }
 
   function normalizarConfig(c) {
@@ -64,7 +62,6 @@
         method: 'POST',
         headers: {
           'apikey': c.key,
-          'Authorization': 'Bearer ' + c.key,
           'Content-Type': 'application/json'
         },
         body: '{}',
@@ -73,9 +70,7 @@
       });
       if (!r.ok) throw new Error('Supabase HTTP ' + r.status);
       return await r.json();
-    } finally {
-      clearTimeout(timer);
-    }
+    } finally { clearTimeout(timer); }
   }
 
   async function carregarPublico(opcoes) {
@@ -90,11 +85,7 @@
         rpc('pss_resultados_publicos'),
         rpc('pss_configuracoes_publicas')
       ]);
-      var dados = {
-        boloes: partes[0] || [],
-        resultadosPublicos: partes[1] || [],
-        configPublica: partes[2] || []
-      };
+      var dados = { boloes: partes[0] || [], resultadosPublicos: partes[1] || [], configPublica: partes[2] || [] };
       salvarCache(dados);
       try { window.PSS_SUPABASE_PUBLIC_DATA = dados; } catch (e) {}
       try { window.dispatchEvent(new CustomEvent('pss:supabase-public-ready', { detail: dados })); } catch (e) {}
@@ -109,28 +100,14 @@
     var lista = dados && Array.isArray(dados.boloes) ? dados.boloes : [];
     return lista.map(function (b) {
       return Object.assign({}, b, {
-        ID: b.id,
-        ID_BOLAO: b.id,
-        idBolao: b.id,
-        NOME: b.nome,
-        NOME_BOLAO: b.nome,
-        LOTERIA: b.loteria || b.nome,
-        STATUS: b.status,
-        DATA_SORTEIO: b.data_sorteio,
-        INI_BOL: b.inicio_pagamento,
-        FIM_BOL: b.fim_pagamento,
-        INI_PAL: b.inicio_palpite,
-        FIM_PAL: b.fim_palpite,
-        VALOR_COTA: b.valor_cota,
-        TOTAL_COTAS: b.total_cotas,
-        COTAS_CONFIRMADAS: b.cotas_adquiridas,
-        COTAS_RESTANTES: b.cotas_disponiveis,
-        PREMIACAO: b.premiacao,
-        PREMIO_POR_COTA: b.premio_por_cota,
-        RANGE: b.faixa_numeros,
-        QTD_MIN: b.qtd_min,
-        QTD_MAX: b.qtd_max,
-        QTD_PALPITE: b.qtd_palpite,
+        ID: b.id, ID_BOLAO: b.id, idBolao: b.id,
+        NOME: b.nome, NOME_BOLAO: b.nome, LOTERIA: b.loteria || b.nome, STATUS: b.status,
+        DATA_SORTEIO: b.data_sorteio, INI_BOL: b.inicio_pagamento, FIM_BOL: b.fim_pagamento,
+        INI_PAL: b.inicio_palpite, FIM_PAL: b.fim_palpite, VALOR_COTA: b.valor_cota,
+        TOTAL_COTAS: b.total_cotas, COTAS_CONFIRMADAS: b.cotas_adquiridas,
+        COTAS_RESTANTES: b.cotas_disponiveis, PREMIACAO: b.premiacao,
+        PREMIO_POR_COTA: b.premio_por_cota, RANGE: b.faixa_numeros,
+        QTD_MIN: b.qtd_min, QTD_MAX: b.qtd_max, QTD_PALPITE: b.qtd_palpite,
         NUMEROS_SORTEADOS: b.numeros_sorteados
       });
     });
@@ -140,21 +117,15 @@
     var legado = null;
     try { legado = window.carregarConfigV341; } catch (e) {}
     if (typeof legado !== 'function' || legado.__PSS_SUPABASE_FIRST__) return false;
-
     var nova = async function () {
       var r = await carregarPublico({ forcar: false });
       if (r && r.dados && Array.isArray(r.dados.boloes) && r.dados.boloes.length) {
-        return {
-          origem: r.fonte === 'supabase' ? 'Supabase PostgreSQL' : 'cache Supabase',
-          lista: listaConfigCompat(r.dados),
-          supabase: true
-        };
+        return { origem: r.fonte === 'supabase' ? 'Supabase PostgreSQL' : 'cache Supabase', lista: listaConfigCompat(r.dados), supabase: true };
       }
       return legado.apply(this, arguments);
     };
     nova.__PSS_SUPABASE_FIRST__ = true;
     nova.__PSS_LEGACY__ = legado;
-
     window.carregarConfigV341 = nova;
     try { carregarConfigV341 = nova; } catch (e) {}
     return true;
@@ -162,10 +133,7 @@
 
   function iniciar() {
     instalarConfigSupabaseFirst();
-    if (!prefetchPromise) {
-      prefetchPromise = carregarPublico({ forcar: false }).catch(function () { return null; });
-    }
-    /* Alguns patches legados são definidos muito perto do fim do HTML. Garante a substituição. */
+    if (!prefetchPromise) prefetchPromise = carregarPublico({ forcar: false }).catch(function () { return null; });
     setTimeout(instalarConfigSupabaseFirst, 0);
     setTimeout(instalarConfigSupabaseFirst, 250);
     setTimeout(instalarConfigSupabaseFirst, 1000);
