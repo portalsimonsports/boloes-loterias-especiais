@@ -1,0 +1,69 @@
+name: PSS Cutover Supabase Phase 1
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-cutover-supabase-phase1.yml'
+permissions:
+  contents: write
+jobs:
+  cutover:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: nsaoekahczonljpozyvy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validar token
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo 'SUPABASE_ACCESS_TOKEN ausente'; exit 2; }
+      - name: Aplicar RPCs de runtime
+        run: |
+          jq -Rs '{query:.,read_only:false}' supabase/migrations/20260810165500_runtime_complementos.sql >/tmp/q.json
+          CODE=$(curl -sS -o /tmp/r.json -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" -H 'Content-Type: application/json' --data-binary @/tmp/q.json)
+          if [ "$CODE" != "200" ] && [ "$CODE" != "201" ]; then cat /tmp/r.json; exit 3; fi
+          echo 'RUNTIME_COMPLEMENTS_OK'
+      - name: Injetar cliente Supabase administrativo e navegação direta
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          admin='<script src="assets/pss-supabase-admin-fast-v1.js?v=V1_CUTOVER_20260810_1728"></script>'
+          nav='<script src="assets/pss-navigation-instant-v2.js?v=V2_CUTOVER_20260810_1728"></script>'
+          # Remove versões anteriores para evitar interceptadores duplicados.
+          s=re.sub(r'\s*<script src="assets/pss-supabase-admin-fast-v1\.js[^\"]*"></script>', '', s)
+          s=re.sub(r'\s*<script src="assets/pss-navigation-instant-v[12]\.js[^\"]*"></script>', '', s)
+          if '</body>' not in s:
+              raise SystemExit('ERRO: </body> não localizado')
+          s=s.replace('</body>', nav+'\n'+admin+'\n</body>',1)
+          if s.count('pss-supabase-admin-fast-v1.js')!=1 or s.count('pss-navigation-instant-v2.js')!=1:
+              raise SystemExit('ERRO: scripts não ficaram únicos')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s:
+              raise SystemExit('ERRO: HTML estrutural inválido')
+          p.write_text(s,encoding='utf-8',newline='')
+          Path('api').mkdir(exist_ok=True)
+          Path('api/cutover-status.json').write_text(json.dumps({
+            'ok':True,
+            'phase':'PHASE_1',
+            'backend':'Supabase/PostgreSQL',
+            'directReads':['USUARIOS','PAGAMENTOS','PARTICIPANTES_BOLAO'],
+            'runtimeRpcsApplied':True,
+            'firebaseAuth':'preserved',
+            'legacyFallback':'temporarily_preserved_for_uncovered_flows',
+            'version':'20260810_1728'
+          },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('CUTOVER_PHASE1_PATCH_OK')
+          PY
+      - name: Publicar
+        run: |
+          rm -f .github/workflows/pss-cutover-supabase-phase1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html api/cutover-status.json .github/workflows/pss-cutover-supabase-phase1.yml
+          git commit -m 'Frontend: cutover Supabase direto fase 1 [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
