@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "phase": "PHASE_1",
+  "backend": "Supabase/PostgreSQL",
+  "directReads": [
+    "USUARIOS",
+    "PAGAMENTOS",
+    "PARTICIPANTES_BOLAO"
+  ],
+  "runtimeRpcsApplied": true,
+  "firebaseAuth": "preserved",
+  "legacyFallback": "temporarily_preserved_for_uncovered_flows",
+  "version": "20260810_1728"
+}
