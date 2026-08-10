@@ -1,0 +1,57 @@
+name: PSS Diagnose Firebase Auth
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-diagnose-firebase-auth.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_SERVICE_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      FIREBASE_TARGET_PROJECT_ID: boloes-loterias-especiais
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preparar Firebase Admin SDK
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install firebase-admin@latest --no-audit --no-fund
+      - name: Diagnosticar acesso Firebase sem expor segredo
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import admin from 'firebase-admin';
+          const out={ok:false,targetProjectId:process.env.FIREBASE_TARGET_PROJECT_ID||'',credentialProjectId:null,code:null,message:null};
+          try{
+            const raw=process.env.GOOGLE_SERVICE_JSON||'';
+            if(!raw) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON ausente');
+            const sa=JSON.parse(raw);
+            out.credentialProjectId=sa.project_id||null;
+            admin.initializeApp({credential:admin.credential.cert(sa),projectId:out.targetProjectId});
+            const page=await admin.auth().listUsers(1);
+            out.ok=true;
+            out.sampleCount=page.users.length;
+            out.message='Firebase Admin SDK conseguiu listar usuários no projeto alvo.';
+          }catch(e){
+            out.code=e?.code||null;
+            out.message=String(e?.message||e).replace(/-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g,'[REDACTED]').slice(0,1000);
+          }
+          fs.mkdirSync('api',{recursive:true});
+          fs.writeFileSync('api/firebase-auth-diagnostic.json',JSON.stringify(out,null,2)+'\n');
+          console.log(JSON.stringify({ok:out.ok,code:out.code,message:out.message,credentialProjectId:out.credentialProjectId,targetProjectId:out.targetProjectId}));
+          NODE
+      - name: Publicar diagnóstico sanitizado
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/firebase-auth-diagnostic.json
+          if git diff --cached --quiet; then echo 'Sem mudança'; else git commit -m 'Diagnóstico Firebase Auth sanitizado [skip ci]' && git pull --rebase origin main && git push origin HEAD:main; fi
