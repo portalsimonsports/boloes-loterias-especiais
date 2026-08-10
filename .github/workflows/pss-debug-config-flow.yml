@@ -1,0 +1,51 @@
+name: PSS debug CONFIG flow
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-debug-config-flow.yml'
+permissions:
+  contents: write
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair fluxo real da CONFIG
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          terms=[
+            'Carregando diretamente da base, sem cache local',
+            'carregarConfigV341',
+            'getConfigBoloesRapidoV233',
+            'listarConfigBoloesRapidoV233',
+            'listarBoloes',
+            'pss-supabase-bridge.js'
+          ]
+          out=[]
+          for term in terms:
+            out.append('\n===== '+term+' =====\n')
+            start=0; found=0
+            while True:
+              i=s.find(term,start)
+              if i<0: break
+              found+=1
+              a=max(0,i-3000); b=min(len(s),i+6000)
+              out.append(f'--- ocorrencia {found} pos {i} ---\n'+s[a:b]+'\n')
+              start=i+len(term)
+              if found>=10: break
+            if not found: out.append('NAO ENCONTRADO\n')
+          Path('api').mkdir(exist_ok=True)
+          Path('api/debug-config-flow.txt').write_text('\n'.join(out),encoding='utf-8')
+          PY
+      - name: Publicar debug
+        run: |
+          rm -f .github/workflows/pss-debug-config-flow.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/debug-config-flow.txt .github/workflows/pss-debug-config-flow.yml
+          git commit -m 'Debug: extrai fluxo real da CONFIG [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
