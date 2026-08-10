@@ -52,7 +52,7 @@ console.log(`Fonte localizada: ${sheetNames.length} abas.`);
  const vals=await get('REGULAMENTO'),texto=vals.map(r=>norm(r[0])).join('\n').trim(),configRows=rowsToObjects(await get('Config')),versao=norm(configRows.find(r=>normKey(r.CHAVE)==='VERSAO_REGULAMENTO')?.VALOR)||'2026.2';
  await sb('/rest/v1/regulamentos?ativo=eq.true',{method:'PATCH',body:{ativo:false},prefer:'return=minimal'});await insertMany('regulamentos',[{versao,titulo:'REGULAMENTO DO BOLÃO — LOTERIAS ESPECIAIS',texto,ativo:true}],'versao');console.log(`Regulamento: ${texto.length} caracteres`);
 }
-if(sheetNames.includes('Config_Paginas')){const rows=rowsToObjects(await get('Config_Paginas')).map(r=>({pagina:norm(r.PAGINA),admin:yes(r.ADMIN),usuario:yes(r.USUARIO),privado:yes(r.PRIVADO)})).filter(r=>r.pagina);await insertMany('permissoes_paginas',rows,'pagina');console.log(`Permissões: ${rows.length}`)}
+if(sheetNames.includes('Config_Paginas')){const raw=rowsToObjects(await get('Config_Paginas')).map(r=>({pagina:norm(r.PAGINA),admin:yes(r.ADMIN),usuario:yes(r.USUARIO),privado:yes(r.PRIVADO)})).filter(r=>r.pagina),map=new Map();for(const r of raw)map.set(normText(r.pagina),r);const rows=[...map.values()];await insertMany('permissoes_paginas',rows,'pagina');console.log(`Permissões: ${rows.length} únicas de ${raw.length} linhas`)}
 // Perfis existentes, sem senha.
 {
  const rows=rowsToObjects(await get('Usuarios'));
