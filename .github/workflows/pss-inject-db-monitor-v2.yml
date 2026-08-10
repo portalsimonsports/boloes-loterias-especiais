@@ -1,0 +1,45 @@
+name: PSS inject DB monitor V2
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-inject-db-monitor-v2.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Injetar monitor V2 seguro
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='<script src="assets/pss-db-usage-monitor-v1.js?v=V1_20260810_0944"></script>'
+          new='<script src="assets/pss-db-usage-monitor-v2.js?v=V2_20260810_1004"></script>'
+          s=s.replace(old+'\n','').replace(old,'')
+          if new not in s:
+              anchor='<script src="assets/pss-config-fast-v5.js?v=V5_20260810_0852"></script>'
+              if anchor not in s:
+                  raise SystemExit('ERRO: anchor V5 nao localizado')
+              s=s.replace(anchor,anchor+'\n'+new,1)
+          if s.count(new)!=1:
+              raise SystemExit('ERRO: tag V2 nao ficou unica')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s:
+              raise SystemExit('ERRO: HTML invalido')
+          p.write_text(s,encoding='utf-8',newline='')
+          print('OK: monitor V2 injetado')
+          PY
+      - name: Publicar
+        run: |
+          rm -f .github/workflows/pss-inject-db-monitor-v2.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html .github/workflows/pss-inject-db-monitor-v2.yml
+          git commit -m 'CONFIG: ativa monitor Supabase V2 isolado [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
