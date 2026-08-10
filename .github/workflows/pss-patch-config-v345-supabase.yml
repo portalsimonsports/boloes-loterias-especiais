@@ -1,0 +1,115 @@
+name: PSS patch CONFIG V345 Supabase
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-patch-config-v345-supabase.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Substituir carregador real da CONFIG
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, json
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          pattern=r"  async function carregarCfgV342\(\)\{.*?\n  \}\n\n  function cardCfg"
+          m=re.search(pattern,s,flags=re.S)
+          if not m:
+              raise SystemExit('ERRO: carregarCfgV342 nao localizado')
+          if len(re.findall(r'async function carregarCfgV342\(\)',s)) != 1:
+              raise SystemExit('ERRO: quantidade inesperada de carregarCfgV342')
+          novo=r'''  async function carregarCfgV342(){
+    /* V345 SUPABASE-FIRST: CONFIG nao espera mais Apps Script/JSONP. */
+    var dados=null, origem='';
+
+    /* 1) Snapshot local: retorno praticamente imediato. */
+    try{
+      var raw=localStorage.getItem('PSS_SUPABASE_PUBLIC_SNAPSHOT_V1');
+      if(raw){
+        var snap=JSON.parse(raw);
+        dados=snap&&snap.data?snap.data:null;
+        var lc=normalizarCfg(dados&&dados.boloes?dados.boloes:dados);
+        if(lc.length){
+          try{if(window.PSS_SUPABASE_BRIDGE)window.PSS_SUPABASE_BRIDGE.carregarPublico({forcar:true}).catch(function(){});}catch(e){}
+          return {origem:'Supabase (snapshot local)',lista:lc,acao:'supabase-cache'};
+        }
+      }
+    }catch(e){}
+
+    /* 2) Bootstrap leve do GitHub: primeira abertura sem aguardar RPC/JSONP. */
+    try{
+      var rb=await fetch('./api/bootstrap.json?v=V345_20260810',{cache:'force-cache'});
+      if(rb.ok){
+        var jb=await rb.json();
+        var lb=normalizarCfg(jb&&jb.boloes?jb.boloes:jb);
+        if(lb.length){
+          try{
+            localStorage.setItem('PSS_SUPABASE_PUBLIC_SNAPSHOT_V1',JSON.stringify({ts:Date.now(),data:{boloes:jb.boloes||lb,resultadosPublicos:jb.resultadosPublicos||[],configPublica:jb.configPublica||[]}}));
+          }catch(e){}
+          try{if(window.PSS_SUPABASE_BRIDGE)window.PSS_SUPABASE_BRIDGE.carregarPublico({forcar:true}).catch(function(){});}catch(e){}
+          return {origem:'Supabase / bootstrap',lista:lb,acao:'bootstrap'};
+        }
+      }
+    }catch(e){}
+
+    /* 3) Supabase direto pela bridge, caso bootstrap nao esteja disponivel. */
+    try{
+      if(window.PSS_SUPABASE_BRIDGE&&typeof window.PSS_SUPABASE_BRIDGE.carregarPublico==='function'){
+        var sr=await window.PSS_SUPABASE_BRIDGE.carregarPublico({forcar:true});
+        var ls=normalizarCfg(sr&&sr.dados&&sr.dados.boloes?sr.dados.boloes:[]);
+        if(ls.length)return {origem:'Supabase PostgreSQL',lista:ls,acao:'supabase'};
+      }
+    }catch(e){}
+
+    /* 4) Compatibilidade: Apps Script somente como ultimo fallback. */
+    var stamp=Date.now(), email=(window.ESTADO&&ESTADO.email)||'';
+    var actions=[
+      ['PSSAPI_CONFIG_LOTERIAS_ADMIN_V342',{email:email,forcar:true,semCache:true,cacheBust:stamp},[email,true,stamp]],
+      ['listarConfigLoteriasAdminV342',{email:email,forcar:true,semCache:true,cacheBust:stamp},[email,true,stamp]],
+      ['getConfigBoloesRapidoV233',{email:email,forcar:true,semCache:true,cacheBust:stamp},[email,true,stamp]],
+      ['listarBoloes',{email:email,forcar:true,semCache:true,cacheBust:stamp},[email,true,stamp]]
+    ];
+    var ultimo=null;
+    for(var i=0;i<actions.length;i++){
+      try{var a=actions[i],r=await chamarV342(a[0],a[1],a[2],20000);var l=normalizarCfg(r);if(l.length)return {origem:'Apps Script (fallback)',lista:l,acao:a[0]};}
+      catch(e){ultimo=e;}
+    }
+    throw ultimo||new Error('Nenhuma loteria/bolao retornou da base.');
+  }
+
+  function cardCfg'''
+          s2=re.sub(pattern,novo,s,count=1,flags=re.S)
+          if 'V345 SUPABASE-FIRST' not in s2:
+              raise SystemExit('ERRO: marcador V345 ausente')
+          if 'Carregando diretamente da base, sem cache local...' in s2:
+              s2=s2.replace('Carregando diretamente da base, sem cache local...','Carregando configurações...',1)
+          if '<!DOCTYPE html>' not in s2 or '</html>' not in s2:
+              raise SystemExit('ERRO: HTML invalido')
+          p.write_text(s2,encoding='utf-8',newline='')
+          Path('api').mkdir(exist_ok=True)
+          Path('api/config-loader-version.json').write_text(json.dumps({
+            'ok':True,
+            'versao':'V345_SUPABASE_FIRST_REAL',
+            'fluxo':'localStorage -> bootstrap.json -> Supabase -> Apps Script fallback',
+            'funcao':'carregarCfgV342',
+            'atualizadoEm':'10/08/2026 08:47:00'
+          },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('OK: carregarCfgV342 substituido diretamente no index.html')
+          PY
+      - name: Publicar alteração validada
+        run: |
+          rm -f .github/workflows/pss-patch-config-v345-supabase.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html api/config-loader-version.json .github/workflows/pss-patch-config-v345-supabase.yml
+          git commit -m 'CONFIG V345: Supabase-first no carregador real [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
