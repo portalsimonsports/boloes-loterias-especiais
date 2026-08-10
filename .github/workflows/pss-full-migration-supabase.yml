@@ -32,6 +32,43 @@ jobs:
           if [ -z "$GOOGLE_SERVICE_JSON" ]; then echo 'ERRO: GOOGLE_SERVICE_ACCOUNT_JSON não está cadastrado nos Actions Secrets.'; missing=1; fi
           if [ "$missing" -ne 0 ]; then exit 2; fi
 
+      - name: Compatibilizar tabela jogos_realizados existente
+        shell: bash
+        run: |
+          cat > /tmp/pss-compat.sql <<'SQL'
+          alter table if exists public.jogos_realizados add column if not exists bolao_id text;
+          alter table if exists public.jogos_realizados add column if not exists loteria text;
+          alter table if exists public.jogos_realizados add column if not exists concurso text;
+          alter table if exists public.jogos_realizados add column if not exists data_jogo date;
+          alter table if exists public.jogos_realizados add column if not exists mes_referencia text;
+          alter table if exists public.jogos_realizados add column if not exists obs text;
+          alter table if exists public.jogos_realizados add column if not exists nome_arquivo text;
+          alter table if exists public.jogos_realizados add column if not exists mime_type text;
+          alter table if exists public.jogos_realizados add column if not exists storage_bucket text;
+          alter table if exists public.jogos_realizados add column if not exists storage_path text;
+          alter table if exists public.jogos_realizados add column if not exists tamanho_bytes bigint;
+          alter table if exists public.jogos_realizados add column if not exists hash_arquivo text;
+          alter table if exists public.jogos_realizados add column if not exists legacy_drive_url text;
+          alter table if exists public.jogos_realizados add column if not exists image_url text;
+          alter table if exists public.jogos_realizados add column if not exists status text;
+          alter table if exists public.jogos_realizados add column if not exists enviado_por uuid;
+          alter table if exists public.jogos_realizados add column if not exists legacy_id text;
+          alter table if exists public.jogos_realizados add column if not exists created_at timestamptz;
+          alter table if exists public.jogos_realizados add column if not exists updated_at timestamptz;
+          SQL
+          jq -Rs '{query:.,read_only:false}' /tmp/pss-compat.sql > /tmp/pss-compat.json
+          HTTP=$(curl -sS -o /tmp/pss-compat-response.json -w '%{http_code}' \
+            -X POST "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/pss-compat.json)
+          if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then
+            echo "Falha na compatibilização. HTTP=$HTTP"
+            cat /tmp/pss-compat-response.json
+            exit 3
+          fi
+          echo 'OK: jogos_realizados compatibilizada sem apagar dados.'
+
       - name: Aplicar schema e RPCs diretamente no PostgreSQL
         shell: bash
         run: |
