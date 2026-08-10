@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "version": "SUPABASE_PERFORMANCE_V2",
+  "adminClient": "V2_CACHE_PREFETCH",
+  "navigation": "V21_NO_DELAY",
+  "strategy": "stale-while-revalidate + session cache + firebase token reuse + prefetch",
+  "legacyDelayRemoved": true
+}
