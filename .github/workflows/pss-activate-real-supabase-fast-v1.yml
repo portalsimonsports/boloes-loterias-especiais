@@ -1,0 +1,55 @@
+name: PSS activate real Supabase fast V1
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-activate-real-supabase-fast-v1.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ativar V2 e Supabase admin direto
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='<script src="assets/pss-navigation-instant-v1.js?v=V1_20260810_1008"></script>'
+          nav='<script src="assets/pss-navigation-instant-v2.js?v=V2_REAL_20260810_1420"></script>'
+          admin='<script src="assets/pss-supabase-admin-fast-v1.js?v=V1_REAL_20260810_1420"></script>'
+          if old in s:
+              s=s.replace(old,nav,1)
+          elif nav not in s:
+              raise SystemExit('ERRO: referencia de navegacao esperada nao encontrada')
+          if admin not in s:
+              if '</body>' not in s: raise SystemExit('ERRO: body nao localizado')
+              s=s.replace('</body>',admin+'\n</body>',1)
+          if s.count(nav)!=1 or s.count(admin)!=1: raise SystemExit('ERRO: referencias nao ficaram unicas')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s: raise SystemExit('ERRO: HTML invalido')
+          p.write_text(s,encoding='utf-8',newline='')
+          Path('api').mkdir(exist_ok=True)
+          Path('api/real-supabase-fast-version.json').write_text(json.dumps({
+            'ok':True,
+            'versao':'REAL_SUPABASE_FAST_V1',
+            'navigation':'V2_REAL_20260810_1420',
+            'adminClient':'V1_REAL_20260810_1420',
+            'rpc':['pss_admin_usuarios_fast','pss_admin_pagamentos_fast','pss_admin_participantes_fast','pss_admin_comprovantes_fast'],
+            'atualizadoEm':'10/08/2026 11:20:00'
+          },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('OK')
+          PY
+      - name: Publicar
+        run: |
+          rm -f .github/workflows/pss-activate-real-supabase-fast-v1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html api/real-supabase-fast-version.json .github/workflows/pss-activate-real-supabase-fast-v1.yml
+          git commit -m 'Frontend: ativa Supabase direto e navegação V2 [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
