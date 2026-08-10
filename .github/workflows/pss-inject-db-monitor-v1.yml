@@ -1,0 +1,53 @@
+name: PSS inject DB monitor V1
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-inject-db-monitor-v1.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Injetar monitor no index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/pss-db-usage-monitor-v1.js?v=V1_20260810_0944"></script>'
+          if tag not in s:
+              if '</body>' not in s:
+                  raise SystemExit('ERRO: </body> não localizado')
+              s=s.replace('</body>',tag+'\n</body>',1)
+          if s.count(tag)!=1:
+              raise SystemExit('ERRO: referência do monitor não ficou única')
+          if '<!DOCTYPE html>' not in s or '</html>' not in s:
+              raise SystemExit('ERRO: HTML inválido')
+          p.write_text(s,encoding='utf-8',newline='')
+          Path('api').mkdir(exist_ok=True)
+          Path('api/db-monitor-version.json').write_text(json.dumps({
+            'ok':True,
+            'versao':'V1',
+            'asset':'assets/pss-db-usage-monitor-v1.js?v=V1_20260810_0944',
+            'rpc':'pss_database_usage',
+            'alertas':[50,70,80,90],
+            'atualizacaoMinutos':5,
+            'atualizadoEm':'10/08/2026 09:44:00'
+          },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('OK: monitor DB V1 injetado')
+          PY
+      - name: Publicar
+        run: |
+          rm -f .github/workflows/pss-inject-db-monitor-v1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html api/db-monitor-version.json .github/workflows/pss-inject-db-monitor-v1.yml
+          git commit -m 'CONFIG: adiciona monitor de uso do Supabase [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
