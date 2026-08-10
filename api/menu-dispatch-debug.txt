@@ -1,0 +1,2859 @@
+
+===== v==='comprovante' @88581 =====
+H)await FIREBASE_AUTH.signOut();}catch(e){}msg.innerHTML=`<div class="notice error">${escapeHtml(firebaseMensagemErro_(err))}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
+    function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_auth:'firebase',_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
+
+
+    function apiPostFormWindowName_(action,dados={},args=null,timeoutMs=90000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const iframe=document.createElement('iframe');
+        iframe.name='pss_upload_iframe_'+token;
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=CONFIG.apiUrl;
+        form.target=iframe.name;
+        form.acceptCharset='UTF-8';
+        form.enctype='application/x-www-form-urlencoded';
+        form.style.display='none';
+
+        function add(name,value){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value==null?'':String(value);
+          form.appendChild(input);
+        }
+
+        add('mode','postmessage');
+        add('action',action);
+        add('fn',action);
+        add('fnName',action);
+        add('callback','callback');
+        add('token',token);
+        add('email',ESTADO.email||dados.email||'');
+        add('payload',JSON.stringify(payload));
+        add('_',String(Date.now()));
+
+        let finalizado=false;
+        let timer=null;
+
+        function limpar(){
+          window.removeEventListener('message',onMessage);
+          if(form&&form.parentNode)form.parentNode.removeChild(form);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        function finalizarOk(resposta){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
+
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
+          if(finalizado)return;
+          try{
+            const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+            if(raw){
+              const msg=JSON.parse(raw);
+              if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+                finalizarOk(msg.response);
+                return;
+              }
+            }
+          }catch(e){}
+          setTimeout(tentarWindowNameFallback,500);
+        }
+
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
+      });
+    }
+
+    async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+      const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+      try{
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
+      }catch(errPost){
+        /* Fallback só para arquivos pequenos. Arquivo grande por JSONP/GET pode travar. */
+        if(String(base64||
+
+===== v==='comprovante' @760880 =====
+(b){var nome=b.loteria||b.nome||b.id||'';return `<div class="v232-jogos-row"><div><b>${esc(nome)}</b><small>${esc(hist(b)?'HISTÓRICO':(b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+esc(fmtData(b.dataSorteio)):''}</small></div><button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${attr(encodeURIComponent(nome))}')">Ver</button></div>`;}).join('')}</div>`:'<div class="notice warn">Nenhuma loteria localizada para exibir jogos.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabecalhoLogadoV272();
+  };
+
+  async function carregarBoloesLimpoV272(forcar){
+    var lista=[];
+    try{
+      if(!forcar && window.ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes;
+    }catch(e){}
+    if(!lista.length){
+      try{
+        if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar);
+      }catch(e2){}
+    }
+    if(!lista.length){
+ 
+
+===== v==='comprovante' @786412 =====
+            <button class="btn btn-block" id="btnAbrirUploadComprovanteV247" type="button" onclick="PSS_abrirUploadComprovanteV272()">Carregar comprovante</button>
+            <small style="display:block;margin-top:8px;color:#546173;font-weight:800;">Ao clicar, será aberto o seletor seguro para enviar PDF, JPG ou PNG.</small>
+            <div class="upload-progress-box" id="comprovanteUploadProgressBox">
+              <div class="upload-progress-top"><span id="comprovanteUploadTitulo">Aguardando envio...</span><span id="comprovanteUploadPercentual">0%</span></div>
+              <div class="upload-progress-bar"><div class="upload-progress-fill" id="comprovanteUploadFill"></div></div>
+              <div class="upload-progress-detail" id="comprovanteUploadDetalhe">Clique em Carregar comprovante para selecionar o arquivo.</div>
+            </div>
+          </div>
+          <hr style="border:0;border-top:1px solid #ddd;margin:24px 0;">
+          <h3>🕘 Meus Envios Recentes</h3>
+          ${(typeof renderHistoricoComprovantes==='function')?renderHistoricoComprovantes(hist):''}
+        </div>
+      `);
+      renderCamposPartes();
+      PSS_alternarTipoEnvioComprovanteV272();
+      montarResumoEnvioComprovanteV272();
+    }catch(err){
+      setViewDiretoV272('<div class="panel"><div class="notice error">'+esc((err&&err.message)||err)+'</div></div>');
+    }
+  };
+
+  var navegarBaseV272=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    try{ ESTADO.view=v; window.PSS_MENU_ATUAL_V268=v; window.PSS_MENU_ATUAL_V267=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    if(v==='inicio') return renderInicio();
+    if(v==='comprovante') return renderComprovante();
+    mostrarCabecalhoLogadoV272();
+    if(typeof navegarBaseV272==='function') return navegarBaseV272.apply(this,arguments);
+  };
+})();
+</script>
+
+
+
+<script>
+/* =========================================================
+ * V275 — AJUSTE FINAL LIMPO
+ * Base: V272 estável. Não mistura página pública com início logado.
+ * Correções pontuais:
+ * 1) Sistema ativo com um único bloco de inscritos/canal.
+ * 2) Menu Bolões só exibe participante inscrito quando cotas reais > 0.
+ * 3) Card do Início sem tabela perdida abaixo dos dados principais.
+ * ========================================================= */
+(function(){
+  'use strict';
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function normal(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function dataAgora(){ return (typeof dataHoraAtualCurta==='function') ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR'); }
+  function listaSegura(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function admin(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function historico(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function setViewV275(html){ var v=byId('view'); if(v) v.innerHTML=html; }
+
+  function mostrarTopoLogadoV275(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+    document.querySelectorAll('.admin-only').forEach(function(el){
+      try{ el.classList.toggle('hidden',!admin()); }catch(e){}
+    });
+  }
+
+  function cotasUsuarioReaisV275(b){
+    b=b||{};
+    var campos=[
+      'cotasUsuario','minhasCotas','minhasCotasBolao','qtdCotasUsuario','qtdCotasParticipante',
+      'cotasDoUsuario','cotasCompradasUsuario','cotasPagasUsuario','COTAS_USUARIO','MINHAS_COTAS'
+    ];
+    for(var i=0;i<campos.length;i++){
+      if(b[campos[i]]!==undefined && b[campos[i]]!==null && b[campos[i]]!==''){
+        var valor=n(b[campos[i]]);
+        if(valor>0) return valor;
+      }
+    }
+    return 0;
+  }
+
+  function participaV275(b){
+    return cotasUsuarioReaisV275(b)>0;
+  }
+
+  async function carregarBoloesV275(forcar){
+    var lista=[];
+    try{
+      if(!forcar && ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes;
+    }catch(e){}
+    if(!lista.length){
+      try{ if(typeof carregarBoloesLimpoV272==='function') lista=await carregarBoloesLimpoV272(!!forcar); }catch(e1){}
+    }
+    if(!lista.length){
+      try{ if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar); }catch(e2){}
+    }
+    if(!lista.length){
+      try{ lista=await carregarBoloes(!!forcar); }catch(e3){}
+    }
+    lista=listaSegura(lista);
+    try{ ESTADO.boloes=lista; }catch(e4){}
+    return lista;
+  }
+
+  function statCardV275(t,v){
+    return '<div class="col-3"><div class="stat-card"><span>'+esc(t)+'</span><strong>'+esc(v)+'</strong></div></div>';
+  }
+
+  function sistemaAtivoHtmlV275(){
+    return ''+
+      '<div id="sistemaAtivoCardV275" class="panel no-left" style="margin:0;padding:24px;background:linear-gradient(140deg,#0b6f28,#073742);color:#fff;min-height:190px;">'+
+        '<h2 style="color:#fff;font-size:32px;">Sistema ativo</h2>'+ 
+        '<p style="color:#fff;">Sessão logada e menus disponíveis.</p>'+ 
+        '<div style="margin-top:18px;font-weight:800;" data-live-clock>'+esc(dataAgora())+'</div>'+ 
+        '<div id="sistemaAtivoResumoV275" style="border-top:1px solid rgba(255,255,255,.25);margin-top:14px;padding-top:14px;">'+
+          '<div style="font-weight:900;color:#fff;margin-bottom:8px;">Participantes aprovados no cadastro</div>'
+
+===== v==='comprovante' @1295107 =====
+t-cotas-v345-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.hist-cotas-v345-head h2{margin:0 0 4px}.hist-cotas-v345-head p{margin:0;color:#4b5c6e}.hist-cotas-v345-list{display:grid;gap:8px}.hist-cotas-v345-item{display:grid;grid-template-columns:minmax(190px,1fr) 120px 150px;gap:10px;align-items:center;border:1px solid #dbe9dc;border-radius:12px;background:#f8fff8;padding:10px 12px}.hist-cotas-v345-item small{display:block;color:#65758a;margin-top:3px}.hist-cotas-v345-num,.hist-cotas-v345-valor{text-align:right}.hist-cotas-v345-total{margin-top:10px;padding:10px 12px;border:1px solid #dbe9dc;border-radius:12px;background:#fff}@media(max-width:760px){.hist-cotas-v345-item{grid-template-columns:1fr}.hist-cotas-v345-num,.hist-cotas-v345-valor{text-align:left}}';
+  document.head.appendChild(css);
+
+  var renderInicioBaseV345=window.renderInicio||((typeof renderInicio==='function')?renderInicio:null);
+  if(renderInicioBaseV345){
+    window.renderInicio=renderInicio=async function(){
+      var r=await renderInicioBaseV345.apply(this,arguments);
+      setTimeout(function(){limparRotuloTecnicoV345();injetarBotaoHistoricoInicioV345();garantirSecaoHistoricoInicioV345();carregarHistoricoCotasInicioV345(false);rearmarUploadV340();},180);
+      setTimeout(function(){limparRotuloTecnicoV345();injetarBotaoHistoricoInicioV345();rearmarUploadV340();},1200);
+      return r;
+    };
+  }
+
+  var navegarBaseV345=window.navegar;
+  if(typeof navegarBaseV345==='function'){
+    window.navegar=function(v){
+      var r=navegarBaseV345.apply(this,arguments);
+      if(v==='inicio') setTimeout(function(){limparRotuloTecnicoV345();injetarBotaoHistoricoInicioV345();garantirSecaoHistoricoInicioV345();carregarHistoricoCotasInicioV345(false);},350);
+      if(v==='comprovante') setTimeout(rearmarUploadV340,700);
+      return r;
+    };
+    try{navegar=window.navegar;}catch(e){}
+  }
+
+  window.diagnosticarIndexV345=function(){
+    return {versao:V,historicoCotasInicio:!!byId('historicoCotasInicioV345'),uploadV340:typeof window.PSS_abrirUploadComprovanteV272==='function'?'OK':'NAO_LOCALIZADO',regra:'Index: histórico de cotas no Início + envio de comprovante reamarrado ao método direto V340.'};
+  };
+
+  setTimeout(function(){limparRotuloTecnicoV345();injetarBotaoHistoricoInicioV345();garantirSecaoHistoricoInicioV345();carregarHistoricoCotasInicioV345(false);rearmarUploadV340();},700);
+  setInterval(limparRotuloTecnicoV345,2000);
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V346 — INÍCIO LIMPO + PALPITES HISTÓRICO ADMIN + CONTADOR CORRETO
+ * - Remove somente a duplicidade visual do Histórico de cotas criada no V345.
+ * - Mantém o botão/modal de histórico que já funcionou no teste.
+ * - Corrige o bloco Sistema ativo para não exibir Aprovados 0 quando há inscritos.
+ * - Em Palpite > Encerrados, administrador visualiza todos os bolões históricos.
+ * - Não altera upload de comprovante, OCR, Drive, pagamentos, jogos realizados ou API.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  var V='V346_INICIO_LIMPO_PALPITES_ADMIN_SEM_MEXER_UPLOAD';
+  try{ if(window.CONFIG){ CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); } }catch(e){}
+
+  function $id(id){return document.getElementById(id);}
+  function txt(v){return String(v==null?'':v).trim();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
+  function attr(v){try{if(typeof escapeAttr==='function')return escapeAttr(v);}catch(e){}return esc(v);}
+  function num(v){var n=Number(String(v==null?'':v).replace(',','.').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0;}
+  function lista(v){return Array.isArray(v)?v:[];}
+  function unwrap(r){var d=r;if(d&&d.dados!==undefined)d=d.dados;if(d&&d.result!==undefined&&!d.lista&&!d.historico)d=d.result;return d||{};}
+  function emailAtual(){return txt((window.ESTADO&&ESTADO.email)||localStorage.getItem('PSS_BOLAO_EMAIL')||'').toLowerCase();}
+  function isAdminV346(){try{if(typeof isAdminLocal==='function'&&isAdminLocal())return true;}catch(e){}try{if(typeof isAdmin==='function'&&isAdmin())return true;}catch(e){}try{var p=txt((window.ESTADO&&ESTADO.perfil)||localStorage.getItem('PSS_BOLAO_PERFIL')||'').toUpperCase();return p.indexOf('ADMIN')>=0;}catch(e){}return false;}
+  function cotasTextoV346(v){var n=Math.round(num(v)*1000)/1000;if(!n)return '0';return Math.abs(n-Math.round(n))<0.0001?String(Math.round(n)):String(n).replace('.',',');}
+  function fmtDataV346(v){try{if(typeof fmtData==='function')return fmtData(v);}catch(e){}return txt(v)||'-';}
+  function moedaV346(v){try{if(typeof moedaLocal==='function')return moedaLocal(v);}catch(e){}var n=num(v);try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(e2){return 'R$ '+String(Math.round(n*100)/100).replace('.',',');}}
+  async function apiV346(action,dados,args,timeout){dados=dados||{};args=args||[];if(typeof apiJsonpDireto_==='function')return apiJsonpDireto_(action,dados,args,timeout||16000);if(typeof apiMulti==='function')return apiMulti([{action:action,dados:dados,args:args}],timeout||16000);if(typeof api==='function')return api(action,dados,args);throw new Error('API do site não inicializada.');}
+
+  /* 1) Histórico de cotas: remove a seção duplicada do V345 e preserva o modal/lista que já funcionou. */
+  function limparHistoricoDuplicadoV346(){
+    try{
+      var sec=$id('historicoCotasInicioV345');
+      if(sec&&sec.parentNode)sec.parentNode.removeChild(sec);
+      var btn=$id('btnHistoricoCotasInicioV345');
+      if(btn&&btn.parentNode)btn.parentNode.removeChild(btn);
+      var botoes=[].slice.call(document.querySelectorAll('button.btn'));
+      var hist=botoes.filter(function(b){return /^\s*hist[oó]rico\s+de\s+cotas\s*$/i.test(txt(b.textContent));});
+      if(hist.length>1){
+        var manter=hist.find(function(b){return b.id==='btnHistoricoCotasV343';})||hist[hist.length-1];
+        hist.forEach(function(b){if(b!==manter&&b.parentNode)b.parentNode.removeChild(b);});
+      }
+      var btnOk=$id('btnHistoricoCotasV343')||[].slice.call(document.querySelectorAll('button.btn')).find(function(b){return /^\s*hist[oó]rico\s+de\s+cotas\s*$/i.test(txt(b.textContent));});
+      if(btnOk){btnOk.onclick=function(){if(typeof window.abrirHistoricoCotasV343==='function')return window.abrirHistoricoCotasV343();if(typeof window.abrirHistoricoCotasV345==='function')return window.abrirHistoricoCotasV345();};}
+    }catch(e){}
+  }
+  window.carregarHistoricoCotasInicioV345=function(){limparHistoricoDuplicadoV346();return Promise.
+
+===== v==='pagamentos' @88781 =====
+  function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_auth:'firebase',_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
+
+
+    function apiPostFormWindowName_(action,dados={},args=null,timeoutMs=90000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const iframe=document.createElement('iframe');
+        iframe.name='pss_upload_iframe_'+token;
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=CONFIG.apiUrl;
+        form.target=iframe.name;
+        form.acceptCharset='UTF-8';
+        form.enctype='application/x-www-form-urlencoded';
+        form.style.display='none';
+
+        function add(name,value){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value==null?'':String(value);
+          form.appendChild(input);
+        }
+
+        add('mode','postmessage');
+        add('action',action);
+        add('fn',action);
+        add('fnName',action);
+        add('callback','callback');
+        add('token',token);
+        add('email',ESTADO.email||dados.email||'');
+        add('payload',JSON.stringify(payload));
+        add('_',String(Date.now()));
+
+        let finalizado=false;
+        let timer=null;
+
+        function limpar(){
+          window.removeEventListener('message',onMessage);
+          if(form&&form.parentNode)form.parentNode.removeChild(form);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        function finalizarOk(resposta){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
+
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
+          if(finalizado)return;
+          try{
+            const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+            if(raw){
+              const msg=JSON.parse(raw);
+              if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+                finalizarOk(msg.response);
+                return;
+              }
+            }
+          }catch(e){}
+          setTimeout(tentarWindowNameFallback,500);
+        }
+
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
+      });
+    }
+
+    async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+      const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+      try{
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
+      }catch(errPost){
+        /* Fallback só para arquivos pequenos. Arquivo grande por JSONP/GET pode travar. */
+        if(String(base64||'').length<350000){
+          return await apiMulti([
+            {action:'uploadJogoRealizadoBolao',dados,args},
+            {action:'salvarJogoRealizadoBolao',dados,args},
+            {action:'envia
+
+===== v==='pagamentos' @761101 =====
+all></div><button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${attr(encodeURIComponent(nome))}')">Ver</button></div>`;}).join('')}</div>`:'<div class="notice warn">Nenhuma loteria localizada para exibir jogos.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabecalhoLogadoV272();
+  };
+
+  async function carregarBoloesLimpoV272(forcar){
+    var lista=[];
+    try{
+      if(!forcar && window.ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes;
+    }catch(e){}
+    if(!lista.length){
+      try{
+        if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar);
+      }catch(e2){}
+    }
+    if(!lista.length){
+      try{ lista=await carregarBoloes(true); }catch(e3){}
+    }
+    lista=listaSeguraV272(lista);
+    try{ ESTADO.boloes=lista; }catch(e4){}
+    return lista;
+  }
+
+  function statV272(t,v){
+    return '<div class="col-3"><
+
+===== v==='usuarios' @88825 =====
+tem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_auth:'firebase',_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
+
+
+    function apiPostFormWindowName_(action,dados={},args=null,timeoutMs=90000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const iframe=document.createElement('iframe');
+        iframe.name='pss_upload_iframe_'+token;
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=CONFIG.apiUrl;
+        form.target=iframe.name;
+        form.acceptCharset='UTF-8';
+        form.enctype='application/x-www-form-urlencoded';
+        form.style.display='none';
+
+        function add(name,value){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value==null?'':String(value);
+          form.appendChild(input);
+        }
+
+        add('mode','postmessage');
+        add('action',action);
+        add('fn',action);
+        add('fnName',action);
+        add('callback','callback');
+        add('token',token);
+        add('email',ESTADO.email||dados.email||'');
+        add('payload',JSON.stringify(payload));
+        add('_',String(Date.now()));
+
+        let finalizado=false;
+        let timer=null;
+
+        function limpar(){
+          window.removeEventListener('message',onMessage);
+          if(form&&form.parentNode)form.parentNode.removeChild(form);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        function finalizarOk(resposta){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
+
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
+          if(finalizado)return;
+          try{
+            const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+            if(raw){
+              const msg=JSON.parse(raw);
+              if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+                finalizarOk(msg.response);
+                return;
+              }
+            }
+          }catch(e){}
+          setTimeout(tentarWindowNameFallback,500);
+        }
+
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
+      });
+    }
+
+    async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+      const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+      try{
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
+      }catch(errPost){
+        /* Fallback só para arquivos pequenos. Arquivo grande por JSONP/GET pode travar. */
+        if(String(base64||'').length<350000){
+          return await apiMulti([
+            {action:'uploadJogoRealizadoBolao',dados,args},
+            {action:'salvarJogoRealizadoBolao',dados,args},
+            {action:'enviarJogoRealizado',dados,args}
+          ]);
+  
+
+===== v==='usuarios' @761160 =====
+ck="abrirPaginaJogosRealizadosV232('${attr(encodeURIComponent(nome))}')">Ver</button></div>`;}).join('')}</div>`:'<div class="notice warn">Nenhuma loteria localizada para exibir jogos.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabecalhoLogadoV272();
+  };
+
+  async function carregarBoloesLimpoV272(forcar){
+    var lista=[];
+    try{
+      if(!forcar && window.ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes;
+    }catch(e){}
+    if(!lista.length){
+      try{
+        if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar);
+      }catch(e2){}
+    }
+    if(!lista.length){
+      try{ lista=await carregarBoloes(true); }catch(e3){}
+    }
+    lista=listaSeguraV272(lista);
+    try{ ESTADO.boloes=lista; }catch(e4){}
+    return lista;
+  }
+
+  function statV272(t,v){
+    return '<div class="col-3"><div class="stat-card"><span>'+esc(t)+'</span><strong>'+esc(
+
+===== v==='solicitacoes' @88865 =====
+ject.assign({},u||{},{_auth:'firebase',_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
+
+
+    function apiPostFormWindowName_(action,dados={},args=null,timeoutMs=90000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const iframe=document.createElement('iframe');
+        iframe.name='pss_upload_iframe_'+token;
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=CONFIG.apiUrl;
+        form.target=iframe.name;
+        form.acceptCharset='UTF-8';
+        form.enctype='application/x-www-form-urlencoded';
+        form.style.display='none';
+
+        function add(name,value){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value==null?'':String(value);
+          form.appendChild(input);
+        }
+
+        add('mode','postmessage');
+        add('action',action);
+        add('fn',action);
+        add('fnName',action);
+        add('callback','callback');
+        add('token',token);
+        add('email',ESTADO.email||dados.email||'');
+        add('payload',JSON.stringify(payload));
+        add('_',String(Date.now()));
+
+        let finalizado=false;
+        let timer=null;
+
+        function limpar(){
+          window.removeEventListener('message',onMessage);
+          if(form&&form.parentNode)form.parentNode.removeChild(form);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        function finalizarOk(resposta){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
+
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
+          if(finalizado)return;
+          try{
+            const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+            if(raw){
+              const msg=JSON.parse(raw);
+              if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+                finalizarOk(msg.response);
+                return;
+              }
+            }
+          }catch(e){}
+          setTimeout(tentarWindowNameFallback,500);
+        }
+
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
+      });
+    }
+
+    async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+      const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+      try{
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
+      }catch(errPost){
+        /* Fallback só para arquivos pequenos. Arquivo grande por JSONP/GET pode travar. */
+        if(String(base64||'').length<350000){
+          return await apiMulti([
+            {action:'uploadJogoRealizadoBolao',dados,args},
+            {action:'salvarJogoRealizadoBolao',dados,args},
+            {action:'enviarJogoRealizado',dados,args}
+          ]);
+        }
+        throw errPost;
+      }
+ 
+
+===== v==='solicitacoes' @761215 =====
+ponent(nome))}')">Ver</button></div>`;}).join('')}</div>`:'<div class="notice warn">Nenhuma loteria localizada para exibir jogos.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabecalhoLogadoV272();
+  };
+
+  async function carregarBoloesLimpoV272(forcar){
+    var lista=[];
+    try{
+      if(!forcar && window.ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes;
+    }catch(e){}
+    if(!lista.length){
+      try{
+        if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar);
+      }catch(e2){}
+    }
+    if(!lista.length){
+      try{ lista=await carregarBoloes(true); }catch(e3){}
+    }
+    lista=listaSeguraV272(lista);
+    try{ ESTADO.boloes=lista; }catch(e4){}
+    return lista;
+  }
+
+  function statV272(t,v){
+    return '<div class="col-3"><div class="stat-card"><span>'+esc(t)+'</span><strong>'+esc(v)+'</strong></div></div>';
+  }
+
+  function cardInicioV
+
+===== v==='baseLoterias' @88913 =====
+now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
+
+
+    function apiPostFormWindowName_(action,dados={},args=null,timeoutMs=90000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const iframe=document.createElement('iframe');
+        iframe.name='pss_upload_iframe_'+token;
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=CONFIG.apiUrl;
+        form.target=iframe.name;
+        form.acceptCharset='UTF-8';
+        form.enctype='application/x-www-form-urlencoded';
+        form.style.display='none';
+
+        function add(name,value){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value==null?'':String(value);
+          form.appendChild(input);
+        }
+
+        add('mode','postmessage');
+        add('action',action);
+        add('fn',action);
+        add('fnName',action);
+        add('callback','callback');
+        add('token',token);
+        add('email',ESTADO.email||dados.email||'');
+        add('payload',JSON.stringify(payload));
+        add('_',String(Date.now()));
+
+        let finalizado=false;
+        let timer=null;
+
+        function limpar(){
+          window.removeEventListener('message',onMessage);
+          if(form&&form.parentNode)form.parentNode.removeChild(form);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        function finalizarOk(resposta){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
+
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
+          if(finalizado)return;
+          try{
+            const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+            if(raw){
+              const msg=JSON.parse(raw);
+              if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+                finalizarOk(msg.response);
+                return;
+              }
+            }
+          }catch(e){}
+          setTimeout(tentarWindowNameFallback,500);
+        }
+
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
+      });
+    }
+
+    async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+      const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+      try{
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
+      }catch(errPost){
+        /* Fallback só para arquivos pequenos. Arquivo grande por JSONP/GET pode travar. */
+        if(String(base64||'').length<350000){
+          return await apiMulti([
+            {action:'uploadJogoRealizadoBolao',dados,args},
+            {action:'salvarJogoRealizadoBolao',dados,args},
+            {action:'enviarJogoRealizado',dados,args}
+          ]);
+        }
+        throw errPost;
+      }
+    }
+
+
+    async function apiUploadComprovante_(
+
+===== v==='baseLoterias' @761278 =====
+ class="notice warn">Nenhuma loteria localizada para exibir jogos.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabecalhoLogadoV272();
+  };
+
+  async function carregarBoloesLimpoV272(forcar){
+    var lista=[];
+    try{
+      if(!forcar && window.ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes;
+    }catch(e){}
+    if(!lista.length){
+      try{
+        if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar);
+      }catch(e2){}
+    }
+    if(!lista.length){
+      try{ lista=await carregarBoloes(true); }catch(e3){}
+    }
+    lista=listaSeguraV272(lista);
+    try{ ESTADO.boloes=lista; }catch(e4){}
+    return lista;
+  }
+
+  function statV272(t,v){
+    return '<div class="col-3"><div class="stat-card"><span>'+esc(t)+'</span><strong>'+esc(v)+'</strong></div></div>';
+  }
+
+  function cardInicioV272(b,i){
+    var nome=b.loteria||b.nome||b.id||'Bolão';
+    va
+
+===== v==='consulta' @270883 =====
+177 — CÁLCULO AUTOMÁTICO DO OFFSET DO MENU FIXO
+ * Evita sobreposição quando existe faixa superior com data/hora/usuário.
+ * ===================================================================== */
+(function(){
+  function pssSetStickyOffsets(){
+    try{
+      var header =
+        document.querySelector('.topbar') ||
+        document.querySelector('.pss-topbar') ||
+        document.querySelector('#topbar') ||
+        document.querySelector('#appHeader') ||
+        document.querySelector('.app-header') ||
+        document.querySelector('header');
+
+      var menu =
+        document.querySelector('#menuPrincipal') ||
+        document.querySelector('.menu-principal') ||
+        document.querySelector('.navbar') ||
+        document.querySelector('.menu') ||
+        document.querySelector('nav');
+
+      var offset = 0;
+
+      if(header && menu && !header.contains(menu)){
+        offset = Math.ceil(header.getBoundingClientRect().height || 0);
+      }
+
+      document.documentElement.style.setProperty('--pss-topbar-offset', offset + 'px');
+    }catch(e){}
+  }
+
+  window.addEventListener('load', pssSetStickyOffsets);
+  window.addEventListener('resize', pssSetStickyOffsets);
+  window.addEventListener('orientationchange', function(){
+    setTimeout(pssSetStickyOffsets, 250);
+  });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    pssSetStickyOffsets();
+    setTimeout(pssSetStickyOffsets, 500);
+    setTimeout(pssSetStickyOffsets, 1500);
+  });
+})();
+
+
+/* =====================================================================
+ * PATCH V178 — CONSULTA ADMINISTRATIVA DE PARTICIPANTE
+ * Menu exclusivo do administrador.
+ * ===================================================================== */
+(function(){
+  const PSSV178_navegarBase = navegar;
+  navegar = function(v){
+    if(v==='consulta'){
+      ESTADO.view=v;
+      document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+      return renderConsultaParticipanteAdmin();
+    }
+    return PSSV178_navegarBase(v);
+  };
+
+  const PSSV178_aplicarLayoutLogadoBase = aplicarLayoutLogado;
+  aplicarLayoutLogado = function(){
+    PSSV178_aplicarLayoutLogadoBase();
+    garantirMenuConsultaAdmin_();
+  };
+
+  const PSSV178_renderInicioBase = renderInicio;
+  renderInicio = async function(){
+    await PSSV178_renderInicioBase();
+    if(isAdmin() && typeof window.inserirAtalhoConsultaInicio_==='function') window.inserirAtalhoConsultaInicio_();
+  };
+
+  function garantirMenuConsultaAdmin_(){
+    try{
+      const nav=document.getElementById('navMenu');
+      if(!nav)return;
+      if(!nav.querySelector('button[data-view="consulta"]')){
+        const sair=nav.querySelector('button.sair');
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.dataset.view='consulta';
+        btn.className='admin-only hidden';
+        btn.textContent='Consulta';
+        btn.addEventListener('click',()=>navegar('consulta'));
+        nav.insertBefore(btn,sair||null);
+      }
+      nav.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()));
+    }catch(e){}
+  }
+
+  function inserirAtalhoConsultaInicio_(){
+    try{
+      const view=document.getElementById('view');
+      if(!view || document.getElementById('atalhoConsultaAdminInicio'))return;
+      const bloco=document.createElement('div');
+      bloco.id='atalhoConsultaAdminInicio';
+      bloco.className='admin-shortcut';
+      bloco.innerHTML=`
+        <h3>Consulta administrativa de participante</h3>
+        <p>Área restrita para consultar vínculos, cotas, comprovantes, pagamentos, palpites e histórico de cada participante.</p>
+        <div class="actions">
+          <button type="button" class="btn" onclick="navegar('consulta')">Abrir consulta</button>
+        </div>
+      `;
+      view.appendChild(bloco);
+    }catch(e){}
+  }
+
+  window.renderConsultaParticipanteAdmin = async function(){
+    if(!isAdmin()){
+      setView(`<div class="panel"><div class="notice error">Acesso restrito ao administrador.</div></div>`);
+      return;
+    }
+
+    loading('Carregando consulta administrativa');
+
+    try{
+      const dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email},[{adminEmail:ESTADO.email}]);
+      const participantes=Array.isArray(dados.participantes)?dados.participantes:[];
+      ESTADO.consultaAdminParticipantes=participantes;
+
+      setView(`
+        <div class="panel">
+          <h2>🔎 Consulta administrativa de participante</h2>
+          <p>Consulte dados completos do participante, bolões vinculados, cotas, comprovantes, pagamentos, palpites e histórico.</p>
+
+          <div class="consulta-actions">
+            <div class="field">
+              <label>Participante</label>
+              <select id="consultaAdminEmail">
+                <option value="">Selecione um participante...</option>
+                ${participantes.map(p=>`<option value="${escapeAttr(p.email)}">${escapeHtml((p.nome||p.email||'Participante')+' — '+(p.email||''))}</option>`).join('')}
+              </select>
+            </div>
+            <button type="button" class="btn" onclick="executarConsultaParticipanteAdmin()">Consultar</button>
+            <button type="button" class="btn btn-light" onclick="renderConsultaParticipanteAdmin()">Atualizar lista</button>
+          </div>
+
+          <div id="resultadoConsultaParticipanteAdmin">
+            <div class="consulta-empty">Selecione um participante para carregar a consulta detalhada.</div>
+          </div>
+        </div>
+      `);
+    }catch(err){
+      setView(`<div class="panel"><div class="notice error">${escapeHtml(err.message)}</div></div>`);
+    }
+  };
+
+  window.executarConsultaParticipanteAdmin = async function(){
+    const email=(document.getElementById('consultaAdminEmail')||{}).value||'';
+    const box=document.getElementById('resultadoConsultaParticipanteAdmin');
+    if(!email){
+      toast('Selecione um participante.','warn');
+      return;
+    }
+
+    if(box)box.innerHTML='<div class="notice info">Carregando dados do participante...</div>';
+
+    try{
+      const dados=await api('consultaParticipanteAdmin',{adminEmail:ESTADO.email,participanteEmail:email},[{adminEmail:ESTADO.email,participanteEmail:email}]);
+      if(box)box.innerHTML=renderResultadoConsultaParticipanteAdmin_(dados);
+    }catch(err){
+      if(box)box.innerHTML=`<div class="notice error">${escapeHtml(err.message)}</div>`;
+    }
+  };
+
+  function renderResultadoConsultaParticipanteAdmin_(d){
+    d=d||{};
+    const u=d.usuario||{};
+    const resumo=d.resumo||{};
+    return `
+      <div class="consulta-admin-grid">
+        ${consultaCard_('Nome',u.nome||'-')}
+        ${consultaCard_('E-mail',u.email||'-')}
+        ${consultaCard_('Status',u.status||'-')}
+        ${consultaCard_('Perfil',u.perf
+
+===== v==='consulta' @760623 =====
+as ficam disponíveis aqui.':'Usuário: aparecem somente os bolões em que você participou.'} Clique em <strong>Ver</strong> para carregar os arquivos daquele bolão.</p><div id="jogosListaV268">${lista.length?`<div class="v232-jogos-lista">${lista.map(function(b){var nome=b.loteria||b.nome||b.id||'';return `<div class="v232-jogos-row"><div><b>${esc(nome)}</b><small>${esc(hist(b)?'HISTÓRICO':(b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+esc(fmtData(b.dataSorteio)):''}</small></div><button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${attr(encodeURIComponent(nome))}')">Ver</button></div>`;}).join('')}</div>`:'<div class="notice warn">Nenhuma loteria localizada para exibir jogos.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabecalhoLogadoV272();
+  };
+
+  async function carregarBoloesLimpoV272(forcar){
+    var lista=[];
+    try{
+      if(!forcar && window.ESTADO && Array.isArray(ESTADO.boloes) && 
+
+===== v==='participantes' @88961 =====
+rSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
+
+
+    function apiPostFormWindowName_(action,dados={},args=null,timeoutMs=90000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const iframe=document.createElement('iframe');
+        iframe.name='pss_upload_iframe_'+token;
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=CONFIG.apiUrl;
+        form.target=iframe.name;
+        form.acceptCharset='UTF-8';
+        form.enctype='application/x-www-form-urlencoded';
+        form.style.display='none';
+
+        function add(name,value){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value==null?'':String(value);
+          form.appendChild(input);
+        }
+
+        add('mode','postmessage');
+        add('action',action);
+        add('fn',action);
+        add('fnName',action);
+        add('callback','callback');
+        add('token',token);
+        add('email',ESTADO.email||dados.email||'');
+        add('payload',JSON.stringify(payload));
+        add('_',String(Date.now()));
+
+        let finalizado=false;
+        let timer=null;
+
+        function limpar(){
+          window.removeEventListener('message',onMessage);
+          if(form&&form.parentNode)form.parentNode.removeChild(form);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        function finalizarOk(resposta){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
+
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
+          if(finalizado)return;
+          try{
+            const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+            if(raw){
+              const msg=JSON.parse(raw);
+              if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+                finalizarOk(msg.response);
+                return;
+              }
+            }
+          }catch(e){}
+          setTimeout(tentarWindowNameFallback,500);
+        }
+
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
+      });
+    }
+
+    async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+      const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+      try{
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
+      }catch(errPost){
+        /* Fallback só para arquivos pequenos. Arquivo grande por JSONP/GET pode travar. */
+        if(String(base64||'').length<350000){
+          return await apiMulti([
+            {action:'uploadJogoRealizadoBolao',dados,args},
+            {action:'salvarJogoRealizadoBolao',dados,args},
+            {action:'enviarJogoRealizado',dados,args}
+          ]);
+        }
+        throw errPost;
+      }
+    }
+
+
+    async function apiUploadComprovante_(base64,file,loteria){
+      const dados={fileDat
+
+===== v==='participantes' @761341 =====
+os.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabecalhoLogadoV272();
+  };
+
+  async function carregarBoloesLimpoV272(forcar){
+    var lista=[];
+    try{
+      if(!forcar && window.ESTADO && Array.isArray(ESTADO.boloes) && ESTADO.boloes.length) lista=ESTADO.boloes;
+    }catch(e){}
+    if(!lista.length){
+      try{
+        if(typeof PSS_carregarBoloesRapidoV268_==='function') lista=await PSS_carregarBoloesRapidoV268_(!!forcar);
+      }catch(e2){}
+    }
+    if(!lista.length){
+      try{ lista=await carregarBoloes(true); }catch(e3){}
+    }
+    lista=listaSeguraV272(lista);
+    try{ ESTADO.boloes=lista; }catch(e4){}
+    return lista;
+  }
+
+  function statV272(t,v){
+    return '<div class="col-3"><div class="stat-card"><span>'+esc(t)+'</span><strong>'+esc(v)+'</strong></div></div>';
+  }
+
+  function cardInicioV272(b,i){
+    var nome=b.loteria||b.nome||b.id||'Bolão';
+    var participa=participaV272(b);
+    var minhas=n(b.cotasUsuario||
+
+===== v==='participantes' @859165 =====
+ds de Usuários.
+ * - Menu Participantes Bolão fica restrito ao admin mestre.
+ * - Cadastro público só libera envio quando senha e confirmação são iguais.
+ * ===================================================================== */
+(function(){
+  function v287Txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function v287Norm(v){return v287Txt(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();}
+  function v287Esc(v){return String(v===undefined||v===null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function v287Master(){
+    try{
+      if(typeof isAdmin==='function' && !isAdmin()) return false;
+      var u=(window.ESTADO&&ESTADO.usuario)||{};
+      var email=v287Norm(u.email||(window.ESTADO&&ESTADO.email)||'');
+      var perfil=v287Norm((window.ESTADO&&ESTADO.role)||'')+' '+v287Norm(u.perfil||'')+' '+v287Norm(u.role||'');
+      return perfil.indexOf('MESTRE')>=0 || perfil.indexOf('ADMIN_MESTRE')>=0 || email==='PORTALSIMONSPORTS@GMAIL.COM';
+    }catch(e){return false;}
+  }
+
+  window.isAdminMestreV286_ = v287Master;
+  window.isAdminMestreV287_ = v287Master;
+
+  var aplicarLayoutAnteriorV287 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutAnteriorV287==='function') aplicarLayoutAnteriorV287();
+    try{
+      var mestre=v287Master();
+      document.querySelectorAll('.admin-mestre-only,[data-view="participantes"]').forEach(function(el){
+        el.classList.toggle('hidden',!mestre);
+        if(!mestre) el.setAttribute('aria-hidden','true');
+        else el.removeAttribute('aria-hidden');
+      });
+    }catch(e){}
+  };
+
+  var navegarAnteriorV287 = window.navegar;
+  window.navegar = navegar = function(v){
+    if(v==='participantes' && !v287Master()){
+      if(typeof setView==='function') setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador mestre.</div></div>');
+      try{document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){b.classList.toggle('active',false);});}catch(e){}
+      return;
+    }
+    return navegarAnteriorV287(v);
+  };
+
+  window.validarSenhasCadastroV287 = function(){
+    var s=document.getElementById('cadSenha');
+    var c=document.getElementById('cadSenha2');
+    var msg=document.getElementById('cadSenhaMsgV287');
+    var btn=document.getElementById('btnEnviarCadastro');
+    var aceite=document.getElementById('cadAceite');
+    var ok=false;
+
+    if(!s||!c){return false;}
+    var senha=v287Txt(s.value);
+    var conf=v287Txt(c.value);
+
+    c.setCustomValidity('');
+    s.setCustomValidity('');
+
+    if(!senha || senha.length<6){
+      ok=false;
+      if(msg) msg.innerHTML='<span style="color:#8a5a00;font-weight:900;">Informe uma senha com pelo menos 6 caracteres.</span>';
+    }else if(!conf){
+      ok=false;
+      if(msg) msg.innerHTML='<span style="color:#8a5a00;font-weight:900;">Confirme a senha para liberar o envio.</span>';
+    }else if(senha!==conf){
+      ok=false;
+      c.setCustomValidity('As senhas não conferem.');
+      if(msg) msg.innerHTML='<span style="color:#b91c1c;font-weight:900;">As senhas não conferem. Digite a mesma senha nos dois campos.</span>';
+    }else{
+      ok=true;
+      if(msg) msg.innerHTML='<span style="color:#0b6f28;font-weight:900;">Senhas conferidas.</span>';
+    }
+
+    if(btn){
+      btn.disabled=!(ok && aceite && aceite.checked);
+    }
+    return ok;
+  };
+
+  window.validarCadastroBotaoV287 = function(){
+    return window.validarSenhasCadastroV287();
+  };
+
+  window.abrirCadastro = abrirCadastro = async function(){
+    abrirModal('Solicitar cadastro',`
+      <form onsubmit="enviarCadastro(event)" id="formCadastroV287" novalidate>
+        <div class="notice info">
+          O cadastro cria apenas o acesso ao sistema. Após aprovação da administração, o participante entra na área logada e escolhe o bolão para adquirir/reservar cotas.
+        </div>
+
+        <div class="field">
+          <label>Nome completo</label>
+          <input id="cadNome" required oninput="if(typeof atualizarPreviewNomePublicoV216==='function') atualizarPreviewNomePublicoV216(); validarCadastroBotaoV287();" />
+        </div>
+
+        <div class="field">
+          <label>Nome para divulgação no Telegram</label>
+          <input id="cadNomePublico" maxlength="60" required placeholder="Ex.: Luiz, Luiz A., Portal SimonSports..." oninput="if(typeof atualizarPreviewNomePublicoV216==='function') atualizarPreviewNomePublicoV216(); validarCadastroBotaoV287();" />
+          <div class="nome-publico-help">
+            Informe como seu nome deverá aparecer nas listas de participantes dos bolões e comunicados do Telegram. Não precisa ser o nome completo.
+          </div>
+          <div class="nome-publico-preview" id="previewNomePublicoV216">Nas listas do bolão, será exibido como: <strong>Nome informado pelo participante</strong></div>
+        </div>
+
+        <div class="field"><label>E-mail</label><input id="cadEmail" type="email" required oninput="validarCadastroBotaoV287()" /></div>
+
+        <div class="form-row">
+          <div class="field"><label>Senha de acesso</label><input id="cadSenha" type="password" minlength="6" autocomplete="new-password" required oninput="validarSenhasCadastroV287()" /></div>
+          <div class="field"><label>Confirmar senha</label><input id="cadSenha2" type="password" minlength="6" autocomplete="new-password" required oninput="validarSenhasCadastroV287()" /></div>
+        </div>
+        <div id="cadSenhaMsgV287" class="nome-publico-help" style="margin-top:-6px;margin-bottom:10px;">Confirme a mesma senha nos dois campos.</div>
+
+        <div class="form-row">
+          <div class="field"><label>CPF</label><input id="cadCpf" placeholder="Opcional" /></div>
+          <div class="field"><label>Telegram</label><input id="cadTelefone" placeholder="@usuario ou telefone vinculado ao Telegram" /></div>
+        </div>
+
+        <div class="field"><label>Regulamento do sistema</label><div class="reg-box" id="cadRegulamento">Carregando...</div><div class="nome-publico-help">A versão vigente será identificada automaticamente pelo sistema.</div></div>
+
+        <label class="checkline"><input type="checkbox" id="cadAvisoNovoBolao" checked><span>Desejo receber aviso por e-mail quando novos bolões forem criados.</span></label>
+        <label class="checkline"><input type="checkbox" id="cadAceite" onchange="validarCadastroBotaoV287()"><span>Li e aceito o regulamento, incluindo regras de cadastro, acesso, cotas, pagamentos, comprovantes, prazos, palpites e divisão proporcional de eventual premiação.</span></label>
+
+        <button class="btn btn-block" id="btnEnviarCadastro" type="submit" disabled>Enviar solicitação de acesso</button>
+      </fo
+
+===== v==='participantes' @1077216 =====
+if(!isMestre()){
+      if(typeof setView==='function')setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador mestre.</div></div>');
+      return;
+    }
+    ativarMenu('participantes');
+    if(typeof loading==='function')loading('Carregando Participantes Bolão');
+    try{
+      var r=await apiMulti([{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES_BOLAO'},args:['PARTICIPANTES_BOLAO']},{action:'getDadosAdmin',dados:{nomeAba:'PARTICIPANTES'},args:['PARTICIPANTES']}]);
+      var headers=r.headers||[];
+      var rows=r.rows||[];
+      if(typeof setView==='function')setView('<div class="panel"><h2>Participantes Bolão</h2><p>Participantes vinculados aos bolões cadastrados.</p><div class="actions"><button class="btn" onclick="sincronizarAbasParticipantesAdmin()">Sincronizar abas individuais</button><button class="btn btn-light" onclick="renderParticipantesBolaoAdmin()">Atualizar lista</button></div><div id="syncAbasParticipantesResultado"></div>'+(headers.length?'<div class="table-wrap"><table><thead><tr>'+headers.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(c){return '<td>'+(typeof formatarCelula==='function'?formatarCelula(c):esc(c))+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>':'<div class="notice warn">Nenhum dado localizado na aba PARTICIPANTES_BOLAO.</div>')+'</div>');
+    }catch(err){
+      if(typeof setView==='function')setView('<div class="panel"><div class="notice error">'+esc((err&&err.message)||err)+'</div></div>');
+    }
+  }
+
+  window.renderParticipantesBolaoAdmin=renderParticipantesBolaoAdmin=renderParticipantesV311;
+
+  var navegarAnterior=window.navegar;
+  window.navegar=navegar=function(v){
+    reforcarSessao();
+    if(v==='participantes')return renderParticipantesV311();
+    if(typeof navegarAnterior==='function')return navegarAnterior.apply(this,arguments);
+  };
+
+  function getCacheSolicitacao(linha){
+    try{if(typeof getSolicitacaoCachePorLinhaV290_==='function')return getSolicitacaoCachePorLinhaV290_(linha)||{};}catch(e){}
+    return {};
+  }
+
+  async function chamarAprovacaoRapida(action,linha){
+    var acao=String(action||'');
+    var args=[linha];
+    var dados={linha:linha,linhaPlanilha:linha,row:linha,email:emailAtual()};
+    if(acao.toLowerCase().indexOf('aprovar')>=0)acao='aprovarSolicitacaoCadastroV311';
+    if(typeof apiJsonpDireto_==='function'){
+      return await apiJsonpDireto_(acao,dados,args,65000);
+    }
+    return await api(acao,dados,args);
+  }
+
+  window.executarAcaoSolicitacaoAdmin=executarAcaoSolicitacaoAdmin=async function(){
+    var cfg=window.PSS_SOLICITACAO_ACAO||{};
+    window.PSS_SOLICITACAO_ACAO=null;
+    try{if(typeof fecharModal==='function')fecharModal();}catch(e){}
+    if(!cfg.action||!cfg.linha)return;
+
+    var card=document.getElementById('sol-card-'+cfg.linha);
+    try{
+      if(card){
+        card.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+        var box=document.createElement('div');
+        box.className='notice info';
+        box.id='sol-processando-v311-'+cfg.linha;
+        box.innerHTML='<span class="loading-fast">Processando aprovação. Aguarde sem clicar novamente...</span>';
+        card.appendChild(box);
+      }
+    }catch(eCard){}
+
+    try{
+      if(typeof toast==='function')toast('Processando solicitação...','info');
+      var antes=getCacheSolicitacao(cfg.linha);
+      var r=await chamarAprovacaoRapida(cfg.action,cfg.linha);
+
+      if(String(cfg.action||'').toLowerCase().indexOf('aprovar')>=0){
+        var uf=(r&&r.usuarioFirebase)||{};
+        var syncDados=Object.assign({},antes,uf,{email:uf.email||r.email||antes.email,nome:uf.nome||r.nome||antes.nome,nomePublico:uf.nomePublico||r.nomePublico||antes.nomePublico,perfil:uf.perfil||'USUARIO'});
+        if(syncDados.email&&typeof sincronizarFirestoreAprovacaoV308_==='function'){
+          try{await sincronizarFirestoreAprovacaoV308_(syncDados);}catch(eSync){if(typeof toast==='function')toast('Aprovação gravada, mas Firestore falhou: '+((eSync&&eSync.message)||eSync),'warn');}
+        }
+      }else if(String(cfg.action||'').toLowerCase().indexOf('recusar')>=0){
+        var rec=antes||{};
+        if(rec.email&&typeof firebaseSincronizarUsuarioAdmin_==='function'){
+          try{await firebaseSincronizarUsuarioAdmin_({email:rec.email,nome:rec.nome,status:'RECUSADO',perfil:'USUARIO',ativo:false});}catch(eRec){}
+        }
+      }
+
+      if(card){
+        var p=document.getElementById('sol-processando-v311-'+cfg.linha);
+        if(p){p.className='notice';p.innerHTML=esc((r&&r.msg)||'Ação realizada com sucesso.');}
+      }
+      if(typeof toast==='function')toast((r&&r.msg)||'Ação realizada com sucesso.');
+      setTimeout(function(){try{if(typeof renderSolicitacoesAdmin==='function')renderSolicitacoesAdmin();}catch(e){}},500);
+      setTimeout(function(){try{if(typeof carregarBadgeInscritosTopo==='function')carregarBadgeInscritosTopo();}catch(e){}},900);
+    }catch(err){
+      try{if(card)card.querySelectorAll('button').forEach(function(b){b.disabled=false;});}catch(eBtn){}
+      var msg=(err&&err.message)||String(err||'Erro ao processar solicitação.');
+      if(typeof toast==='function')toast(msg,'error');
+      var p2=document.getElementById('sol-processando-v311-'+cfg.linha);
+      if(p2){p2.className='notice error';p2.innerHTML=esc(msg);}
+    }
+  };
+
+  setTimeout(function(){try{reforcarSessao();if(window.ESTADO&&ESTADO.usuario&&typeof aplicarLayoutLogado==='function')aplicarLayoutLogado();}catch(e){}},150);
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * PATCH V312 — APROVAÇÃO SEM CONFLITO COM PUBLICADOR JSON
+ * Projeto: Portal SimonSports — Bolões Loterias Especiais
+ *
+ * Motivo:
+ * A V311 ainda podia receber "Outra aprovação está em andamento" porque
+ * o Code_API usava LockService.getScriptLock(), o mesmo lock global usado
+ * por outras rotinas do projeto, inclusive publicador JSON/cache.
+ *
+ * Correção:
+ * - Aprovação usa rota V312.
+ * - Botão fica protegido apenas na tela atual.
+ * - API não usa mais ScriptLock global para aprovação.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  var V='V313_FIREBASE_SYNC_FIX';
+  try{ if(window.CONFIG) CONFIG.versao=V; localStorage.setItem('PSS_INDEX_VERSION',V); }catch(e){}
+  var processando={};
+
+  function txt(v){return String(v===undefined||v===null?'':v).trim();}
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v);}catch(e){}return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function emailAtual(){
+    try{if(window.ESTADO&&ESTADO.email)return String(
+
+===== v==='boloes' @88496 =====
+STADO.usuario);aplicarLayoutLogado();navegar('inicio')}catch(err){try{if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}msg.innerHTML=`<div class="notice error">${escapeHtml(firebaseMensagemErro_(err))}</div>`}finally{btn.disabled=false;btn.textContent='Entrar no sistema'}}
+    function salvarSessao(u){localStorage.setItem('PSS_BOLAO_SESSAO',JSON.stringify(Object.assign({},u||{},{_auth:'firebase',_ts:Date.now(),_versao:CONFIG.versao})))}function carregarSessao(){try{return JSON.parse(localStorage.getItem('PSS_BOLAO_SESSAO')||'null')}catch(e){return null}}async function logout(){ESTADO.usuario=null;ESTADO.role='';localStorage.removeItem('PSS_BOLAO_SESSAO');try{await inicializarFirebase_();if(FIREBASE_AUTH)await FIREBASE_AUTH.signOut();}catch(e){}renderHomePublica()}
+    function aplicarLayoutLogado(){if(!ESTADO.usuario||!ESTADO.usuario.email){renderHomePublica();return}document.body.classList.add('app-logado');document.getElementById('publicHeader').classList.add('hidden');document.getElementById('appHeader').classList.remove('hidden');const u=normalizarUsuarioSessao_(ESTADO.usuario);ESTADO.usuario=u;ESTADO.email=u.email;document.getElementById('userDisplay').textContent=`${u.nome||'Usuário'}${u.email?' • '+u.email:''}`;document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()))}function isAdmin(){const r=normalizar(ESTADO.role+' '+(ESTADO.usuario?ESTADO.usuario.perfil:''));return r.includes('ADMIN')||r.includes('MESTRE')}
+    function navegar(v){ESTADO.view=v;document.querySelectorAll('#navMenu button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v!=='inicio')setView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);if(v==='inicio')renderInicio();if(v==='boloes')renderBoloes('ativos');if(v==='palpite')renderPalpiteLista('ativos');if(v==='comprovante')renderComprovante();if(v==='jogos')renderJogosRealizados();if(v==='especiais')renderEspeciais();if(v==='regulamento')renderRegulamento();if(v==='config')renderConfigBoloesAdmin();if(v==='pagamentos')renderPagamentosAdmin();if(v==='usuarios')renderUsuariosAdmin();if(v==='solicitacoes')renderSolicitacoesAdmin();if(v==='baseLoterias')renderBaseLoteriasAdmin();if(v==='participantes')renderParticipantesBolaoAdmin()}
+    function setView(h){document.getElementById('view').innerHTML=h}function loading(t){setView(`<div class="panel"><h2>${escapeHtml(t)}</h2><p>Carregando dados...</p></div>`)}
+
+
+    function apiPostFormWindowName_(action,dados={},args=null,timeoutMs=90000){
+      return new Promise((resolve,reject)=>{
+        const token='PSSPOST_'+Date.now()+'_'+Math.floor(Math.random()*1e9);
+        const payload=montarPayloadApi_(action,dados,args);
+
+        const iframe=document.createElement('iframe');
+        iframe.name='pss_upload_iframe_'+token;
+        iframe.style.position='fixed';
+        iframe.style.left='-9999px';
+        iframe.style.top='-9999px';
+        iframe.style.width='1px';
+        iframe.style.height='1px';
+        iframe.style.opacity='0';
+        iframe.style.pointerEvents='none';
+        iframe.setAttribute('aria-hidden','true');
+
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=CONFIG.apiUrl;
+        form.target=iframe.name;
+        form.acceptCharset='UTF-8';
+        form.enctype='application/x-www-form-urlencoded';
+        form.style.display='none';
+
+        function add(name,value){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value==null?'':String(value);
+          form.appendChild(input);
+        }
+
+        add('mode','postmessage');
+        add('action',action);
+        add('fn',action);
+        add('fnName',action);
+        add('callback','callback');
+        add('token',token);
+        add('email',ESTADO.email||dados.email||'');
+        add('payload',JSON.stringify(payload));
+        add('_',String(Date.now()));
+
+        let finalizado=false;
+        let timer=null;
+
+        function limpar(){
+          window.removeEventListener('message',onMessage);
+          if(form&&form.parentNode)form.parentNode.removeChild(form);
+          if(iframe&&iframe.parentNode)iframe.parentNode.removeChild(iframe);
+        }
+
+        function finalizarOk(resposta){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          try{resolve(tratarRespostaApi_(resposta));}catch(e){reject(e);}
+        }
+
+        function finalizarErro(err){
+          if(finalizado)return;
+          finalizado=true;
+          clearTimeout(timer);
+          limpar();
+          reject(err instanceof Error?err:new Error(String(err||'Falha no envio.')));
+        }
+
+        function onMessage(ev){
+          if(finalizado)return;
+
+          let msg=ev.data;
+          if(typeof msg==='string'){
+            try{msg=JSON.parse(msg);}catch(e){}
+          }
+
+          if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+            finalizarOk(msg.response);
+          }
+        }
+
+        function tentarWindowNameFallback(){
+          if(finalizado)return;
+          try{
+            const raw=iframe.contentWindow&&iframe.contentWindow.name?iframe.contentWindow.name:'';
+            if(raw){
+              const msg=JSON.parse(raw);
+              if(msg&&msg.pssBoloesApi===true&&msg.token===token){
+                finalizarOk(msg.response);
+                return;
+              }
+            }
+          }catch(e){}
+          setTimeout(tentarWindowNameFallback,500);
+        }
+
+        window.addEventListener('message',onMessage);
+
+        timer=setTimeout(()=>{
+          finalizarErro(new Error('Tempo limite ao enviar arquivo. O servidor não confirmou o recebimento.'));
+        },timeoutMs);
+
+        iframe.onerror=()=>finalizarErro(new Error('Falha ao abrir canal de upload.'));
+        iframe.onload=()=>setTimeout(tentarWindowNameFallback,150);
+
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        try{
+          form.submit();
+          setTimeout(tentarWindowNameFallback,800);
+        }catch(err){
+          finalizarErro(err);
+        }
+      });
+    }
+
+    async function apiUploadJogoRealizado_(base64,file,loteria,concurso,dataJogo,obs){
+      const dados={fileData:base64,fileName:file.name,mimeType:file.type,email:ESTADO.email,loteria,concurso,dataJogo,obs};
+      const args=[base64,file.name,ESTADO.email,loteria,concurso,dataJogo,obs];
+      try{
+        try{ return await uploadFetchV226_('uploadJogoRealizadoBolao',dados,args,160000); }
+        catch(_ef){ return await apiPostFormWindowName_('uploadJogoRealizadoBolao',dados,args,240000); }
+      }catch(errPost){
+        /* Fallback só para arqui
+
+===== v==='boloes' @760454 =====
+atualizando){
+    lista=jogosFiltrar(lista);
+    return `<div class="panel"><h2>🎟️ Jogos realizados do bolão</h2><p>${admin()?'Administrador: todas as loterias cadastradas ficam disponíveis aqui.':'Usuário: aparecem somente os bolões em que você participou.'} Clique em <strong>Ver</strong> para carregar os arquivos daquele bolão.</p><div id="jogosListaV268">${lista.length?`<div class="v232-jogos-lista">${lista.map(function(b){var nome=b.loteria||b.nome||b.id||'';return `<div class="v232-jogos-row"><div><b>${esc(nome)}</b><small>${esc(hist(b)?'HISTÓRICO':(b.status||'ATIVO'))}${b.dataSorteio?' • Sorteio: '+esc(fmtData(b.dataSorteio)):''}</small></div><button type="button" class="v232-link-ver" onclick="abrirPaginaJogosRealizadosV232('${attr(encodeURIComponent(nome))}')">Ver</button></div>`;}).join('')}</div>`:'<div class="notice warn">Nenhuma loteria localizada para exibir jogos.</div>'}</div>${atualizando?'<div class="cache-hint warn">Atualizando lista em segundo plano...</div>':''}</div>`;
+  }
+  window.renderJogosRealizados = renderJogosRealizados = async function(){
+    window.PSS_MENU_ATUAL_V268='jogos';
+    aplicarView(htmlJogos(cacheLocalBoloes(),true));
+    try{
+      var lista=await carregarBoloesRapido(false);
+      if((window.PSS_MENU_ATUAL_V268||ESTADO.view)==='jogos') aplicarView(htmlJogos(lista,false));
+    }catch(e){}
+  };
+
+  var navegarBase=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    if(v==='base') v='baseLoterias';
+    window.PSS_MENU_ATUAL_V268=v;
+    window.PSS_MENU_ATUAL_V267=v;
+    try{ ESTADO.view=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.view===v); });
+    try{
+      if(v==='inicio') return renderInicio();
+      if(v==='boloes') return renderBoloes('ativos');
+      if(v==='palpite') return renderPalpiteLista('ativos');
+      if(v==='jogos') return renderJogosRealizados();
+      if(v==='consulta' && typeof renderConsultaParticipanteAdmin==='function') return renderConsultaParticipanteAdmin();
+      if(v!=='inicio') aplicarView(`<div class="panel"><h2><span class="loading-fast">Carregando</span></h2><p>Aguarde...</p></div>`);
+      if(v==='comprovante') return renderComprovante();
+      if(v==='especiais') return renderEspeciais();
+      if(v==='regulamento') return renderRegulamento();
+      if(v==='config') return renderConfigBoloesAdmin();
+      if(v==='pagamentos') return renderPagamentosAdmin();
+      if(v==='usuarios') return renderUsuariosAdmin();
+      if(v==='solicitacoes') return renderSolicitacoesAdmin();
+      if(v==='baseLoterias') return renderBaseLoteriasAdmin();
+      if(v==='participantes') return renderParticipantesBolaoAdmin();
+      if(typeof navegarBase==='function') return navegarBase.apply(this,arguments);
+    }catch(err){
+      aplicarView(`<div class="panel"><div class="notice error">${esc((err&&err.message)||err)}</div></div>`);
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* =====================================================================
+ * V272 — CORREÇÃO LIMPA E RESTRITA
+ * Base: V268 estável. Sem misturar página pública dentro da área logada.
+ * 1) Login nunca fica com menu logado visível.
+ * 2) Início logado volta a ser painel interno simples e objetivo.
+ * 3) Comprovante de terceiro: Com cadastro = busca; Sem cadastro = campo nome/contato.
+ * ===================================================================== */
+(function(){
+  'use strict';
+  if(window.PSS_V272_LIMPO_APLICADO) return;
+  window.PSS_V272_LIMPO_APLICADO = true;
+  try{ if(window.CONFIG) CONFIG.versao='V275_LIMPO_FINAL_INICIO_BOLOES_INSCRITOS_CORRETOS'; }catch(e){}
+
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){ return (typeof escapeHtml==='function') ? escapeHtml(v==null?'':v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return (typeof escapeAttr==='function') ? escapeAttr(v==null?'':v) : esc(v); }
+  function n(v){ return (typeof num==='function') ? num(v) : (Number(String(v||0).replace(',','.'))||0); }
+  function money(v){ return (typeof moeda==='function') ? moeda(v) : ('R$ '+(Number(v||0).toFixed(2)).replace('.',',')); }
+  function fmt(v){ return (typeof formatarDataHoraPtBR==='function') ? formatarDataHoraPtBR(v||'-') : (v||'-'); }
+  function norm(v){ return (typeof normalizar==='function') ? normalizar(v||'') : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+  function listaSeguraV272(lista){ return Array.isArray(lista) ? lista.filter(function(x){return x && typeof x==='object';}) : []; }
+  function historicoV272(b){ try{return typeof isHistorico==='function' ? isHistorico(b) : false;}catch(e){return false;} }
+  function participaV272(b){ try{return typeof usuarioParticipaBolaoUI_==='function' ? usuarioParticipaBolaoUI_(b) : !!(b&&(b.participanteInscrito||b.cotasUsuario||b.minhasCotas));}catch(e){return false;} }
+  function adminV272(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+  function dataHoraV272(){ try{return typeof dataHoraAtualCurta==='function' ? dataHoraAtualCurta() : new Date().toLocaleString('pt-BR');}catch(e){return new Date().toLocaleString('pt-BR');} }
+  function setViewDiretoV272(html){
+    var v=byId('view');
+    if(v) v.innerHTML=html;
+  }
+
+  function mostrarCabecalhoLogadoV272(){
+    try{ document.body.classList.add('app-logado'); }catch(e){}
+    var pub=byId('publicHeader'); if(pub) pub.classList.add('hidden');
+    var app=byId('appHeader'); if(app) app.classList.remove('hidden');
+    var u=byId('userDisplay');
+    if(u){
+      var nome=(ESTADO&&ESTADO.usuario&&(ESTADO.usuario.nome||ESTADO.usuario.name||ESTADO.usuario.displayName)) || (ESTADO&&ESTADO.email?String(ESTADO.email).split('@')[0]:'Usuário');
+      var email=(ESTADO&&ESTADO.email) || (ESTADO&&ESTADO.usuario&&ESTADO.usuario.email) || '';
+      u.textContent = nome + (email ? ' • '+email : '');
+    }
+  }
+  function esconderCabecalhoLogadoV272(){
+    try{ document.body.classList.remove('app-logado'); }catch(e){}
+    var app=byId('appHeader'); if(app) app.classList.add('hidden');
+  }
+
+  var renderLoginBaseV272 = window.renderLogin;
+  window.renderLogin = renderLogin = function(){
+    if(typeof renderLoginBaseV272==='function') renderLoginBaseV272.apply(this,arguments);
+    esconderCabecalhoLogadoV272();
+    setTimeout(esconderCabecalhoLogadoV272,50);
+    setTimeout(esconderCabecalhoLogadoV272,250);
+  };
+
+  var aplicarLayoutBaseV272 = window.aplicarLayoutLogado;
+  window.aplicarLayoutLogado = aplicarLayoutLogado = function(){
+    if(typeof aplicarLayoutBaseV272==='function') aplicarLayoutBaseV272.apply(this,arguments);
+    mostrarCabeca
+
+===== v==='boloes' @803999 =====
+rarTopoLogadoV275();
+    var lista=[];
+    try{ lista=await carregarBoloesV275(false); }catch(e1){}
+    var dados=(tipo==='historico'?lista.filter(historico):lista.filter(function(b){return !historico(b);}));
+    setViewV275('<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab '+(tipo==='ativos'?'active':'')+'" onclick="renderBoloes(\'ativos\')">Bolões ativos</button><button type="button" class="btn btn-tab '+(tipo==='historico'?'active':'')+'" onclick="renderBoloes(\'historico\')">Histórico</button></div>'+cardsBoloesV275(dados,'boloes')+'</div>');
+    try{
+      var atualizada=await carregarBoloesV275(true);
+      if((ESTADO&&ESTADO.view)==='boloes'){
+        var dados2=(tipo==='historico'?atualizada.filter(historico):atualizada.filter(function(b){return !historico(b);}));
+        setViewV275('<div class="panel"><h2>🎯 Menu de bolões</h2><p>Consulte bolões ativos e histórico em uma única área.</p><div class="actions"><button type="button" class="btn btn-tab '+(tipo==='ativos'?'active':'')+'" onclick="renderBoloes(\'ativos\')">Bolões ativos</button><button type="button" class="btn btn-tab '+(tipo==='historico'?'active':'')+'" onclick="renderBoloes(\'historico\')">Histórico</button></div>'+cardsBoloesV275(dados2,'boloes')+'</div>');
+      }
+    }catch(e2){}
+  };
+
+  var navegarBaseV275=window.navegar;
+  window.navegar = navegar = function(v){
+    v=String(v||'inicio');
+    try{ ESTADO.view=v; window.PSS_MENU_ATUAL_V268=v; window.PSS_MENU_ATUAL_V267=v; }catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){ try{b.classList.toggle('active',b.dataset.view===v);}catch(e){} });
+    if(v==='inicio') return renderInicio();
+    if(v==='boloes') return renderBoloes('ativos');
+    mostrarTopoLogadoV275();
+    if(typeof navegarBaseV275==='function') return navegarBaseV275.apply(this,arguments);
+  };
+})();
+</script>
+
+
+<script>
+/* =====================================================================
+ * V276 — CORREÇÃO FINAL PONTUAL
+ * - Remove duplicidade do bloco Sistema ativo.
+ * - Conta inscritos aprovados por API e, para admin, por leitura direta da aba.
+ * - Impede duplo envio do formulário de cadastro no navegador.
+ * - Mantém o menu Início limpo da V275 e não altera comprovante/pagamentos/OCR.
+ * ===================================================================== */
+(function(){
+  'use strict';
+
+  try{ if(window.CONFIG) CONFIG.versao='V276_CADASTRO_INSCRITOS_SEM_DUPLICIDADE'; }catch(e){}
+
+  function n(v){
+    if(typeof num==='function') return num(v);
+    var s=String(v==null?'':v).replace(/[R$\s]/g,'');
+    if(s.indexOf(',')>=0 && s.indexOf('.')>=0) s=s.replace(/\./g,'').replace(',','.');
+    else if(s.indexOf(',')>=0) s=s.replace(',','.');
+    var x=Number(s); return isNaN(x)?0:x;
+  }
+  function esc(v){ return typeof escapeHtml==='function'?escapeHtml(v):String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function attr(v){ return typeof escapeAttr==='function'?escapeAttr(v):esc(v); }
+  function norm(v){ return String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+  function isAdminLocal(){ try{return typeof isAdmin==='function' && isAdmin();}catch(e){return false;} }
+
+  function esconderBotoesTopoV276(){
+    document.querySelectorAll('#badgeInscritosTopo,.badge-inscritos-topo,#btnTelegramCanalTopo,.telegram-canal-topo').forEach(function(el){
+      try{ el.classList.add('hidden'); el.style.display='none'; }catch(e){}
+    });
+  }
+
+  function localizarCardSistemaV276(){
+    return document.getElementById('sistemaAtivoCardV275') || (function(){
+      var h2s=[].slice.call(document.querySelectorAll('#view h2'));
+      var h=h2s.find(function(x){return String(x.textContent||'').trim().toLowerCase()==='sistema ativo';});
+      return h ? (h.closest('.panel') || h.parentElement) : null;
+    })();
+  }
+
+  function limparDuplicidadesSistemaV276(){
+    var card=localizarCardSistemaV276();
+    if(!card) return;
+
+    /* Remove blocos antigos que eram inseridos por patches V228/V229. */
+    ['#sistemaAtivoInscritosV228','#sistemaAtivoAcoesV229'].forEach(function(sel){
+      card.querySelectorAll(sel).forEach(function(el){ try{el.remove();}catch(e){} });
+    });
+    card.querySelectorAll('.v228-sistema-inscritos').forEach(function(el){
+      if(el.id!=='sistemaAtivoResumoV275'){
+        try{el.remove();}catch(e){}
+      }
+    });
+
+    /* Garante um único container oficial. */
+    var box=document.getElementById('sistemaAtivoResumoV275');
+    if(!box){
+      box=document.createElement('div');
+      box.id='sistemaAtivoResumoV275';
+      box.style.borderTop='1px solid rgba(255,255,255,.25)';
+      box.style.marginTop='14px';
+      box.style.paddingTop='14px';
+      card.appendChild(box);
+    }
+  }
+
+  function contarAprovadosAdminV276_(dadosAdmin){
+    try{
+      var headers=(dadosAdmin&&dadosAdmin.headers)||[];
+      var rows=(dadosAdmin&&dadosAdmin.rows)||[];
+      var hn=headers.map(function(h){return norm(h).replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');});
+      function idx(aliases){
+        aliases=aliases.map(function(a){return norm(a).replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');});
+        for(var i=0;i<aliases.length;i++){ var p=hn.indexOf(aliases[i]); if(p>=0)return p; }
+        return -1;
+      }
+      var iEmail=idx(['EMAIL','E-MAIL']);
+      var iStatus=idx(['STATUS','SITUACAO','SITUAÇÃO']);
+      var vistos={};
+      rows.forEach(function(r){
+        var email=iEmail>=0?String(r[iEmail]||'').trim().toLowerCase():String((r.join(' ').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)||[''])[0]).toLowerCase();
+        if(!email) return;
+        var st=iStatus>=0?norm(r[iStatus]):norm(r.join(' | '));
+        if(st.indexOf('APROV')>=0 && st.indexOf('DUPLIC')<0 && st.indexOf('RECUS')<0 && st.indexOf('PEND')<0 && st.indexOf('INAT')<0 && st.indexOf('BLOQ')<0){
+          vistos[email]=true;
+        }
+      });
+      return Object.keys(vistos).length;
+    }catch(e){return 0;}
+  }
+
+  async function obterResumoInscritosV276(){
+    var dados={};
+    try{
+      dados=await apiMulti([
+        {action:'getResumoInscritosBoloes',dados:{email:(ESTADO&&ESTADO.email)||''},args:[(ESTADO&&ESTADO.email)||'']},
+        {action:'resumoInscritosBoloes',dados:{email:(ESTADO&&ESTADO.email)||''},args:[(ESTADO&&ESTADO.email)||'']}
+      ]);
+    }catch(e){ dados={}; }
+
+    var total=n(dados.totalAprovadosSite||dados.totalInscritosSite||dados.totalInscritos||dados.total||dados.aprovados||0);
+
+    /* Fallback administrativo: lê a própria aba quando o resumo antigo vier zerado. */
+    if(false && total===0 && isAdminLocal()){ /* V300: fallback admin
+
+===== v==='boloes' @831703 =====
+ng('pt-BR'));
+    card.innerHTML='<h2 style="color:#fff;font-size:32px;margin:0 0 10px;">Sistema ativo</h2><p style="color:#fff;font-weight:800;">Sessão logada e menus disponíveis.</p><div style="margin-top:18px;font-weight:900;">'+esc(agora)+'</div><div id="sistemaAtivoResumoV277" style="border-top:1px solid rgba(255,255,255,.25);margin-top:14px;padding-top:14px;"><div style="font-weight:900;color:#fff;margin-bottom:8px;">Participantes aprovados no cadastro</div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;"><button type="button" class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;" onclick="try{abrirResumoInscritosTopo()}catch(e){}">👥 Inscritos: '+esc(total)+'</button>'+(link?'<a class="btn btn-light" style="background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;border-radius:999px;text-decoration:none;" href="'+attr(link)+'" target="_blank" rel="noopener">📣 Entrar no canal</a>':'')+'</div></div>';
+  }
+
+  var baseRenderInicioV277=window.renderInicio;
+  if(typeof baseRenderInicioV277==='function'){
+    window.renderInicio=renderInicio=async function(){
+      var r=await baseRenderInicioV277.apply(this,arguments);
+      setTimeout(corrigirSistemaAtivoUnicoV277,120);
+      setTimeout(corrigirSistemaAtivoUnicoV277,900);
+      return r;
+    };
+  }
+
+  var baseNavegarV277=window.navegar;
+  window.navegar=navegar=function(v){
+    v=String(v||'inicio');
+    try{ESTADO.view=v; window.PSS_MENU_ATUAL_V268=v; window.PSS_MENU_ATUAL_V267=v;}catch(e){}
+    document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){try{b.classList.toggle('active',b.dataset.view===v);}catch(e){}});
+    if(v==='boloes') return renderBoloes('ativos');
+    if(v==='palpite') return renderPalpiteLista('ativos');
+    if(v==='inicio') return renderInicio();
+    if(typeof baseNavegarV277==='function') return baseNavegarV277.apply(this,arguments);
+  };
+})();
+</script>
+
+<script>
+/* =========================================================
+ * V286 — USUÁRIOS EM CARDS + LOGOUT REAL + CADASTRO SEGURO
+ * - Menu Usuários deixa de parecer tabela incorporada.
+ * - Admin/Mestre ganha ações por card: e-mail/senha, ativar, inativar, excluir.
+ * - Sair limpa sessão e volta obrigatoriamente para a home pública.
+ * - Cadastro público envia SENHA ao GS, grava sempre como Pendente e limpa o formulário após sucesso.
+ * ========================================================= */
+(function(){
+  'use strict';
+
+  var CSS_V286 = `
+    .usuarios-admin-wrap{display:grid;gap:12px;margin-top:14px}
+    .usuarios-admin-card{border:1px solid #cbded0;background:#fff;border-radius:14px;padding:14px;box-shadow:0 5px 16px rgba(0,0,0,.05)}
+    .usuarios-admin-card.inativo{border-left:5px solid #b91c1c;background:#fffafa}
+    .usuarios-admin-card.ativo{border-left:5px solid #0b6f28}
+    .usuarios-admin-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+    .usuarios-admin-head h3{margin:0;color:#003b12;font-size:16px;line-height:1.25}
+    .usuarios-admin-head small{display:block;color:#5b6b7d;font-weight:800;margin-top:3px;word-break:break-word}
+    .usuarios-admin-pill{display:inline-flex;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:900;background:#d9f5df;color:#064d1a;border:1px solid #bce8c6}
+    .usuarios-admin-pill.inativo{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+    .usuarios-admin-pill.admin{background:#eaf2ff;color:#123c74;border-color:#bad3ff}
+    .usuarios-admin-info{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;margin:10px 0}
+    .usuarios-admin-info div{background:#f7fbf8;border:1px solid #e0ebe3;border-radius:10px;padding:8px;color:#263445;font-size:12px;word-break:break-word;min-height:54px}
+    .usuarios-admin-info b{display:block;color:#0b4b1d;font-size:10px;text-transform:uppercase;margin-bottom:4px}
+    .usuarios-admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .usuarios-admin-actions .btn{min-height:36px;padding:8px 12px;border-radius:10px;font-size:12px}
+    .usuarios-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+    .usuarios-toolbar .field{margin:0;min-width:260px}
+    .usuarios-toolbar .actions{margin:0}
+    .btn-outline-danger{background:#fff!important;color:#b91c1c!important;border:1px solid #f1b7b7!important}
+    .btn-outline-danger:hover{background:#b91c1c!important;color:#fff!important;border-color:#b91c1c!important}
+    .btn-muted{background:#e9eef2!important;color:#43556a!important;border-color:#d2d9df!important}
+    .btn-muted:hover{background:#dbe3e9!important;color:#1f2937!important;border-color:#c7d0d8!important}
+    .cadastro-sucesso-v286{border:1px solid #bfe7c9;background:#f4fff7;color:#064d1a;border-radius:14px;padding:16px;font-weight:800;line-height:1.45}
+    .cadastro-sucesso-v286 h3{margin:0 0 8px;color:#003b12}
+    @media(max-width:920px){
+      .usuarios-admin-info{grid-template-columns:1fr}
+      .usuarios-admin-actions .btn{width:100%}
+      .usuarios-toolbar{align-items:stretch}
+      .usuarios-toolbar .field{width:100%;min-width:0}
+    }
+  `;
+
+  try{
+    if(!document.getElementById('pss-v286-style')){
+      var st=document.createElement('style');
+      st.id='pss-v286-style';
+      st.textContent=CSS_V286;
+      document.head.appendChild(st);
+    }
+  }catch(e){}
+
+  function escV286(v){
+    try{ return typeof escapeHtml==='function' ? escapeHtml(v) : String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    catch(e){ return String(v==null?'':v); }
+  }
+  function attrV286(v){
+    try{ return typeof escapeAttr==='function' ? escapeAttr(v) : escV286(v); }
+    catch(e){ return escV286(v); }
+  }
+  function normV286(v){
+    try{ return typeof normalizar==='function' ? normalizar(v) : String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+    catch(e){ return String(v||'').toUpperCase().trim(); }
+  }
+  function fmtV286(v){
+    try{ return typeof formatarDataHoraPtBR==='function' ? formatarDataHoraPtBR(v) : String(v||'-'); }
+    catch(e){ return String(v||'-'); }
+  }
+  function txtV286(v){
+    return String(v==null?'':v).trim();
+  }
+  function getV286(headers,row,aliases){
+    headers=headers||[]; row=row||[];
+    var al=(aliases||[]).map(normV286);
+    for(var i=0;i<headers.length;i++){
+      if(al.indexOf(normV286(headers[i]))>=0) return row[i]===undefined||row[i]===null?'':row[i];
+    }
+    return '';
+  }
+  function firstNameV286(nome,email){
+    nome=txtV286(nome);
+    if(nome) return nome.split(/\s+/)
