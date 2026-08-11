@@ -1,0 +1,55 @@
+name: PSS Firebase Auth Bridge Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-firebase-auth-bridge-check.yml'
+      - 'scripts/firebase-auth-bridge-check.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_SERVICE_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      FIREBASE_TARGET_PROJECT_ID: boloes-loterias-especiais
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preparar Firebase Admin
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install firebase-admin@latest --no-audit --no-fund
+      - name: Validar acesso e aplicar role authenticated
+        id: auth
+        shell: bash
+        run: |
+          set +e
+          node scripts/firebase-auth-bridge-check.mjs > /tmp/firebase-out.txt 2>&1
+          CODE=$?
+          set -e
+          mkdir -p api
+          if [ "$CODE" -eq 0 ]; then
+            JSON=$(tail -n 1 /tmp/firebase-out.txt)
+            echo "$JSON" | jq '. + {verifiedAt:(now|todateiso8601)}' > api/firebase-auth-status.json
+          else
+            MSG=$(tail -n 8 /tmp/firebase-out.txt | sed 's/[[:cntrl:]]//g' | tr '\n' ' ' | cut -c1-900)
+            jq -n --arg msg "$MSG" '{ok:false,verifiedAt:(now|todateiso8601),message:$msg}' > api/firebase-auth-status.json
+          fi
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+      - name: Publicar status sanitizado
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/firebase-auth-status.json
+          git commit -m 'Auth: status Firebase Supabase [skip ci]' || true
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Falhar se autenticação não estiver pronta
+        if: steps.auth.outputs.code != '0'
+        run: exit 1
