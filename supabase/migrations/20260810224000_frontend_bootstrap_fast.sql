@@ -66,7 +66,7 @@ begin
   );
 end$$;
 
-revoke all on function public.pss_frontend_bootstrap_fast() from public,anon;
-grant execute on function public.pss_frontend_bootstrap_fast() to authenticated;
+revoke all on function public.pss_frontend_bootstrap_fast() from public;
+grant execute on function public.pss_frontend_bootstrap_fast() to anon,authenticated;
 
-comment on function public.pss_frontend_bootstrap_fast() is 'Bootstrap de leitura para navegação rápida; mantém renderizadores e regras existentes.';
+comment on function public.pss_frontend_bootstrap_fast() is 'Bootstrap de leitura para navegação rápida; exige Firebase JWT válido e usuário aprovado internamente; mantém renderizadores e regras existentes.';
