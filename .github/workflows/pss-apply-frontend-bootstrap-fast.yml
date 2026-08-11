@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   apply:
@@ -19,6 +19,8 @@ jobs:
       SUPABASE_PROJECT_REF: nsaoekahczonljpozyvy
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Aplicar bootstrap no PostgreSQL
         shell: bash
         run: |
@@ -30,3 +32,14 @@ jobs:
             -H 'Content-Type: application/json' --data-binary @/tmp/q.json)
           if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then cat /tmp/r.json; exit 3; fi
           echo BOOTSTRAP_FAST_SQL_OK
+      - name: Registrar status
+        shell: bash
+        run: |
+          mkdir -p api
+          printf '{"ok":true,"version":"FRONTEND_BOOTSTRAP_FAST_V1","appliedAt":"%s"}\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > api/frontend-bootstrap-fast-status.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/frontend-bootstrap-fast-status.json
+          git commit -m 'Supabase: bootstrap rápido aplicado [skip ci]' || true
+          git pull --rebase origin main
+          git push origin HEAD:main
