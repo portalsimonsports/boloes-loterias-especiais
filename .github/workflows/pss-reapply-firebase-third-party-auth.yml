@@ -1,0 +1,48 @@
+name: PSS Reapply Firebase Third Party Auth
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-reapply-firebase-third-party-auth.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: nsaoekahczonljpozyvy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validar configuração local
+        shell: bash
+        run: |
+          grep -q '\[auth.third_party.firebase\]' supabase/config.toml
+          grep -q 'enabled = true' supabase/config.toml
+          grep -q 'project_id = "boloes-loterias-especiais"' supabase/config.toml
+          echo CONFIG_FIREBASE_LOCAL_OK
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Reaplicar Firebase Third Party Auth no projeto hospedado
+        run: supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
+      - name: Registrar confirmação
+        shell: bash
+        run: |
+          mkdir -p api
+          TS=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          printf '{"ok":true,"firebaseProjectId":"boloes-loterias-especiais","supabaseProjectRef":"%s","appliedAt":"%s"}\n' "$SUPABASE_PROJECT_REF" "$TS" > api/firebase-third-party-applied.json
+          rm -f .github/workflows/pss-reapply-firebase-third-party-auth.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/firebase-third-party-applied.json .github/workflows/pss-reapply-firebase-third-party-auth.yml
+          git commit -m 'Auth: Firebase Third-Party reaplicado no Supabase [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
