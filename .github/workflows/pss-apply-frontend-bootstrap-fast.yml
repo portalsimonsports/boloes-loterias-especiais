@@ -1,0 +1,32 @@
+name: PSS Apply Frontend Bootstrap Fast
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-apply-frontend-bootstrap-fast.yml'
+      - 'supabase/migrations/20260810224000_frontend_bootstrap_fast.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: nsaoekahczonljpozyvy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar bootstrap no PostgreSQL
+        shell: bash
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          jq -Rs '{query:.,read_only:false}' supabase/migrations/20260810224000_frontend_bootstrap_fast.sql > /tmp/q.json
+          HTTP=$(curl -sS -o /tmp/r.json -w '%{http_code}' \
+            -X POST "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H 'Content-Type: application/json' --data-binary @/tmp/q.json)
+          if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then cat /tmp/r.json; exit 3; fi
+          echo BOOTSTRAP_FAST_SQL_OK
