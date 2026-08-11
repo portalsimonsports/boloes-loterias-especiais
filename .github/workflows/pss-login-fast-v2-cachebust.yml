@@ -1,0 +1,44 @@
+name: PSS Login Fast V2 Cache Bust
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-login-fast-v2-cachebust.yml'
+      - 'assets/pss-login-fast-v1.js'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Atualizar versão do login rápido no index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          new='<script src="assets/pss-login-fast-v1.js?v=V2_20260811_0648"></script>'
+          pat=r'<script\s+src=["\']assets/pss-login-fast-v1\.js(?:\?v=[^"\']*)?["\']\s*></script>'
+          if re.search(pat,s,re.I):
+              s=re.sub(pat,new,s,count=1,flags=re.I)
+          else:
+              if '</body>' not in s: raise SystemExit('BODY_NAO_LOCALIZADO')
+              s=s.replace('</body>',new+'\n</body>',1)
+          if s.count('assets/pss-login-fast-v1.js')!=1:
+              raise SystemExit('TAG_LOGIN_DUPLICADA')
+          p.write_text(s,encoding='utf-8',newline='')
+          print('LOGIN_FAST_V2_ATIVO')
+          PY
+      - name: Publicar
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Login: ativa cache de aprovação V2 [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
