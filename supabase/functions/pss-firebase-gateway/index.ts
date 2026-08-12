@@ -75,8 +75,6 @@ Deno.serve(async (req) => {
 
   try {
     const ident = await verifyFirebase(req)
-
-    // Autoridade de acesso = mesmo cadastro Firebase/Firestore usado pelo site.
     const fb = await firebasePerfilAdmin(ident.email, ident.token)
     if (!fb || !adminValido(fb)) return json({ ok: false, erro: 'ADMIN_NAO_AUTORIZADO' }, 403)
 
@@ -86,7 +84,6 @@ Deno.serve(async (req) => {
     if (!url || !secret) throw new Error('SUPABASE_SECRET_INDISPONIVEL')
     const sb = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } })
 
-    // Sincroniza identidade/perfil no Supabase sem depender dela para liberar a tela.
     const { data: me } = await sb.from('usuarios').select('id,firebase_uid').eq('email', ident.email).maybeSingle()
     if (me?.id) {
       const patch: any = { firebase_uid: ident.sub }
@@ -126,6 +123,11 @@ Deno.serve(async (req) => {
     }
     if (screen === 'pagamentos') {
       const { data, error } = await sb.from('pagamentos').select('*').order('created_at', { ascending: false }).limit(1000)
+      if (error) throw error
+      return json({ ok: true, screen, rows: data || [] })
+    }
+    if (screen === 'dados_recebimento') {
+      const { data, error } = await sb.from('dados_recebimento').select('*').order('loteria', { ascending: true })
       if (error) throw error
       return json({ ok: true, screen, rows: data || [] })
     }
