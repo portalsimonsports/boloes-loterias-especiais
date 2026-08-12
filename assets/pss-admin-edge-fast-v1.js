@@ -12,7 +12,7 @@ function norm(v){return String(v==null?'':v).trim().toUpperCase();}
 function esc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}
 async function cfg(){
   if(CFG)return CFG;
-  var r=await fetch('./api/supabase-public.json?v=EDGE_FAST_V1',{cache:'force-cache'});
+  var r=await fetch('./api/supabase-public.json?v=EDGE_FAST_V12',{cache:'force-cache'});
   if(!r.ok)throw new Error('Config Supabase HTTP '+r.status);
   var j=await r.json();
   CFG={url:String(j.url||'').replace(/\/$/,''),key:String(j.publishableKey||j.key||j.anonKey||'')};
@@ -55,6 +55,11 @@ function participantes(lista){
 function pagamentos(lista){
   return {headers:['DATA','EMAIL','LOTERIA','URL_COMPROVANTE','STATUS','PAGADOR','VALOR','ID_TRANSACAO','AUTENTICACAO','ARQUIVO_URL','RECEBEDOR','PIX_DESTINO','VALIDACAO','MES_REFERENCIA','TIPO_COTA','IDENTIFICADOR','PARTES_COTA','PARTICIPANTES_COTA'],rows:(lista||[]).map(function(x){return [x.data_pagamento||x.data_comprovante||x.created_at,x.usuario_email||'',x.bolao_nome||x.bolao_id||'',x.arquivo_url||'',x.status||'',x.pagador||'',x.valor_transferido||x.valor||0,x.id_transacao||x.legacy_id||'',x.autenticacao||'',x.arquivo_url||'',x.recebedor||'',x.pix_destino||'',x.validacao||'',x.mes_referencia||'',x.tipo_cota||'',x.identificador||'',x.partes_cota||'',x.participantes_cota||''];})};
 }
+function recebimentos(lista){
+  return (lista||[]).map(function(x){return {
+    id:x.id||'',loteria:x.loteria||'',tipoRecebimento:x.tipo_recebimento||'',nomeCompleto:x.nome_completo||'',tipoPix:x.tipo_pix||'',chavePix:x.chave_pix||'',banco:x.banco||'',agencia:x.agencia||'',conta:x.conta||'',operacao:x.operacao||'',obs:x.obs||'',ativo:x.ativo!==false
+  };});
+}
 function tabela(aba,lista){
   var a=norm(aba);
   if(a==='USUARIOS')return usuarios(lista);
@@ -77,6 +82,9 @@ function instalarApiMulti(){
           var s=screenAba(aba);
           if(s){return dadosAdmin(aba);}
         }
+        if(String(t.action||'')==='getDadosRecebimentoAdmin'){
+          return {dados:recebimentos(await call('dados_recebimento',false))};
+        }
       }
     }
     return base.apply(this,arguments);
@@ -93,6 +101,7 @@ function instalarApi(){
       var aba=(dados&&dados.nomeAba)||(args&&args[0])||'';
       var s=screenAba(aba);if(s)return dadosAdmin(aba);
     }
+    if(String(action||'')==='getDadosRecebimentoAdmin')return {dados:recebimentos(await call('dados_recebimento',false))};
     return base.apply(this,arguments);
   };
   nova.__PSS_ADMIN_EDGE_FAST_V1__=true;nova.__base=base;
@@ -100,7 +109,21 @@ function instalarApi(){
   return true;
 }
 
-/* V1.1 — sobrescreve a override V311 que ainda chamava apiMulti/window.name. */
+function instalarPagamentosDireto(){
+  var fn=async function(){
+    var p=pagamentos(await call('pagamentos',false));
+    var r=recebimentos(await call('dados_recebimento',false));
+    window.ESTADO=window.ESTADO||{};
+    ESTADO.dadosRecebimentoAdmin=r;
+    ESTADO.pagamentosAdminCache={headers:p.headers||[],rows:p.rows||[]};
+    return {pag:p,rec:{dados:r}};
+  };
+  fn.__PSS_ADMIN_EDGE_PAGAMENTOS__=true;
+  window.carregarDadosPagamentosAdmin_=fn;
+  try{carregarDadosPagamentosAdmin_=fn;}catch(e){}
+  return true;
+}
+
 function instalarParticipantesDireto(){
   var atual=window.renderParticipantesBolaoAdmin;
   if(atual&&atual.__PSS_ADMIN_EDGE_PARTICIPANTES__)return true;
@@ -129,7 +152,7 @@ function instalarParticipantesDireto(){
   return true;
 }
 
-function instalar(){instalarApiMulti();instalarApi();instalarParticipantesDireto();}
+function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();}
 instalar();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(instalar,ms);});
-window.PSS_ADMIN_EDGE_FAST={version:'V1.1',call:call,clear:function(){CACHE={};},status:function(){return {cache:Object.keys(CACHE),source:window.PSS_LAST_DATA_SOURCE||null,participantesDireto:!!(window.renderParticipantesBolaoAdmin&&window.renderParticipantesBolaoAdmin.__PSS_ADMIN_EDGE_PARTICIPANTES__)};}};
+window.PSS_ADMIN_EDGE_FAST={version:'V1.2',call:call,clear:function(){CACHE={};},status:function(){return {cache:Object.keys(CACHE),source:window.PSS_LAST_DATA_SOURCE||null,pagamentosDireto:!!(window.carregarDadosPagamentosAdmin_&&window.carregarDadosPagamentosAdmin_.__PSS_ADMIN_EDGE_PAGAMENTOS__),participantesDireto:!!(window.renderParticipantesBolaoAdmin&&window.renderParticipantesBolaoAdmin.__PSS_ADMIN_EDGE_PARTICIPANTES__)};}};
 })();
