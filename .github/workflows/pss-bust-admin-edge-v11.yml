@@ -1,0 +1,41 @@
+name: PSS Bust Admin Edge V1.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-bust-admin-edge-v11.yml'
+      - 'assets/pss-admin-edge-fast-v1.js'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atualizar somente versão da tag Admin Edge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          pat=r'<script src="assets/pss-admin-edge-fast-v1\.js(?:\?v=[^"]*)?"></script>'
+          tag='<script src="assets/pss-admin-edge-fast-v1.js?v=V1_1_20260812_0543"></script>'
+          n=len(re.findall(pat,s))
+          if n==0:
+              if '</body>' not in s: raise SystemExit('BODY_NAO_LOCALIZADO')
+              s=s.replace('</body>',tag+'\n</body>',1)
+          else:
+              s=re.sub(pat,tag,s)
+          p.write_text(s,encoding='utf-8',newline='')
+          print('ADMIN_EDGE_V11_TAG_ATIVA')
+          PY
+      - name: Publicar
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then echo 'Tag já estava atualizada.'; else git commit -m 'Frontend: força Admin Edge V1.1 [skip ci]' && git push; fi
