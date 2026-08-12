@@ -1,0 +1,44 @@
+name: PSS Activate Admin Edge Fast V1.2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/pss-admin-edge-fast-v1.js'
+      - '.github/workflows/pss-activate-admin-edge-fast-v12.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atualizar versão do cliente Admin Edge
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          pat=r'assets/pss-admin-edge-fast-v1\.js\?v=[^"\']+'
+          rep='assets/pss-admin-edge-fast-v1.js?v=V1_2_20260812_0554'
+          if re.search(pat,s):
+              s=re.sub(pat,rep,s)
+          else:
+              marker='</body>'
+              tag='\n<script src="'+rep+'"></script>\n'
+              if marker not in s: raise SystemExit('ERRO: </body> não localizado')
+              s=s.replace(marker,tag+marker,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then echo 'Index já está na V1.2.'; else git commit -m 'Frontend: ativa Admin Edge Fast V1.2 [skip ci]' && git push; fi
