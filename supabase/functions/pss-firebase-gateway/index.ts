@@ -27,8 +27,9 @@ function field(v: any): any {
 function decodeFields(fields: Record<string, any> = {}) { const out: Record<string, any> = {}; for (const [k,v] of Object.entries(fields)) out[k]=field(v); return out }
 function n(v:any){ return String(v??'').trim().toUpperCase() }
 function same(a:any,b:any){ return n(a)===n(b) }
-function usuarioValido(u:any){ const st=n(u?.status); const ativo=u?.ativo===true || ['TRUE','SIM','ATIVO','APROVADO'].includes(n(u?.ativo)); return ativo && (st==='APROVADO'||st==='ATIVO') }
-function adminValido(u:any){ const pf=n(u?.perfil||u?.role); return usuarioValido(u) && (pf.includes('ADMIN')||pf.includes('MESTRE')) }
+function usuarioFirebaseValido(u:any){ const st=n(u?.status); const ativo=u?.ativo===true || ['TRUE','SIM','ATIVO','APROVADO'].includes(n(u?.ativo)); return ativo && (st==='APROVADO'||st==='ATIVO') }
+function usuarioSupabaseValido(u:any){ const st=n(u?.status); return (u?.aprovado===true || st==='APROVADO' || st==='ATIVO') && (st==='APROVADO'||st==='ATIVO'||u?.aprovado===true) }
+function adminPerfilValido(u:any){ const pf=n(u?.perfil||u?.role); return pf.includes('ADMIN')||pf.includes('MESTRE') }
 
 async function verifyFirebase(req: Request) {
   const auth = req.headers.get('authorization') || ''
@@ -40,23 +41,20 @@ async function verifyFirebase(req: Request) {
   return {email,sub,token}
 }
 async function firebasePerfil(email:string,token:string){
-  const c=PROFILE_CACHE.get(email); if(c&&Date.now()-c.ts<30000)return c.data
+  const c=PROFILE_CACHE.get(email); if(c&&Date.now()-c.ts<120000)return c.data
   const url=`https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/usuarios/${encodeURIComponent(email)}`
-  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),3000)
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),2500)
   try{ const r=await fetch(url,{headers:{Authorization:`Bearer ${token}`},signal:ctrl.signal}); if(!r.ok)return null; const j=await r.json(); const d=decodeFields(j?.fields||{}); PROFILE_CACHE.set(email,{ts:Date.now(),data:d}); return d } finally { clearTimeout(timer) }
 }
-function adminScreen(s:string){return ['usuarios','solicitacoes','base_loterias','participantes','pagamentos','dados_recebimento','consulta'].includes(s)}
+function adminScreen(s:string){return ['usuarios','solicitacoes','base_loterias','participantes','pagamentos','pagamentos_bundle','dados_recebimento','consulta'].includes(s)}
 
 Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:cors})
   if(req.method!=='POST')return json({ok:false,erro:'METODO_INVALIDO'},405)
   try{
     const ident=await verifyFirebase(req)
-    const fb=await firebasePerfil(ident.email,ident.token)
-    if(!fb||!usuarioValido(fb))return json({ok:false,erro:'USUARIO_NAO_AUTORIZADO'},403)
     const body=await req.json().catch(()=>({}))
     const screen=String(body?.screen||'').trim().toLowerCase()
-    if(adminScreen(screen)&&!adminValido(fb))return json({ok:false,erro:'ADMIN_NAO_AUTORIZADO'},403)
 
     const url=Deno.env.get('SUPABASE_URL')!
     const secretMap=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}')
@@ -64,11 +62,32 @@ Deno.serve(async(req)=>{
     if(!url||!secret)throw new Error('SUPABASE_SECRET_INDISPONIVEL')
     const sb=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}})
 
-    let {data:me}=await sb.from('usuarios').select('id,email,firebase_uid').eq('email',ident.email).maybeSingle()
-    if(!me?.id){
-      const ins=await sb.from('usuarios').upsert({email:ident.email,nome:String(fb.nome||ident.email),perfil:String(fb.perfil||'PARTICIPANTE').toUpperCase(),status:'APROVADO',aprovado:true,firebase_uid:ident.sub},{onConflict:'email'}).select('id,email,firebase_uid').maybeSingle()
-      me=ins.data||null
-    }else if(!me.firebase_uid){ await sb.from('usuarios').update({firebase_uid:ident.sub}).eq('id',me.id) }
+    let {data:me,error:meErr}=await sb.from('usuarios').select('id,email,firebase_uid,nome,perfil,status,aprovado').eq('email',ident.email).maybeSingle()
+    if(meErr)throw meErr
+
+    let fb:any=null
+    if(!me?.id || !usuarioSupabaseValido(me) || (adminScreen(screen)&&!adminPerfilValido(me))){
+      fb=await firebasePerfil(ident.email,ident.token)
+      if(!fb||!usuarioFirebaseValido(fb))return json({ok:false,erro:'USUARIO_NAO_AUTORIZADO'},403)
+      if(adminScreen(screen)&&!adminPerfilValido(fb))return json({ok:false,erro:'ADMIN_NAO_AUTORIZADO'},403)
+      const payload={
+        email:ident.email,
+        nome:String(fb.nome||me?.nome||ident.email),
+        perfil:String(fb.perfil||me?.perfil||'PARTICIPANTE').toUpperCase(),
+        status:'APROVADO',
+        aprovado:true,
+        firebase_uid:ident.sub
+      }
+      const ins=await sb.from('usuarios').upsert(payload,{onConflict:'email'}).select('id,email,firebase_uid,nome,perfil,status,aprovado').maybeSingle()
+      if(ins.error)throw ins.error
+      me=ins.data||me
+    } else if(!me.firebase_uid){
+      const up=await sb.from('usuarios').update({firebase_uid:ident.sub}).eq('id',me.id).select('id,email,firebase_uid,nome,perfil,status,aprovado').maybeSingle()
+      if(!up.error&&up.data)me=up.data
+    }
+
+    if(!me?.id||!usuarioSupabaseValido(me))return json({ok:false,erro:'USUARIO_NAO_AUTORIZADO'},403)
+    if(adminScreen(screen)&&!adminPerfilValido(me))return json({ok:false,erro:'ADMIN_NAO_AUTORIZADO'},403)
 
     if(screen==='usuarios'){
       const q=await sb.from('usuarios').select('id,nome,nome_publico,email,telefone,status,perfil,aprovado,firebase_uid,created_at,updated_at').order('nome',{ascending:true}); if(q.error)throw q.error; return json({ok:true,screen,rows:q.data||[]})
@@ -88,10 +107,18 @@ Deno.serve(async(req)=>{
     if(screen==='dados_recebimento'){
       const q=await sb.from('dados_recebimento').select('*').order('loteria',{ascending:true}); if(q.error)throw q.error; return json({ok:true,screen,rows:q.data||[]})
     }
+    if(screen==='pagamentos_bundle'){
+      const [qp,qr]=await Promise.all([
+        sb.from('pagamentos').select('*').order('created_at',{ascending:false}).limit(1000),
+        sb.from('dados_recebimento').select('*').order('loteria',{ascending:true})
+      ])
+      if(qp.error)throw qp.error; if(qr.error)throw qr.error
+      return json({ok:true,screen,data:{pagamentos:qp.data||[],dadosRecebimento:qr.data||[]}})
+    }
     if(screen==='boloes'){
       const [qb,qp]=await Promise.all([
         sb.from('boloes').select('*').order('data_sorteio',{ascending:true}),
-        me?.id?sb.from('participacoes').select('*').eq('usuario_id',me.id):Promise.resolve({data:[],error:null} as any)
+        sb.from('participacoes').select('*').eq('usuario_id',me.id)
       ])
       if(qb.error)throw qb.error; if(qp.error)throw qp.error
       const pm=new Map((qp.data||[]).map((p:any)=>[String(p.bolao_id),p]))
@@ -104,7 +131,6 @@ Deno.serve(async(req)=>{
       return json({ok:true,screen,rows})
     }
     if(screen==='comprovantes'){
-      if(!me?.id)return json({ok:true,screen,rows:[]})
       const [qc,qp,qb]=await Promise.all([
         sb.from('comprovantes').select('id,pagamento_id,nome_arquivo,status,legacy_drive_url,storage_path,created_at').eq('usuario_id',me.id).order('created_at',{ascending:false}).limit(100),
         sb.from('pagamentos').select('id,bolao_id,status,data_pagamento,arquivo_url').eq('usuario_id',me.id).order('created_at',{ascending:false}).limit(200),
@@ -127,8 +153,8 @@ Deno.serve(async(req)=>{
         return json({ok:true,screen,data:{loteria:b.loteria||b.nome,nome:b.nome,range,nMax:range,qtdEscolha:qtd,qtdPalpite:qtd,numerosDisponiveis:Array.from({length:range},(_,i)=>i+1)}})
       }
       const [qpart,quser,qall]=await Promise.all([
-        me?.id?sb.from('participacoes').select('*').eq('usuario_id',me.id).eq('bolao_id',b.id).maybeSingle():Promise.resolve({data:null,error:null} as any),
-        me?.id?sb.from('palpites').select('*').eq('usuario_id',me.id).eq('bolao_id',b.id).order('jogo',{ascending:true}):Promise.resolve({data:[],error:null} as any),
+        sb.from('participacoes').select('*').eq('usuario_id',me.id).eq('bolao_id',b.id).maybeSingle(),
+        sb.from('palpites').select('*').eq('usuario_id',me.id).eq('bolao_id',b.id).order('jogo',{ascending:true}),
         sb.from('palpites').select('numeros').eq('bolao_id',b.id)
       ])
       if(qpart.error)throw qpart.error;if(quser.error)throw quser.error;if(qall.error)throw qall.error
