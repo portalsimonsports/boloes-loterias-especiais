@@ -1,19 +1,20 @@
-/* Portal SimonSports — Navegação rápida V4
- * Mantém os menus já rápidos e aplica o mesmo caminho direto aos lentos.
- * Sem criar nova camada: usa Supabase Edge e caches já existentes.
+/* Portal SimonSports — Navegação rápida V5
+ * Mantém os menus já rápidos e corrige os gargalos restantes.
+ * Usa o mesmo Supabase Edge existente, sem novas camadas.
  */
 (function(){
 'use strict';
-if(window.PSS_LAST_CLICK_WINS_V4)return;
-window.PSS_LAST_CLICK_WINS_V4=true;
+if(window.PSS_LAST_CLICK_WINS_V5)return;
+window.PSS_LAST_CLICK_WINS_V5=true;
 
 var seq=0,currentView='',baseNavigate=null;
 var CFG=null,CACHE={},INFLIGHT={},TTL=30000;
 function norm(v){return String(v==null?'':v).trim().toUpperCase();}
+function esc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}
 function edgeFast(){return window.PSS_ADMIN_EDGE_FAST;}
 async function cfg(){
   if(CFG)return CFG;
-  var r=await fetch('./api/supabase-public.json?v=NAV_FAST_V4',{cache:'force-cache'});
+  var r=await fetch('./api/supabase-public.json?v=NAV_FAST_V5',{cache:'force-cache'});
   if(!r.ok)throw new Error('Config Supabase HTTP '+r.status);
   var j=await r.json();
   CFG={url:String(j.url||'').replace(/\/$/,''),key:String(j.publishableKey||j.key||j.anonKey||'')};
@@ -100,39 +101,57 @@ function fastAction(action,dados,args){
   return null;
 }
 function instalarLoaders(){
-  var fn=async function(){return boloesRapido();};fn.__PSS_NAV_FAST_V4=true;
+  var fn=async function(){return boloesRapido();};fn.__PSS_NAV_FAST_V5=true;
   ['carregarBoloes','PSS_carregarBoloesCompletoV267_','PSS_carregarBoloesRapidoV268_','PSS_carregarBoloesV277_'].forEach(function(n){try{window[n]=fn;}catch(e){}try{eval(n+'=fn');}catch(e){}});
 }
 function instalarConfigRapido(){
   var base=window.PSS_CONFIG_FAST_LOADER;
-  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V4){
+  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V5){
     var fn=async function(){
       var d=configCache();
-      if(d){setTimeout(function(){edge('boloes',{},true).then(salvarConfigCache).catch(function(){});},0);return {origem:'Supabase (cache rapido)',lista:d.boloes,acao:'PSS_NAV_FAST_V4',supabase:true};}
-      try{var l=await edge('boloes');salvarConfigCache(l);return {origem:'Supabase Edge',lista:l,acao:'PSS_NAV_FAST_V4',supabase:true};}catch(e){return base.apply(this,arguments);}
+      if(d){setTimeout(function(){edge('boloes',{},true).then(salvarConfigCache).catch(function(){});},0);return {origem:'Supabase (cache rapido)',lista:d.boloes,acao:'PSS_NAV_FAST_V5',supabase:true};}
+      try{var l=await edge('boloes');salvarConfigCache(l);return {origem:'Supabase Edge',lista:l,acao:'PSS_NAV_FAST_V5',supabase:true};}catch(e){return base.apply(this,arguments);}
     };
-    fn.__PSS_NAV_FAST_V4=true;fn.__base=base;window.PSS_CONFIG_FAST_LOADER=fn;
+    fn.__PSS_NAV_FAST_V5=true;fn.__base=base;window.PSS_CONFIG_FAST_LOADER=fn;
   }
 }
 function instalarPagamentosRapido(){
   var fn=async function(){
-    var r=await Promise.all([edge('pagamentos'),edge('dados_recebimento')]);
-    var p=pagamentosTabela(r[0]),rec=recebimentos(r[1]);
+    var b=await edge('pagamentos_bundle',{bundle:true});
+    var p=pagamentosTabela((b&&b.pagamentos)||[]),rec=recebimentos((b&&b.dadosRecebimento)||[]);
     window.ESTADO=window.ESTADO||{};ESTADO.dadosRecebimentoAdmin=rec;ESTADO.pagamentosAdminCache={headers:p.headers||[],rows:p.rows||[]};
     return {pag:p,rec:{dados:rec}};
   };
-  fn.__PSS_NAV_FAST_V4=true;window.carregarDadosPagamentosAdmin_=fn;try{carregarDadosPagamentosAdmin_=fn;}catch(e){}
+  fn.__PSS_NAV_FAST_V5=true;window.carregarDadosPagamentosAdmin_=fn;try{carregarDadosPagamentosAdmin_=fn;}catch(e){}
+}
+function instalarConsultaDireta(){
+  var fn=async function(){
+    try{
+      var d=await edge('consulta',{lista:true}),ps=(d&&d.participantes)||[];
+      window.ESTADO=window.ESTADO||{};ESTADO.consultaAdminParticipantes=ps;
+      var h='<div class="panel"><h2>Consulta administrativa de participante</h2><p>Consulte dados completos do participante, bolões vinculados, cotas, comprovantes, pagamentos, palpites e histórico.</p><div class="consulta-actions"><div class="field"><label>Participante</label><select id="consultaAdminEmail"><option value="">Selecione um participante...</option>'+ps.map(function(p){return '<option value="'+esc(p.email)+'">'+esc((p.nome||p.email||'Participante')+' — '+(p.email||''))+'</option>';}).join('')+'</select></div><button type="button" class="btn" onclick="executarConsultaParticipanteAdmin()">Consultar</button><button type="button" class="btn btn-light" onclick="renderConsultaParticipanteAdmin()">Atualizar lista</button></div><div id="resultadoConsultaParticipanteAdmin"><div class="consulta-empty">Selecione um participante para carregar a consulta detalhada.</div></div></div>';
+      if(typeof window.setView==='function')window.setView(h);
+    }catch(e){if(typeof window.setView==='function')window.setView('<div class="panel"><div class="notice error">'+esc((e&&e.message)||e)+'</div></div>');}
+  };
+  fn.__PSS_NAV_FAST_V5=true;window.renderConsultaParticipanteAdmin=fn;try{renderConsultaParticipanteAdmin=fn;}catch(e){}
+  var ex=async function(){
+    var email=(document.getElementById('consultaAdminEmail')||{}).value||'',box=document.getElementById('resultadoConsultaParticipanteAdmin');
+    if(!email){try{toast('Selecione um participante.','warn');}catch(e){}return;}
+    if(box)box.innerHTML='<div class="notice info">Carregando dados do participante...</div>';
+    try{var d=await edge('consulta',{participanteEmail:email});var renderer=window.renderResultadoConsultaParticipanteAdmin_;if(box)box.innerHTML=typeof renderer==='function'?renderer(d):'<pre>'+esc(JSON.stringify(d,null,2))+'</pre>';}catch(e){if(box)box.innerHTML='<div class="notice error">'+esc((e&&e.message)||e)+'</div>';}
+  };
+  window.executarConsultaParticipanteAdmin=ex;try{executarConsultaParticipanteAdmin=ex;}catch(e){}
 }
 function instalarAdminDados(){
-  var base=window.adminDados;if(typeof base!=='function'||base.__PSS_NAV_FAST_V4)return;
+  var base=window.adminDados;if(typeof base!=='function'||base.__PSS_NAV_FAST_V5)return;
   var fn=async function(aba){var r=await adminRapido(aba);if(r)return r;return base.apply(this,arguments);};
-  fn.__PSS_NAV_FAST_V4=true;fn.__base=base;window.adminDados=fn;try{adminDados=fn;}catch(e){}
+  fn.__PSS_NAV_FAST_V5=true;fn.__base=base;window.adminDados=fn;try{adminDados=fn;}catch(e){}
 }
 function instalarApi(){
   var base=window.api;
-  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V4){var fn=async function(action,dados,args){if(String(action||'')==='getDadosAdmin'){var aba=(dados&&dados.nomeAba)||(args&&args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(action,dados,args);if(r)return await r;return base.apply(this,arguments);};fn.__PSS_NAV_FAST_V4=true;fn.__base=base;window.api=fn;try{api=fn;}catch(e){}}
+  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V5){var fn=async function(action,dados,args){if(String(action||'')==='getDadosAdmin'){var aba=(dados&&dados.nomeAba)||(args&&args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(action,dados,args);if(r)return await r;return base.apply(this,arguments);};fn.__PSS_NAV_FAST_V5=true;fn.__base=base;window.api=fn;try{api=fn;}catch(e){}}
   var bm=window.apiMulti;
-  if(typeof bm==='function'&&!bm.__PSS_NAV_FAST_V4){var fm=async function(tentativas){if(Array.isArray(tentativas))for(var i=0;i<tentativas.length;i++){var t=tentativas[i]||{};if(String(t.action||'')==='getDadosAdmin'){var aba=(t.dados&&t.dados.nomeAba)||(t.args&&t.args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(t.action,t.dados,t.args);if(r)return await r;}return bm.apply(this,arguments);};fm.__PSS_NAV_FAST_V4=true;fm.__base=bm;window.apiMulti=fm;try{apiMulti=fm;}catch(e){}}
+  if(typeof bm==='function'&&!bm.__PSS_NAV_FAST_V5){var fm=async function(tentativas){if(Array.isArray(tentativas))for(var i=0;i<tentativas.length;i++){var t=tentativas[i]||{};if(String(t.action||'')==='getDadosAdmin'){var aba=(t.dados&&t.dados.nomeAba)||(t.args&&t.args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(t.action,t.dados,t.args);if(r)return await r;}return bm.apply(this,arguments);};fm.__PSS_NAV_FAST_V5=true;fm.__base=bm;window.apiMulti=fm;try{apiMulti=fm;}catch(e){}}
 }
 
 var renderMap={
@@ -153,8 +172,8 @@ var renderMap={
 };
 function mark(v){currentView=v;seq++;try{window.ESTADO=window.ESTADO||{};window.ESTADO.view=v;window.PSS_NAV_SEQ=seq;window.PSS_NAV_VIEW=v;}catch(e){}try{document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===v);});}catch(e){}return seq;}
 function go(v){v=String(v||'inicio');mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}
-function instalarNavegacao(){if(typeof window.navegar==='function'&&!window.navegar.__PSS_NAV_FAST_V4){baseNavigate=window.navegar;var n=function(v){return go(v);};n.__PSS_NAV_FAST_V4=true;n.__base=baseNavigate;window.navegar=n;try{navegar=n;}catch(e){}}}
-function install(){instalarLoaders();instalarConfigRapido();instalarPagamentosRapido();instalarAdminDados();instalarApi();instalarNavegacao();}
+function instalarNavegacao(){if(typeof window.navegar==='function'&&!window.navegar.__PSS_NAV_FAST_V5){baseNavigate=window.navegar;var n=function(v){return go(v);};n.__PSS_NAV_FAST_V5=true;n.__base=baseNavigate;window.navegar=n;try{navegar=n;}catch(e){}}}
+function install(){instalarLoaders();instalarConfigRapido();instalarPagamentosRapido();instalarConsultaDireta();instalarAdminDados();instalarApi();instalarNavegacao();}
 install();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(install,ms);});
-window.PSS_LAST_CLICK_WINS={version:'V4',get:function(){return {seq:seq,view:currentView};},go:go};
+window.PSS_LAST_CLICK_WINS={version:'V5',get:function(){return {seq:seq,view:currentView};},go:go};
 })();
