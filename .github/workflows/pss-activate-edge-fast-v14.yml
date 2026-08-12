@@ -1,0 +1,43 @@
+name: PSS Activate Edge Fast V1.4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-activate-edge-fast-v14.yml'
+      - 'assets/pss-admin-edge-fast-v1.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Forcar V1.4 no index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          pat=r'assets/pss-admin-edge-fast-v1\.js\?v=[^"\']+'
+          new='assets/pss-admin-edge-fast-v1.js?v=EDGE_FAST_V14_20260812_0835'
+          s2,n=re.subn(pat,new,s)
+          if n==0:
+              raise SystemExit('Tag pss-admin-edge-fast-v1.js nao localizada')
+          p.write_text(s2,encoding='utf-8')
+          print('tags atualizadas:',n)
+          PY
+      - name: Commit
+        run: |
+          if git diff --quiet -- index.html; then exit 0; fi
+          git config user.name "Portal SimonSports Bot"
+          git config user.email "actions@github.com"
+          git add index.html
+          git commit -m "Frontend: ativa Edge Fast V1.4"
+          git push
