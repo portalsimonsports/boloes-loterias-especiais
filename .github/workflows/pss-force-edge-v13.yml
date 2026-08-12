@@ -1,0 +1,48 @@
+name: PSS Edge Fast V1.3 Menus Restantes
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pss-force-edge-v13.yml'
+      - 'assets/pss-admin-edge-fast-v1.js'
+
+permissions:
+  contents: write
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ativar V1.3 sem alterar layout
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          pat=r'assets/pss-admin-edge-fast-v1\.js(?:\?v=[^"\']*)?'
+          rep='assets/pss-admin-edge-fast-v1.js?v=V13_20260812_0611'
+          n,c=re.subn(pat,rep,s)
+          if c==0:
+              marker='</body>'
+              tag='<script src="assets/pss-admin-edge-fast-v1.js?v=V13_20260812_0611"></script>\n'
+              if marker not in s: raise SystemExit('ERRO: </body> não localizado')
+              n=s.replace(marker,tag+marker,1)
+          p.write_text(n,encoding='utf-8')
+          print('V1.3 ativada; ocorrencias:',c)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'index.html já está em V1.3.'
+          else
+            git commit -m 'Frontend: ativa Supabase Edge Fast V1.3 [skip ci]'
+            git push
+          fi
