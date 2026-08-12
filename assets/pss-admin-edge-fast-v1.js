@@ -9,6 +9,7 @@ window.PSS_ADMIN_EDGE_FAST_V1=true;
 
 var CFG=null,CACHE={},TTL=20000;
 function norm(v){return String(v==null?'':v).trim().toUpperCase();}
+function esc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}
 async function cfg(){
   if(CFG)return CFG;
   var r=await fetch('./api/supabase-public.json?v=EDGE_FAST_V1',{cache:'force-cache'});
@@ -98,7 +99,37 @@ function instalarApi(){
   window.api=nova;try{api=nova;}catch(e){}
   return true;
 }
-function instalar(){instalarApiMulti();instalarApi();}
-instalar();[50,150,400,1000,2500].forEach(function(ms){setTimeout(instalar,ms);});
-window.PSS_ADMIN_EDGE_FAST={version:'V1',call:call,clear:function(){CACHE={};},status:function(){return {cache:Object.keys(CACHE),source:window.PSS_LAST_DATA_SOURCE||null};}};
+
+/* V1.1 — sobrescreve a override V311 que ainda chamava apiMulti/window.name. */
+function instalarParticipantesDireto(){
+  var atual=window.renderParticipantesBolaoAdmin;
+  if(atual&&atual.__PSS_ADMIN_EDGE_PARTICIPANTES__)return true;
+  var fn=async function(){
+    try{
+      if(typeof window.PSS_isAdminMestreV308==='function'&&!window.PSS_isAdminMestreV308()){
+        if(typeof window.setView==='function')window.setView('<div class="panel"><div class="notice error">Acesso restrito ao administrador mestre.</div></div>');
+        return;
+      }
+      var r=participantes(await call('participantes',false));
+      var headers=r.headers||[],rows=r.rows||[];
+      var fmt=typeof window.formatarCelula==='function'?window.formatarCelula:function(v){return esc(v);};
+      var html='<div class="panel"><h2>Participantes Bolão</h2><p>Participantes vinculados aos bolões cadastrados.</p><div class="actions"><button class="btn" onclick="sincronizarAbasParticipantesAdmin()">Sincronizar abas individuais</button><button class="btn btn-light" onclick="renderParticipantesBolaoAdmin()">Atualizar lista</button></div><div id="syncAbasParticipantesResultado"></div>';
+      if(headers.length){
+        html+='<div class="table-wrap"><table><thead><tr>'+headers.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(c){return '<td>'+fmt(c)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>';
+      }else html+='<div class="notice warn">Nenhum dado localizado em Participantes.</div>';
+      html+='</div>';
+      if(typeof window.setView==='function')window.setView(html);
+    }catch(err){
+      if(typeof window.setView==='function')window.setView('<div class="panel"><div class="notice error">'+esc((err&&err.message)||err)+'</div></div>');
+    }
+  };
+  fn.__PSS_ADMIN_EDGE_PARTICIPANTES__=true;
+  window.renderParticipantesBolaoAdmin=fn;
+  try{renderParticipantesBolaoAdmin=fn;}catch(e){}
+  return true;
+}
+
+function instalar(){instalarApiMulti();instalarApi();instalarParticipantesDireto();}
+instalar();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(instalar,ms);});
+window.PSS_ADMIN_EDGE_FAST={version:'V1.1',call:call,clear:function(){CACHE={};},status:function(){return {cache:Object.keys(CACHE),source:window.PSS_LAST_DATA_SOURCE||null,participantesDireto:!!(window.renderParticipantesBolaoAdmin&&window.renderParticipantesBolaoAdmin.__PSS_ADMIN_EDGE_PARTICIPANTES__)};}};
 })();
