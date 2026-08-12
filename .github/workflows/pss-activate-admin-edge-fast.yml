@@ -1,0 +1,49 @@
+name: PSS Activate Admin Edge Fast
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/pss-admin-edge-fast-v1.js'
+      - '.github/workflows/pss-activate-admin-edge-fast.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ativar cliente admin Edge sem alterar layout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          import re
+          s=re.sub(r'<script src="assets/pss-admin-edge-fast-v1\.js\?v=[^"]+"></script>\s*','',s)
+          tag='<script src="assets/pss-admin-edge-fast-v1.js?v=V1_20260812_0500"></script>'
+          if '</body>' not in s:
+              raise SystemExit('ERRO_BODY_NAO_LOCALIZADO')
+          s=s.replace('</body>',tag+'\n</body>',1)
+          if s.count('assets/pss-admin-edge-fast-v1.js')!=1:
+              raise SystemExit('ERRO_TAG_ADMIN_EDGE')
+          p.write_text(s,encoding='utf-8',newline='')
+          print('PSS_ADMIN_EDGE_FAST_ATIVO')
+          PY
+      - name: Publicar
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'Tag já estava atualizada.'
+          else
+            git commit -m 'Performance: ativa admin Edge Fast V1 [skip ci]'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
