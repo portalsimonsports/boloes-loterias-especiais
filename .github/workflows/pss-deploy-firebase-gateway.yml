@@ -1,0 +1,33 @@
+name: PSS Deploy Firebase Gateway
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/pss-firebase-gateway/**'
+      - 'supabase/config.toml'
+      - '.github/workflows/pss-deploy-firebase-gateway.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: nsaoekahczonljpozyvy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validar token
+        run: test -n "$SUPABASE_ACCESS_TOKEN"
+      - name: Aplicar configuração
+        run: supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
+      - name: Publicar gateway Firebase
+        run: supabase functions deploy pss-firebase-gateway --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+      - name: Conclusão
+        run: echo 'PSS_FIREBASE_GATEWAY_DEPLOY_OK'
