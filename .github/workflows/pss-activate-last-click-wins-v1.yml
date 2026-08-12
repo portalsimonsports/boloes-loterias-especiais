@@ -26,7 +26,7 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           s=re.sub(r'\s*<script[^>]+pss-last-click-wins-v1\.js[^>]*></script>\s*','\n',s,flags=re.I)
-          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V3_20260812_1445"></script>\n'
+          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V4_20260812_1458"></script>\n'
           if '</body>' not in s.lower():
               raise SystemExit('index.html sem </body>')
           pos=s.lower().rfind('</body>')
@@ -34,11 +34,11 @@ jobs:
           p.write_text(s,encoding='utf-8')
           if s.lower().rfind('pss-last-click-wins-v1.js') > s.lower().rfind('</body>'):
               raise SystemExit('tag fora do body')
-          print('LAST_CLICK_WINS_V3_INJETADO')
+          print('LAST_CLICK_WINS_V4_INJETADO')
           PY
       - name: Validar
         run: |
-          grep -q 'pss-last-click-wins-v1.js?v=V3_20260812_1445' index.html
+          grep -q 'pss-last-click-wins-v1.js?v=V4_20260812_1458' index.html
           test "$(grep -o 'pss-last-click-wins-v1.js' index.html | wc -l)" -eq 1
       - name: Commit
         run: |
@@ -49,5 +49,5 @@ jobs:
             echo 'Sem alteracoes'
             exit 0
           fi
-          git commit -m 'Frontend: ativa navegacao rapida V3'
+          git commit -m 'Frontend: ativa navegacao rapida V4'
           git push
