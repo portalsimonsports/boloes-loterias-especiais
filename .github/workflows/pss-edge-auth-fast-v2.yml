@@ -1,10 +1,9 @@
 name: PSS Edge Auth Fast V2
 
+# Manutenção manual apenas.
+# Não deve executar em commits automáticos de dados, frontend ou GitHub Pages.
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/pss-edge-auth-fast-v2.yml'
 
 permissions:
   contents: write
@@ -14,75 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Priorizar autorização pelo Supabase
+      - name: Verificar estado atual do gateway
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('supabase/functions/pss-firebase-gateway/index.ts')
-          s=p.read_text(encoding='utf-8')
-          old="""    const ident=await verifyFirebase(req)
-    const fb=await firebasePerfil(ident.email,ident.token)
-    if(!fb||!usuarioValido(fb))return json({ok:false,erro:'USUARIO_NAO_AUTORIZADO'},403)
-    const body=await req.json().catch(()=>({}))
-    const screen=String(body?.screen||'').trim().toLowerCase()
-    if(adminScreen(screen)&&!adminValido(fb))return json({ok:false,erro:'ADMIN_NAO_AUTORIZADO'},403)
-
-    const url=Deno.env.get('SUPABASE_URL')!
-    const secretMap=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}')
-    const secret=secretMap.default||Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if(!url||!secret)throw new Error('SUPABASE_SECRET_INDISPONIVEL')
-    const sb=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}})
-
-    let {data:me}=await sb.from('usuarios').select('id,email,firebase_uid').eq('email',ident.email).maybeSingle()
-    if(!me?.id){
-      const ins=await sb.from('usuarios').upsert({email:ident.email,nome:String(fb.nome||ident.email),perfil:String(fb.perfil||'PARTICIPANTE').toUpperCase(),status:'APROVADO',aprovado:true,firebase_uid:ident.sub},{onConflict:'email'}).select('id,email,firebase_uid').maybeSingle()
-      me=ins.data||null
-    }else if(!me.firebase_uid){ await sb.from('usuarios').update({firebase_uid:ident.sub}).eq('id',me.id) }
-"""
-          new="""    const ident=await verifyFirebase(req)
-    const body=await req.json().catch(()=>({}))
-    const screen=String(body?.screen||'').trim().toLowerCase()
-
-    const url=Deno.env.get('SUPABASE_URL')!
-    const secretMap=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}')
-    const secret=secretMap.default||Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if(!url||!secret)throw new Error('SUPABASE_SECRET_INDISPONIVEL')
-    const sb=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}})
-
-    let {data:me}=await sb.from('usuarios').select('id,email,nome,firebase_uid,status,perfil,aprovado').eq('email',ident.email).maybeSingle()
-    const supOk=!!me?.id && me?.aprovado===true && ['APROVADO','ATIVO'].includes(n(me?.status))
-    const supAdmin=supOk && (n(me?.perfil).includes('ADMIN')||n(me?.perfil).includes('MESTRE'))
-    let fb:any=null
-
-    if(!supOk || (adminScreen(screen)&&!supAdmin)){
-      fb=await firebasePerfil(ident.email,ident.token)
-      if(!fb||!usuarioValido(fb))return json({ok:false,erro:'USUARIO_NAO_AUTORIZADO'},403)
-      if(adminScreen(screen)&&!adminValido(fb))return json({ok:false,erro:'ADMIN_NAO_AUTORIZADO'},403)
-      if(!me?.id){
-        const ins=await sb.from('usuarios').upsert({email:ident.email,nome:String(fb.nome||ident.email),perfil:String(fb.perfil||'PARTICIPANTE').toUpperCase(),status:'APROVADO',aprovado:true,firebase_uid:ident.sub},{onConflict:'email'}).select('id,email,nome,firebase_uid,status,perfil,aprovado').maybeSingle()
-        me=ins.data||null
-      }else{
-        await sb.from('usuarios').update({firebase_uid:ident.sub,perfil:String(fb.perfil||me.perfil||'PARTICIPANTE').toUpperCase(),status:'APROVADO',aprovado:true}).eq('id',me.id)
-        me={...me,firebase_uid:ident.sub,perfil:String(fb.perfil||me.perfil||'PARTICIPANTE').toUpperCase(),status:'APROVADO',aprovado:true}
-      }
-    }else if(!me?.firebase_uid){
-      await sb.from('usuarios').update({firebase_uid:ident.sub}).eq('id',me.id)
-      me={...me,firebase_uid:ident.sub}
-    }
-"""
-          if old not in s:
-              raise SystemExit('Bloco esperado não encontrado; abortando sem alterar arquivo.')
-          p.write_text(s.replace(old,new),encoding='utf-8')
-          PY
-      - name: Validar
-        run: |
-          grep -q 'const supOk=' supabase/functions/pss-firebase-gateway/index.ts
-          grep -q "if(!supOk || (adminScreen(screen)&&!supAdmin))" supabase/functions/pss-firebase-gateway/index.ts
-      - name: Commit
-        run: |
-          git config user.name 'portalsimonsports'
-          git config user.email 'portalsimonsports@users.noreply.github.com'
-          git add supabase/functions/pss-firebase-gateway/index.ts
-          git diff --cached --quiet && exit 0
-          git commit -m 'Performance: autoriza Edge pelo Supabase antes do Firestore'
-          git push
+          grep -q "pss-firebase-gateway" <<< "pss-firebase-gateway"
+          test -f supabase/functions/pss-firebase-gateway/index.ts
+          echo "EDGE_AUTH_FAST_MANUAL_OK"
