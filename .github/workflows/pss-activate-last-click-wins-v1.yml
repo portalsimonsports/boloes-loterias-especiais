@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Aplicar clique direto nos 4 menus lentos
+      - name: Publicar V9 dos 4 menus no index
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -29,75 +29,50 @@ jobs:
           a=Path('assets/pss-last-click-wins-v1.js')
           s=a.read_text(encoding='utf-8')
 
-          # Mantém o mesmo transporte que já funciona em Usuários.
-          s=s.replace("var lista=await edge('boloes',{palpiteMenu:true});lista=Array.isArray(lista)?lista:[];window.ESTADO=window.ESTADO||{};ESTADO.boloes=lista;",
-                      "var lista=await pssStableCall('boloes');lista=Array.isArray(lista)?lista:[];window.ESTADO=window.ESTADO||{};ESTADO.boloes=lista;",1)
-          s=s.replace("if(a==='BASE_LOTERIAS')return baseLoteriasTabela(await edge('base_loterias'));",
-                      "if(a==='BASE_LOTERIAS')return baseLoteriasTabela(await pssStableCall('base_loterias'));",1)
-          s=s.replace("var d=await edge('consulta',{lista:true}),ps=(d&&d.participantes)||[];",
-                      "var d=await pssStableCall('consulta'),ps=(d&&d.participantes)||[];",1)
+          # Confirma que a V9 e o clique direto já estão no arquivo atual.
+          obrigatorios=[
+            'window.PSS_LAST_CLICK_WINS_V9',
+            'function instalarCliquesDiretos4()',
+            "pssStableCall('boloes')",
+            "pssStableCall('pagamentos')",
+            "pssStableCall('base_loterias')",
+            "pssStableCall('consulta')"
+          ]
+          faltando=[x for x in obrigatorios if x not in s]
+          if faltando:
+              raise SystemExit('V9 incompleta: '+', '.join(faltando))
 
-          # Intercepta somente os quatro botões antes do navegador legado.
-          handler = r'''
-function instalarCliquesDiretos4(){
-  if(window.PSS_CLIQUE_DIRETO_4_V9)return;
-  window.PSS_CLIQUE_DIRETO_4_V9=true;
-  document.addEventListener('click',function(ev){
-    var b=ev.target&&ev.target.closest?ev.target.closest('#navMenu button[data-view]'):null;
-    if(!b)return;
-    var v=String(b.dataset.view||'');
-    if(['palpite','pagamentos','baseLoterias','consulta'].indexOf(v)<0)return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    if(typeof ev.stopImmediatePropagation==='function')ev.stopImmediatePropagation();
-    go(v);
-  },true);
-}
-'''
-          if 'function instalarCliquesDiretos4()' not in s:
-              anchor='var renderMap={'
-              if anchor not in s: raise SystemExit('renderMap nao localizado')
-              s=s.replace(anchor,handler+'\n'+anchor,1)
-
-          s=s.replace('function install(){instalarLoaders();instalarPalpiteRapido();instalarConfigRapido();instalarPagamentosRapido();instalarConsultaDireta();instalarAdminDados();instalarApi();instalarNavegacao();}',
-                      'function install(){instalarLoaders();instalarPalpiteRapido();instalarConfigRapido();instalarPagamentosRapido();instalarConsultaDireta();instalarAdminDados();instalarApi();instalarNavegacao();instalarCliquesDiretos4();}',1)
-          s=s.replace('Navegação rápida V8','Navegação rápida V9',1)
-          s=s.replace('window.PSS_LAST_CLICK_WINS_V8','window.PSS_LAST_CLICK_WINS_V9')
-          s=s.replace('PSS_NAV_FAST_V8','PSS_NAV_FAST_V9')
-          s=s.replace('PSS_PALPITE_FAST_V8','PSS_PALPITE_FAST_V9')
-          s=s.replace("version:'V8'","version:'V9'")
-          a.write_text(s,encoding='utf-8')
-
+          # Não reescreve lógica. Apenas troca a URL carregada pelo index.
           p=Path('index.html')
           h=p.read_text(encoding='utf-8')
           h=re.sub(r'\s*<script[^>]+pss-last-click-wins-v1\.js[^>]*></script>\s*','\n',h,flags=re.I)
-          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V9_CLIQUE_DIRETO_4_20260814_0556"></script>\n'
-          if '</body>' not in h.lower(): raise SystemExit('index.html sem </body>')
+          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V9_CLIQUE_DIRETO_4_20260814_0838"></script>\n'
+          if '</body>' not in h.lower():
+              raise SystemExit('index.html sem </body>')
           pos=h.lower().rfind('</body>')
           h=h[:pos]+tag+h[pos:]
           p.write_text(h,encoding='utf-8')
-          print('V9_CLIQUE_DIRETO_4_OK')
+          print('V9_PUBLICADA_NO_INDEX_OK')
           PY
 
       - name: Validar
         run: |
           grep -q 'function instalarCliquesDiretos4()' assets/pss-last-click-wins-v1.js
-          grep -q "\['palpite','pagamentos','baseLoterias','consulta'\]" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('boloes')" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('pagamentos')" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('base_loterias')" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('consulta')" assets/pss-last-click-wins-v1.js
-          grep -q 'V9_CLIQUE_DIRETO_4_20260814_0556' index.html
+          grep -q 'V9_CLIQUE_DIRETO_4_20260814_0838' index.html
           test "$(grep -o 'pss-last-click-wins-v1.js' index.html | wc -l)" -eq 1
 
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
-          git add assets/pss-last-click-wins-v1.js index.html
+          git add index.html
           if git diff --cached --quiet; then
             echo 'Sem alteracoes'
             exit 0
           fi
-          git commit -m 'Performance: clique direto nos 4 menus lentos'
+          git commit -m 'Frontend: publica V9 dos 4 menus rápidos'
           git push
