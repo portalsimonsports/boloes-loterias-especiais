@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restaurar letreiro publico sem alterar menus
+      - name: Corrigir contador de inscritos aprovados no Inicio
         shell: bash
         run: |
           python - <<'PY'
@@ -28,60 +28,68 @@ jobs:
 
           a=Path('assets/pss-admin-edge-fast-v1.js')
           s=a.read_text(encoding='utf-8')
-          marker='function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();}'
-          if marker not in s and 'function instalarResultadosPublicosJson()' not in s:
-              raise SystemExit('Marcador do Admin Edge nao localizado')
 
-          if 'function instalarResultadosPublicosJson()' not in s:
-              lines=[
-                'function instalarResultadosPublicosJson(){',
-                "  var atual=window.carregarLetreiroResultadosPublicosV213;",
-                "  if(typeof atual!=='function')return false;",
-                '  if(atual.__PSS_RESULTADOS_JSON_V13)return true;',
-                '  var base=atual;',
-                '  var fn=async function(forcar){',
-                '    try{',
-                "      var url='./dados-publicos.json?v='+(forcar?Date.now():'RESULTADOS_JSON_V13_20260814_2000');",
-                "      var r=await fetch(url,{cache:forcar?'no-store':'no-cache'});",
-                "      if(!r.ok)throw new Error('dados-publicos HTTP '+r.status);",
-                '      var j=await r.json();',
-                '      var d=j&&j.resultadosPublicos;',
-                '      var valido=!!(d&&((Array.isArray(d.resultados)&&d.resultados.length)||d.letreiroTexto));',
-                "      if(!valido)throw new Error('resultadosPublicos ausente');",
-                "      try{localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V213',JSON.stringify({ts:Date.now(),dados:d}));}catch(e){}",
-                "      if(typeof window.renderLetreiroResultadosPublicosV213==='function'){",
-                '        window.renderLetreiroResultadosPublicosV213(d);',
-                '        return d;',
-                '      }',
-                '      return base.apply(this,arguments);',
-                '    }catch(err){',
-                '      return base.apply(this,arguments);',
-                '    }',
-                '  };',
-                '  fn.__PSS_RESULTADOS_JSON_V13=true;',
-                '  fn.__base=base;',
-                '  window.carregarLetreiroResultadosPublicosV213=fn;',
-                '  try{carregarLetreiroResultadosPublicosV213=fn;}catch(e){}',
-                '  return true;',
-                '}',
-                '',
-                'function iniciarResultadosPublicosJson(){',
-                '  if(!instalarResultadosPublicosJson())return;',
-                "  var box=document.getElementById('resultadosPublicosTickerV213');",
-                "  if(box&&typeof window.carregarLetreiroResultadosPublicosV213==='function'){",
-                '    window.carregarLetreiroResultadosPublicosV213(false).catch(function(){});',
-                '  }',
-                '}',
-                ''
-              ]
-              bloco='\n'.join(lines)
-              novo=bloco+'function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();instalarResultadosPublicosJson();}'
-              s=s.replace(marker,novo,1)
+          if 'function instalarContadorInscritosSupabase()' not in s:
+              marker='function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();instalarResultadosPublicosJson();}'
+              if marker not in s:
+                  raise SystemExit('Marcador do Admin Edge nao localizado')
+              bloco="""function totalAprovadosSupabase(lista){
+  lista=Array.isArray(lista)?lista:[];
+  return lista.filter(function(u){
+    var ap=u&&u.aprovado;
+    var ok=(ap===true||ap===1||String(ap||'').toUpperCase()==='TRUE'||String(ap||'').toUpperCase()==='SIM');
+    var st=String((u&&u.status)||'').trim().toUpperCase();
+    return ok && st!=='RECUSADO' && st!=='INATIVO' && st!=='CANCELADO';
+  }).length;
+}
+function aplicarContadorInscritosSupabase(total){
+  total=Number(total)||0;
+  if(total<=0)return false;
+  var card=document.getElementById('sistemaAtivoCardV275')||document.querySelector('[id^="sistemaAtivoCard"]');
+  if(!card)return false;
+  var alterou=false;
+  [].slice.call(card.querySelectorAll('button')).forEach(function(b){
+    if(/inscritos\s*:/i.test(String(b.textContent||''))){
+      b.textContent='👥 Inscritos: '+total;
+      alterou=true;
+    }
+  });
+  try{
+    window.PSS_RESUMO_INSCRITOS_TOPO=Object.assign({},window.PSS_RESUMO_INSCRITOS_TOPO||{},{totalAprovadosSite:total,totalInscritosSite:total,totalInscritos:total,total:total,origem:'SUPABASE_USUARIOS'});
+  }catch(e){}
+  return alterou;
+}
+async function atualizarContadorInscritosSupabase(forcar){
+  try{
+    var lista=await call('usuarios',!!forcar);
+    var total=totalAprovadosSupabase(lista);
+    if(total>0)aplicarContadorInscritosSupabase(total);
+    return total;
+  }catch(e){return 0;}
+}
+function instalarContadorInscritosSupabase(){
+  if(window.PSS_CONTADOR_INSCRITOS_SUPABASE_V14)return true;
+  window.PSS_CONTADOR_INSCRITOS_SUPABASE_V14=true;
+  var baseInicio=window.renderInicio;
+  if(typeof baseInicio==='function'&&!baseInicio.__PSS_INSCRITOS_SUPABASE_V14){
+    var novo=async function(){
+      var r=await baseInicio.apply(this,arguments);
+      [80,250,700,1500].forEach(function(ms){setTimeout(function(){atualizarContadorInscritosSupabase(false);},ms);});
+      return r;
+    };
+    novo.__PSS_INSCRITOS_SUPABASE_V14=true;
+    novo.__base=baseInicio;
+    window.renderInicio=novo;
+    try{renderInicio=novo;}catch(e){}
+  }
+  [0,150,500,1200,2500].forEach(function(ms){setTimeout(function(){atualizarContadorInscritosSupabase(false);},ms);});
+  return true;
+}
 
-          old='instalar();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(instalar,ms);});'
-          new=old+'[0,100,300,800,1600,3000].forEach(function(ms){setTimeout(iniciarResultadosPublicosJson,ms);});'
-          if old in s and 'setTimeout(iniciarResultadosPublicosJson' not in s:
-              s=s.replace(old,new,1)
+"""
+              s=s.replace(marker,bloco+'function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();instalarResultadosPublicosJson();instalarContadorInscritosSupabase();}',1)
+
+          s=s.replace("version:'V1.2'","version:'V1.4_INSCRITOS_SUPABASE'",1)
           a.write_text(s,encoding='utf-8')
 
           p=Path('index.html')
@@ -89,23 +97,22 @@ jobs:
           if 'V10_REARM_4_20260814_1945' not in h:
               raise SystemExit('V10 dos quatro menus nao localizada; abortando')
           pat=r"assets/pss-admin-edge-fast-v1\.js\?v=[^\"']+"
-          rep='assets/pss-admin-edge-fast-v1.js?v=V1_3_RESULTADOS_PUBLICOS_20260814_2000'
+          rep='assets/pss-admin-edge-fast-v1.js?v=V1_4_INSCRITOS_SUPABASE_20260814_2025'
           if re.search(pat,h):
               h=re.sub(pat,rep,h)
           else:
-              pos=h.lower().rfind('</body>')
-              if pos<0: raise SystemExit('index sem body')
-              h=h[:pos]+'\n<script src="'+rep+'"></script>\n'+h[pos:]
+              raise SystemExit('Script Admin Edge nao localizado no index')
           p.write_text(h,encoding='utf-8')
           PY
 
-      - name: Validar isolamento
+      - name: Validar contador e isolamento
         shell: bash
         run: |
+          grep -q 'function instalarContadorInscritosSupabase()' assets/pss-admin-edge-fast-v1.js
+          grep -q "call('usuarios'" assets/pss-admin-edge-fast-v1.js
+          grep -q 'totalAprovadosSupabase' assets/pss-admin-edge-fast-v1.js
+          grep -q 'V1_4_INSCRITOS_SUPABASE_20260814_2025' index.html
           grep -q 'function instalarResultadosPublicosJson()' assets/pss-admin-edge-fast-v1.js
-          grep -q 'j&&j.resultadosPublicos' assets/pss-admin-edge-fast-v1.js
-          grep -q './dados-publicos.json' assets/pss-admin-edge-fast-v1.js
-          grep -q 'V1_3_RESULTADOS_PUBLICOS_20260814_2000' index.html
           grep -q 'V10_REARM_4_20260814_1945' index.html
 
       - name: Commit
@@ -118,5 +125,5 @@ jobs:
             echo 'Sem alteracoes'
             exit 0
           fi
-          git commit -m 'Publico: restaura letreiro via dados-publicos sem alterar menus'
+          git commit -m 'Inicio: exibe inscritos aprovados via Supabase'
           git push
