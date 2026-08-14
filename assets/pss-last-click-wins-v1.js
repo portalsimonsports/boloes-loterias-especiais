@@ -192,7 +192,13 @@ var renderMap={
   participantes:function(){return window.renderParticipantesBolaoAdmin&&window.renderParticipantesBolaoAdmin();}
 };
 function mark(v){currentView=v;seq++;try{window.ESTADO=window.ESTADO||{};window.ESTADO.view=v;window.PSS_NAV_SEQ=seq;window.PSS_NAV_VIEW=v;}catch(e){}try{document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===v);});}catch(e){}return seq;}
-function go(v){v=String(v||'inicio');mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}
+function rearmar4(v){
+  if(v==='palpite'){instalarPalpiteRapido();}
+  else if(v==='pagamentos'){instalarPagamentosRapido();instalarAdminDados();instalarApi();}
+  else if(v==='baseLoterias'){instalarAdminDados();instalarApi();}
+  else if(v==='consulta'){instalarConsultaDireta();}
+}
+function go(v){v=String(v||'inicio');rearmar4(v);mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}
 function instalarNavegacao(){if(typeof window.navegar==='function'&&!window.navegar.__PSS_NAV_FAST_V9){baseNavigate=window.navegar;var n=function(v){return go(v);};n.__PSS_NAV_FAST_V9=true;n.__base=baseNavigate;window.navegar=n;try{navegar=n;}catch(e){}}}
 function instalarCliquesDiretos4(){
   if(window.PSS_CLIQUE_DIRETO_4_V9)return;
@@ -208,5 +214,5 @@ function instalarCliquesDiretos4(){
 }
 function install(){instalarLoaders();instalarPalpiteRapido();instalarConfigRapido();instalarPagamentosRapido();instalarConsultaDireta();instalarAdminDados();instalarApi();instalarNavegacao();instalarCliquesDiretos4();}
 install();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(install,ms);});
-window.PSS_LAST_CLICK_WINS={version:'V9',get:function(){return {seq:seq,view:currentView};},go:go};
+window.PSS_LAST_CLICK_WINS={version:'V10_REARM_4',get:function(){return {seq:seq,view:currentView};},go:go};
 })();
