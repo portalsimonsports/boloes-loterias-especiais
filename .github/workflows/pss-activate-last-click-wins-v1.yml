@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Publicar V9 dos 4 menus no index
+      - name: Corrigir os 4 menus e publicar V10
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -29,50 +29,74 @@ jobs:
           a=Path('assets/pss-last-click-wins-v1.js')
           s=a.read_text(encoding='utf-8')
 
-          # Confirma que a V9 e o clique direto já estão no arquivo atual.
           obrigatorios=[
-            'window.PSS_LAST_CLICK_WINS_V9',
-            'function instalarCliquesDiretos4()',
-            "pssStableCall('boloes')",
-            "pssStableCall('pagamentos')",
-            "pssStableCall('base_loterias')",
-            "pssStableCall('consulta')"
+            'function instalarPalpiteRapido()',
+            'function instalarPagamentosRapido()',
+            'function instalarConsultaDireta()',
+            'function instalarAdminDados()',
+            'function instalarApi()',
+            'function go(v)'
           ]
           faltando=[x for x in obrigatorios if x not in s]
           if faltando:
-              raise SystemExit('V9 incompleta: '+', '.join(faltando))
+              raise SystemExit('Estrutura esperada nao localizada: '+', '.join(faltando))
 
-          # Não reescreve lógica. Apenas troca a URL carregada pelo index.
+          antigo="function go(v){v=String(v||'inicio');mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}"
+          novo="""function rearmar4(v){
+  if(v==='palpite'){
+    instalarPalpiteRapido();
+  }else if(v==='pagamentos'){
+    instalarPagamentosRapido();
+    instalarAdminDados();
+    instalarApi();
+  }else if(v==='baseLoterias'){
+    instalarAdminDados();
+    instalarApi();
+  }else if(v==='consulta'){
+    instalarConsultaDireta();
+  }
+}
+function go(v){v=String(v||'inicio');rearmar4(v);mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}"""
+
+          if antigo in s:
+              s=s.replace(antigo,novo,1)
+          elif 'function rearmar4(v)' not in s:
+              raise SystemExit('Funcao go esperada nao localizada para patch')
+
+          s=s.replace("window.PSS_LAST_CLICK_WINS={version:'V9'", "window.PSS_LAST_CLICK_WINS={version:'V10_REARM_4'", 1)
+          a.write_text(s,encoding='utf-8')
+
           p=Path('index.html')
           h=p.read_text(encoding='utf-8')
           h=re.sub(r'\s*<script[^>]+pss-last-click-wins-v1\.js[^>]*></script>\s*','\n',h,flags=re.I)
-          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V9_CLIQUE_DIRETO_4_20260814_0838"></script>\n'
+          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V10_REARM_4_20260814_1442"></script>\n'
           if '</body>' not in h.lower():
               raise SystemExit('index.html sem </body>')
           pos=h.lower().rfind('</body>')
           h=h[:pos]+tag+h[pos:]
           p.write_text(h,encoding='utf-8')
-          print('V9_PUBLICADA_NO_INDEX_OK')
+          print('V10_REARM_4_OK')
           PY
 
       - name: Validar
         run: |
-          grep -q 'function instalarCliquesDiretos4()' assets/pss-last-click-wins-v1.js
-          grep -q "pssStableCall('boloes')" assets/pss-last-click-wins-v1.js
-          grep -q "pssStableCall('pagamentos')" assets/pss-last-click-wins-v1.js
-          grep -q "pssStableCall('base_loterias')" assets/pss-last-click-wins-v1.js
-          grep -q "pssStableCall('consulta')" assets/pss-last-click-wins-v1.js
-          grep -q 'V9_CLIQUE_DIRETO_4_20260814_0838' index.html
+          grep -q 'function rearmar4(v)' assets/pss-last-click-wins-v1.js
+          grep -q "if(v==='palpite')" assets/pss-last-click-wins-v1.js
+          grep -q "else if(v==='pagamentos')" assets/pss-last-click-wins-v1.js
+          grep -q "else if(v==='baseLoterias')" assets/pss-last-click-wins-v1.js
+          grep -q "else if(v==='consulta')" assets/pss-last-click-wins-v1.js
+          grep -q "version:'V10_REARM_4'" assets/pss-last-click-wins-v1.js
+          grep -q 'V10_REARM_4_20260814_1442' index.html
           test "$(grep -o 'pss-last-click-wins-v1.js' index.html | wc -l)" -eq 1
 
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add assets/pss-last-click-wins-v1.js index.html
           if git diff --cached --quiet; then
             echo 'Sem alteracoes'
             exit 0
           fi
-          git commit -m 'Frontend: publica V9 dos 4 menus rápidos'
+          git commit -m 'Frontend: corrige definitivamente os 4 menus lentos V10'
           git push
