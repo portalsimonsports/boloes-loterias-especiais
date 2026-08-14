@@ -40,7 +40,7 @@ async function call(screen,force){
     var txt=await r.text(),j={};
     try{j=JSON.parse(txt||'{}');}catch(e){}
     if(!r.ok||!j.ok)throw new Error((j&&j.erro)||('Gateway HTTP '+r.status));
-    CACHE[k]={ts:now,data:j.rows||[]};
+    var out=Object.prototype.hasOwnProperty.call(j,'data')?j.data:(j.rows||[]);CACHE[k]={ts:now,data:out};
     window.PSS_LAST_DATA_SOURCE={origem:'SUPABASE EDGE',ms:Math.round(performance.now()-ini),aba:k,ts:Date.now()};
     return CACHE[k].data;
   }finally{clearTimeout(tm);}

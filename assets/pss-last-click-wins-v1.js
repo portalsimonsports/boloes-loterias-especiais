@@ -1,17 +1,23 @@
-/* Portal SimonSports — Navegação rápida V7
+/* Portal SimonSports — Navegação rápida V8
  * Mantém todos os menus atuais e corrige somente a abertura do menu Palpite.
  * Palpite passa a usar uma única leitura de bolões/vínculos já entregue pelo Supabase Edge.
  */
 (function(){
 'use strict';
-if(window.PSS_LAST_CLICK_WINS_V7)return;
-window.PSS_LAST_CLICK_WINS_V7=true;
+if(window.PSS_LAST_CLICK_WINS_V8)return;
+window.PSS_LAST_CLICK_WINS_V8=true;
 
 var seq=0,currentView='',baseNavigate=null;
 var CFG=null,CACHE={},INFLIGHT={},TTL=30000;
 function norm(v){return String(v==null?'':v).trim().toUpperCase();}
 function esc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}
 function edgeFast(){return window.PSS_ADMIN_EDGE_FAST;}
+async function pssStableCall(screen,force){
+  var f=window.PSS_ADMIN_EDGE_FAST;
+  if(f&&typeof f.call==='function')return f.call(String(screen||'').toLowerCase(),!!force);
+  return edge(String(screen||'').toLowerCase(),{},!!force);
+}
+
 async function cfg(){
   if(CFG)return CFG;
   var r=await fetch('./api/supabase-public.json?v=NAV_FAST_V6',{cache:'force-cache'});
@@ -67,7 +73,7 @@ function recebimentos(lista){return (lista||[]).map(function(x){return {id:x.id|
 async function adminRapido(aba){
   var a=norm(aba);
   if(a==='SOLICITACOES_CADASTRO')return solicitacoesTabela(await edge('solicitacoes'));
-  if(a==='BASE_LOTERIAS')return baseLoteriasTabela(await edge('base_loterias'));
+  if(a==='BASE_LOTERIAS')return baseLoteriasTabela(await pssStableCall('base_loterias'));
   if(a==='PAGAMENTOS')return pagamentosTabela(await edge('pagamentos'));
   return null;
 }
@@ -101,7 +107,7 @@ function fastAction(action,dados,args){
   return null;
 }
 function instalarLoaders(){
-  var fn=async function(){return boloesRapido();};fn.__PSS_NAV_FAST_V7=true;
+  var fn=async function(){return boloesRapido();};fn.__PSS_NAV_FAST_V8=true;
   ['carregarBoloes','PSS_carregarBoloesCompletoV267_','PSS_carregarBoloesRapidoV268_','PSS_carregarBoloesV277_'].forEach(function(n){try{window[n]=fn;}catch(e){}try{eval(n+'=fn');}catch(e){}});
 }
 function instalarPalpiteRapido(){
@@ -109,7 +115,7 @@ function instalarPalpiteRapido(){
     tipo=tipo||'ativos';
     if(typeof window.loading==='function')window.loading('Carregando palpites');
     try{
-      var lista=await edge('boloes',{palpiteMenu:true});lista=Array.isArray(lista)?lista:[];window.ESTADO=window.ESTADO||{};ESTADO.boloes=lista;
+      var lista=await pssStableCall('boloes');lista=Array.isArray(lista)?lista:[];window.ESTADO=window.ESTADO||{};ESTADO.boloes=lista;
       var histFn=window.bolaoHistoricoV267||window.isHistorico;
       var dados=lista.filter(function(b){
         var ehHist=typeof histFn==='function'?!!histFn(b):!!b.historico;
@@ -133,39 +139,39 @@ function instalarPalpiteRapido(){
       if(typeof window.setView==='function')window.setView(html);
     }catch(err){if(typeof window.setView==='function')window.setView('<div class="panel"><div class="notice error">'+esc((err&&err.message)||err)+'</div></div>');}
   };
-  fn.__PSS_PALPITE_FAST_V7=true;
+  fn.__PSS_PALPITE_FAST_V8=true;
   window.renderPalpiteLista=fn;try{renderPalpiteLista=fn;}catch(e){}
 }
 function instalarConfigRapido(){
   var base=window.PSS_CONFIG_FAST_LOADER;
-  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V7){
+  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V8){
     var fn=async function(){
       var d=configCache();
-      if(d){setTimeout(function(){edge('boloes',{},true).then(salvarConfigCache).catch(function(){});},0);return {origem:'Supabase (cache rapido)',lista:d.boloes,acao:'PSS_NAV_FAST_V7',supabase:true};}
-      try{var l=await edge('boloes');salvarConfigCache(l);return {origem:'Supabase Edge',lista:l,acao:'PSS_NAV_FAST_V7',supabase:true};}catch(e){return base.apply(this,arguments);}
+      if(d){setTimeout(function(){edge('boloes',{},true).then(salvarConfigCache).catch(function(){});},0);return {origem:'Supabase (cache rapido)',lista:d.boloes,acao:'PSS_NAV_FAST_V8',supabase:true};}
+      try{var l=await edge('boloes');salvarConfigCache(l);return {origem:'Supabase Edge',lista:l,acao:'PSS_NAV_FAST_V8',supabase:true};}catch(e){return base.apply(this,arguments);}
     };
-    fn.__PSS_NAV_FAST_V7=true;fn.__base=base;window.PSS_CONFIG_FAST_LOADER=fn;
+    fn.__PSS_NAV_FAST_V8=true;fn.__base=base;window.PSS_CONFIG_FAST_LOADER=fn;
   }
 }
 function instalarPagamentosRapido(){
   var fn=async function(){
-    var b=await edge('pagamentos_bundle',{bundle:true});
-    var p=pagamentosTabela((b&&b.pagamentos)||[]),rec=recebimentos((b&&b.dadosRecebimento)||[]);
+    var r=await Promise.all([pssStableCall('pagamentos'),pssStableCall('dados_recebimento')]);
+    var p=pagamentosTabela(r[0]||[]),rec=recebimentos(r[1]||[]);
     window.ESTADO=window.ESTADO||{};ESTADO.dadosRecebimentoAdmin=rec;ESTADO.pagamentosAdminCache={headers:p.headers||[],rows:p.rows||[]};
     return {pag:p,rec:{dados:rec}};
   };
-  fn.__PSS_NAV_FAST_V7=true;window.carregarDadosPagamentosAdmin_=fn;try{carregarDadosPagamentosAdmin_=fn;}catch(e){}
+  fn.__PSS_NAV_FAST_V8=true;window.carregarDadosPagamentosAdmin_=fn;try{carregarDadosPagamentosAdmin_=fn;}catch(e){}
 }
 function instalarConsultaDireta(){
   var fn=async function(){
     try{
-      var d=await edge('consulta',{lista:true}),ps=(d&&d.participantes)||[];
+      var d=await pssStableCall('consulta'),ps=(d&&d.participantes)||[];
       window.ESTADO=window.ESTADO||{};ESTADO.consultaAdminParticipantes=ps;
       var h='<div class="panel"><h2>Consulta administrativa de participante</h2><p>Consulte dados completos do participante, bolões vinculados, cotas, comprovantes, pagamentos, palpites e histórico.</p><div class="consulta-actions"><div class="field"><label>Participante</label><select id="consultaAdminEmail"><option value="">Selecione um participante...</option>'+ps.map(function(p){return '<option value="'+esc(p.email)+'">'+esc((p.nome||p.email||'Participante')+' — '+(p.email||''))+'</option>';}).join('')+'</select></div><button type="button" class="btn" onclick="executarConsultaParticipanteAdmin()">Consultar</button><button type="button" class="btn btn-light" onclick="renderConsultaParticipanteAdmin()">Atualizar lista</button></div><div id="resultadoConsultaParticipanteAdmin"><div class="consulta-empty">Selecione um participante para carregar a consulta detalhada.</div></div></div>';
       if(typeof window.setView==='function')window.setView(h);
     }catch(e){if(typeof window.setView==='function')window.setView('<div class="panel"><div class="notice error">'+esc((e&&e.message)||e)+'</div></div>');}
   };
-  fn.__PSS_NAV_FAST_V7=true;window.renderConsultaParticipanteAdmin=fn;try{renderConsultaParticipanteAdmin=fn;}catch(e){}
+  fn.__PSS_NAV_FAST_V8=true;window.renderConsultaParticipanteAdmin=fn;try{renderConsultaParticipanteAdmin=fn;}catch(e){}
   var ex=async function(){
     var email=(document.getElementById('consultaAdminEmail')||{}).value||'',box=document.getElementById('resultadoConsultaParticipanteAdmin');
     if(!email){try{toast('Selecione um participante.','warn');}catch(e){}return;}
@@ -175,15 +181,15 @@ function instalarConsultaDireta(){
   window.executarConsultaParticipanteAdmin=ex;try{executarConsultaParticipanteAdmin=ex;}catch(e){}
 }
 function instalarAdminDados(){
-  var base=window.adminDados;if(typeof base!=='function'||base.__PSS_NAV_FAST_V7)return;
+  var base=window.adminDados;if(typeof base!=='function'||base.__PSS_NAV_FAST_V8)return;
   var fn=async function(aba){var r=await adminRapido(aba);if(r)return r;return base.apply(this,arguments);};
-  fn.__PSS_NAV_FAST_V7=true;fn.__base=base;window.adminDados=fn;try{adminDados=fn;}catch(e){}
+  fn.__PSS_NAV_FAST_V8=true;fn.__base=base;window.adminDados=fn;try{adminDados=fn;}catch(e){}
 }
 function instalarApi(){
   var base=window.api;
-  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V7){var fn=async function(action,dados,args){if(String(action||'')==='getDadosAdmin'){var aba=(dados&&dados.nomeAba)||(args&&args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(action,dados,args);if(r)return await r;return base.apply(this,arguments);};fn.__PSS_NAV_FAST_V7=true;fn.__base=base;window.api=fn;try{api=fn;}catch(e){}}
+  if(typeof base==='function'&&!base.__PSS_NAV_FAST_V8){var fn=async function(action,dados,args){if(String(action||'')==='getDadosAdmin'){var aba=(dados&&dados.nomeAba)||(args&&args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(action,dados,args);if(r)return await r;return base.apply(this,arguments);};fn.__PSS_NAV_FAST_V8=true;fn.__base=base;window.api=fn;try{api=fn;}catch(e){}}
   var bm=window.apiMulti;
-  if(typeof bm==='function'&&!bm.__PSS_NAV_FAST_V7){var fm=async function(tentativas){if(Array.isArray(tentativas))for(var i=0;i<tentativas.length;i++){var t=tentativas[i]||{};if(String(t.action||'')==='getDadosAdmin'){var aba=(t.dados&&t.dados.nomeAba)||(t.args&&t.args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(t.action,t.dados,t.args);if(r)return await r;}return bm.apply(this,arguments);};fm.__PSS_NAV_FAST_V7=true;fm.__base=bm;window.apiMulti=fm;try{apiMulti=fm;}catch(e){}}
+  if(typeof bm==='function'&&!bm.__PSS_NAV_FAST_V8){var fm=async function(tentativas){if(Array.isArray(tentativas))for(var i=0;i<tentativas.length;i++){var t=tentativas[i]||{};if(String(t.action||'')==='getDadosAdmin'){var aba=(t.dados&&t.dados.nomeAba)||(t.args&&t.args[0])||'';var ar=await adminRapido(aba);if(ar)return ar;}var r=fastAction(t.action,t.dados,t.args);if(r)return await r;}return bm.apply(this,arguments);};fm.__PSS_NAV_FAST_V8=true;fm.__base=bm;window.apiMulti=fm;try{apiMulti=fm;}catch(e){}}
 }
 
 var renderMap={
@@ -204,8 +210,8 @@ var renderMap={
 };
 function mark(v){currentView=v;seq++;try{window.ESTADO=window.ESTADO||{};window.ESTADO.view=v;window.PSS_NAV_SEQ=seq;window.PSS_NAV_VIEW=v;}catch(e){}try{document.querySelectorAll('#navMenu button[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===v);});}catch(e){}return seq;}
 function go(v){v=String(v||'inicio');mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}
-function instalarNavegacao(){if(typeof window.navegar==='function'&&!window.navegar.__PSS_NAV_FAST_V7){baseNavigate=window.navegar;var n=function(v){return go(v);};n.__PSS_NAV_FAST_V7=true;n.__base=baseNavigate;window.navegar=n;try{navegar=n;}catch(e){}}}
+function instalarNavegacao(){if(typeof window.navegar==='function'&&!window.navegar.__PSS_NAV_FAST_V8){baseNavigate=window.navegar;var n=function(v){return go(v);};n.__PSS_NAV_FAST_V8=true;n.__base=baseNavigate;window.navegar=n;try{navegar=n;}catch(e){}}}
 function install(){instalarLoaders();instalarPalpiteRapido();instalarConfigRapido();instalarPagamentosRapido();instalarConsultaDireta();instalarAdminDados();instalarApi();instalarNavegacao();}
 install();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(install,ms);});
-window.PSS_LAST_CLICK_WINS={version:'V7',get:function(){return {seq:seq,view:currentView};},go:go};
+window.PSS_LAST_CLICK_WINS={version:'V8',get:function(){return {seq:seq,view:currentView};},go:go};
 })();
