@@ -3,10 +3,10 @@ name: PSS Activate Last Click Wins V1
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'assets/pss-last-click-wins-v1.js'
-      - 'assets/pss-admin-edge-fast-v1.js'
       - '.github/workflows/pss-activate-last-click-wins-v1.yml'
 
 permissions:
@@ -20,76 +20,51 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Corrigir os 4 menus e publicar V10
+      - name: Corrigir quatro menus e publicar V10
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          a=Path('assets/pss-last-click-wins-v1.js')
-          s=a.read_text(encoding='utf-8')
+          asset = Path('assets/pss-last-click-wins-v1.js')
+          s = asset.read_text(encoding='utf-8')
 
-          obrigatorios=[
-            'function instalarPalpiteRapido()',
-            'function instalarPagamentosRapido()',
-            'function instalarConsultaDireta()',
-            'function instalarAdminDados()',
-            'function instalarApi()',
-            'function go(v)'
-          ]
-          faltando=[x for x in obrigatorios if x not in s]
-          if faltando:
-              raise SystemExit('Estrutura esperada nao localizada: '+', '.join(faltando))
+          old = "function go(v){v=String(v||'inicio');mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}"
+          new = "function rearmar4(v){\n  if(v==='palpite'){instalarPalpiteRapido();}\n  else if(v==='pagamentos'){instalarPagamentosRapido();instalarAdminDados();instalarApi();}\n  else if(v==='baseLoterias'){instalarAdminDados();instalarApi();}\n  else if(v==='consulta'){instalarConsultaDireta();}\n}\nfunction go(v){v=String(v||'inicio');rearmar4(v);mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}"
 
-          antigo="function go(v){v=String(v||'inicio');mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}"
-          novo="""function rearmar4(v){
-  if(v==='palpite'){
-    instalarPalpiteRapido();
-  }else if(v==='pagamentos'){
-    instalarPagamentosRapido();
-    instalarAdminDados();
-    instalarApi();
-  }else if(v==='baseLoterias'){
-    instalarAdminDados();
-    instalarApi();
-  }else if(v==='consulta'){
-    instalarConsultaDireta();
-  }
-}
-function go(v){v=String(v||'inicio');rearmar4(v);mark(v);var fn=renderMap[v];if(typeof fn==='function')return fn();if(typeof baseNavigate==='function')return baseNavigate(v);}"""
+          if 'function rearmar4(v)' not in s:
+              if old not in s:
+                  raise SystemExit('go(v) atual nao localizado')
+              s = s.replace(old, new, 1)
 
-          if antigo in s:
-              s=s.replace(antigo,novo,1)
-          elif 'function rearmar4(v)' not in s:
-              raise SystemExit('Funcao go esperada nao localizada para patch')
+          s = s.replace("version:'V9'", "version:'V10_REARM_4'")
+          asset.write_text(s, encoding='utf-8')
 
-          s=s.replace("window.PSS_LAST_CLICK_WINS={version:'V9'", "window.PSS_LAST_CLICK_WINS={version:'V10_REARM_4'", 1)
-          a.write_text(s,encoding='utf-8')
-
-          p=Path('index.html')
-          h=p.read_text(encoding='utf-8')
-          h=re.sub(r'\s*<script[^>]+pss-last-click-wins-v1\.js[^>]*></script>\s*','\n',h,flags=re.I)
-          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V10_REARM_4_20260814_1442"></script>\n'
-          if '</body>' not in h.lower():
+          index = Path('index.html')
+          h = index.read_text(encoding='utf-8')
+          h = re.sub(r'\s*<script[^>]+pss-last-click-wins-v1\.js[^>]*></script>\s*', '\n', h, flags=re.I)
+          tag = '\n<script src="assets/pss-last-click-wins-v1.js?v=V10_REARM_4_20260814_1945"></script>\n'
+          pos = h.lower().rfind('</body>')
+          if pos < 0:
               raise SystemExit('index.html sem </body>')
-          pos=h.lower().rfind('</body>')
-          h=h[:pos]+tag+h[pos:]
-          p.write_text(h,encoding='utf-8')
-          print('V10_REARM_4_OK')
+          h = h[:pos] + tag + h[pos:]
+          index.write_text(h, encoding='utf-8')
           PY
 
-      - name: Validar
+      - name: Validar correção
+        shell: bash
         run: |
-          grep -q 'function rearmar4(v)' assets/pss-last-click-wins-v1.js
-          grep -q "if(v==='palpite')" assets/pss-last-click-wins-v1.js
-          grep -q "else if(v==='pagamentos')" assets/pss-last-click-wins-v1.js
-          grep -q "else if(v==='baseLoterias')" assets/pss-last-click-wins-v1.js
-          grep -q "else if(v==='consulta')" assets/pss-last-click-wins-v1.js
-          grep -q "version:'V10_REARM_4'" assets/pss-last-click-wins-v1.js
-          grep -q 'V10_REARM_4_20260814_1442' index.html
+          grep -q "function rearmar4(v)" assets/pss-last-click-wins-v1.js
+          grep -q "v==='palpite'" assets/pss-last-click-wins-v1.js
+          grep -q "v==='pagamentos'" assets/pss-last-click-wins-v1.js
+          grep -q "v==='baseLoterias'" assets/pss-last-click-wins-v1.js
+          grep -q "v==='consulta'" assets/pss-last-click-wins-v1.js
+          grep -q "V10_REARM_4_20260814_1945" index.html
           test "$(grep -o 'pss-last-click-wins-v1.js' index.html | wc -l)" -eq 1
 
-      - name: Commit
+      - name: Commit da publicação
+        shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
@@ -98,5 +73,5 @@ function go(v){v=String(v||'inicio');rearmar4(v);mark(v);var fn=renderMap[v];if(
             echo 'Sem alteracoes'
             exit 0
           fi
-          git commit -m 'Frontend: corrige definitivamente os 4 menus lentos V10'
+          git commit -m 'Frontend: publica correção dos 4 menus V10'
           git push
