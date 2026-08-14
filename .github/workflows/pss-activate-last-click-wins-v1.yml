@@ -20,95 +20,84 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Aplicar mesmo Edge Fast de Usuarios aos 4 menus
+      - name: Aplicar clique direto nos 4 menus lentos
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          # 1) Corrige o Edge Fast existente para preservar respostas em `data`
-          #    (Consulta usa data; Usuarios/Base/Pagamentos usam rows).
-          e=Path('assets/pss-admin-edge-fast-v1.js')
-          es=e.read_text(encoding='utf-8')
-          old="CACHE[k]={ts:now,data:j.rows||[]};"
-          new="var out=Object.prototype.hasOwnProperty.call(j,'data')?j.data:(j.rows||[]);CACHE[k]={ts:now,data:out};"
-          if old in es:
-              es=es.replace(old,new,1)
-          elif new not in es:
-              raise SystemExit('Ponto de retorno do Edge Fast nao localizado')
-          e.write_text(es,encoding='utf-8')
-
-          # 2) Usa exatamente PSS_ADMIN_EDGE_FAST.call nos 4 menus problemáticos.
           a=Path('assets/pss-last-click-wins-v1.js')
           s=a.read_text(encoding='utf-8')
 
-          helper="""\nasync function pssStableCall(screen,force){\n  var f=window.PSS_ADMIN_EDGE_FAST;\n  if(f&&typeof f.call==='function')return f.call(String(screen||'').toLowerCase(),!!force);\n  return edge(String(screen||'').toLowerCase(),{},!!force);\n}\n"""
-          if 'async function pssStableCall(' not in s:
-              anchor='function edgeFast(){return window.PSS_ADMIN_EDGE_FAST;}'
-              if anchor not in s: raise SystemExit('Anchor edgeFast nao localizado')
-              s=s.replace(anchor,anchor+helper,1)
-
-          # PALPITE: uma única chamada pelo mesmo transporte de Usuários.
-          s=re.sub(
-              r"var lista=await edge\('boloes',\{palpiteMenu:true\}\);lista=Array\.isArray\(lista\)\?lista:\[\];window\.ESTADO=window\.ESTADO\|\|\{\};ESTADO\.boloes=lista;",
-              "var lista=await pssStableCall('boloes');lista=Array.isArray(lista)?lista:[];window.ESTADO=window.ESTADO||{};ESTADO.boloes=lista;",
-              s,count=1
-          )
-
-          # PAGAMENTOS: duas leituras em paralelo pelo mesmo Edge Fast de Usuários.
-          old_pag="""var b=await edge('pagamentos_bundle',{bundle:true});\n    var p=pagamentosTabela((b&&b.pagamentos)||[]),rec=recebimentos((b&&b.dadosRecebimento)||[]);"""
-          new_pag="""var r=await Promise.all([pssStableCall('pagamentos'),pssStableCall('dados_recebimento')]);\n    var p=pagamentosTabela(r[0]||[]),rec=recebimentos(r[1]||[]);"""
-          if old_pag in s:
-              s=s.replace(old_pag,new_pag,1)
-          elif new_pag not in s:
-              raise SystemExit('Ponto Pagamentos nao localizado')
-
-          # BASE LOTERIAS: força explicitamente o Edge Fast estável.
+          # Mantém o mesmo transporte que já funciona em Usuários.
+          s=s.replace("var lista=await edge('boloes',{palpiteMenu:true});lista=Array.isArray(lista)?lista:[];window.ESTADO=window.ESTADO||{};ESTADO.boloes=lista;",
+                      "var lista=await pssStableCall('boloes');lista=Array.isArray(lista)?lista:[];window.ESTADO=window.ESTADO||{};ESTADO.boloes=lista;",1)
           s=s.replace("if(a==='BASE_LOTERIAS')return baseLoteriasTabela(await edge('base_loterias'));",
                       "if(a==='BASE_LOTERIAS')return baseLoteriasTabela(await pssStableCall('base_loterias'));",1)
-
-          # CONSULTA: lista inicial pelo mesmo Edge Fast estável.
           s=s.replace("var d=await edge('consulta',{lista:true}),ps=(d&&d.participantes)||[];",
                       "var d=await pssStableCall('consulta'),ps=(d&&d.participantes)||[];",1)
 
-          # V8 apenas identifica este ajuste; não cria novo arquivo.
-          s=s.replace('Navegação rápida V7','Navegação rápida V8',1)
-          s=s.replace('window.PSS_LAST_CLICK_WINS_V7','window.PSS_LAST_CLICK_WINS_V8')
-          s=s.replace('PSS_NAV_FAST_V7','PSS_NAV_FAST_V8')
-          s=s.replace('PSS_PALPITE_FAST_V7','PSS_PALPITE_FAST_V8')
-          s=s.replace("version:'V7'","version:'V8'")
+          # Intercepta somente os quatro botões antes do navegador legado.
+          handler = r'''
+function instalarCliquesDiretos4(){
+  if(window.PSS_CLIQUE_DIRETO_4_V9)return;
+  window.PSS_CLIQUE_DIRETO_4_V9=true;
+  document.addEventListener('click',function(ev){
+    var b=ev.target&&ev.target.closest?ev.target.closest('#navMenu button[data-view]'):null;
+    if(!b)return;
+    var v=String(b.dataset.view||'');
+    if(['palpite','pagamentos','baseLoterias','consulta'].indexOf(v)<0)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if(typeof ev.stopImmediatePropagation==='function')ev.stopImmediatePropagation();
+    go(v);
+  },true);
+}
+'''
+          if 'function instalarCliquesDiretos4()' not in s:
+              anchor='var renderMap={'
+              if anchor not in s: raise SystemExit('renderMap nao localizado')
+              s=s.replace(anchor,handler+'\n'+anchor,1)
+
+          s=s.replace('function install(){instalarLoaders();instalarPalpiteRapido();instalarConfigRapido();instalarPagamentosRapido();instalarConsultaDireta();instalarAdminDados();instalarApi();instalarNavegacao();}',
+                      'function install(){instalarLoaders();instalarPalpiteRapido();instalarConfigRapido();instalarPagamentosRapido();instalarConsultaDireta();instalarAdminDados();instalarApi();instalarNavegacao();instalarCliquesDiretos4();}',1)
+          s=s.replace('Navegação rápida V8','Navegação rápida V9',1)
+          s=s.replace('window.PSS_LAST_CLICK_WINS_V8','window.PSS_LAST_CLICK_WINS_V9')
+          s=s.replace('PSS_NAV_FAST_V8','PSS_NAV_FAST_V9')
+          s=s.replace('PSS_PALPITE_FAST_V8','PSS_PALPITE_FAST_V9')
+          s=s.replace("version:'V8'","version:'V9'")
           a.write_text(s,encoding='utf-8')
 
-          # 3) Atualiza somente a tag já existente no index.
           p=Path('index.html')
           h=p.read_text(encoding='utf-8')
           h=re.sub(r'\s*<script[^>]+pss-last-click-wins-v1\.js[^>]*></script>\s*','\n',h,flags=re.I)
-          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V8_MESMO_EDGE_USUARIOS_20260814_0530"></script>\n'
+          tag='\n<script src="assets/pss-last-click-wins-v1.js?v=V9_CLIQUE_DIRETO_4_20260814_0556"></script>\n'
           if '</body>' not in h.lower(): raise SystemExit('index.html sem </body>')
           pos=h.lower().rfind('</body>')
           h=h[:pos]+tag+h[pos:]
           p.write_text(h,encoding='utf-8')
-          print('V8_QUATRO_MENUS_MESMO_EDGE_USUARIOS_OK')
+          print('V9_CLIQUE_DIRETO_4_OK')
           PY
 
       - name: Validar
         run: |
+          grep -q 'function instalarCliquesDiretos4()' assets/pss-last-click-wins-v1.js
+          grep -q "\['palpite','pagamentos','baseLoterias','consulta'\]" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('boloes')" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('pagamentos')" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('base_loterias')" assets/pss-last-click-wins-v1.js
           grep -q "pssStableCall('consulta')" assets/pss-last-click-wins-v1.js
-          grep -q "hasOwnProperty.call(j,'data')" assets/pss-admin-edge-fast-v1.js
-          grep -q 'V8_MESMO_EDGE_USUARIOS_20260814_0530' index.html
+          grep -q 'V9_CLIQUE_DIRETO_4_20260814_0556' index.html
           test "$(grep -o 'pss-last-click-wins-v1.js' index.html | wc -l)" -eq 1
 
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
-          git add assets/pss-admin-edge-fast-v1.js assets/pss-last-click-wins-v1.js index.html
+          git add assets/pss-last-click-wins-v1.js index.html
           if git diff --cached --quiet; then
             echo 'Sem alteracoes'
             exit 0
           fi
-          git commit -m 'Performance: 4 menus usam mesmo Edge Fast de Usuarios'
+          git commit -m 'Performance: clique direto nos 4 menus lentos'
           git push
