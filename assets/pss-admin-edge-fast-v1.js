@@ -190,7 +190,60 @@ function iniciarResultadosPublicosJson(){
     window.carregarLetreiroResultadosPublicosV213(false).catch(function(){});
   }
 }
-function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();instalarResultadosPublicosJson();}
+function totalAprovadosSupabase(lista){
+  lista=Array.isArray(lista)?lista:[];
+  return lista.filter(function(u){
+    var ap=u&&u.aprovado;
+    var ok=(ap===true||ap===1||String(ap||'').toUpperCase()==='TRUE'||String(ap||'').toUpperCase()==='SIM');
+    var st=String((u&&u.status)||'').trim().toUpperCase();
+    return ok && st!=='RECUSADO' && st!=='INATIVO' && st!=='CANCELADO';
+  }).length;
+}
+function aplicarContadorInscritosSupabase(total){
+  total=Number(total)||0;
+  if(total<=0)return false;
+  var card=document.getElementById('sistemaAtivoCardV275')||document.querySelector('[id^="sistemaAtivoCard"]');
+  if(!card)return false;
+  var alterou=false;
+  [].slice.call(card.querySelectorAll('button')).forEach(function(b){
+    if(/inscritos\s*:/i.test(String(b.textContent||''))){
+      b.textContent='👥 Inscritos: '+total;
+      alterou=true;
+    }
+  });
+  try{
+    window.PSS_RESUMO_INSCRITOS_TOPO=Object.assign({},window.PSS_RESUMO_INSCRITOS_TOPO||{},{totalAprovadosSite:total,totalInscritosSite:total,totalInscritos:total,total:total,origem:'SUPABASE_USUARIOS'});
+  }catch(e){}
+  return alterou;
+}
+async function atualizarContadorInscritosSupabase(forcar){
+  try{
+    var lista=await call('usuarios',!!forcar);
+    var total=totalAprovadosSupabase(lista);
+    if(total>0)aplicarContadorInscritosSupabase(total);
+    return total;
+  }catch(e){return 0;}
+}
+function instalarContadorInscritosSupabase(){
+  if(window.PSS_CONTADOR_INSCRITOS_SUPABASE_V14)return true;
+  window.PSS_CONTADOR_INSCRITOS_SUPABASE_V14=true;
+  var baseInicio=window.renderInicio;
+  if(typeof baseInicio==='function'&&!baseInicio.__PSS_INSCRITOS_SUPABASE_V14){
+    var novo=async function(){
+      var r=await baseInicio.apply(this,arguments);
+      [80,250,700,1500].forEach(function(ms){setTimeout(function(){atualizarContadorInscritosSupabase(false);},ms);});
+      return r;
+    };
+    novo.__PSS_INSCRITOS_SUPABASE_V14=true;
+    novo.__base=baseInicio;
+    window.renderInicio=novo;
+    try{renderInicio=novo;}catch(e){}
+  }
+  [0,150,500,1200,2500].forEach(function(ms){setTimeout(function(){atualizarContadorInscritosSupabase(false);},ms);});
+  return true;
+}
+
+function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();instalarResultadosPublicosJson();instalarContadorInscritosSupabase();}
 instalar();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(instalar,ms);});[0,100,300,800,1600,3000].forEach(function(ms){setTimeout(iniciarResultadosPublicosJson,ms);});
-window.PSS_ADMIN_EDGE_FAST={version:'V1.2',call:call,clear:function(){CACHE={};},status:function(){return {cache:Object.keys(CACHE),source:window.PSS_LAST_DATA_SOURCE||null,pagamentosDireto:!!(window.carregarDadosPagamentosAdmin_&&window.carregarDadosPagamentosAdmin_.__PSS_ADMIN_EDGE_PAGAMENTOS__),participantesDireto:!!(window.renderParticipantesBolaoAdmin&&window.renderParticipantesBolaoAdmin.__PSS_ADMIN_EDGE_PARTICIPANTES__)};}};
+window.PSS_ADMIN_EDGE_FAST={version:'V1.4_INSCRITOS_SUPABASE',call:call,clear:function(){CACHE={};},status:function(){return {cache:Object.keys(CACHE),source:window.PSS_LAST_DATA_SOURCE||null,pagamentosDireto:!!(window.carregarDadosPagamentosAdmin_&&window.carregarDadosPagamentosAdmin_.__PSS_ADMIN_EDGE_PAGAMENTOS__),participantesDireto:!!(window.renderParticipantesBolaoAdmin&&window.renderParticipantesBolaoAdmin.__PSS_ADMIN_EDGE_PARTICIPANTES__)};}};
 })();
