@@ -152,7 +152,45 @@ function instalarParticipantesDireto(){
   return true;
 }
 
-function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();}
-instalar();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(instalar,ms);});
+function instalarResultadosPublicosJson(){
+  var atual=window.carregarLetreiroResultadosPublicosV213;
+  if(typeof atual!=='function')return false;
+  if(atual.__PSS_RESULTADOS_JSON_V13)return true;
+  var base=atual;
+  var fn=async function(forcar){
+    try{
+      var url='./dados-publicos.json?v='+(forcar?Date.now():'RESULTADOS_JSON_V13_20260814_2000');
+      var r=await fetch(url,{cache:forcar?'no-store':'no-cache'});
+      if(!r.ok)throw new Error('dados-publicos HTTP '+r.status);
+      var j=await r.json();
+      var d=j&&j.resultadosPublicos;
+      var valido=!!(d&&((Array.isArray(d.resultados)&&d.resultados.length)||d.letreiroTexto));
+      if(!valido)throw new Error('resultadosPublicos ausente');
+      try{localStorage.setItem('PSS_RESULTADOS_PUBLICOS_V213',JSON.stringify({ts:Date.now(),dados:d}));}catch(e){}
+      if(typeof window.renderLetreiroResultadosPublicosV213==='function'){
+        window.renderLetreiroResultadosPublicosV213(d);
+        return d;
+      }
+      return base.apply(this,arguments);
+    }catch(err){
+      return base.apply(this,arguments);
+    }
+  };
+  fn.__PSS_RESULTADOS_JSON_V13=true;
+  fn.__base=base;
+  window.carregarLetreiroResultadosPublicosV213=fn;
+  try{carregarLetreiroResultadosPublicosV213=fn;}catch(e){}
+  return true;
+}
+
+function iniciarResultadosPublicosJson(){
+  if(!instalarResultadosPublicosJson())return;
+  var box=document.getElementById('resultadosPublicosTickerV213');
+  if(box&&typeof window.carregarLetreiroResultadosPublicosV213==='function'){
+    window.carregarLetreiroResultadosPublicosV213(false).catch(function(){});
+  }
+}
+function instalar(){instalarApiMulti();instalarApi();instalarPagamentosDireto();instalarParticipantesDireto();instalarResultadosPublicosJson();}
+instalar();[50,150,400,1000,2500,5000].forEach(function(ms){setTimeout(instalar,ms);});[0,100,300,800,1600,3000].forEach(function(ms){setTimeout(iniciarResultadosPublicosJson,ms);});
 window.PSS_ADMIN_EDGE_FAST={version:'V1.2',call:call,clear:function(){CACHE={};},status:function(){return {cache:Object.keys(CACHE),source:window.PSS_LAST_DATA_SOURCE||null,pagamentosDireto:!!(window.carregarDadosPagamentosAdmin_&&window.carregarDadosPagamentosAdmin_.__PSS_ADMIN_EDGE_PAGAMENTOS__),participantesDireto:!!(window.renderParticipantesBolaoAdmin&&window.renderParticipantesBolaoAdmin.__PSS_ADMIN_EDGE_PARTICIPANTES__)};}};
 })();
