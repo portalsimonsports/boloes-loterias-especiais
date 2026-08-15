@@ -31,3 +31,5 @@ jobs:
         run: supabase functions deploy pss-firebase-gateway --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
       - name: Conclusão
         run: echo 'PSS_FIREBASE_GATEWAY_DEPLOY_OK'
+
+# redeploy solicitado em 15/08/2026 para publicar a versão atual do gateway
