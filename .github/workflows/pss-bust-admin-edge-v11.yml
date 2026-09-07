@@ -1,11 +1,7 @@
 name: PSS Bust Admin Edge V1.1
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/pss-bust-admin-edge-v11.yml'
-      - 'assets/pss-admin-edge-fast-v1.js'
+  workflow_dispatch:
 
 permissions:
   contents: write
