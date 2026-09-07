@@ -1,10 +1,7 @@
 name: PSS Performance Supabase V2
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/pss-performance-supabase-v2.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -25,19 +22,16 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           old=s
-          # troca qualquer referencia antiga do admin fast pelo V2
           s,n1=re.subn(r'<script\s+src="assets/pss-supabase-admin-fast-v1\.js\?v=[^"]+"\s*></script>',
                        '<script src="assets/pss-supabase-admin-fast-v2.js?v=V2_CACHE_PREFETCH_20260810_1745"></script>',s,count=1)
           if n1==0 and 'pss-supabase-admin-fast-v2.js' not in s:
               if '</body>' not in s: raise SystemExit('ERRO: </body> nao encontrado')
               s=s.replace('</body>','<script src="assets/pss-supabase-admin-fast-v2.js?v=V2_CACHE_PREFETCH_20260810_1745"></script>\n</body>',1)
-          # atualiza querystring da navegacao V2 para forcar browser a receber a versao sem atraso
           s,n2=re.subn(r'assets/pss-navigation-instant-v2\.js\?v=[^"\']+',
                        'assets/pss-navigation-instant-v2.js?v=V21_NO_DELAY_20260810_1745',s,count=1)
           if n2==0 and 'assets/pss-navigation-instant-v2.js' not in s:
               if '</body>' not in s: raise SystemExit('ERRO: </body> nao encontrado para nav')
               s=s.replace('</body>','<script src="assets/pss-navigation-instant-v2.js?v=V21_NO_DELAY_20260810_1745"></script>\n</body>',1)
-          # remove referencia V1 duplicada caso exista alem da primeira substituida
           s=re.sub(r'\s*<script\s+src="assets/pss-supabase-admin-fast-v1\.js\?v=[^"]+"\s*></script>','',s)
           if s.count('pss-supabase-admin-fast-v2.js')!=1: raise SystemExit('ERRO: admin V2 nao ficou unico')
           if s.count('pss-navigation-instant-v2.js')!=1: raise SystemExit('ERRO: nav V2 nao ficou unica')
