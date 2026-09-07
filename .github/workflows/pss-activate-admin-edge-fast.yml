@@ -2,11 +2,6 @@ name: PSS Activate Admin Edge Fast
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'assets/pss-admin-edge-fast-v1.js'
-      - '.github/workflows/pss-activate-admin-edge-fast.yml'
 
 permissions:
   contents: write
