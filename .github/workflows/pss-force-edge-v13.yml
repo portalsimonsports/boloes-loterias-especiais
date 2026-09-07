@@ -2,11 +2,6 @@ name: PSS Edge Fast V1.3 Menus Restantes
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/pss-force-edge-v13.yml'
-      - 'assets/pss-admin-edge-fast-v1.js'
 
 permissions:
   contents: write
